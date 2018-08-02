@@ -11,7 +11,6 @@
 
 class Import_FileReader_Reader
 {
-
 	public $temp_status = 'success';
 	public $numberOfRecordsRead = 0;
 	public $errorMessage = '';
@@ -19,7 +18,13 @@ class Import_FileReader_Reader
 	public $request;
 	public $moduleModel;
 
-	public function __construct($request, $user)
+	/**
+	 * Constructor.
+	 *
+	 * @param \App\Request $request
+	 * @param \App\User    $user
+	 */
+	public function __construct(\App\Request $request, \App\User $user)
 	{
 		$this->request = $request;
 		$this->user = $user;
@@ -64,14 +69,16 @@ class Import_FileReader_Reader
 		$filePath = $this->getFilePath();
 		if (!file_exists($filePath)) {
 			$this->temp_status = 'failed';
-			$this->errorMessage = "ERR_FILE_DOESNT_EXIST";
+			$this->errorMessage = 'ERR_FILE_DOESNT_EXIST';
+
 			return false;
 		}
 
 		$fileHandler = fopen($filePath, 'r');
 		if (!$fileHandler) {
 			$this->temp_status = 'failed';
-			$this->errorMessage = "ERR_CANT_OPEN_FILE";
+			$this->errorMessage = 'ERR_CANT_OPEN_FILE';
+
 			return false;
 		}
 		return $fileHandler;
@@ -99,7 +106,7 @@ class Import_FileReader_Reader
 	}
 
 	/**
-	 * Function creates tables for import in database
+	 * Function creates tables for import in database.
 	 */
 	public function createTable()
 	{
@@ -111,11 +118,16 @@ class Import_FileReader_Reader
 		$columns = [
 			'id' => 'pk',
 			'temp_status' => $schema->createColumnSchemaBuilder(\yii\db\Schema::TYPE_SMALLINT, 1)->defaultValue(0),
-			'recordid' => 'integer'
+			'recordid' => 'integer',
 		];
 		foreach ($fieldMapping as $fieldName => $index) {
 			if ($field = $moduleFields[$fieldName]) {
-				$columns[$fieldName] = $field->getDBColumnType();
+				$stringTypes = array_merge(Vtiger_Field_Model::$referenceTypes, ['owner', 'currencyList', 'sharedOwner']);
+				if (in_array($field->getFieldDataType(), $stringTypes)) {
+					$columns[$fieldName] = $schema->createColumnSchemaBuilder('string', 255);
+				} else {
+					$columns[$fieldName] = $field->getDBColumnType();
+				}
 			}
 		}
 		$db->createTable($tableName, $columns);
@@ -124,7 +136,7 @@ class Import_FileReader_Reader
 			$inventoryTableName = Import_Module_Model::getInventoryDbTableName($this->user);
 			$inventoryFieldModel = Vtiger_InventoryField_Model::getInstance($this->moduleModel->getName());
 			$columns = [
-				'id' => $schema->createColumnSchemaBuilder('integer', 19)
+				'id' => $schema->createColumnSchemaBuilder('integer', 19),
 			];
 			foreach ($inventoryFieldModel->getFields() as $columnName => $fieldObject) {
 				$dbType = $fieldObject->getDBType();
@@ -148,23 +160,27 @@ class Import_FileReader_Reader
 	}
 
 	/**
-	 * Function adds imported data to database
+	 * Function adds imported data to database.
+	 *
 	 * @param array $data
+	 *
 	 * @return int
 	 */
 	public function addRecordToDB($data)
 	{
 		$db = \App\Db::getInstance();
 		$tableName = Import_Module_Model::getDbTableName($this->user);
-		$result = $db->createCommand()->insert($tableName, $data)->execute();
-		$this->numberOfRecordsRead++;
+		$db->createCommand()->insert($tableName, $data)->execute();
+		++$this->numberOfRecordsRead;
+
 		return $db->getLastInsertID($tableName . '_id_seq');
 	}
 
 	/**
-	 * Function adds imported inventory data to database
+	 * Function adds imported inventory data to database.
+	 *
 	 * @param array $inventoryData
-	 * @param int $importId
+	 * @param int   $importId
 	 */
 	public function addInventoryToDB($inventoryData, $importId)
 	{

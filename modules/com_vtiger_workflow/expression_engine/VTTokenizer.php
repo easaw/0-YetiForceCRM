@@ -8,98 +8,82 @@
  * All Rights Reserved.
  * **************************************************************************** */
 
-class VTExpressionToken
-{
-
-	function __construct($label)
-	{
-		$this->label = $label;
-	}
-}
-
-function _vt_processtoken_id($token)
-{
-	return $token;
-}
-
-function _vt_processtoken_symbol($token)
-{
-	return new VTEXpressionSymbol($token);
-}
-
 class VTExpressionTokenizer
 {
-
-	function __construct($expr)
+	public function __construct($expr)
 	{
-		$tokenTypes = array(
-			"SPACE" => array('\s+', '_vt_processtoken_id'),
-			"SYMBOL" => array('[a-zA-Z][\w]*', '_vt_processtoken_symbol'),
-			"ESCAPED_SYMBOL" => array('?:`([^`]+)`', '_vt_processtoken_symbol'),
+		$tokenTypes = [
+			'SPACE' => ['\s+', 'processTokenId'],
+			'SYMBOL' => ['[a-zA-Z][\w]*', 'processTokenSymbol'],
+			'ESCAPED_SYMBOL' => ['?:`([^`]+)`', 'processTokenSymbol'],
 			//"STRING" => array('?:(?:"((?:\\\\"|[^"])+)"|'."'((?:\\\\'|[^'])+)')", 'stripcslashes'),
 			//"STRING" => array('?:"((?:\\\\"|[^"])+)"', 'stripcslashes'),
-			"STRING" => array("?:'((?:\\\\'|[^'])+)'", 'stripcslashes'),
-			"FLOAT" => array('\d+[.]\d+', 'floatval'),
-			"INTEGER" => array('\d+', 'intval'),
-			'OPERATOR' => array('[+]|[-]|[*]|>=|<=|[<]|[>]|==|\/', '_vt_processtoken_symbol'),
-			// NOTE: Any new Operator added should be updated in VTParser.inc::$precedence and operation at VTExpressionEvaluater				
-			'OPEN_BRACKET' => array('[(]', '_vt_processtoken_symbol'),
-			'CLOSE_BRACKET' => array('[)]', '_vt_processtoken_symbol'),
-			'COMMA' => array('[,]', '_vt_processtoken_symbol')
-		);
-		$tokenReArr = array();
-		$tokenNames = array();
+			'STRING' => ["?:'((?:\\\\'|[^'])+)'", 'stripcslashes'],
+			'FLOAT' => ['\d+[.]\d+', 'floatval'],
+			'INTEGER' => ['\d+', 'intval'],
+			'OPERATOR' => ['[+]|[-]|[*]|>=|<=|[<]|[>]|==|\/', 'processTokenSymbol'],
+			// NOTE: Any new Operator added should be updated in VTParser.inc::$precedence and operation at VTExpressionEvaluater
+			'OPEN_BRACKET' => ['[(]', 'processTokenSymbol'],
+			'CLOSE_BRACKET' => ['[)]', 'processTokenSymbol'],
+			'COMMA' => ['[,]', 'processTokenSymbol'],
+		];
+		$tokenReArr = [];
+		$tokenNames = [];
 		$this->tokenTypes = $tokenTypes;
 
 		foreach ($tokenTypes as $tokenName => $code) {
-			list($re, $processtoken) = $code;
+			list($re) = $code;
 			$tokenReArr[] = '(' . $re . ')';
 			$tokenNames[] = $tokenName;
 		}
 		$this->tokenNames = $tokenNames;
 		$tokenRe = '/' . implode('|', $tokenReArr) . '/';
-		$this->EOF = new VTExpressionToken("EOF");
+		$this->EOF = new VTExpressionToken('EOF');
 
-		$matches = array();
-		preg_match_all($tokenRe, $expr, $matches, PREG_SET_ORDER);
+		$matches = [];
+		preg_match_all($tokenRe, App\Purifier::decodeHtml($expr), $matches, PREG_SET_ORDER);
 		$this->matches = $matches;
 		$this->idx = 0;
 	}
 
-	function nextToken()
+	public function nextToken()
 	{
 		$matches = $this->matches;
 		$idx = $this->idx;
-		if ($idx == sizeof($matches)) {
+		if ($idx == count($matches)) {
 			return $this->EOF;
 		} else {
 			$match = $matches[$idx];
 			$this->idx = $idx + 1;
 			$i = 1;
-			while ($match[$i] == null) {
-				$i+=1;
+			while (empty($match[$i])) {
+				$i += 1;
 			}
 			$tokenName = $this->tokenNames[$i - 1];
 			$token = new VTExpressionToken($tokenName);
-			$token->value = $this->tokenTypes[$tokenName][1]($match[$i]);
+			if (method_exists($this, $this->tokenTypes[$tokenName][1])) {
+				$token->value = call_user_func([$this, $this->tokenTypes[$tokenName][1]], $match[$i]);
+			} else {
+				$token->value = $this->tokenTypes[$tokenName][1]($match[$i]);
+			}
+
 			return $token;
 		}
 	}
-}
 
-class VTExpressionSpaceFilter
-{
-
-	function __construct($tokens)
+	public function tests($token)
 	{
-		$this->tokens = $tokens;
+		$this->processTokenId($token);
+		$this->processTokenSymbol($token);
 	}
 
-	function nextToken()
+	private function processTokenId($token)
 	{
-		do {
-			$token = $this->tokens->nextToken();
-		} while ($token->label == "SPACE");
 		return $token;
+	}
+
+	private function processTokenSymbol($token)
+	{
+		return new VTEXpressionSymbol($token);
 	}
 }

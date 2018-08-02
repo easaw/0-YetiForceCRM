@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Services TreeView Model Class
- * @package YetiForce.TreeView
- * @license licenses/License.html
+ * Services TreeView Model Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Services_TreeView_Model extends Vtiger_TreeView_Model
 {
-
 	public function isActive()
 	{
 		return true;
@@ -17,12 +17,12 @@ class Services_TreeView_Model extends Vtiger_TreeView_Model
 	private function getRecords()
 	{
 		$pagingModel = new Vtiger_Paging_Model();
-		$pagingModel->set('limit', 'no_limit');
+		$pagingModel->set('limit', 0);
 		$listViewModel = Vtiger_ListView_Model::getInstance($this->getModuleName());
 		$listEntries = $listViewModel->getListViewEntries($pagingModel);
 		$tree = [];
 		foreach ($listEntries as $item) {
-			$this->lastTreeId++;
+			++$this->lastTreeId;
 			$parent = $item->get('pscategory');
 			$parent = (int) str_replace('T', '', $parent);
 			$tree[] = [
@@ -32,21 +32,23 @@ class Services_TreeView_Model extends Vtiger_TreeView_Model
 				'text' => $item->getName(),
 				'isrecord' => true,
 				'state' => [],
-				'icon' => 'glyphicon glyphicon-file'
+				'icon' => 'fas fa-file',
 			];
 		}
 		return $tree;
 	}
 
 	/**
-	 * Load tree
-	 * @return String
+	 * Load tree.
+	 *
+	 * @return string
 	 */
 	public function getTreeList()
 	{
 		$tree = parent::getTreeList();
 		$treeWithItems = $this->getRecords();
 		$tree = array_merge($tree, $treeWithItems);
+
 		return $tree;
 	}
 }

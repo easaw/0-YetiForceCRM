@@ -9,29 +9,15 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Settings_Roles_Save_Action extends Vtiger_Action_Controller
+class Settings_Roles_Save_Action extends Settings_Vtiger_Basic_Action
 {
-
 	/**
-	 * Checking permission
-	 * @param Vtiger_Request $request
-	 * @throws \Exception\AppException
+	 * Process.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function checkPermission(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUser->isAdminUser()) {
-			throw new \Exception\AppException('LBL_PERMISSION_DENIED');
-		}
-	}
-
-	/**
-	 * Process
-	 * @param Vtiger_Request $request
-	 */
-	public function process(Vtiger_Request $request)
-	{
-		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
 		$recordId = $request->get('record');
 		$roleName = $request->get('rolename');
@@ -58,8 +44,9 @@ class Settings_Roles_Save_Action extends Vtiger_Action_Controller
 				->set('assignedmultiowner', $request->get('assignedmultiowner'))
 				->set('clendarallorecords', $request->get('clendarallorecords'))
 				->set('auto_assign', $request->get('auto_assign'));
-			if (!empty($allowassignedrecordsto))
-				$recordModel->set('allowassignedrecordsto', $allowassignedrecordsto); // set the value of assigned records to
+			if (!empty($allowassignedrecordsto)) {
+				$recordModel->set('allowassignedrecordsto', $allowassignedrecordsto);
+			} // set the value of assigned records to
 			if ($parentRole && !empty($roleName) && !empty($roleProfiles)) {
 				$recordModel->set('rolename', $roleName);
 				$recordModel->set('profileIds', $roleProfiles);
@@ -70,17 +57,12 @@ class Settings_Roles_Save_Action extends Vtiger_Action_Controller
 			if ($roleProfiles) {
 				foreach ($roleProfiles as $profileId) {
 					$profileRecordModel = Settings_Profiles_Record_Model::getInstanceById($profileId);
-					$profileRecordModel->recalculate(array($recordId));
+					$profileRecordModel->recalculate([$recordId]);
 				}
 			}
 		}
 
 		$redirectUrl = $moduleModel->getDefaultUrl();
 		header("Location: $redirectUrl");
-	}
-
-	public function validateRequest(Vtiger_Request $request)
-	{
-		$request->validateWriteAccess();
 	}
 }

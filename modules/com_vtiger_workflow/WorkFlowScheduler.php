@@ -8,27 +8,40 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-require_once ('modules/com_vtiger_workflow/WorkflowSchedulerInclude.php');
-require_once('modules/com_vtiger_workflow/VTWorkflowUtils.php');
+require_once 'modules/com_vtiger_workflow/WorkflowSchedulerInclude.php';
+require_once 'modules/com_vtiger_workflow/VTWorkflowUtils.php';
 require_once 'modules/Users/Users.php';
 
+/**
+ * Class WorkFlowScheduler.
+ */
 class WorkFlowScheduler
 {
-
+	/**
+	 * User.
+	 *
+	 * @var Users
+	 */
 	private $user;
-	private $db;
 
-	public function __construct($adb)
+	/**
+	 * Constructor.
+	 */
+	public function __construct()
 	{
-		$util = new VTWorkflowUtils();
-		$adminUser = $util->adminUser();
-		$this->user = $adminUser;
-		$this->db = $adb;
+		$this->user = Users::getActiveAdminUser();
 	}
 
-	public function getWorkflowQuery($workflow)
+	/**
+	 * Get workflow query.
+	 *
+	 * @param \Workflow $workflow
+	 *
+	 * @return \App\Db\Query
+	 */
+	public function getWorkflowQuery(\Workflow $workflow)
 	{
-		$conditions = \App\Json::decode(decode_html($workflow->test));
+		$conditions = \App\Json::decode(App\Purifier::decodeHtml($workflow->test));
 
 		$moduleName = $workflow->moduleName;
 		$queryGenerator = new \App\QueryGenerator($moduleName, $this->user->id);
@@ -39,39 +52,47 @@ class WorkFlowScheduler
 			// We should only get the records related to proper activity type
 			if ($moduleName === 'Calendar') {
 				$queryGenerator->addCondition('activitytype', 'Task', 'e');
-			} else if ($moduleName === 'Events') {
+			} elseif ($moduleName === 'Events') {
 				$queryGenerator->addCondition('activitytype', 'Task', 'n');
 			}
 		}
 		return $queryGenerator->createQuery();
 	}
 
+	/**
+	 * Get eligible workflow records.
+	 *
+	 * @param Workflow $workflow
+	 *
+	 * @return string
+	 */
 	public function getEligibleWorkflowRecords($workflow)
 	{
 		$query = $this->getWorkflowQuery($workflow);
+
 		return $query->column();
 	}
 
+	/**
+	 * Queue scheduled workflow tasks.
+	 */
 	public function queueScheduledWorkflowTasks()
 	{
 		$default_timezone = AppConfig::main('default_timezone');
-		$adb = $this->db;
-
-		$vtWorflowManager = new VTWorkflowManager($adb);
-		$taskQueue = new VTTaskQueue($adb);
-		$entityCache = new VTEntityCache($this->user);
+		$vtWorflowManager = new VTWorkflowManager();
+		$taskQueue = new VTTaskQueue();
 
 		// set the time zone to the admin's time zone, this is needed so that the scheduled workflow will be triggered
 		// at admin's time zone rather than the systems time zone. This is specially needed for Hourly and Daily scheduled workflows
 		$admin = Users::getActiveAdminUser();
 		$adminTimeZone = $admin->time_zone;
-		@date_default_timezone_set($adminTimeZone);
+		date_default_timezone_set($adminTimeZone);
 		$currentTimestamp = date('Y-m-d H:i:s');
-		@date_default_timezone_set($default_timezone);
+		date_default_timezone_set($default_timezone);
 
 		$scheduledWorkflows = $vtWorflowManager->getScheduledWorkflows($currentTimestamp);
 		foreach ($scheduledWorkflows as $i => &$workflow) {
-			$tm = new VTTaskManager($adb);
+			$tm = new VTTaskManager();
 			$tasks = $tm->getTasksForWorkflow($workflow->id);
 			if ($tasks) {
 				$records = $this->getEligibleWorkflowRecords($workflow);
@@ -81,7 +102,7 @@ class WorkFlowScheduler
 					foreach ($tasks as $task) {
 						if ($task->active) {
 							$trigger = $task->trigger;
-							if ($trigger != null) {
+							if ($trigger !== null) {
 								$delay = strtotime($data[$trigger['field']]) + $trigger['days'] * 86400;
 							} else {
 								$delay = 0;
@@ -100,9 +121,15 @@ class WorkFlowScheduler
 		$scheduledWorkflows = null;
 	}
 
-	public function addWorkflowConditionsToQueryGenerator($queryGenerator, $conditions)
+	/**
+	 * Add workflow conditions to query generator.
+	 *
+	 * @param \App\QueryGenerator $queryGenerator
+	 * @param array               $conditions
+	 */
+	public function addWorkflowConditionsToQueryGenerator(\App\QueryGenerator $queryGenerator, $conditions)
 	{
-		$conditionMapping = array(
+		$conditionMapping = [
 			'equal to' => 'e',
 			'less than' => 'l',
 			'greater than' => 'g',
@@ -131,37 +158,40 @@ class WorkFlowScheduler
 			'more than hours before' => 'l',
 			'more than hours later' => 'g',
 			'is today' => 'e',
-		);
-		//Algorithm :
-		//1. If the query has already where condition then start a new group with and condition, else start a group
-		//2. Foreach of the condition, if its a condition in the same group just append with the existing joincondition
-		//3. If its a new group, then start the group with the group join.
-		//4. And for the first condition in the new group, dont append any joincondition.
+		];
+		/*
+		  Algorithm :
+		  1. If the query has already where condition then start a new group with and condition, else start a group
+		  2. Foreach of the condition, if its a condition in the same group just append with the existing joincondition
+		  3. If its a new group, then start the group with the group join.
+		  4. And for the first condition in the new group, dont append any joincondition.
+		 */
 		if ($conditions) {
 			foreach ($conditions as &$condition) {
 				$operation = $condition['operation'];
 				//Cannot handle this condition for scheduled workflows
-				if ($operation === 'has changed')
+				if ($operation === 'has changed') {
 					continue;
-				$value = $condition['value'];
-				if (in_array($operation, $this->_specialDateTimeOperator())) {
-					$value = $this->_parseValueForDate($condition);
 				}
-				$groupId = $condition['groupid'];
+				$value = $condition['value'];
+				if (in_array($operation, $this->specialDateTimeOperator())) {
+					$value = $this->parseValueForDate($condition);
+				}
 				$groupJoin = $condition['groupjoin'];
 				$operator = $conditionMapping[$operation];
 				$fieldName = $condition['fieldname'];
-				$valueType = $condition['valuetype'];
 				$value = html_entity_decode($value);
 				preg_match('/(\w+) : \((\w+)\) (\w+)/', $condition['fieldname'], $matches);
 				if (count($matches) != 0) {
-					list($full, $sourceField, $relatedModule, $reletedFieldName) = $matches;
+					$sourceField = $matches[1];
+					$relatedModule = $matches[2];
+					$relatedFieldName = $matches[3];
 				}
 				if ($sourceField) {
-					$queryGenerator->addReletedCondition([
+					$queryGenerator->addRelatedCondition([
 						'sourceField' => $sourceField,
 						'relatedModule' => $relatedModule,
-						'relatedField' => $reletedFieldName,
+						'relatedField' => $relatedFieldName,
 						'value' => $value,
 						'operator' => $operator,
 						'conditionGroup' => $groupJoin === 'and',
@@ -174,87 +204,81 @@ class WorkFlowScheduler
 	}
 
 	/**
-	 * Special Date functions
-	 * @return <Array>
+	 * Special Date functions.
+	 *
+	 * @return array
 	 */
-	public function _specialDateTimeOperator()
+	public function specialDateTimeOperator()
 	{
-		return array('less than days ago', 'more than days ago', 'in less than', 'in more than', 'days ago', 'days later',
-			'less than hours before', 'less than hours later', 'more than hours later', 'more than hours before', 'is today');
+		return ['less than days ago', 'more than days ago', 'in less than', 'in more than', 'days ago', 'days later',
+			'less than hours before', 'less than hours later', 'more than hours later', 'more than hours before', 'is today', ];
 	}
 
 	/**
-	 * Function parse the value based on the condition
-	 * @param <Array> $condition
+	 * Function parse the value based on the condition.
+	 *
+	 * @param array $condition
+	 *
 	 * @return string
 	 */
-	public function _parseValueForDate($condition)
+	public function parseValueForDate($condition)
 	{
 		$value = $condition['value'];
 		$operation = $condition['operation'];
 
 		// based on the admin users time zone, since query generator expects datetime at user timezone
-		$default_timezone = vglobal('default_timezone');
+		$default_timezone = \AppConfig::main('default_timezone');
 		$admin = Users::getActiveAdminUser();
 		$adminTimeZone = $admin->time_zone;
-		@date_default_timezone_set($adminTimeZone);
+		date_default_timezone_set($adminTimeZone);
 
 		switch ($operation) {
-			case 'less than days ago' :  //between current date and (currentdate - givenValue)
+			case 'less than days ago':  //between current date and (currentdate - givenValue)
 				$days = $condition['value'];
 				$value = date('Y-m-d', strtotime('-' . $days . ' days')) . ',' . date('Y-m-d', strtotime('+1 day'));
 				break;
-
-			case 'more than days ago' :  // less than (current date - givenValue)
+			case 'more than days ago':  // less than (current date - givenValue)
 				$days = $condition['value'] - 1;
 				$value = date('Y-m-d', strtotime('-' . $days . ' days'));
 				break;
-
-			case 'in less than' :   // between current date and future date(current date + givenValue)
+			case 'in less than':   // between current date and future date(current date + givenValue)
 				$days = $condition['value'] + 1;
 				$value = date('Y-m-d', strtotime('-1 day')) . ',' . date('Y-m-d', strtotime('+' . $days . ' days'));
 				break;
-
-			case 'in more than' :   // greater than future date(current date + givenValue)
+			case 'in more than':   // greater than future date(current date + givenValue)
 				$days = $condition['value'] - 1;
 				$value = date('Y-m-d', strtotime('+' . $days . ' days'));
 				break;
-
-			case 'days ago' :
+			case 'days ago':
 				$days = $condition['value'];
 				$value = date('Y-m-d', strtotime('-' . $days . ' days'));
 				break;
-
-			case 'days later' :
+			case 'days later':
 				$days = $condition['value'];
 				$value = date('Y-m-d', strtotime('+' . $days . ' days'));
 				break;
-
-			case 'is today' :
+			case 'is today':
 				$value = date('Y-m-d');
 				break;
-
-			case 'less than hours before' :
+			case 'less than hours before':
 				$hours = $condition['value'];
 				$value = date('Y-m-d H:i:s', strtotime('-' . $hours . ' hours')) . ',' . date('Y-m-d H:i:s');
 				break;
-
-			case 'less than hours later' :
+			case 'less than hours later':
 				$hours = $condition['value'];
 				$value = date('Y-m-d H:i:s') . ',' . date('Y-m-d H:i:s', strtotime('+' . $hours . ' hours'));
 				break;
-
-			case 'more than hours later' :
+			case 'more than hours later':
 				$hours = $condition['value'];
 				$value = date('Y-m-d H:i:s', strtotime('+' . $hours . ' hours'));
 				break;
-
-			case 'more than hours before' :
+			case 'more than hours before':
 				$hours = $condition['value'];
 				$value = date('Y-m-d H:i:s', strtotime('-' . $hours . ' hours'));
 				break;
 		}
-		@date_default_timezone_set($default_timezone);
+		date_default_timezone_set($default_timezone);
+
 		return $value;
 	}
 }

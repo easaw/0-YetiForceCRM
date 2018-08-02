@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Action to save dashboard
- * @package YetiForce.Action
- * @license licenses/License.html
+ * Action to save dashboard.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
-class Settings_WidgetsManagement_Dashboard_Action extends Settings_Vtiger_IndexAjax_View
+class Settings_WidgetsManagement_Dashboard_Action extends Settings_Vtiger_Basic_Action
 {
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -16,7 +16,7 @@ class Settings_WidgetsManagement_Dashboard_Action extends Settings_Vtiger_IndexA
 		$this->exposeMethod('delete');
 	}
 
-	public function save(Vtiger_Request $request)
+	public function save(\App\Request $request)
 	{
 		Settings_WidgetsManagement_Module_Model::saveDashboard($request->get('dashboardId'), $request->get('name'));
 		$response = new Vtiger_Response();
@@ -24,11 +24,11 @@ class Settings_WidgetsManagement_Dashboard_Action extends Settings_Vtiger_IndexA
 		$response->emit();
 	}
 
-	public function delete(Vtiger_Request $request)
+	public function delete(\App\Request $request)
 	{
 		$dashboardId = $request->get('dashboardId');
-		if($dashboardId === Settings_WidgetsManagement_Module_Model::getDefaultDashboard()) {
-			throw new \Exception\AppException(vtranslate('LBL_PERMISSION_DENIED', 'Vtiger'));
+		if ($dashboardId === Settings_WidgetsManagement_Module_Model::getDefaultDashboard()) {
+			throw new \App\Exceptions\AppException('LBL_PERMISSION_DENIED');
 		}
 		Settings_WidgetsManagement_Module_Model::deleteDashboard($dashboardId);
 		$response = new Vtiger_Response();

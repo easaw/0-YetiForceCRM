@@ -9,37 +9,37 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Accounts_AccountHierarchy_View extends Vtiger_View_Controller
+class Accounts_AccountHierarchy_View extends \App\Controller\View
 {
+	use App\Controller\ClearProcess;
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedToRecord
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$userPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		$permission = $userPrivilegesModel->hasModulePermission($moduleName);
-
-		if (!$permission) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if ($request->isEmpty('record', true)) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
-	}
-
-	public function preProcess(Vtiger_Request $request, $display = true)
-	{
-		
+		if (!\App\Privilege::isPermitted($request->getModule(), 'DetailView', $request->getInteger('record'))) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
 	}
 
 	private function getLastModified($id)
 	{
-		return (new \App\Db\Query())->from('u_#__crmentity_last_changes')
-				->where(['crmid' => $id, 'fieldname' => 'active'])
-				->one();
+		return (new \App\Db\Query())->from('u_#__crmentity_last_changes')->where(['crmid' => $id, 'fieldname' => 'active'])->one();
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 
 		$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
 		$hierarchy = $recordModel->getAccountHierarchy();
@@ -58,10 +58,5 @@ class Accounts_AccountHierarchy_View extends Vtiger_View_Controller
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('ACCOUNT_HIERARCHY', $hierarchy);
 		$viewer->view('AccountHierarchy.tpl', $moduleName);
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		
 	}
 }

@@ -1,19 +1,20 @@
 <?php
 
 /**
- * List View Model Class for Mail Settings
- * @package YetiForce.Settings.Record
- * @license licenses/License.html
+ * List View Model Class for Mail Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Adrian Koń <a.kon@yetiforce.com>
  */
-
 class Settings_Mail_ListView_Model extends Settings_Vtiger_ListView_Model
 {
-
 	/**
-	 * Function to get the list view entries
+	 * Function to get the list view entries.
+	 *
 	 * @param Vtiger_Paging_Model $pagingModel
-	 * @return array - Associative array of record id mapped to Vtiger_Record_Model instance.
+	 *
+	 * @return array - Associative array of record id mapped to Vtiger_Record_Model instance
 	 */
 	public function getListViewEntries($pagingModel)
 	{
@@ -24,33 +25,33 @@ class Settings_Mail_ListView_Model extends Settings_Vtiger_ListView_Model
 		}
 		$recordModelClass = Vtiger_Loader::getComponentClassName('Model', 'Record', $qualifiedModuleName);
 		$listFields = array_keys($module->listFields);
-		$listFields [] = $module->baseIndex;
+		$listFields[] = $module->baseIndex;
 		$query = (new \App\Db\Query())->select($listFields)
 			->from($module->baseTable);
 		$searchParams = $this->get('searchParams');
-		if(!empty($searchParams)){
+		$fieldsToFilter = $module->getFilterFields();
+		if (!empty($searchParams)) {
 			foreach ($searchParams as $key => $value) {
-				if('' !== $value['value']){
+				if ('' !== $value['value'] && in_array($key, $fieldsToFilter)) {
 					$query->andWhere([$key => $value['value']]);
 				}
 			}
 		}
-	
 		$startIndex = $pagingModel->getStartIndex();
 		$pageLimit = $pagingModel->getPageLimit();
 		$orderBy = $this->getForSql('orderby');
-		if (!empty($orderBy)) {
-			$query->orderBy(sprintf('%s %s ', $orderBy, $this->getForSql('sortorder')));
+		if (!empty($orderBy) && in_array($orderBy, $listFields)) {
+			if ($this->getForSql('sortorder') === 'DESC') {
+				$query->orderBy([$orderBy => SORT_DESC]);
+			} else {
+				$query->orderBy([$orderBy => SORT_ASC]);
+			}
 		}
 		$query->limit($pageLimit + 1)->offset($startIndex);
 		$dataReader = $query->createCommand()->query();
 		$listViewRecordModels = [];
 		while ($row = $dataReader->read()) {
 			$recordModel = new $recordModelClass();
-			$moduleName = \App\Module::getModuleName($row['tabid']);
-			$relModuleName = \App\Module::getModuleName($row['reltabid']);
-			$row['tabid'] = \App\Language::translate($moduleName, $moduleName);
-			$row['reltabid'] = \App\Language::translate($relModuleName, $relModuleName);
 			$recordModel->setData($row);
 			$listViewRecordModels[$recordModel->getId()] = $recordModel;
 		}
@@ -61,10 +62,13 @@ class Settings_Mail_ListView_Model extends Settings_Vtiger_ListView_Model
 		} else {
 			$pagingModel->set('nextPageExists', false);
 		}
+		$dataReader->close();
+
 		return $listViewRecordModels;
 	}
-	
-	public function getBasicLinks(){
+
+	public function getBasicLinks()
+	{
 		return [];
 	}
 }

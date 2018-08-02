@@ -10,17 +10,30 @@
 
 class Rss_DeleteAjax_Action extends Vtiger_Delete_Action
 {
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
+	{
+		$currentUserModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserModel->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 
 		$recordModel = Rss_Record_Model::getInstanceById($recordId, $moduleName);
 		$recordModel->delete();
 
 		$response = new Vtiger_Response();
-		$response->setResult(array('record' => $recordId, 'module' => $moduleName));
+		$response->setResult(['record' => $recordId, 'module' => $moduleName]);
 		$response->emit();
 	}
 }

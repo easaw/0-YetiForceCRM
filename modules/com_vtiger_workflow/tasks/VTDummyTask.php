@@ -10,16 +10,16 @@
 
 class VTDummyTask extends VTTask
 {
-
 	public $executeImmediately = true;
 
 	public function getFieldNames()
 	{
-		return array();
+		return [];
 	}
 
 	/**
-	 * Execute task
+	 * Execute task.
+	 *
 	 * @param Vtiger_Record_Model $recordModel
 	 */
 	public function doTask($recordModel)

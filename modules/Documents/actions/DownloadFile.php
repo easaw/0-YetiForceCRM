@@ -8,23 +8,29 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class Documents_DownloadFile_Action extends Vtiger_Action_Controller
+class Documents_DownloadFile_Action extends \App\Controller\Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-
-		if (!Users_Privileges_Model::isPermitted($moduleName, 'DetailView', $request->get('record'))) {
-			throw new \Exception\NoPermittedToRecord(vtranslate('LBL_PERMISSION_DENIED', $moduleName));
+		if ($request->isEmpty('record')) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+		if (!\App\Privilege::isPermitted($request->getModule(), 'DetailView', $request->getInteger('record'))) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 
-		$documentRecordModel = Vtiger_Record_Model::getInstanceById($request->get('record'), $moduleName);
+		$documentRecordModel = Vtiger_Record_Model::getInstanceById($request->getInteger('record'), $moduleName);
 		//Download the file
 		$documentRecordModel->downloadFile();
 		//Update the Download Count

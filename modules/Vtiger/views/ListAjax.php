@@ -10,6 +10,8 @@
 
 class Vtiger_ListAjax_View extends Vtiger_List_View
 {
+	use \App\Controller\ExposeMethod,
+	 App\Controller\ClearProcess;
 
 	public function __construct()
 	{
@@ -19,30 +21,12 @@ class Vtiger_ListAjax_View extends Vtiger_List_View
 		$this->exposeMethod('getPageCount');
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
-	{
-		return true;
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		return true;
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
-		}
-	}
-
 	/**
-	 * Function to get the page count for list
+	 * Function to get the page count for list.
+	 *
 	 * @return total number of pages
 	 */
-	public function getPageCount(Vtiger_Request $request)
+	public function getPageCount(\App\Request $request)
 	{
 		$listViewCount = $this->getListViewCount($request);
 		$pagingModel = new Vtiger_Paging_Model();
@@ -61,10 +45,11 @@ class Vtiger_ListAjax_View extends Vtiger_List_View
 	}
 
 	/**
-	 * Function returns the number of records for the current filter
-	 * @param Vtiger_Request $request
+	 * Function returns the number of records for the current filter.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function getRecordsCount(Vtiger_Request $request)
+	public function getRecordsCount(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$cvId = App\CustomView::getInstance($moduleName)->getViewId();
@@ -82,10 +67,11 @@ class Vtiger_ListAjax_View extends Vtiger_List_View
 	}
 
 	/**
-	 * Function to get listView count
-	 * @param Vtiger_Request $request
+	 * Function to get listView count.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function getListViewCount(Vtiger_Request $request)
+	public function getListViewCount(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		if (!$this->listViewModel) {
@@ -95,15 +81,15 @@ class Vtiger_ListAjax_View extends Vtiger_List_View
 			}
 			$this->listViewModel = Vtiger_ListView_Model::getInstance($moduleName, $cvId);
 		}
-		$searchKey = $request->get('search_key');
-		$searchValue = $request->get('search_value');
-		$operator = $request->get('operator');
-		if (!empty($operator)) {
-			$this->listViewModel->set('operator', $operator);
+		if (!$request->isEmpty('operator', true)) {
+			$this->listViewModel->set('operator', $request->getByType('operator', 1));
 		}
-		if (!empty($searchKey) && !empty($searchValue)) {
-			$this->listViewModel->set('search_key', $searchKey);
-			$this->listViewModel->set('search_value', $searchValue);
+		if (!$request->isEmpty('search_key', true) && !$request->isEmpty('search_value', true)) {
+			$this->listViewModel->set('search_key', $request->getByType('search_key', 1));
+			$this->listViewModel->set('search_value', $request->get('search_value'));
+		}
+		if ($request->has('entityState')) {
+			$this->listViewModel->set('entityState', $request->getByType('entityState'));
 		}
 		$searchParmams = $request->get('search_params');
 		if (!empty($searchParmams) && is_array($searchParmams)) {

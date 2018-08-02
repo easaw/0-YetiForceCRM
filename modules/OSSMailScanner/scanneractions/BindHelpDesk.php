@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Mail scanner action bind HelpDesk
- * @package YetiForce.MailScanner
- * @license licenses/License.html
+ * Mail scanner action bind HelpDesk.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class OSSMailScanner_BindHelpDesk_ScannerAction extends OSSMailScanner_PrefixScannerAction_Model
 {
-
 	public $moduleName = 'HelpDesk';
 	public $tableName = 'vtiger_troubletickets';
 	public $tableColumn = 'ticket_no';
@@ -18,7 +18,7 @@ class OSSMailScanner_BindHelpDesk_ScannerAction extends OSSMailScanner_PrefixSca
 		$this->mail = $mail;
 		$ids = $this->findAndBind();
 		if ($ids) {
-			$id = array_shift($ids);
+			$id = current($ids);
 			if (!\App\Record::isExists($id, $this->moduleName)) {
 				return false;
 			}
@@ -35,7 +35,7 @@ class OSSMailScanner_BindHelpDesk_ScannerAction extends OSSMailScanner_PrefixSca
 					$recordModel->save();
 				} elseif ($conf['changeTicketStatus'] === 'createTicket') {
 					$mailAccount = $mail->getAccount();
-					if (strstr($mailAccount['actions'], 'CreatedHelpDesk')) {
+					if (is_array($mailAccount['actions']) ? in_array('CreatedHelpDesk', $mailAccount['actions']) : strstr($mailAccount['actions'], 'CreatedHelpDesk')) {
 						$handler = new OSSMailScanner_CreatedHelpDesk_ScannerAction();
 						$handler->add($mail);
 					}

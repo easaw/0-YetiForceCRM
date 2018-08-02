@@ -7,48 +7,61 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  * **************************************************************************** */
-require_once("include/events/SqlResultIterator.php");
 
+/**
+ * Class VTEntityMethodManager.
+ */
 class VTEntityMethodManager
 {
-
-	function __construct($adb)
+	/**
+	 * Add entity method.
+	 *
+	 * @param string $moduleName
+	 * @param string $methodName
+	 * @param string $functionPath
+	 * @param string $functionName
+	 */
+	public function addEntityMethod($moduleName, $methodName, $functionPath, $functionName)
 	{
-		$this->adb = $adb;
+		$db = \App\Db::getInstance();
+		$id = $db->getUniqueId('com_vtiger_workflowtasks_entitymethod');
+		$db->createCommand()
+			->insert('com_vtiger_workflowtasks_entitymethod', [
+				'workflowtasks_entitymethod_id' => $id,
+				'module_name' => $moduleName,
+				'function_path' => $functionPath,
+				'function_name' => $functionName,
+				'method_name' => $methodName,
+			])->execute();
 	}
 
-	function addEntityMethod($moduleName, $methodName, $functionPath, $functionName)
+	/**
+	 * Execute method.
+	 *
+	 * @param Vtiger_Record_Model $recordModel
+	 * @param string              $methodName
+	 */
+	public function executeMethod(Vtiger_Record_Model $recordModel, $methodName)
 	{
-		$adb = $this->adb;
-		$id = $adb->getUniqueId("com_vtiger_workflowtasks_entitymethod");
-		$adb->pquery("insert into com_vtiger_workflowtasks_entitymethod (workflowtasks_entitymethod_id, module_name, function_path, function_name, method_name) values (?,?,?,?,?)", array($id, $moduleName, $functionPath, $functionName, $methodName));
-	}
-
-	function executeMethod($entityData, $methodName)
-	{
-		$adb = $this->adb;
-		$moduleName = $entityData->getModuleName();
-		$result = $adb->pquery("select function_path, function_name from com_vtiger_workflowtasks_entitymethod where module_name=? and method_name=?", array($moduleName, $methodName));
-		if ($adb->num_rows($result) != 0) {
-			$data = $adb->raw_query_result_rowdata($result, 0);
-			$functionPath = $data['function_path'];
-			$functionName = $data['function_name'];
-			require_once($functionPath);
-			$functionName($entityData);
+		$data = (new \App\Db\Query())->select(['function_path', 'function_name'])->from('com_vtiger_workflowtasks_entitymethod')->where(['module_name' => $recordModel->getModuleName(), 'method_name' => $methodName])->one();
+		if ($data) {
+			require_once $data['function_path'];
+			call_user_func("{$data['function_name']}::$methodName", $recordModel);
 		}
 	}
 
-	function methodsForModule($moduleName)
+	/**
+	 * Get methods for module.
+	 *
+	 * @param string $moduleName
+	 *
+	 * @return array
+	 */
+	public function methodsForModule($moduleName)
 	{
-		$adb = $this->adb;
-		$result = $adb->pquery("select method_name from com_vtiger_workflowtasks_entitymethod where module_name=?", array($moduleName));
-		$it = new SqlResultIterator($adb, $result);
-		$methodNames = array();
-		foreach ($it as $row) {
-			$methodNames[] = $row->method_name;
-		}
-		return $methodNames;
+		return (new \App\Db\Query())->select(['method_name'])->from('com_vtiger_workflowtasks_entitymethod')->where(['module_name' => $moduleName])->column();
 	}
+
 	/*
 	  private function methodExists($object, $methodName){
 	  $className = get_class($object);
@@ -63,13 +76,13 @@ class VTEntityMethodManager
 	  } */
 
 	/**
-	 * Function to remove workflowtasks entity method 
-	 * @param <String> Module Name
-	 * @param <String> Entity Method Name.
+	 * Function to remove workflowtasks entity method.
+	 *
+	 * @param string $moduleName Module Name
+	 * @param string $methodName Entity Method Name
 	 */
-	function removeEntityMethod($moduleName, $methodName)
+	public function removeEntityMethod($moduleName, $methodName)
 	{
-		$adb = $this->adb;
-		$adb->pquery("DELETE FROM com_vtiger_workflowtasks_entitymethod WHERE module_name = ? and method_name= ?", array($moduleName, $methodName));
+		\App\Db::getInstance()->createCommand()->delete('com_vtiger_workflowtasks_entitymethod', ['module_name' => $moduleName, 'method_name' => $methodName])->execute();
 	}
 }

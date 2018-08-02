@@ -6,36 +6,35 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce Sp. z o.o.
  * *********************************************************************************** */
 
 class Campaigns_Relation_Model extends Vtiger_Relation_Model
 {
-
 	/**
-	 * Function to update the status of relation
-	 * @param <Number> Campaign record id
-	 * @param <array> $statusDetails
+	 * Function to update the status of relation.
+	 *
+	 * @param int   $sourceRecordId
+	 * @param array $statusDetails
 	 */
 	public function updateStatus($sourceRecordId, $statusDetails = [])
 	{
 		if ($sourceRecordId && $statusDetails) {
-			$relatedModuleName = $this->getRelationModuleModel()->getName();
-
-			if (in_array($relatedModuleName, ['Accounts', 'Leads', 'Vendors', 'Contacts', 'Partners', 'Competition'])) {
-				$db = PearDatabase::getInstance();
-
-				$updateQuery = 'UPDATE vtiger_campaign_records SET campaignrelstatusid = CASE crmid ';
+			if (in_array($this->getRelationModuleModel()->getName(), ['Accounts', 'Leads', 'Vendors', 'Contacts', 'Partners', 'Competition'])) {
+				$db = App\Db::getInstance();
+				$case = ' CASE crmid ';
 				foreach ($statusDetails as $relatedRecordId => $status) {
-					$updateQuery .= " WHEN $relatedRecordId THEN $status ";
+					$case .= " WHEN {$db->quoteValue($relatedRecordId)} THEN {$db->quoteValue($status)}";
 				}
-				$updateQuery .= 'ELSE campaignrelstatusid END WHERE campaignid = ?';
-				$db->pquery($updateQuery, array($sourceRecordId));
+				$case .= 'ELSE campaignrelstatusid END';
+				$db->createCommand()->update('vtiger_campaign_records', ['campaignrelstatusid' => new yii\db\Expression($case)], ['campaignid' => $sourceRecordId])->execute();
 			}
 		}
 	}
 
 	/**
-	 * Function to get relation field for relation module and parent module
+	 * Function to get relation field for relation module and parent module.
+	 *
 	 * @return Vtiger_Field_Model
 	 */
 	public function getRelationField()
@@ -71,12 +70,20 @@ class Campaigns_Relation_Model extends Vtiger_Relation_Model
 	}
 
 	/**
-	 * Get records in campaign
+	 * Get records in campaign.
 	 */
 	public function getCampaignsRecords()
 	{
 		$queryGenerator = $this->getQueryGenerator();
 		$queryGenerator->addJoin(['INNER JOIN', 'vtiger_campaign_records', 'vtiger_campaign_records.crmid = vtiger_crmentity.crmid']);
 		$queryGenerator->addNativeCondition(['vtiger_campaign_records.campaignid' => $this->get('parentRecord')->getId()]);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function transferDb(array $params)
+	{
+		return \App\Db::getInstance()->createCommand()->update('vtiger_campaign_records', ['crmid' => $params['sourceRecordId'], 'campaignid' => $params['destinationRecordId']], ['crmid' => $params['fromRecordId'], 'campaignid' => $params['destinationRecordId']])->execute();
 	}
 }

@@ -1,19 +1,15 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * CallHistory ListView model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class CallHistory_ListView_Model extends Vtiger_ListView_Model
 {
-
 	/**
-	 * Overrided to remove add button 
+	 * Overrided to remove add button.
 	 */
 	public function getBasicLinks()
 	{
@@ -21,16 +17,26 @@ class CallHistory_ListView_Model extends Vtiger_ListView_Model
 	}
 
 	/**
-	 * Overrided to remove Mass Edit Option 
+	 * Overrided to remove Mass Edit Option.
 	 */
 	public function getListViewMassActions($linkParams)
 	{
-		$currentUserModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		$moduleModel = $this->getModule();
+		return Vtiger_Link_Model::getAllByType($this->getModule()->getId(), ['LISTVIEWMASSACTION'], $linkParams);
+	}
 
-		$linkTypes = array('LISTVIEWMASSACTION');
-		$links = Vtiger_Link_Model::getAllByType($moduleModel->getId(), $linkTypes, $linkParams);
-
-		return $links;
+	/**
+	 * Function to give advance links of a module.
+	 *
+	 * @return array of advanced links
+	 */
+	public function getAdvancedLinks()
+	{
+		$advancedLinks = parent::getAdvancedLinks();
+		foreach ($advancedLinks as $key => $value) {
+			if ($value['linklabel'] === 'LBL_FIND_DUPLICATES') {
+				unset($advancedLinks[$key]);
+			}
+		}
+		return $advancedLinks;
 	}
 }

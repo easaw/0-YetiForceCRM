@@ -9,11 +9,15 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
+/**
+ * Record model for module leads.
+ */
 class Leads_Record_Model extends Vtiger_Record_Model
 {
-
 	/**
-	 * Function returns the url for converting lead
+	 * Function returns the url for converting lead.
+	 *
+	 * @return string
 	 */
 	public function getConvertLeadUrl()
 	{
@@ -21,16 +25,16 @@ class Leads_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function returns Account fields for Lead Convert
-	 * @return Array
+	 * Function returns Account fields for Lead Convert.
+	 *
+	 * @return array
 	 */
 	public function getAccountFieldsForLeadConvert()
 	{
-		$accountsFields = array();
-		$privilegeModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		$accountsFields = [];
 		$moduleName = 'Accounts';
 
-		if (!Users_Privileges_Model::isPermitted($moduleName, 'EditView')) {
+		if (!\App\Privilege::isPermitted($moduleName, 'EditView')) {
 			return;
 		}
 
@@ -38,10 +42,9 @@ class Leads_Record_Model extends Vtiger_Record_Model
 		if ($moduleModel->isActive()) {
 			$fieldModels = $moduleModel->getFields();
 			//Fields that need to be shown
-			$complusoryFields = array(); //Field List in the conversion lead
+			$complusoryFields = []; //Field List in the conversion lead
 			foreach ($fieldModels as $fieldName => $fieldModel) {
 				if ($fieldModel->isMandatory() && $fieldName != 'assigned_user_id') {
-
 					$keyIndex = array_search($fieldName, $complusoryFields);
 					if ($keyIndex !== false) {
 						unset($complusoryFields[$keyIndex]);
@@ -64,7 +67,7 @@ class Leads_Record_Model extends Vtiger_Record_Model
 					if ($industryLeadMappedField) {
 						$industryFieldModel->set('fieldvalue', $this->get($industryLeadMappedField));
 					} else {
-						$industryFieldModel->set('fieldvalue', $fieldModel->get('defaultvalue'));
+						$industryFieldModel->set('fieldvalue', $fieldModel->getDefaultFieldValue());
 					}
 					$accountsFields[] = $industryFieldModel;
 				}
@@ -74,8 +77,11 @@ class Leads_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function returns field mapped to Leads field, used in Lead Convert for settings the field values
+	 * Function returns field mapped to Leads field, used in Lead Convert for settings the field values.
+	 *
 	 * @param string $fieldName
+	 * @param string $moduleName
+	 *
 	 * @return string
 	 */
 	public function getConvertLeadMappedField($fieldName, $moduleName)
@@ -83,11 +89,8 @@ class Leads_Record_Model extends Vtiger_Record_Model
 		$mappingFields = $this->get('mappingFields');
 
 		if (!$mappingFields) {
-			$db = PearDatabase::getInstance();
-			$mappingFields = array();
-
-			$result = $db->pquery('SELECT * FROM vtiger_convertleadmapping', array());
-			$numOfRows = $db->num_rows($result);
+			$mappingFields = [];
+			$query = (new \App\Db\Query())->from('vtiger_convertleadmapping');
 
 			$accountInstance = Vtiger_Module_Model::getInstance('Accounts');
 			$accountFieldInstances = $accountInstance->getFieldsById();
@@ -95,14 +98,16 @@ class Leads_Record_Model extends Vtiger_Record_Model
 			$leadInstance = Vtiger_Module_Model::getInstance('Leads');
 			$leadFieldInstances = $leadInstance->getFieldsById();
 
-			for ($i = 0; $i < $numOfRows; $i++) {
-				$row = $db->query_result_rowdata($result, $i);
-				if (empty($row['leadfid']))
+			$dataReader = $query->createCommand()->query();
+			while ($row = $dataReader->read()) {
+				if (empty($row['leadfid'])) {
 					continue;
+				}
 
 				$leadFieldInstance = $leadFieldInstances[$row['leadfid']];
-				if (!$leadFieldInstance)
+				if (!$leadFieldInstance) {
 					continue;
+				}
 
 				$leadFieldName = $leadFieldInstance->getName();
 				$accountFieldInstance = $accountFieldInstances[$row['accountfid']];
@@ -110,18 +115,20 @@ class Leads_Record_Model extends Vtiger_Record_Model
 					$mappingFields['Accounts'][$accountFieldInstance->getName()] = $leadFieldName;
 				}
 			}
+			$dataReader->close();
 			$this->set('mappingFields', $mappingFields);
 		}
 		return $mappingFields[$moduleName][$fieldName];
 	}
 
 	/**
-	 * Function returns the fields required for Lead Convert
-	 * @return <Array of Vtiger_Field_Model>
+	 * Function returns the fields required for Lead Convert.
+	 *
+	 * @return Vtiger_Field_Model[]
 	 */
 	public function getConvertLeadFields()
 	{
-		$convertFields = array();
+		$convertFields = [];
 		$accountFields = $this->getAccountFieldsForLeadConvert();
 		if (!empty($accountFields)) {
 			$convertFields['Accounts'] = $accountFields;
@@ -130,22 +137,26 @@ class Leads_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function returns the url for create event
+	 * Function returns the url for create event.
+	 *
 	 * @return string
 	 */
 	public function getCreateEventUrl()
 	{
 		$calendarModuleModel = Vtiger_Module_Model::getInstance('Calendar');
+
 		return $calendarModuleModel->getCreateEventRecordUrl() . '&link=' . $this->getId();
 	}
 
 	/**
-	 * Function returns the url for create todo
+	 * Function returns the url for create todo.
+	 *
 	 * @return string
 	 */
 	public function getCreateTaskUrl()
 	{
 		$calendarModuleModel = Vtiger_Module_Model::getInstance('Calendar');
+
 		return $calendarModuleModel->getCreateTaskRecordUrl() . '&link=' . $this->getId();
 	}
 }

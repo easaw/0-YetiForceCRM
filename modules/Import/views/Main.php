@@ -9,36 +9,51 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Import_Main_View extends Vtiger_View_Controller
+class Import_Main_View extends \App\Controller\View
 {
-
 	public $request;
 	public $user;
 	public $numberOfRecords;
 
-	public function process(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
-		return;
+		$currentUserPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserPrivilegesModel->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
 	}
 
-	public function __construct($request, $user)
+	public function process(\App\Request $request)
+	{
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param \App\Request $request
+	 * @param App\User     $user
+	 */
+	public function __construct(\App\Request $request, App\User $user)
 	{
 		$this->request = $request;
 		$this->user = $user;
 	}
 
-	public static function import($request, $user)
+	/**
+	 * Import data from file.
+	 *
+	 * @param \App\Request $request
+	 * @param App\User     $user
+	 */
+	public static function import(\App\Request $request, \App\User $user)
 	{
-		$importController = new Import_Main_View($request, $user);
-
+		$importController = new self($request, $user);
 		$importController->saveMap();
 		$fileReadStatus = $importController->copyFromFileToDB();
 		if ($fileReadStatus) {
 			$importController->queueDataImport();
 		}
-
 		$isImportScheduled = $importController->request->get('is_scheduled');
-
 		if ($isImportScheduled) {
 			$importInfo = Import_Queue_Action::getUserCurrentImportInfo($importController->user);
 			self::showScheduledStatus($importInfo);
@@ -51,11 +66,10 @@ class Import_Main_View extends Vtiger_View_Controller
 	{
 		$importInfo = Import_Queue_Action::getImportInfo($this->request->get('module'), $this->user);
 		$importDataController = new Import_Data_Action($importInfo, $this->user);
-
 		if (!$batchImport) {
 			if (!$importDataController->initializeImport()) {
-				Import_Utils_Helper::showErrorPage(vtranslate('ERR_FAILED_TO_LOCK_MODULE', 'Import'));
-				throw new \Exception\AppException(vtranslate('ERR_FAILED_TO_LOCK_MODULE', 'Import'));
+				Import_Utils_Helper::showErrorPage(\App\Language::translate('ERR_FAILED_TO_LOCK_MODULE', 'Import'));
+				throw new \App\Exceptions\AppException('ERR_FAILED_TO_LOCK_MODULE');
 			}
 		}
 
@@ -67,16 +81,18 @@ class Import_Main_View extends Vtiger_View_Controller
 	}
 
 	/**
-	 * Show import status
-	 * @param array $importInfo
-	 * @param Users_Record_Model $user
-	 * @throws \Exception\AppException
+	 * Show import status.
+	 *
+	 * @param array     $importInfo
+	 * @param \App\User $user
+	 *
+	 * @throws \App\Exceptions\AppException
 	 */
-	public static function showImportStatus($importInfo, $user)
+	public static function showImportStatus($importInfo, \App\User $user)
 	{
 		if (empty($importInfo)) {
-			Import_Utils_Helper::showErrorPage(vtranslate('ERR_IMPORT_INTERRUPTED', 'Import'));
-			throw new \Exception\AppException(vtranslate('ERR_IMPORT_INTERRUPTED', 'Import'));
+			Import_Utils_Helper::showErrorPage(\App\Language::translate('ERR_IMPORT_INTERRUPTED', 'Import'));
+			throw new \App\Exceptions\AppException('ERR_IMPORT_INTERRUPTED');
 		}
 		$importDataController = new Import_Data_Action($importInfo, $user);
 		if ($importInfo['temp_status'] === Import_Queue_Action::$IMPORT_STATUS_HALTED ||
@@ -107,7 +123,6 @@ class Import_Main_View extends Vtiger_View_Controller
 		$viewer->assign('MODULE', 'Import');
 		$viewer->assign('IMPORT_ID', $importId);
 		$viewer->assign('IMPORT_RESULT', $importStatusCount);
-		$viewer->assign('INVENTORY_MODULES', getInventoryModules());
 		$viewer->assign('CONTINUE_IMPORT', $continueImport);
 
 		$viewer->view('ImportStatus.tpl', 'Import');
@@ -115,20 +130,12 @@ class Import_Main_View extends Vtiger_View_Controller
 
 	public static function showResult($importInfo, $importStatusCount)
 	{
-		$moduleName = $importInfo['module'];
-		$ownerId = $importInfo['user_id'];
-
 		$viewer = new Vtiger_Viewer();
-
-		$viewer->assign('SKIPPED_RECORDS', $skippedRecords);
-		$viewer->assign('FOR_MODULE', $moduleName);
+		$viewer->assign('FOR_MODULE', $importInfo['module']);
 		$viewer->assign('MODULE', 'Import');
-		$viewer->assign('OWNER_ID', $ownerId);
+		$viewer->assign('OWNER_ID', $importInfo['user_id']);
 		$viewer->assign('IMPORT_RESULT', $importStatusCount);
-		$viewer->assign('INVENTORY_MODULES', getInventoryModules());
-		$viewer->assign('TYPE', $importInfo['type']);
 		$viewer->assign('MERGE_ENABLED', $importInfo['merge_type']);
-
 		$viewer->view('ImportResult.tpl', 'Import');
 	}
 
@@ -159,23 +166,23 @@ class Import_Main_View extends Vtiger_View_Controller
 			$hasHeader = $fileReader->hasHeader();
 			if ($hasHeader) {
 				$firstRowData = $fileReader->getFirstRowData($hasHeader);
-				$headers = array_keys($firstRowData);
+				$headers = array_keys($firstRowData['LBL_STANDARD_FIELDS']);
+				if (isset($firstRowData['LBL_INVENTORY_FIELDS'])) {
+					$headers = array_merge($headers, array_keys($firstRowData['LBL_INVENTORY_FIELDS']));
+				}
 				foreach ($fieldMapping as $fieldName => $index) {
 					$saveMapping["$headers[$index]"] = $fieldName;
 				}
 			} else {
 				$saveMapping = array_flip($fieldMapping);
 			}
-
-			$map = array();
+			$map = [];
 			$map['name'] = $mapName;
 			$map['content'] = $saveMapping;
 			$map['module'] = $this->request->get('module');
 			$map['has_header'] = ($hasHeader) ? 1 : 0;
 			$map['assigned_user_id'] = $this->user->id;
-
-			$importMap = new Import_Map_Model($map, $this->user);
-			$importMap->save();
+			(new Import_Map_Model($map))->save();
 		}
 	}
 
@@ -186,10 +193,12 @@ class Import_Main_View extends Vtiger_View_Controller
 		$fileReader->deleteFile();
 		if ($fileReader->getStatus() === 'success') {
 			$this->numberOfRecords = $fileReader->getNumberOfRecordsRead();
+
 			return true;
 		} else {
-			Import_Utils_Helper::showErrorPage(vtranslate('ERR_FILE_READ_FAILED', 'Import') . ' - ' .
-				vtranslate($fileReader->getErrorMessage(), 'Import'));
+			Import_Utils_Helper::showErrorPage(\App\Language::translate('ERR_FILE_READ_FAILED', 'Import') . ' - ' .
+				\App\Language::translate($fileReader->getErrorMessage(), 'Import'));
+
 			return false;
 		}
 	}
@@ -205,14 +214,18 @@ class Import_Main_View extends Vtiger_View_Controller
 		Import_Queue_Action::add($this->request, $this->user);
 	}
 
-	public static function deleteMap($request)
+	/**
+	 * Delete map.
+	 *
+	 * @param \App\Request $request
+	 */
+	public static function deleteMap(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$mapId = $request->get('mapid');
+		$mapId = $request->getInteger('mapid');
 		if (!empty($mapId)) {
 			Import_Map_Model::markAsDeleted($mapId);
 		}
-
 		$viewer = new Vtiger_Viewer();
 		$viewer->assign('FOR_MODULE', $moduleName);
 		$viewer->assign('MODULE', 'Import');
@@ -220,5 +233,3 @@ class Import_Main_View extends Vtiger_View_Controller
 		$viewer->view('Import_Saved_Maps.tpl', 'Import');
 	}
 }
-
-?>

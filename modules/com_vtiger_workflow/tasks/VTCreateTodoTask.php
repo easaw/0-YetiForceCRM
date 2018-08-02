@@ -8,23 +8,12 @@
  * All Rights Reserved.
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
-require_once('include/Webservices/Utils.php');
-require_once("include/Webservices/VtigerCRMObject.php");
-require_once("include/Webservices/VtigerCRMObjectMeta.php");
-require_once("include/Webservices/DataTransform.php");
-require_once("include/Webservices/WebServiceError.php");
-require_once 'include/Webservices/ModuleTypes.php';
-require_once('include/Webservices/Create.php');
-require_once 'include/Webservices/DescribeObject.php';
-require_once 'include/Webservices/WebserviceField.php';
-require_once 'include/Webservices/EntityMeta.php';
-require_once 'include/Webservices/VtigerWebserviceObject.php';
-
-require_once("modules/Users/Users.php");
+require_once 'include/Webservices/Utils.php';
+require_once 'include/Webservices/WebServiceError.php';
+require_once 'modules/Users/Users.php';
 
 class VTCreateTodoTask extends VTTask
 {
-
 	public $executeImmediately = true;
 
 	public function getFieldNames()
@@ -32,17 +21,9 @@ class VTCreateTodoTask extends VTTask
 		return ['todo', 'description', 'time', 'days_start', 'days_end', 'status', 'priority', 'days', 'direction_start', 'datefield_start', 'direction_end', 'datefield_end', 'sendNotification', 'assigned_user_id', 'days', 'doNotDuplicate', 'duplicateStatus', 'updateDates'];
 	}
 
-	function getAdmin()
-	{
-		$user = Users::getActiveAdminUser();
-		$currentUser = vglobal('current_user');
-		$this->originalUser = $currentUser;
-		$currentUser = $user;
-		return $user;
-	}
-
 	/**
-	 * Execute task
+	 * Execute task.
+	 *
 	 * @param Vtiger_Record_Model $recordModel
 	 */
 	public function doTask($recordModel)
@@ -50,18 +31,14 @@ class VTCreateTodoTask extends VTTask
 		if (!\App\Module::isModuleActive('Calendar')) {
 			return;
 		}
-		$currentUser = vglobal('current_user');
-
 		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__);
-		$adminUser = $this->getAdmin();
 		$userId = $recordModel->get('assigned_user_id');
 		if ($userId === null) {
-			$userId = $adminUser;
+			$userId = Users::getActiveAdminUser();
 		}
 		$moduleName = $recordModel->getModuleName();
 
 		if ($this->doNotDuplicate == 'true') {
-
 			$entityId = $recordModel->getId();
 			$query = (new App\Db\Query())->from('vtiger_activity')
 				->innerJoin('vtiger_crmentity', 'vtiger_crmentity.crmid = vtiger_activity.activityid')
@@ -70,7 +47,7 @@ class VTCreateTodoTask extends VTTask
 				['vtiger_crmentity.deleted' => 0],
 				['or', ['vtiger_activity.link' => $entityId], ['vtiger_activity.process' => $entityId]],
 				['vtiger_activity.activitytype' => 'Task'],
-				['vtiger_activity.subject' => $this->todo]
+				['vtiger_activity.subject' => $this->todo],
 			]);
 			$status = vtlib\Functions::getArrayFromValue($this->duplicateStatus);
 			if (count($status) > 0) {
@@ -78,17 +55,18 @@ class VTCreateTodoTask extends VTTask
 			}
 			if ($query->count() > 0) {
 				\App\Log::warning(__CLASS__ . '::' . __METHOD__ . ': To Do was ignored because a duplicate was found.' . $this->todo);
+
 				return;
 			}
 		}
 
 		if ($this->assigned_user_id === 'currentUser') {
 			$userId = \App\User::getCurrentUserId();
-		} else if ($this->assigned_user_id === 'triggerUser') {
+		} elseif ($this->assigned_user_id === 'triggerUser') {
 			$userId = $recordModel->executeUser;
-		} else if ($this->assigned_user_id === 'copyParentOwner') {
+		} elseif ($this->assigned_user_id === 'copyParentOwner') {
 			$userId = $recordModel->get('assigned_user_id');
-		} else if (!empty($this->assigned_user_id)) { // Added to check if the user/group is active
+		} elseif (!empty($this->assigned_user_id)) { // Added to check if the user/group is active
 			$userExists = (new App\Db\Query())->from('vtiger_users')
 				->where(['id' => $this->assigned_user_id, 'status' => 'Active'])
 				->exists();
@@ -154,10 +132,11 @@ class VTCreateTodoTask extends VTTask
 		$baseDateEnd = strtotime($match[0]);
 		$date_start = strftime('%Y-%m-%d', $baseDateStart + (int) $this->days_start * 24 * 60 * 60 * (strtolower($this->direction_start) == 'before' ? -1 : 1));
 		$due_date = strftime('%Y-%m-%d', $baseDateEnd + (int) $this->days_end * 24 * 60 * 60 * (strtolower($this->direction_end) == 'before' ? -1 : 1));
+		$textParser = \App\TextParser::getInstanceByModel($recordModel);
 		$fields = [
 			'activitytype' => 'Task',
-			'description' => $this->description,
-			'subject' => $this->todo,
+			'description' => $textParser->setContent($this->description)->parse()->getContent(),
+			'subject' => $textParser->setContent($this->todo)->parse()->getContent(),
 			'taskpriority' => $this->priority,
 			'activitystatus' => $this->status,
 			'assigned_user_id' => $userId,
@@ -173,12 +152,26 @@ class VTCreateTodoTask extends VTTask
 		if ($field) {
 			$fields[$field] = $recordModel->getId();
 		}
+		if ($parentRecord = \App\Record::getParentRecord($recordModel->getId())) {
+			$parentModuleName = \App\Record::getType($parentRecord);
+			$field = \App\ModuleHierarchy::getMappingRelatedField($parentModuleName);
+			if ($field) {
+				$fields[$field] = $parentRecord;
+			}
+			if ($parentRecord = \App\Record::getParentRecord($parentRecord)) {
+				$parentModuleName = \App\Record::getType($parentRecord);
+				$field = \App\ModuleHierarchy::getMappingRelatedField($parentModuleName);
+				if ($field) {
+					$fields[$field] = $parentRecord;
+				}
+			}
+		}
 		$newRecordModel = Vtiger_Record_Model::getCleanInstance('Calendar');
 		$newRecordModel->setData($fields);
 		$newRecordModel->setHandlerExceptions(['disableWorkflow' => true]);
 		$newRecordModel->save();
 
-		relateEntities($recordModel->getEntity(), $moduleName, $recordModel->getId(), 'Calendar', $newRecordModel->getId());
+		vtlib\Deprecated::relateEntities($recordModel->getEntity(), $moduleName, $recordModel->getId(), 'Calendar', $newRecordModel->getId());
 
 		if ($this->updateDates == 'true') {
 			App\Db::getInstance()->createCommand()->insert('vtiger_activity_update_dates', [
@@ -187,14 +180,12 @@ class VTCreateTodoTask extends VTTask
 				'task_id' => $this->id,
 			])->execute();
 		}
-		$currentUser = vglobal('current_user');
-		$currentUser = $this->originalUser;
 		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
 	}
 
-	static function conv12to24hour($timeStr)
+	public static function conv12to24hour($timeStr)
 	{
-		$arr = array();
+		$arr = [];
 		preg_match('/(\d{1,2}):(\d{1,2})(am|pm)/', $timeStr, $arr);
 		if ($arr[3] == 'am') {
 			$hours = ((int) $arr[1]) % 12;
@@ -206,6 +197,6 @@ class VTCreateTodoTask extends VTTask
 
 	public function getTimeFieldList()
 	{
-		return array('time');
+		return ['time'];
 	}
 }

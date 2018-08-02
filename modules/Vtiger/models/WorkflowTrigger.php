@@ -11,17 +11,17 @@
 
 class Vtiger_WorkflowTrigger_Model
 {
-
 	/**
-	 * Function executes workflow tasks
+	 * Function executes workflow tasks.
+	 *
 	 * @param string $moduleName
-	 * @param int $record
-	 * @param array $ids
-	 * @param int $userId
+	 * @param int    $record
+	 * @param array  $ids
+	 * @param int    $userId
 	 */
 	public static function execute($moduleName, $record, $ids, $userId)
 	{
-		vimport('~~modules/com_vtiger_workflow/include.php');
+		Vtiger_Loader::includeOnce('~~modules/com_vtiger_workflow/include.php');
 		$recordModel = Vtiger_Record_Model::getInstanceById($record, $moduleName);
 		if ($userId) {
 			$recordModel->executeUser = $userId;

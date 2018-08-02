@@ -11,17 +11,17 @@
 
 class HelpDesk_Module_Model extends Vtiger_Module_Model
 {
-
 	/**
-	 * Function to get list view query for popup window
-	 * @param string $sourceModule Parent module
-	 * @param string $field parent fieldname
-	 * @param string $record parent id
+	 * Function to get list view query for popup window.
+	 *
+	 * @param string              $sourceModule   Parent module
+	 * @param string              $field          parent fieldname
+	 * @param string              $record         parent id
 	 * @param \App\QueryGenerator $queryGenerator
 	 */
 	public function getQueryByModuleField($sourceModule, $field, $record, \App\QueryGenerator $queryGenerator)
 	{
-		if (in_array($sourceModule, array('Assets', 'Project', 'ServiceContracts', 'Services'))) {
+		if (in_array($sourceModule, ['Assets', 'Project', 'ServiceContracts', 'Services'])) {
 			$queryGenerator->addNativeCondition([
 				'and',
 				['not in', 'vtiger_troubletickets.ticketid', (new App\Db\Query())->select(['relcrmid'])->from('vtiger_crmentityrel')->where(['crmid' => $record])],

@@ -11,49 +11,66 @@
 
 class Vtiger_Boolean_UIType extends Vtiger_Base_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return string - Template Name
-	 */
-	public function getTemplateName()
-	{
-		return 'uitypes/Boolean.tpl';
-	}
-
-	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
-	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
-	{
-		if ($value === 1 || $value === '1' || strtolower($value) === 'on' || strtolower($value) === 'yes' || true === $value) {
-			return Vtiger_Language_Handler::getTranslatedString('LBL_YES', $this->get('field')->getModuleName());
-		} else if ($value === 0 || $value === '0' || strtolower($value) === 'off' || strtolower($value) === 'no' || false === $value) {
-			return Vtiger_Language_Handler::getTranslatedString('LBL_NO', $this->get('field')->getModuleName());
-		}
-
-		return $value;
-	}
-
-	public function getListSearchTemplateName()
-	{
-		return 'uitypes/BooleanFieldSearchView.tpl';
-	}
-
-	/**
-	 * Function to get the DB Insert Value, for the current field type with given User Value
-	 * @param mixed $value
-	 * @param \Vtiger_Record_Model $recordModel
-	 * @return mixed
+	 * {@inheritdoc}
 	 */
 	public function getDBValue($value, $recordModel = false)
 	{
-		if ($value === 'on' || $value == 1) {
+		if ($value === 'on' || (int) $value === 1) {
 			return 1;
 		} else {
 			return 0;
 		}
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function validate($value, $isUserFormat = false)
+	{
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		if (!in_array($value, [0, 1, '1', '0', 'on'])) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate[$value] = true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		if ($value === 1 || $value === '1' || strtolower($value) === 'on' || strtolower($value) === 'yes' || true === $value) {
+			return App\Language::translate('LBL_YES', $this->getFieldModel()->getModuleName());
+		} elseif ($value === 0 || $value === '0' || strtolower($value) === 'off' || strtolower($value) === 'no' || false === $value) {
+			return App\Language::translate('LBL_NO', $this->getFieldModel()->getModuleName());
+		}
+		return \App\Purifier::encodeHtml($value);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'Edit/Field/Boolean.tpl';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getListSearchTemplateName()
+	{
+		return 'List/Field/Boolean.tpl';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getAllowedColumnTypes()
+	{
+		return ['tinyint', 'smallint'];
 	}
 }

@@ -10,61 +10,63 @@
 
 class ModComments_Module_Model extends Vtiger_Module_Model
 {
-
 	/**
-	 * Function to get the Quick Links for the module
+	 * Function to get the Quick Links for the module.
+	 *
 	 * @param <Array> $linkParams
+	 *
 	 * @return <Array> List of Vtiger_Link_Model instances
 	 */
 	public function getSideBarLinks($linkParams)
 	{
 		$links = parent::getSideBarLinks($linkParams);
 		unset($links['SIDEBARLINK']);
+
 		return $links;
 	}
 
 	/**
-	 * Function to get the create url with parent id set
-	 * @param <type> $parentRecord	- parent record for which comment need to be added
+	 * Function to get the create url with parent id set.
+	 *
+	 * @param <type> $parentRecord - parent record for which comment need to be added
+	 *
 	 * @return string Url
 	 */
 	public function getCreateRecordUrlWithParent($parentRecord)
 	{
 		$createRecordUrl = $this->getCreateRecordUrl();
 		$createRecordUrlWithParent = $createRecordUrl . '&parent_id=' . $parentRecord->getId();
+
 		return $createRecordUrlWithParent;
 	}
 
 	/**
-	 * Function to get Settings links
+	 * Function to get Settings links.
+	 *
 	 * @return <Array>
 	 */
 	public function getSettingLinks()
 	{
-		vimport('~~modules/com_vtiger_workflow/VTWorkflowUtils.php');
-
-		$editWorkflowsImagePath = Vtiger_Theme::getImagePath('EditWorkflows.png');
-		$settingsLinks = array();
-
-
+		Vtiger_Loader::includeOnce('~~modules/com_vtiger_workflow/VTWorkflowUtils.php');
+		$settingsLinks = [];
 		if (VTWorkflowUtils::checkModuleWorkflow($this->getName())) {
-			$settingsLinks[] = array(
+			$settingsLinks[] = [
 				'linktype' => 'LISTVIEWSETTING',
 				'linklabel' => 'LBL_EDIT_WORKFLOWS',
 				'linkurl' => 'index.php?parent=Settings&module=Workflows&view=List&sourceModule=' . $this->getName(),
-				'linkicon' => $editWorkflowsImagePath
-			);
+				'linkicon' => 'adminIcon-triggers',
+			];
 		}
 		return $settingsLinks;
 	}
 
 	/**
-	 * Delete coments associated with module
-	 * @param vtlib\Module Instnace of module to use
+	 * Delete coments associated with module.
+	 *
+	 * @param vtlib\ModuleBasic Instnace of module to use
 	 */
-	static function deleteForModule($moduleInstance)
+	public static function deleteForModule(vtlib\ModuleBasic $moduleInstance)
 	{
-		$db = PearDatabase::getInstance();
-		$db->delete('vtiger_modcomments', 'related_to IN(SELECT crmid FROM vtiger_crmentity WHERE setype=?)', [$moduleInstance->name]);
+		\App\Db::getInstance()->createCommand()->delete('vtiger_modcomments', ['related_to' => (new \App\Db\Query())->select(['crmid'])->from('vtiger_crmentity')->where(['setype' => $moduleInstance->name])])->execute();
 	}
 }

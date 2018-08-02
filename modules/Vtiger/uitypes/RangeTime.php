@@ -1,32 +1,40 @@
 <?php
 
 /**
- * UIType RangeTime Field Class
- * @package YetiForce.Fields
- * @license licenses/License.html
+ * UIType RangeTime Field Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Vtiger_RangeTime_UIType extends Vtiger_Base_UIType
 {
-
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return $value
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		$isNull = is_null($value);
-		$result = vtlib\Functions::getRangeTime($value, !$isNull);
-		$mode = $this->get('field')->getFieldParams();
+		$result = vtlib\Functions::getRangeTime($value, !is_null($value));
+		$mode = $this->getFieldModel()->getFieldParams();
 		if (empty($mode)) {
 			$mode = 'short';
 		}
-		return $result[$mode];
+		return \App\Purifier::encodeHtml($result[$mode]);
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function isActiveSearchView()
 	{
 		return false;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getAllowedColumnTypes()
+	{
+		return null;
 	}
 }

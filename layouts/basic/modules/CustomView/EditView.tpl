@@ -2,7 +2,7 @@
 /*********************************************************************************
 ** The contents of this file are subject to the vtiger CRM Public License Version 1.0
 * ("License"); You may not use this file except in compliance with the License
-* The Original Code is:  vtiger CRM Open Source
+* The Original Code is: vtiger CRM Open Source
 * The Initial Developer of the Original Code is vtiger.
 * Portions created by vtiger are Copyright (C) vtiger.
 * All Rights Reserved.
@@ -11,74 +11,75 @@
 -->*}
 {strip}
 	<form class="form-horizontal" id="CustomView" name="CustomView" method="post" action="index.php">
-		<input type="hidden" name="record" id="record" value="{$RECORD_ID}" />
+		{if $RECORD_ID}
+			<input type="hidden" name="record" id="record" value="{$RECORD_ID}" />
+		{/if}
 		<input type="hidden" name="module" value="{$MODULE}" />
 		<input type="hidden" name="action" value="Save" />
-		<input type="hidden" name="source_module" value="{$SOURCE_MODULE}"/>
-		<input type="hidden" id="stdfilterlist" name="stdfilterlist" value=""/>
-		<input type="hidden" id="advfilterlist" name="advfilterlist" value=""/>
-		<input type="hidden" id="status" name="status" value="{$CV_PRIVATE_VALUE}"/>
-		<input type="hidden" id="sourceModule" value="{$SOURCE_MODULE}">
-		<input type="hidden" name="date_filters" data-value='{Vtiger_Util_Helper::toSafeHTML(\App\Json::encode($DATE_FILTERS))}' />
+		<input type="hidden" name="source_module" value="{$SOURCE_MODULE}" />
+		<input type="hidden" id="stdfilterlist" name="stdfilterlist" value="" />
+		<input type="hidden" id="advfilterlist" name="advfilterlist" value="" />
+		<input type="hidden" id="status" name="status" value="{$CV_PRIVATE_VALUE}" />
+		<input type="hidden" id="sourceModule" value="{$SOURCE_MODULE}" />
+		<input type="hidden" name="date_filters" data-value='{\App\Purifier::encodeHtml(\App\Json::encode($DATE_FILTERS))}' />
 		<div class='widget_header row customViewHeader'>
-			<div class="col-sm-5 col-xs-12">
+			<div class="col-sm-5 col-12">
 				{if !$RECORD_ID}
-					{assign var=BREADCRUMB_TITLE value='LBL_VIEW_CREATE'}
+					{assign var=BREADCRUMB_TITLE value=\App\Language::translate('LBL_VIEW_CREATE',$MODULE)}
 				{else}
 					{assign var=BREADCRUMB_TITLE value=$CUSTOMVIEW_MODEL->get('viewname')}
 				{/if}
-				{include file='BreadCrumbs.tpl'|@vtemplate_path:$MODULE}
+				{include file=\App\Layout::getTemplatePath('BreadCrumbs.tpl', $MODULE)}
 			</div>
-			<div class="col-sm-7 col-xs-12 btn-toolbar" role="toolbar">
-				<div class="btn-group filterActions pull-right">
-					<button class="btn btn-warning" type="reset" onClick="window.location.reload()">{vtranslate('LBL_CANCEL', $MODULE)}</button>
-				</div>
-				<div class="btn-group filterActions pull-right">
-					<button class="btn btn-success" id="customViewSubmit" type="submit"><strong>{vtranslate('LBL_SAVE', $MODULE)}</strong></button>
-				</div>
-				<div class="btn-group pull-right pull-left-xs iconPreferences marginRight10" data-toggle="buttons">
-					<label class="btn btn-default{if $CUSTOMVIEW_MODEL->isDefault()} active  btn-primary{/if}" title="{vtranslate('LBL_SET_AS_DEFAULT',$MODULE)}" >
-						<input id="setdefault" name="setdefault" type="checkbox"  {if $CUSTOMVIEW_MODEL->isDefault()}checked="checked"{/if} value="1">
-						<span class="glyphicon glyphicon-heart-empty" data-check="glyphicon-heart" data-unchecked="glyphicon-heart-empty"></span>
+			<div class="col-sm-7 col-12 btn-toolbar p-2 childrenMarginRight justify-content-end" role="toolbar">
+				<div class="btn-group iconPreferences btn-group-toggle" data-toggle="buttons">
+					<label class="btn btn-light{if $CUSTOMVIEW_MODEL->isDefault()} active btn-primary{/if}" title="{\App\Language::translate('LBL_SET_AS_DEFAULT',$MODULE)}" >
+						<input id="setdefault" name="setdefault" type="checkbox" {if $CUSTOMVIEW_MODEL->isDefault()}checked="checked"{/if} value="1" />
+						<span class="far fa-heart" data-check="fas fa-heart" data-unchecked="far fa-heart"></span>
 					</label>
-					<label class="btn btn-default{if $CUSTOMVIEW_MODEL->isSetPublic()} active  btn-primary{/if}" title="{vtranslate('LBL_SET_AS_PUBLIC',$MODULE)}">
-						<input id="status" name="status" type="checkbox" {if $CUSTOMVIEW_MODEL->isSetPublic()} value="{$CUSTOMVIEW_MODEL->get('status')}" checked="checked" {else} value="{$CV_PENDING_VALUE}" {/if}>
-						<span class="glyphicon glyphicon-eye-close" data-check="glyphicon-eye-open" data-unchecked="glyphicon-eye-close"></span>
+					<label class="btn btn-light{if $CUSTOMVIEW_MODEL->isSetPublic()} active btn-primary{/if}" title="{\App\Language::translate('LBL_SET_AS_PUBLIC',$MODULE)}">
+						<input id="status" name="status" type="checkbox" {if $CUSTOMVIEW_MODEL->isSetPublic()} value="{$CUSTOMVIEW_MODEL->get('status')}" checked="checked" {else} value="{$CV_PENDING_VALUE}" {/if} />
+						<span class="far fa-eye-slash" data-check="fas fa-eye" data-unchecked="fa-eye-slash"></span>
 					</label>
-					<label class="btn btn-default{if $CUSTOMVIEW_MODEL->isFeatured(true)} active btn-primary{/if}" title="{vtranslate('LBL_FEATURED',$MODULE)}">
-						<input id="featured" name="featured" type="checkbox"  {if $CUSTOMVIEW_MODEL->isFeatured(true)} checked="checked"{/if} value="1">
-						<span class="glyphicon glyphicon-star-empty" data-check="glyphicon-star" data-unchecked="glyphicon-star-empty"></span>
+					<label class="btn btn-light{if $CUSTOMVIEW_MODEL->isFeatured(true)} active btn-primary{/if}" title="{\App\Language::translate('LBL_FEATURED',$MODULE)}">
+						<input id="featured" name="featured" type="checkbox" {if $CUSTOMVIEW_MODEL->isFeatured(true)} checked="checked"{/if} value="1" />
+						<span class="far fa-star" data-check="fas fa-star" data-unchecked="far fa-star"></span>
 					</label>
-					<label class="btn btn-default{if $CUSTOMVIEW_MODEL->get('setmetrics')} active btn-primary{/if}" title="{vtranslate('LBL_LIST_IN_METRICS',$MODULE)}">
-						<input id="setmetrics" name="setmetrics" type="checkbox" {if $CUSTOMVIEW_MODEL->get('setmetrics') eq '1'}checked="checked"{/if} value="1">
-						<span class="glyphicon glyphicon-blackboard" data-check="glyphicon-heart" data-unchecked="glyphicon-heart-empty"></span>
+					<label class="btn btn-light{if $CUSTOMVIEW_MODEL->get('setmetrics')} active btn-primary{/if}" title="{\App\Language::translate('LBL_LIST_IN_METRICS',$MODULE)}">
+						<input id="setmetrics" name="setmetrics" type="checkbox" {if $CUSTOMVIEW_MODEL->get('setmetrics') eq '1'}checked="checked"{/if} value="1" />
+						<span class="fas fa-desktop" data-check="fas fa-desktop" data-unchecked="fas fa-desktop"></span>
 					</label>
 				</div>
+				<button class="btn btn-success" id="customViewSubmit" type="submit"><span
+							class="fa fa-check u-mr-5px"></span><strong>{\App\Language::translate('LBL_SAVE', $MODULE)}</strong></button>
+				<button class="btn btn-danger" type="reset" onClick="window.location.reload()"><span
+							class="fa fa-times u-mr-5px"></span>{\App\Language::translate('LBL_CANCEL', $MODULE)}</button>
 			</div>
-		</div>	
+		</div>
 		{assign var=SELECTED_FIELDS value=$CUSTOMVIEW_MODEL->getSelectedFields()}
-		<div class="">
-			<div class="panel panel-default row marginLeftZero marginRightZero blockContainer">
-				<div class="row blockHeader panel-heading marginLeftZero marginRightZero"><div class="iconCollapse">
-						<span class="cursorPointer iconToggle glyphicon glyphicon glyphicon-menu-down" data-hide="glyphicon-menu-right" data-show="glyphicon-menu-down"></span>
-						<h4 class="">{vtranslate('LBL_BASIC_DETAILS',$MODULE)}</h4></div></div>
-				<div class="panel-body">
+		<div class="childrenMarginTopX">
+			<div class="js-toggle-panel c-panel" data-js="click">
+				<div class="blockHeader  c-panel__header">
+					<span class="iconToggle fas fa-chevron-down small m-1 mt-2" data-hide="fas fa-chevron-right" data-show="fas fa-chevron-down"></span>
+					<h5 class="">{\App\Language::translate('LBL_BASIC_DETAILS',$MODULE)}</h5>
+				</div>
+				<div class="c-panel__body py-1">
 					<div class="form-group">
 						<div class="row col-md-5">
-							<label class="pull-left control-label paddingLeftMd"><span class="redColor">*</span> {vtranslate('LBL_VIEW_NAME',$MODULE)}:</label>
+							<label class="float-left col-form-label "><span class="redColor">*</span> {\App\Language::translate('LBL_VIEW_NAME',$MODULE)}:</label>
 							<div class="col-md-7">
-								<input type="text" id="viewname" class="form-control" data-validation-engine="validate[required]" name="viewname" value="{$CUSTOMVIEW_MODEL->get('viewname')}">
+								<input type="text" id="viewname" class="form-control" data-validation-engine="validate[required]" name="viewname" value="{$CUSTOMVIEW_MODEL->get('viewname')}" />
 							</div>
 						</div>
 					</div>
 					<div class="form-group">
-						<label class="paddingLeftMd control-label"><span class="redColor">*</span> {vtranslate('LBL_CHOOSE_COLUMNS',$MODULE)} ({vtranslate('LBL_MAX_NUMBER_FILTER_COLUMNS')}):</label>
+						<label class=" col-form-label"><span class="redColor">*</span> {\App\Language::translate('LBL_CHOOSE_COLUMNS',$MODULE)} ({\App\Language::translate('LBL_MAX_NUMBER_FILTER_COLUMNS')}):</label>
 						<div class="columnsSelectDiv col-md-12">
-							{assign var=MANDATORY_FIELDS value=array()}
+							{assign var=MANDATORY_FIELDS value=[]}
 							<div class="">
-								<select data-placeholder="{vtranslate('LBL_ADD_MORE_COLUMNS',$MODULE)}" multiple class="columnsSelect form-control" id="viewColumnsSelect">
+								<select data-placeholder="{\App\Language::translate('LBL_ADD_MORE_COLUMNS',$MODULE)}" multiple class="columnsSelect form-control js-select2-sortable" id="viewColumnsSelect">
 									{foreach key=BLOCK_LABEL item=BLOCK_FIELDS from=$RECORD_STRUCTURE}
-										<optgroup label='{vtranslate($BLOCK_LABEL, $SOURCE_MODULE)}'>
+										<optgroup label='{\App\Language::translate($BLOCK_LABEL, $SOURCE_MODULE)}'>
 											{foreach key=FIELD_NAME item=FIELD_MODEL from=$BLOCK_FIELDS}
 												{if $FIELD_MODEL->isMandatory()}
 													{array_push($MANDATORY_FIELDS, $FIELD_MODEL->getCustomViewColumnName())}
@@ -87,7 +88,7 @@
 														{if in_array($FIELD_MODEL->getCustomViewColumnName(), $SELECTED_FIELDS)}
 															selected
 														{/if}
-														>{vtranslate($FIELD_MODEL->get('label'), $SOURCE_MODULE)}
+														>{\App\Language::translate($FIELD_MODEL->getFieldLabel(), $SOURCE_MODULE)}
 											{if $FIELD_MODEL->isMandatory() eq true} <span>*</span> {/if}
 											</option>
 										{/foreach}
@@ -95,7 +96,7 @@
 									{/foreach}
 									{*Required to include event fields for columns in calendar module advanced filter*}
 									{foreach key=BLOCK_LABEL item=BLOCK_FIELDS from=$EVENT_RECORD_STRUCTURE}
-										<optgroup label='{vtranslate($BLOCK_LABEL, 'Events')}'>
+										<optgroup label='{\App\Language::translate($BLOCK_LABEL, 'Events')}'>
 											{foreach key=FIELD_NAME item=FIELD_MODEL from=$BLOCK_FIELDS}
 												{if $FIELD_MODEL->isMandatory()}
 													{array_push($MANDATORY_FIELDS, $FIELD_MODEL->getCustomViewColumnName())}
@@ -104,7 +105,7 @@
 														{if in_array($FIELD_MODEL->getCustomViewColumnName(), $SELECTED_FIELDS)}
 															selected
 														{/if}
-														>{vtranslate($FIELD_MODEL->get('label'), $SOURCE_MODULE)}
+														>{\App\Language::translate($FIELD_MODEL->getFieldLabel(), $SOURCE_MODULE)}
 											{if $FIELD_MODEL->isMandatory() eq true} <span>*</span> {/if}
 											</option>
 										{/foreach}
@@ -118,10 +119,10 @@
 					</div>
 					<div class="form-group marginbottomZero">
 						<div class="row col-md-5">
-							<label class="pull-left control-label paddingLeftMd"><span class="redColor">*</span> {vtranslate('LBL_COLOR_VIEW',$MODULE)}:</label>
+							<label class="float-left col-form-label ">{\App\Language::translate('LBL_COLOR_VIEW',$MODULE)}:</label>
 							<div class="col-md-7">
 								<div class="input-group">
-									<input type="text" class="form-control colorPicker" name="color" value="{$CUSTOMVIEW_MODEL->get('color')}">
+									<input type="text" class="form-control colorPicker" name="color" value="{$CUSTOMVIEW_MODEL->get('color')}" />
 									<span class="input-group-addon" style="background-color: {$CUSTOMVIEW_MODEL->get('color')};">&nbsp;&nbsp;</span>
 								</div>
 							</div>
@@ -129,32 +130,36 @@
 					</div>
 				</div>
 			</div>
-			<div class="panel panel-default row marginLeftZero marginRightZero blockContainer">
-				<div class="row blockHeader panel-heading marginLeftZero marginRightZero"><div class="iconCollapse">
-						<span class="cursorPointer iconToggle glyphicon glyphicon glyphicon-menu-right" data-hide="glyphicon-menu-right" data-show="glyphicon-menu-down"></span>
-						<h4 class="">{vtranslate('LBL_DESCRIPTION_INFORMATION',$MODULE)}</h4></div></div>
-				<div class="panel-body padding5 hide">
-					<textarea name="description" id="description" class="ckEditorSource">{$CUSTOMVIEW_MODEL->get('description')}</textarea>
-				</div>	
+			<div class="js-toggle-panel c-panel" data-js="click">
+				<div class="blockHeader c-panel__header">
+					<span class="iconToggle fas fa-chevron-right small m-1 mt-2" data-hide="fas fa-chevron-right" data-show="fas fa-chevron-down"></span>
+					<h5 class="">{\App\Language::translate('LBL_DESCRIPTION_INFORMATION',$MODULE)}</h5>
+				</div>
+				<div class="c-panel__body py-1 d-none">
+					<textarea name="description" id="description" class="js-editor" data-js="ckeditor">{$CUSTOMVIEW_MODEL->get('description')}</textarea>
+				</div>
 			</div>
-			<div class="panel panel-default row marginLeftZero marginRightZero blockContainer">
-				<div class="row blockHeader panel-heading marginLeftZero marginRightZero"><div class="iconCollapse">
-						<span class="cursorPointer iconToggle glyphicon glyphicon glyphicon-menu-down" data-hide="glyphicon-menu-right" data-show="glyphicon-menu-down"></span>
-						<h4 class="">{vtranslate('LBL_CHOOSE_FILTER_CONDITIONS', $MODULE)}:</h4></div></div>
-				<div class="panel-body">
+			<div class="js-toggle-panel c-panel" data-js="click">
+				<div class="blockHeader c-panel__header">
+					<span class="iconToggle fas fa-chevron-down small m-1 mt-2" data-hide="fas fa-chevron-right" data-show="fas fa-chevron-down"></span>
+					<h5 class="">{\App\Language::translate('LBL_CHOOSE_FILTER_CONDITIONS', $MODULE)}:</h5>
+				</div>
+				<div class="c-panel__body py-1">
 					<div class="filterConditionsDiv">
 						<div class="row">
 							<span class="col-md-12">
-								{include file='AdvanceFilter.tpl'|@vtemplate_path}
+								{include file=\App\Layout::getTemplatePath('AdvanceFilter.tpl')}
 							</span>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-		<div class="filterActions">
-			<button class="cancelLink pull-right btn btn-warning" type="reset" onClick="window.location.reload()">{vtranslate('LBL_CANCEL', $MODULE)}</button>
-			<button class="btn btn-success pull-right" id="customViewSubmit" type="submit"><strong>{vtranslate('LBL_SAVE', $MODULE)}</strong></button>
+		<div class="filterActions py-2">
+			<button class="cancelLink float-right btn btn-danger" type="reset" onClick="window.location.reload()"><span
+						class="fa fa-times u-mr-5px"></span>{\App\Language::translate('LBL_CANCEL', $MODULE)}</button>
+			<button class="btn btn-success float-right mr-1" id="customViewSubmit" type="submit"><strong><span
+							class="fa fa-check u-mr-5px"></span>{\App\Language::translate('LBL_SAVE', $MODULE)}</strong></button>
 		</div>
 	</form>
 {/strip}

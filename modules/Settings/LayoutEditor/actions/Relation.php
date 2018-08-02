@@ -11,7 +11,6 @@
 
 class Settings_LayoutEditor_Relation_Action extends Settings_Vtiger_Index_Action
 {
-
 	public function __construct()
 	{
 		$this->exposeMethod('changeStatusRelation');
@@ -20,39 +19,40 @@ class Settings_LayoutEditor_Relation_Action extends Settings_Vtiger_Index_Action
 		$this->exposeMethod('updateStateFavorites');
 		$this->exposeMethod('addRelation');
 		$this->exposeMethod('removeRelation');
+		$this->exposeMethod('updateRelatedViewType');
 	}
 
-	public function changeStatusRelation(Vtiger_Request $request)
+	public function changeStatusRelation(\App\Request $request)
 	{
-		$relationId = $request->get('relationId');
-		$status = $request->get('status');
+		$relationId = $request->getInteger('relationId');
+		$status = $request->getBoolean('status');
 		$response = new Vtiger_Response();
 		try {
 			Vtiger_Relation_Model::updateRelationPresence($relationId, $status);
-			$response->setResult(array('success' => true));
+			$response->setResult(['success' => true]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
 	}
 
-	public function updateSequenceRelatedModule(Vtiger_Request $request)
+	public function updateSequenceRelatedModule(\App\Request $request)
 	{
 		$modules = $request->get('modules');
 		$response = new Vtiger_Response();
 		try {
 			Vtiger_Relation_Model::updateRelationSequence($modules);
-			$response->setResult(array('success' => true));
+			$response->setResult(['success' => true]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
 	}
 
-	public function updateSelectedFields(Vtiger_Request $request)
+	public function updateSelectedFields(\App\Request $request)
 	{
 		$fields = $request->get('fields');
-		$relationId = $request->get('relationId');
+		$relationId = $request->getInteger('relationId');
 		$isInventory = $request->get('inventory');
 		$response = new Vtiger_Response();
 		try {
@@ -61,14 +61,14 @@ class Settings_LayoutEditor_Relation_Action extends Settings_Vtiger_Index_Action
 			} else {
 				Vtiger_Relation_Model::updateModuleRelatedFields($relationId, $fields);
 			}
-			$response->setResult(array('success' => true));
+			$response->setResult(['success' => true]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
 	}
 
-	public function addRelation(Vtiger_Request $request)
+	public function addRelation(\App\Request $request)
 	{
 		$source = $request->get('source');
 		$target = $request->get('target');
@@ -76,15 +76,15 @@ class Settings_LayoutEditor_Relation_Action extends Settings_Vtiger_Index_Action
 		$type = $request->get('type');
 		$actions = is_array($request->get('actions')) ? $request->get('actions') : [$request->get('actions')];
 
-		$source_Module = vtlib\Module::getInstance($source);
+		$module = vtlib\Module::getInstance($source);
 		$moduleInstance = vtlib\Module::getInstance($target);
-		$source_Module->setRelatedList($moduleInstance, $label, $actions, $type);
+		$module->setRelatedList($moduleInstance, $label, $actions, $type);
 
 		$response = new Vtiger_Response();
 		$response->emit();
 	}
 
-	public function removeRelation(Vtiger_Request $request)
+	public function removeRelation(\App\Request $request)
 	{
 		$relationId = $request->get('relationId');
 		$response = new Vtiger_Response();
@@ -97,22 +97,34 @@ class Settings_LayoutEditor_Relation_Action extends Settings_Vtiger_Index_Action
 		$response->emit();
 	}
 
-	public function updateStateFavorites(Vtiger_Request $request)
+	/**
+	 * Update related view type mode.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function updateRelatedViewType(\App\Request $request)
 	{
-		$relationId = $request->get('relationId');
-		$status = $request->get('status');
 		$response = new Vtiger_Response();
 		try {
-			Vtiger_Relation_Model::updateStateFavorites($relationId, $status);
-			$response->setResult(array('success' => true));
+			Settings_LayoutEditor_Module_Model::updateRelatedViewType($request->getInteger('relationId'), $request->getArray('types', 'Standard'));
+			$response->setResult(['text' => \App\Language::translate('LBL_CHANGES_SAVED')]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function updateStateFavorites(\App\Request $request)
 	{
-		$request->validateWriteAccess();
+		$relationId = $request->getInteger('relationId');
+		$status = $request->get('status');
+		$response = new Vtiger_Response();
+		try {
+			Vtiger_Relation_Model::updateStateFavorites($relationId, $status);
+			$response->setResult(['success' => true]);
+		} catch (Exception $e) {
+			$response->setError($e->getCode(), $e->getMessage());
+		}
+		$response->emit();
 	}
 }

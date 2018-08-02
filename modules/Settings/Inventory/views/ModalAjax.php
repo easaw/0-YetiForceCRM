@@ -1,18 +1,16 @@
 <?php
 
 /**
- * @package YetiForce.views
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_Inventory_ModalAjax_View extends Settings_Inventory_CreditLimits_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
-		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
 		$id = $request->get('id');
 		$type = $request->get('type');

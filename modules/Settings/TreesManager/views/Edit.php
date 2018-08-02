@@ -1,23 +1,24 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings TreesManager edit view class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_TreesManager_Edit_View extends Settings_Vtiger_Index_View
 {
-
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 		$sourceModuleId = '';
 		$access = 1;
 		if (!empty($record)) {
@@ -39,32 +40,33 @@ class Settings_TreesManager_Edit_View extends Settings_Vtiger_Index_View
 		$viewer->assign('ACCESS', $access);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
 		$viewer->assign('SOURCE_MODULE', $sourceModuleId);
-		$viewer->assign('USER_MODEL', Users_Record_Model::getCurrentUserModel());
 		$viewer->view('EditView.tpl', $qualifiedModuleName);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
-			'libraries.jquery.jstree.jstree',
+		$jsFileNames = [
+			'~libraries/jstree/dist/jstree.js',
 			"modules.Settings.$moduleName.resources.Edit",
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
-		$cssFileNames = array(
-			'libraries.jquery.jstree.themes.proton.style',
-		);
+		$cssFileNames = [
+			'~libraries/jstree-bootstrap-theme/dist/themes/proton/style.css',
+		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
+
 		return array_merge($cssInstances, $headerCssInstances);
 	}
 }

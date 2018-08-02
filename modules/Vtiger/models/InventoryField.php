@@ -1,23 +1,25 @@
 <?php
 
 /**
- * Basic Inventory Model Class
- * @package YetiForce.Inventory
- * @license licenses/License.html
- * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
- * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
+ * Basic Inventory Model Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license   YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author    Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ * @author    Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-class Vtiger_InventoryField_Model extends Vtiger_Base_Model
+class Vtiger_InventoryField_Model extends App\Base
 {
-
-	protected $fields = false;
+	protected $fields = [];
 	protected $columns = false;
 	protected $jsonFields = ['discountparam', 'taxparam', 'currencyparam'];
 
 	/**
-	 * Create the name of the Inventory data table
+	 * Create the name of the Inventory data table.
+	 *
 	 * @param string $module Module name
 	 * @param string $prefix Prefix table
+	 *
 	 * @return string Table name
 	 */
 	public function getTableName($type = 'data')
@@ -36,19 +38,20 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 		$focus = CRMEntity::getInstance($this->get('module'));
 		$basetable = $focus->table_name;
 		$supfield = $basetable . $prefix;
+
 		return $supfield;
 	}
 
 	/**
-	 * Loading the Inventory data
-	 * @param boolean $returnInBlock Should the result be divided into blocks
+	 * Loading the Inventory data.
+	 *
+	 * @param bool  $returnInBlock Should the result be divided into blocks
 	 * @param array $ids
-	 * @return array Inventory data
+	 *
+	 * @return Vtiger_Basic_InventoryField[] Inventory data
 	 */
 	public function getFields($returnInBlock = false, $ids = [], $viewType = false)
 	{
-
-		\App\Log::trace('Entering ' . __METHOD__ . '| ');
 		$key = $returnInBlock ? 'block' : 'noBlock';
 		if (!isset($this->fields[$key])) {
 			$table = $this->getTableName('fields');
@@ -62,11 +65,11 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 			$fields = [];
 			$dataReader = $query->createCommand()->query();
 			while ($row = $dataReader->read()) {
-				if ($viewType != 'Settings' && !$this->isActiveField($row)) {
+				if ($viewType !== 'Settings' && !$this->isActiveField($row)) {
 					continue;
 				}
 				$inventoryFieldInstance = $this->getInventoryFieldInstance($row);
-				if ($viewType == 'Detail' && !$inventoryFieldInstance->isVisible()) {
+				if ($viewType === 'Detail' && !$inventoryFieldInstance->isVisible()) {
 					continue;
 				}
 				if ($returnInBlock) {
@@ -90,14 +93,15 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 				$fields[2] = [];
 			}
 		}
-		\App\Log::trace('Exiting ' . __METHOD__);
 		return $fields;
 	}
 
 	/**
-	 * Check whether this field is active
+	 * Check whether this field is active.
+	 *
 	 * @param array $row Field entry from the database
-	 * @return boolean
+	 *
+	 * @return bool
 	 */
 	public function isActiveField($row)
 	{
@@ -111,41 +115,42 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Get inventory columns
-	 * @param string $module Module name
-	 * @param boolean $returnInBlock Should the result be divided into blocks
+	 * Get inventory columns.
+	 *
+	 * @param string $module        Module name
+	 * @param bool   $returnInBlock Should the result be divided into blocks
+	 *
 	 * @return array Inventory columns
 	 */
 	public function getColumns()
 	{
-
-		\App\Log::trace('Entering ' . __METHOD__ . '| ');
 		if ($this->columns) {
 			return $this->columns;
 		}
-
 		$columns = [];
 		foreach ($this->getFields() as $key => $field) {
 			$column = $field->getColumnName();
-			if (!empty($column) && $column != '-')
+			if (!empty($column) && $column != '-') {
 				$columns[] = $column;
+			}
 			foreach ($field->getCustomColumn() as $name => $field) {
 				$columns[] = $name;
 			}
 		}
 		$this->columns = $columns;
-		\App\Log::trace('Exiting ' . __METHOD__);
+
 		return $columns;
 	}
 
 	/**
-	 * Creating installation of the field from the table
+	 * Creating installation of the field from the table.
+	 *
 	 * @param string $valueArray Array of data
+	 *
 	 * @return \modelClassName Instance Vtiger_Basic_InventoryField
 	 */
 	public function getInventoryFieldInstance($valueArray)
 	{
-
 		\App\Log::trace('Entering ' . __METHOD__ . '| ');
 
 		$className = Vtiger_Loader::getComponentClassName('InventoryField', $valueArray['invtype'], $this->get('module'));
@@ -153,12 +158,15 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 		$instance->initialize($valueArray);
 		$instance->set('module', $this->get('module'));
 		\App\Log::trace('Exiting ' . __METHOD__);
+
 		return $instance;
 	}
 
 	/**
-	 * Retrieve list of all fields
+	 * Retrieve list of all fields.
+	 *
 	 * @param string $moduleName Module name
+	 *
 	 * @return array Fields instance Vtiger_Basic_InventoryField
 	 */
 	public function getAllFields()
@@ -170,6 +178,7 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 		$instance = Vtiger_Cache::get('InventoryFields', $moduleName);
 		if ($instance) {
 			\App\Log::trace('Exiting ' . __METHOD__);
+
 			return $instance;
 		}
 
@@ -181,8 +190,9 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 		}
 		$fields = [];
 		foreach ($fieldPaths as $fieldPath) {
-			if (!is_dir($fieldPath))
+			if (!is_dir($fieldPath)) {
 				continue;
+			}
 			foreach (new DirectoryIterator($fieldPath) as $fileinfo) {
 				if ($fileinfo->isFile() && $fileinfo->getFilename() != 'Basic.php') {
 					$fieldName = str_replace('.php', '', $fileinfo->getFilename());
@@ -194,17 +204,19 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 		}
 		Vtiger_Cache::set('InventoryFields', $moduleName, $fields);
 		\App\Log::trace('Exiting ' . __METHOD__);
+
 		return $fields;
 	}
 
 	/**
-	 * Retrieve list of parameters
+	 * Retrieve list of parameters.
+	 *
 	 * @param array $fields Array of instances fields (Vtiger_Basic_InventoryField)
+	 *
 	 * @return array Array of parameters
 	 */
 	public static function getMainParams($fields)
 	{
-
 		\App\Log::trace('Entering ' . __METHOD__);
 
 		$params = false;
@@ -223,9 +235,11 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Get Vtiger_InventoryField_Model instance
+	 * Get Vtiger_InventoryField_Model instance.
+	 *
 	 * @param string $moduleName Module name
-	 * @return \modelClassName Vtiger_InventoryField_Model Instance
+	 *
+	 * @return Vtiger_InventoryField_Model
 	 */
 	public static function getInstance($moduleName)
 	{
@@ -240,8 +254,10 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Get Vtiger_InventoryField_Model instance
+	 * Get Vtiger_InventoryField_Model instance.
+	 *
 	 * @param string $moduleName Module name
+	 *
 	 * @return \modelClassName Vtiger_InventoryField_Model Instance
 	 */
 	public static function getFieldInstance($moduleName, $type)
@@ -257,50 +273,52 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Get fields to auto-complete
+	 * Get fields to auto-complete.
+	 *
 	 * @param string $moduleName
+	 *
 	 * @return array
 	 */
 	public function getAutoCompleteFieldsByModule($moduleName)
 	{
-		$fields = [];
-		foreach ($this->getAutoCompleteFields() as $row) {
-			if ($row['module'] == $moduleName) {
-				$fields[] = $row;
-			}
-		}
-		return $fields;
+		return $this->getAutoCompleteFields()[$moduleName] ?? [];
 	}
 
 	/**
-	 * Get configuration parameters for taxes
+	 * Get configuration parameters for taxes.
+	 *
 	 * @param string $taxParam String parameters json encode
-	 * @param int $net net price
-	 * @param array $return
+	 * @param int    $net      net price
+	 * @param array  $return
+	 *
 	 * @return array
 	 */
 	public static function getTaxParam($taxParam, $net, $return = false)
 	{
 		$taxParam = json_decode($taxParam, true);
-		if (count($taxParam) == 0) {
+		if (count($taxParam) === 0) {
 			return [];
 		}
 		if (is_string($taxParam['aggregationType'])) {
 			$taxParam['aggregationType'] = [$taxParam['aggregationType']];
 		}
-		if (!$return) {
+		if (!$return || empty($taxParam['aggregationType'])) {
 			$return = [];
 		}
-		foreach ($taxParam['aggregationType'] as $aggregationType) {
-			$precent = $taxParam[$aggregationType . 'Tax'];
-			$return[$precent] += $net * ($precent / 100);
+		if (isset($taxParam['aggregationType'])) {
+			foreach ($taxParam['aggregationType'] as $aggregationType) {
+				$precent = $taxParam[$aggregationType . 'Tax'];
+				$return[$precent] += $net * ($precent / 100);
+			}
 		}
 		return $return;
 	}
 
 	/**
-	 * Get related field name
+	 * Get related field name.
+	 *
 	 * @param string $mainModule Module Name
+	 *
 	 * @return string
 	 */
 	public function getReferenceField($mainModule = 'Accounts')
@@ -324,9 +342,11 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Whether the module should be turned on Wysiwyg
+	 * Whether the module should be turned on Wysiwyg.
+	 *
 	 * @param string $moduleName Module Name
-	 * @return boolean|int
+	 *
+	 * @return bool|int
 	 */
 	public function isWysiwygType($moduleName)
 	{
@@ -344,22 +364,25 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 			$return = 1;
 		}
 		Vtiger_Cache::set('InventoryIsWysiwygType', $moduleName, $return);
+
 		return $return;
 	}
 
 	/**
-	 * Get field name for the module taxes
+	 * Get field name for the module taxes.
+	 *
 	 * @param string $moduleName Module name
+	 *
 	 * @return string Tax field name
 	 */
-	public function getTaxField($moduleName)
+	public static function getTaxField($moduleName)
 	{
 		$cache = Vtiger_Cache::get('InventoryIsGetTaxField', $moduleName);
 		if ($cache) {
 			return $cache;
 		}
 		$return = false;
-		if ($moduleName == '') {
+		if ($moduleName === '') {
 			return $return;
 		}
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
@@ -369,40 +392,17 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 				continue;
 			}
 		}
-
 		Vtiger_Cache::set('InventoryIsGetTaxField', $moduleName, $return);
+
 		return $return;
 	}
 
 	/**
-	 * Get the value to save
-	 * @param Vtiger_Request $request
-	 * @param string $field Field name
-	 * @param int $i Sequence number
-	 * @return string
-	 */
-	public function getValueForSave($request, $field, $i)
-	{
-		$value = '';
-		if ($request->has($field . $i)) {
-			$value = $request->get($field . $i);
-		} else if ($request->has($field)) {
-			$value = $request->get($field);
-		}
-
-		if (in_array($field, $this->jsonFields) && $value != '') {
-			$value = json_encode($value);
-		}
-		if (in_array($field, ['qty', 'price', 'gross', 'net', 'discount', 'purchase', 'margin', 'marginp', 'tax', 'total'])) {
-			$value = CurrencyField::convertToDBFormat($value, null, true);
-		}
-		return $value;
-	}
-
-	/**
-	 * Creating a new field
+	 * Creating a new field.
+	 *
 	 * @param string $type
-	 * @param array $params
+	 * @param array  $params
+	 *
 	 * @return array/false
 	 */
 	public function addField($type, $params)
@@ -433,9 +433,9 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 		}
 
 		if ($instance->isColumnType()) {
-			vtlib\Utils::AddColumn($table, $columnName, $instance->getDBType());
+			vtlib\Utils::addColumn($table, $columnName, $instance->getDBType());
 			foreach ($instance->getCustomColumn() as $column => $criteria) {
-				vtlib\Utils::AddColumn($table, $column, $criteria);
+				vtlib\Utils::addColumn($table, $column, $criteria);
 			}
 		}
 		$tableName = $this->getTableName('fields');
@@ -447,58 +447,60 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 			'sequence' => $db->getUniqueID($tableName, 'sequence', false),
 			'block' => $params['block'],
 			'displaytype' => $params['displayType'],
-			'params' => isset($params['params']) ? $params['params'] : '',
-			'colspan' => $colSpan
+			'params' => isset($params['params']) ? App\Purifier::decodeHtml($params['params']) : '',
+			'colspan' => $colSpan,
 		])->execute();
+
 		return $db->getLastInsertID($tableName . '_id_seq');
 	}
 
 	/**
-	 * Save field value
+	 * Save field value.
+	 *
 	 * @param array $param
+	 *
 	 * @return string/false
-	 * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
 	 */
 	public function saveField($type, $param)
 	{
-		$db = PearDatabase::getInstance();
 		$columns = ['label', 'invtype', 'defaultValue', 'sequence', 'block', 'displayType', 'params', 'colSpan'];
-		$set = [];
-		$params = [];
-		foreach ($columns AS $columnName) {
+		$updates = [];
+		foreach ($columns as $columnName) {
 			if (isset($param[$columnName])) {
-				$set[strtolower($columnName)] = $param[$columnName];
+				$updates[strtolower($columnName)] = \App\Purifier::decodeHtml($param[$columnName]);
 			}
 		}
-		$id = $param['id'];
-		$params[] = $id;
-		if (!empty($set)) {
-			$return = $db->update($this->getTableName('fields'), $set, '`id` = ?', [$id]);
+		if (!empty($updates)) {
+			$return = \App\Db::getInstance()->createCommand()->update($this->getTableName('fields'), $updates, ['id' => $param['id']])->execute();
 		}
 		return $return;
 	}
 
 	/**
-	 * Save sequence field
+	 * Save sequence field.
+	 *
 	 * @param array $sequenceList
+	 *
 	 * @return string/false
-	 * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
 	 */
 	public function saveSequence($sequenceList)
 	{
+		$db = \App\Db::getInstance();
 		$case = 'CASE id';
 		foreach ($sequenceList as $sequence => $id) {
-			$case .= ' WHEN ' . $id . ' THEN ' . $sequence;
+			$case .= " WHEN {$db->quoteValue($id)} THEN {$db->quoteValue($sequence)}";
 		}
 		$case .= ' END ';
-		return \App\Db::getInstance()->createCommand()->update($this->getTableName('fields'), ['sequence' => new \yii\db\Expression($case)], ['id' => $sequenceList])->execute();
+
+		return $db->createCommand()->update($this->getTableName('fields'), ['sequence' => new \yii\db\Expression($case)], ['id' => $sequenceList])->execute();
 	}
 
 	/**
-	 * Delete inventory field
+	 * Delete inventory field.
+	 *
 	 * @param array $param
+	 *
 	 * @return string/false
-	 * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
 	 */
 	public function delete($param)
 	{
@@ -511,25 +513,26 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 			foreach ($columns as $column) {
 				$result = $db->createCommand()->dropColumn($this->getTableName('data'), $column)->execute();
 			}
+
 			return $result;
 		}
 		return false;
 	}
 
 	/**
-	 * Getting unique id from invtype
+	 * Getting unique id from invtype.
+	 *
 	 * @return int
 	 */
 	public function getUniqueID($instance)
 	{
-		$adb = PearDatabase::getInstance();
-		$query = sprintf('SELECT MAX(id) AS max FROM `%s` WHERE `invtype` = ? ', $this->getTableName('fields'));
-		$result = $adb->pquery($query, [$instance->getName()]);
-		return (int) $adb->getSingleValue($result) + 1;
+		return (int) (new \App\Db\Query())->from($this->getTableName('fields'))->where(['invtype' => $instance->getName()])
+			->max('id') + 1;
 	}
 
 	/**
-	 * Getting summary fields name
+	 * Getting summary fields name.
+	 *
 	 * @return array
 	 */
 	public function getSummaryFields()
@@ -543,21 +546,22 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 		return $summaryFields;
 	}
 
+	/**
+	 * Function return autocomplete fields.
+	 *
+	 * @return array
+	 */
 	public function getAutoCompleteFields()
 	{
-		$instance = Vtiger_Cache::get('AutoCompleteFields', $this->get('module'));
-		if ($instance) {
-			return $instance;
+		if (\App\Cache::has('AutoCompleteFields', $this->get('module'))) {
+			return \App\Cache::get('AutoCompleteFields', $this->get('module'));
 		}
-
-		$db = PearDatabase::getInstance();
-		$table = $this->getTableName('autofield');
-		$result = $db->pquery(sprintf('SELECT * FROM %s', $table));
+		$invmap = (new \App\Db\Query())->from($this->getTableName('autofield'))->all();
 		$fields = [];
-		while ($row = $db->getRow($result)) {
-			$fields[$row['tofield']] = $row;
+		foreach ($invmap as $row) {
+			$fields[$row['module']][$row['tofield']] = $row;
 		}
-		Vtiger_Cache::set('AutoCompleteFields', $this->get('module'), $fields);
+		App\Cache::save('AutoCompleteFields', $this->get('module'), $fields);
 		return $fields;
 	}
 
@@ -567,8 +571,8 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * 
 	 * @param Vtiger_Record_Model $recordModel
+	 *
 	 * @return float
 	 */
 	public function getInventoryPrice(Vtiger_Record_Model $recordModel)
@@ -577,8 +581,10 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to get list elements in iventory as html code
+	 * Function to get list elements in iventory as html code.
+	 *
 	 * @param Vtiger_Record_Model $recodModel
+	 *
 	 * @return string
 	 */
 	public function getInventoryListName(Vtiger_Record_Model $recodModel)
@@ -595,22 +601,46 @@ class Vtiger_InventoryField_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to get custom values to complete in inventory
-	 * @param string $sourceModuleName
-	 * @param string $sourceFieldName
+	 * Function to get custom values to complete in inventory.
+	 *
+	 * @param string              $sourceModuleName
+	 * @param string              $sourceFieldName
 	 * @param Vtiger_Record_Model $recordModel
+	 *
 	 * @return array
 	 */
 	public function getCustomAutoComplete($sourceModuleName, $sourceFieldName, Vtiger_Record_Model $recordModel)
 	{
 		$inventoryMap = AppConfig::module($sourceModuleName, 'INVENTORY_ON_SELECT_AUTO_COMPLETE');
 		$values = [];
-		foreach ($inventoryMap as $fieldToComplete => $mapping) {
-			if (isset($mapping[$sourceFieldName]) && method_exists($this, $mapping[$sourceFieldName])) {
-				$methodName = $mapping[$sourceFieldName];
-				$values[$fieldToComplete] = $this->$methodName($recordModel);
+		if ($inventoryMap) {
+			foreach ($inventoryMap as $fieldToComplete => $mapping) {
+				if (isset($mapping[$sourceFieldName]) && method_exists($this, $mapping[$sourceFieldName])) {
+					$methodName = $mapping[$sourceFieldName];
+					$values[$fieldToComplete] = $this->$methodName($recordModel);
+				}
 			}
 		}
 		return $values;
+	}
+
+	/**
+	 * Get default inventory item module.
+	 *
+	 * @param array $mainParams
+	 *
+	 * @return bool
+	 */
+	public function getDefaultModule($mainParams)
+	{
+		if (empty($mainParams['modules'])) {
+			return false;
+		}
+		foreach ($mainParams['modules'] as $module) {
+			if (\App\Module::isModuleActive($module)) {
+				return $module;
+			}
+		}
+		return false;
 	}
 }

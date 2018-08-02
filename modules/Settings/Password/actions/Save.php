@@ -1,30 +1,66 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings Password save action class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Password_Save_Action extends Settings_Vtiger_Index_Action
 {
+	use \App\Controller\ExposeMethod;
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Constructor.
+	 */
+	public function __construct()
+	{
+		parent::__construct();
+		$this->exposeMethod('encryption');
+		$this->exposeMethod('pass');
+	}
+
+	/**
+	 * Action change configuration for password.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function pass(\App\Request $request)
 	{
 		$moduleName = $request->getModule(false);
-		$type = $request->get('type');
+		$type = $request->getByType('type', 2);
 		$vale = $request->get('vale');
 		if (Settings_Password_Record_Model::validation($type, $vale)) {
 			Settings_Password_Record_Model::setPassDetail($type, $vale);
-			$resp = vtranslate('LBL_SAVE_OK', $moduleName);
+			$resp = \App\Language::translate('LBL_SAVE_OK', $moduleName);
 		} else {
-			$resp = vtranslate('LBL_ERROR', $moduleName);
+			$resp = \App\Language::translate('LBL_ERROR', $moduleName);
 		}
 		$response = new Vtiger_Response();
 		$response->setResult($resp);
+		$response->emit();
+	}
+
+	/**
+	 * Action to set password and method for encryption.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\IllegalValue
+	 */
+	public function encryption(\App\Request $request)
+	{
+		$method = $request->isEmpty('methods') ? '' : $request->getByType('methods', 'Text');
+		if ($method && !in_array($method, \App\Encryption::getMethods())) {
+			throw new \App\Exceptions\IllegalValue('ERR_NOT_ALLOWED_VALUE||methods', 406);
+		}
+		$password = $request->getRaw('password');
+		if ($method && strlen($password) !== App\Encryption::getLengthVector($method)) {
+			throw new \App\Exceptions\IllegalValue('ERR_NOT_ALLOWED_VALUE||password', 406);
+		}
+		(new App\BatchMethod(['method' => '\App\Encryption::recalculatePasswords', 'params' => App\Json::encode([$method, $password])]))->save();
+		$response = new Vtiger_Response();
+		$response->setResult(App\Language::translate('LBL_REGISTER_ENCRYPTION', $request->getModule(false)));
 		$response->emit();
 	}
 }

@@ -1,69 +1,86 @@
 <?php
+
+use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\Test;
+use PHPUnit\Framework\TestSuite;
+use PHPUnit\Framework\Warning;
+
 /**
- * Travis CI test script
- * @package YetiForce.Tests
- * @license licenses/License.html
- * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ * Travis CI test script.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license   YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author    Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-
-use PHPUnit\Framework\TestCase;
 // @codeCoverageIgnoreStart
-class Times implements PHPUnit_Framework_TestListener
-{
 
-	public function startTest(PHPUnit_Framework_Test $test)
+class YtTimes implements PHPUnit\Framework\TestListener
+{
+	public function startTest(Test $test): void
 	{
 		//printf("Test %s started.\n", $test->getName());
-		echo "\n";
+		//echo "\n";
 	}
 
-	public function endTest(PHPUnit_Framework_Test $test, $time)
+	public function endTest(Test $test, float $time): void
 	{
 		$time = round($time, 2);
-		echo " Time: $time second(s)";
+		echo " - $time second(s) | Assertions: " . $test->getNumAssertions();
 	}
 
-	public function addError(PHPUnit_Framework_Test $test, Exception $e, $time)
+	public function addError(Test $test, \Throwable $t, float $time): void
 	{
-		echo "Error in " . $test->getName() . " !!!\n";
+		$time = round($time, 2);
+		echo '! Test ' . $test->getName() . " error.\n";
+		//echo "Exception Message: " . $e->getMessage() . "\n";
+		//echo "Exception Trace:\n" . $e->getTraceAsString() . "\n";
 	}
 
-	public function addFailure(PHPUnit_Framework_Test $test, PHPUnit_Framework_AssertionFailedError $e, $time)
+	public function addWarning(Test $test, Warning $e, float $time): void
 	{
-		echo "Test " . $test->getName() . " failed. $time\n";
-		echo "Exception Message: " . $e->getMessage() . "\n";
-		echo "Exception Trace: " . $e->getTraceAsString() . "\n";
+		$time = round($time, 2);
+		echo '! Test ' . $test->getName() . " warning.\n";
+		//echo "Exception Message: " . $e->getMessage() . "\n";
+		//echo "Exception Trace:\n" . $e->getTraceAsString() . "\n";
 	}
 
-	public function addIncompleteTest(PHPUnit_Framework_Test $test, Exception $e, $time)
+	public function addFailure(Test $test, AssertionFailedError $e, float $time): void
+	{
+		$time = round($time, 2);
+		echo '! Test ' . $test->getName() . " failed.\n";
+		//echo "Exception Message: " . $e->getMessage() . "\n";
+		//echo "Exception Trace:\n" . $e->getTraceAsString() . "\n";
+	}
+
+	public function addIncompleteTest(Test $test, \Throwable $t, float $time): void
 	{
 		$time = round($time, 2);
 		printf("addIncompleteTest: Test '%s' is incomplete.\n", $test->getName());
 	}
 
-	public function addRiskyTest(PHPUnit_Framework_Test $test, Exception $e, $time)
+	public function addRiskyTest(Test $test, \Throwable $t, float $time): void
 	{
-		printf("Test %s is deemed risky.\n", $test->getName());
-		echo "Exception Message: " . $e->getMessage() . "\n";
-		echo "Exception Trace: " . $e->getTraceAsString() . "\n";
+		printf("! Test %s is deemed risky.\n", $test->getName());
+		//echo "Exception Message: " . $e->getMessage() . "\n";
+		//echo "Exception Trace:\n" . $e->getTraceAsString() . "\n";
 	}
 
-	public function addSkippedTest(PHPUnit_Framework_Test $test, Exception $e, $time)
+	public function addSkippedTest(Test $test, \Throwable $t, float $time): void
 	{
 		$time = round($time, 2);
-		printf("Test '%s' has been skipped. ($time second(s))\n", $test->getName());
-		echo "Exception Message: " . $e->getMessage() . "\n";
-		echo "Exception Trace: " . $e->getTraceAsString() . "\n";
+		printf("! Test '%s' has been skipped. ($time second(s))\n", $test->getName());
+		//echo "Exception Message: " . $e->getMessage() . "\n";
+		//echo "Exception Trace:\n" . $e->getTraceAsString() . "\n";
 	}
 
-	public function startTestSuite(PHPUnit_Framework_TestSuite $suite)
+	public function startTestSuite(TestSuite $suite): void
 	{
-		//printf("Started all tests: %s \n", $suite->getName());
 	}
 
-	public function endTestSuite(PHPUnit_Framework_TestSuite $suite)
+	public function endTestSuite(TestSuite $suite): void
 	{
 		//printf("Ended all tests: %s.\n", $suite->getName());
 	}
 }
+
 // @codeCoverageIgnoreEnd

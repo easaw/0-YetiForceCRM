@@ -1,41 +1,44 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
-	{if $DISCOUNT_TYPE == '0'}
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<strong>{vtranslate('LBL_INDIVIDUAL_DISCOUNTS', $MODULE)}</strong>
-				<div class="pull-right">
-					<input type="{$AGGREGATION_INPUT_TYPE}" name="aggregationType" value="individual" class="activeCheckbox">
-				</div>
+	<div class="card js-panel" data-js="class: js-active">
+		<div class="card-header">
+			<strong>{\App\Language::translate('LBL_INDIVIDUAL_DISCOUNTS', $MODULE)}</strong>
+			<div class="float-right">
+				<input type="{$AGGREGATION_INPUT_TYPE}" name="aggregationType" value="individual" class="activeCheckbox">
 			</div>
-			<div class="panel-body" style="display: none;">
-				<div class="container-fluid">
-					<div class="row">
-						<div class="col-md-6">
-							<div class="radio">
-								<label>
-									<input type="radio" name="individualDiscountType" value="percentage" class="individualDiscountType" data-symbol="%" checked>
-									{vtranslate('LBL_PERCENTAGE_DISCOUNTS', $MODULE)}
-								</label>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="radio">
-								<label>
-									<input type="radio" name="individualDiscountType" value="amount" class="individualDiscountType" data-symbol="{$CURRENCY_SYMBOL}">
-									{vtranslate('LBL_AMOUNT_DISCOUNTS', $MODULE)}
-								</label>
-							</div>
+		</div>
+		<div class=" card-body js-panel__body d-none" data-js="class: d-none">
+			<div class="container-fluid">
+				<div class="form-row">
+					<div class="col-md-6 text-center">
+						<div class="radio align-items-center">
+								<input type="radio" name="individualDiscountType" value="percentage" class="individualDiscountType mr-2" data-symbol="%" checked>
+							<label>
+								{\App\Language::translate('LBL_PERCENTAGE_DISCOUNTS', $MODULE)}
+							</label>
 						</div>
 					</div>
-					<div class="row">
-						<div class="input-group individualDiscountContainer">
-							<input type="text" name="individualDiscount" class="form-control individualDiscountValue" value="0">
-							<span class="input-group-addon">%</span>
+					{if $DISCOUNT_TYPE == '0'}
+						<div class="col-md-6 text-center">
+							<div class="radio align-items-center">
+									<input type="radio" name="individualDiscountType" value="amount" class="individualDiscountType mr-2  ml-2" data-symbol="{$CURRENCY_SYMBOL}">
+								<label>
+									{\App\Language::translate('LBL_AMOUNT_DISCOUNTS', $MODULE)}
+								</label>
+							</div>
+						</div>
+					{/if}
+				</div>
+				<div class="row">
+					<div class="input-group individualDiscountContainer">
+						<input type="text" name="individualDiscount" class="form-control individualDiscountValue" value="0">
+						<div class="input-group-append">
+							<span class="input-group-text">%</span>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	{/if}
+	</div>
+
 {/strip}

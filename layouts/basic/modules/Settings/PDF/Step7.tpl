@@ -1,6 +1,6 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
-	<div class="pdfTemplateContents">
+	<div class="tpl-Settings-PDF-Step7 pdfTemplateContents">
 		<form name="EditPdfTemplate" action="index.php" method="post" id="pdf_step7" class="form-horizontal">
 			<input type="hidden" name="module" value="PDF">
 			<input type="hidden" name="view" value="Edit">
@@ -11,22 +11,22 @@
 
 			<div class="padding1per stepBorder">
 				<label>
-					<strong>{vtranslate('LBL_STEP_N',$QUALIFIED_MODULE, 7)}: {vtranslate('LBL_PERMISSIONS_DETAILS',$QUALIFIED_MODULE)}</strong>
+					<strong>{\App\Language::translateArgs('LBL_STEP_N',$QUALIFIED_MODULE, 7)}: {\App\Language::translate('LBL_PERMISSIONS_DETAILS',$QUALIFIED_MODULE)}</strong>
 				</label>
-				<br>
+				<br />
 				<div class="form-group">
-					<div class="col-md-2 control-label">
-						{vtranslate('LBL_GROUP_MEMBERS', 'Settings:Groups')}
+					<div class="col-md-2 col-form-label">
+						{\App\Language::translate('LBL_GROUP_MEMBERS', 'Settings:Groups')}
 					</div>
 					<div class="col-md-6 controls">
 						<div class="row">
 							<div class="col-md-6">
-								<select class="select2 form-control" multiple="true" name="template_members[]" data-placeholder="{vtranslate('LBL_ADD_USERS_ROLES', 'Settings:Groups')}">
+								<select class="select2 form-control" multiple="true" name="template_members[]" data-placeholder="{\App\Language::translate('LBL_ADD_USERS_ROLES', 'Settings:Groups')}">
 									{assign 'TEMPLATE_MEMBERS' explode(',',$PDF_MODEL->get('template_members'))}
 									{foreach from=Settings_Groups_Member_Model::getAll(false) key=GROUP_LABEL item=ALL_GROUP_MEMBERS}
-										<optgroup label="{vtranslate($GROUP_LABEL, $QUALIFIED_MODULE)}">
+										<optgroup label="{\App\Language::translate($GROUP_LABEL, $QUALIFIED_MODULE)}">
 											{foreach from=$ALL_GROUP_MEMBERS item=MEMBER}
-												<option value="{$MEMBER->get('id')}"  data-member-type="{$GROUP_LABEL}" {if in_array($MEMBER->get('id'), $TEMPLATE_MEMBERS)}selected="true"{/if}>{vtranslate($MEMBER->get('name'), $QUALIFIED_MODULE)}</option>
+												<option value="{$MEMBER->get('id')}"  data-member-type="{$GROUP_LABEL}" {if in_array($MEMBER->get('id'), $TEMPLATE_MEMBERS)}selected="true"{/if}>{\App\Language::translate($MEMBER->get('name'), $QUALIFIED_MODULE)}</option>
 											{/foreach}
 										</optgroup>
 									{/foreach}
@@ -36,11 +36,20 @@
 					</div>
 				</div>
 			</div>
-			<br>
-			<div class="pull-right">
-				<button class="btn btn-danger backStep" type="button"><strong>{vtranslate('LBL_BACK', $QUALIFIED_MODULE)}</strong></button>&nbsp;&nbsp;
-				<button class="btn btn-success" type="submit"><strong>{vtranslate('LBL_NEXT', $QUALIFIED_MODULE)}</strong></button>&nbsp;&nbsp;
-				<button class="btn btn-warning cancelLink" type="reset">{vtranslate('LBL_CANCEL', $QUALIFIED_MODULE)}</button>
+			<br />
+			<div class="float-right mb-2">
+				<button class="btn btn-danger backStep mr-1" type="button">
+					<span class="fas fa-caret-left mr-1"></span>
+					{\App\Language::translate('LBL_BACK', $QUALIFIED_MODULE)}
+				</button>
+				<button class="btn btn-success mr-1" type="submit">
+					<span class="fas fa-caret-right mr-1"></span>
+					{\App\Language::translate('LBL_NEXT', $QUALIFIED_MODULE)}
+				</button>
+				<button class="btn btn-warning cancelLink" type="reset">
+					<span class="fas fa-times mr-1"></span>
+					{\App\Language::translate('LBL_CANCEL', $QUALIFIED_MODULE)}
+				</button>
 			</div>
 		</form>
 	</div>

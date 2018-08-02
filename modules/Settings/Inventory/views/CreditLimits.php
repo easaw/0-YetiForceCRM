@@ -1,24 +1,26 @@
 <?php
 
 /**
- * @package YetiForce.Views
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_Inventory_CreditLimits_View extends Settings_Vtiger_Index_View
 {
+	use \App\Controller\ExposeMethod;
 
 	public function getView()
 	{
 		return 'CreditLimits';
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if (!empty($mode)) {
 			echo $this->invokeExposedMethod($mode, $request);
+
 			return;
 		}
 		$view = $this->getView();
@@ -36,18 +38,18 @@ class Settings_Inventory_CreditLimits_View extends Settings_Vtiger_Index_View
 		$viewer->view('Index.tpl', $qualifiedModuleName);
 	}
 
-	public function getPageLabels(Vtiger_Request $request)
+	public function getPageLabels(\App\Request $request)
 	{
-		$qualifiedModuleName = $request->getModule(false);
 		if ($request->get('type')) {
 			$view = $request->get('type');
 		} else {
-			$view = $request->get('view');
+			$view = $request->getByType('view', 1);
 		}
 		$translations = [];
 		$translations['title'] = 'LBL_' . strtoupper($view);
 		$translations['title_single'] = 'LBL_' . strtoupper($view) . '_SINGLE';
 		$translations['description'] = 'LBL_' . strtoupper($view) . '_DESCRIPTION';
+
 		return $translations;
 	}
 }

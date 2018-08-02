@@ -1,21 +1,24 @@
 <?php
 
 /**
- * Auto assign record View Class
- * @package YetiForce.ModalView
- * @license licenses/License.html
+ * Auto assign record View Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Vtiger_AutoAssignRecord_View extends Vtiger_BasicModal_View
 {
-
 	/**
-	 * Checking permission 
-	 * @param Vtiger_Request $request
-	 * @return boolean
-	 * @throws \Exception\NoPermitted
+	 * Checking permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 *
+	 * @return bool
 	 */
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
 		$recordId = $request->get('record');
 		if (!empty($recordId)) {
@@ -24,28 +27,30 @@ class Vtiger_AutoAssignRecord_View extends Vtiger_BasicModal_View
 				return true;
 			}
 		}
-		throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 	}
 
 	/**
-	 * Function get modal size
-	 * @param Vtiger_Request $request
+	 * Function get modal size.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return string
 	 */
-	public function getSize(Vtiger_Request $request)
+	public function getSize(\App\Request $request)
 	{
 		return 'modal-lg';
 	}
 
 	/**
-	 * Process
-	 * @param Vtiger_Request $request
+	 * Process.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$recordId = $request->get('record');
-		$users = [];
 
 		$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
 		$autoAssignModel = Settings_Vtiger_Module_Model::getInstance('Settings:AutomaticAssignment');
@@ -61,19 +66,24 @@ class Vtiger_AutoAssignRecord_View extends Vtiger_BasicModal_View
 	}
 
 	/**
-	 * Function to get the list of Css models to be included
-	 * @param Vtiger_Request $request
+	 * Function to get the list of Css models to be included.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return Vtiger_JsScript_Model[] - List of Vtiger_CssScript_Model instances
 	 */
-	public function getModalScripts(Vtiger_Request $request)
+	public function getModalScripts(\App\Request $request)
 	{
 		$parentScriptInstances = parent::getModalScripts($request);
 		$scripts = [
-			'~libraries/jquery/datatables/media/js/jquery.dataTables.min.js',
-			'~libraries/jquery/datatables/plugins/integration/bootstrap/3/dataTables.bootstrap.min.js'
+			'~libraries/datatables.net/js/jquery.dataTables.js',
+			'~libraries/datatables.net-bs4/js/dataTables.bootstrap4.js',
+			'~libraries/datatables.net-responsive/js/dataTables.responsive.js',
+			'~libraries/datatables.net-responsive-bs4/js/responsive.bootstrap4.js'
 		];
 		$modalInstances = $this->checkAndConvertJsScripts($scripts);
 		$scriptInstances = array_merge($modalInstances, $parentScriptInstances);
+
 		return $scriptInstances;
 	}
 }

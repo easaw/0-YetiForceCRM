@@ -1,21 +1,20 @@
 <?php
 /**
- * Time Control Handler Class
- * @package YetiForce.Handler
- * @license licenses/License.html
+ * Time Control Handler Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-vimport('~~modules/com_vtiger_workflow/include.php');
-vimport('~~modules/com_vtiger_workflow/VTEntityCache.php');
-vimport('~~include/Webservices/Utils.php');
-vimport('~~include/Webservices/Retrieve.php');
+Vtiger_Loader::includeOnce('~~modules/com_vtiger_workflow/include.php');
+Vtiger_Loader::includeOnce('~~include/Webservices/Utils.php');
 
 class OSSTimeControl_TimeControl_Handler
 {
-
 	/**
-	 * EntityAfterUnLink handler function
+	 * EntityAfterUnLink handler function.
+	 *
 	 * @param App\EventHandler $eventHandler
 	 */
 	public function entityAfterUnLink(App\EventHandler $eventHandler)
@@ -32,7 +31,8 @@ class OSSTimeControl_TimeControl_Handler
 	}
 
 	/**
-	 * EntityAfterDelete handler function
+	 * EntityAfterDelete handler function.
+	 *
 	 * @param App\EventHandler $eventHandler
 	 */
 	public function entityAfterDelete(App\EventHandler $eventHandler)
@@ -48,7 +48,8 @@ class OSSTimeControl_TimeControl_Handler
 	}
 
 	/**
-	 * EntityAfterSave handler function
+	 * EntityAfterSave handler function.
+	 *
 	 * @param App\EventHandler $eventHandler
 	 */
 	public function entityAfterSave(App\EventHandler $eventHandler)
@@ -65,10 +66,11 @@ class OSSTimeControl_TimeControl_Handler
 	}
 
 	/**
-	 * EntityAfterRestore handler function
+	 * EntityChangeState handler function.
+	 *
 	 * @param App\EventHandler $eventHandler
 	 */
-	public function entityAfterRestore(App\EventHandler $eventHandler)
+	public function entityChangeState(App\EventHandler $eventHandler)
 	{
 		$recordModel = $eventHandler->getRecordModel();
 		$wfs = new VTWorkflowManager();

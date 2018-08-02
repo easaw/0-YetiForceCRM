@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Notifications parser class
- * @package YetiForce.TextParser
- * @license licenses/License.html
+ * Notifications parser class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Notification_Notifications_TextParser extends \App\TextParser\Base
 {
-
 	/** @var string Class name */
 	public $name = 'LBL_NOTIFICATIONS';
 
@@ -16,12 +16,12 @@ class Notification_Notifications_TextParser extends \App\TextParser\Base
 	public $type = 'mail';
 
 	/**
-	 * Process
+	 * Process.
+	 *
 	 * @return string
 	 */
 	public function process()
 	{
-		$siteURL = \AppConfig::main('site_URL');
 		$html = '';
 		$scheduleData = \Vtiger_Watchdog_Model::getWatchingModulesSchedule($this->textParser->getParam('userId'), true);
 		$modules = $scheduleData['modules'];
@@ -35,15 +35,15 @@ class Notification_Notifications_TextParser extends \App\TextParser\Base
 				foreach ($entries[$typeId] as $notification) {
 					$title = preg_replace_callback(
 						$pattern, function ($matches) {
-						return \AppConfig::main('site_URL') . $matches[0];
-					}, $notification->getTitle());
+							return \AppConfig::main('site_URL') . $matches[0];
+						}, $notification->getTitle());
 					$massage = preg_replace_callback(
 						$pattern, function ($matches) {
-						return \AppConfig::main('site_URL') . $matches[0];
-					}, $notification->getMessage());
-					$html .= "<li>$title<br>$massage</li>";
+							return \AppConfig::main('site_URL') . $matches[0];
+						}, $notification->getMessage());
+					$html .= "<li>$title<br />$massage</li>";
 				}
-				$html .= '</ul><br>';
+				$html .= '</ul><br />';
 			}
 		}
 		if (empty($html)) {

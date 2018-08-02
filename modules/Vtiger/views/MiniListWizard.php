@@ -10,38 +10,42 @@
 
 class Vtiger_MiniListWizard_View extends Vtiger_Index_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 
 		$viewer->assign('MODULE_NAME', $moduleName);
-		$viewer->assign('WIZARD_STEP', $request->get('step'));
+		$viewer->assign('WIZARD_STEP', $request->getByType('step', 2));
 
-		switch ($request->get('step')) {
+		switch ($request->getByType('step', 2)) {
 			case 'step1':
 				$modules = vtlib\Functions::getAllModules(true, false, 0);
-				//Since comments is not treated as seperate module 
+				//Since comments is not treated as seperate module
 				unset($modules['ModComments']);
 				$viewer->assign('MODULES', $modules);
 				break;
 			case 'step2':
-				$selectedModule = $request->get('selectedModule');
+				$selectedModule = $request->getByType('selectedModule', 2);
+				if (!\App\Privilege::isPermitted($selectedModule)) {
+					throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+				}
 				$filters = CustomView_Record_Model::getAllByGroup($selectedModule);
 				$viewer->assign('ALLFILTERS', $filters);
 				break;
 			case 'step3':
-				$selectedModule = $request->get('selectedModule');
-				$filterid = $request->get('filterid');
-
+				$selectedModule = $request->getByType('selectedModule', 2);
+				if (!\App\Privilege::isPermitted($selectedModule)) {
+					throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+				}
 				$queryGenerator = new \App\QueryGenerator($selectedModule);
-				$queryGenerator->initForCustomViewById($filterid);
+				$queryGenerator->initForCustomViewById($request->getInteger('filterid'));
+				$viewer->assign('FIELDS_BY_BLOCK', $queryGenerator->getModuleModel()->getFieldsByBlocks());
+				$viewer->assign('LIST_VIEW_FIELDS', $queryGenerator->getListViewFields());
 				$viewer->assign('QUERY_GENERATOR', $queryGenerator);
 				$viewer->assign('SELECTED_MODULE', $selectedModule);
 				break;
 		}
-
 		$viewer->view('dashboards/MiniListWizard.tpl', $moduleName);
 	}
 }

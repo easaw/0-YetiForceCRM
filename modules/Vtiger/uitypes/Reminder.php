@@ -6,66 +6,60 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Vtiger_Reminder_UIType extends Vtiger_Date_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return string - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
-	{
-		return 'uitypes/Reminder.tpl';
-	}
-
-	/**
-	 * Function to get the Detailview template name for the current UI Type Object
-	 * @return string - Template Name
-	 */
-	public function getDetailViewTemplateName()
-	{
-		return 'uitypes/ReminderDetailView.tpl';
-	}
-
-	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
-	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
 		$reminder_value = '';
-		$reminder_time = $this->getEditViewDisplayValue($value);
+		$reminder_time = $this->getEditViewDisplayValue($value, $recordModel);
 		if (!empty($reminder_time[0])) {
-			$reminder_value = $reminder_time[0] . ' ' . vtranslate('LBL_DAYS');
+			$reminder_value = $reminder_time[0] . ' ' . \App\Language::translate('LBL_DAYS');
 		}
 		if (!empty($reminder_time[1])) {
-			$reminder_value = $reminder_value . ' ' . $reminder_time[1] . ' ' . vtranslate('LBL_HOURS');
+			$reminder_value = $reminder_value . ' ' . $reminder_time[1] . ' ' . \App\Language::translate('LBL_HOURS');
 		}
 		if (!empty($reminder_time[2])) {
-			$reminder_value = $reminder_value . ' ' . $reminder_time[2] . ' ' . vtranslate('LBL_MINUTES');
+			$reminder_value = $reminder_value . ' ' . $reminder_time[2] . ' ' . \App\Language::translate('LBL_MINUTES');
 		}
-
 		return $reminder_value;
 	}
 
 	/**
-	 * Function to get the display value in edit view
-	 * @param $value
-	 * @return converted value
+	 * {@inheritdoc}
 	 */
-	public function getEditViewDisplayValue($value, $record = false)
+	public function getEditViewDisplayValue($value, $recordModel = false)
 	{
 		if ($value != 0) {
 			$rem_days = floor($value / (24 * 60));
 			$rem_hrs = floor(($value - $rem_days * 24 * 60) / 60);
 			$rem_min = ($value - ($rem_days * 24 * 60)) % 60;
-			$reminder_time = array($rem_days, $rem_hrs, $rem_min);
+			$reminder_time = [$rem_days, $rem_hrs, $rem_min];
+
 			return $reminder_time;
 		} else {
 			return '';
 		}
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'Edit/Field/Reminder.tpl';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDetailViewTemplateName()
+	{
+		return 'Detail/Field/Reminder.tpl';
 	}
 }

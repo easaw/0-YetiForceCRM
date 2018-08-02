@@ -11,10 +11,8 @@
 
 class Vtiger_MiniList_Dashboard extends Vtiger_IndexAjax_View
 {
-
-	public function process(Vtiger_Request $request, $widget = NULL)
+	public function process(\App\Request $request, $widget = null)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		$data = $request->getAll();
@@ -23,29 +21,37 @@ class Vtiger_MiniList_Dashboard extends Vtiger_IndexAjax_View
 		if ($widget && !$request->has('widgetid')) {
 			$widgetId = $widget->get('id');
 		} else {
-			$widgetId = $request->get('widgetid');
+			$widgetId = $request->getInteger('widgetid');
 		}
 
-		$widget = Vtiger_Widget_Model::getInstanceWithWidgetId($widgetId, $currentUser->getId());
-		if (!$request->has('owner'))
+		$widget = Vtiger_Widget_Model::getInstanceWithWidgetId($widgetId, \App\User::getCurrentUserId());
+		if (!$request->has('owner')) {
 			$owner = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget);
-		else
-			$owner = $request->get('owner');
-
+		} else {
+			$owner = $request->getByType('owner', 2);
+		}
 		$minilistWidgetModel = new Vtiger_MiniList_Model();
 		$minilistWidgetModel->setWidgetModel($widget);
-
+		$searchParams = $request->get('search_params');
+		if ($searchParams) {
+			$minilistWidgetModel->setSearchParams($searchParams);
+		}
+		$filterField = false;
+		if ($widget->get('data')) {
+			$widgetParams = $widget->get('data');
+			if (isset($widgetParams['filterFields'])) {
+				$filterField = Vtiger_Field_Model::getInstanceFromFieldId($widgetParams['filterFields']);
+			}
+		}
 		$viewer->assign('WIDGET', $widget);
 		$viewer->assign('MODULE_NAME', $moduleName);
 		$viewer->assign('OWNER', $owner);
-		$viewer->assign('CURRENTUSER', $currentUser);
 		$viewer->assign('MINILIST_WIDGET_MODEL', $minilistWidgetModel);
 		$viewer->assign('BASE_MODULE', $minilistWidgetModel->getTargetModule());
 		$viewer->assign('SCRIPTS', $this->getFooterScripts($request));
 		$viewer->assign('DATA', $data);
-
-		$content = $request->get('content');
-		if (!empty($content)) {
+		$viewer->assign('FILTER_FIELD', $filterField);
+		if ($request->has('content')) {
 			$viewer->view('dashboards/MiniListContents.tpl', $moduleName);
 			$viewer->view('dashboards/MiniListFooter.tpl', $moduleName);
 		} else {

@@ -1,16 +1,18 @@
 <?php
 
 /**
- * Members View Class for Notifications
- * @package YetiForce.Settings.ModalView
- * @license licenses/License.html
+ * Members View Class for Notifications.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_Notifications_Members_View extends Settings_Vtiger_BasicModal_View
 {
+	use \App\Controller\ExposeMethod;
 
 	/**
-	 * Constructor
+	 * Constructor.
 	 */
 	public function __construct()
 	{
@@ -20,24 +22,27 @@ class Settings_Notifications_Members_View extends Settings_Vtiger_BasicModal_Vie
 	}
 
 	/**
-	 * Function gets settings
-	 * @param Vtiger_Request $request
+	 * Function gets settings.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
+
 			return;
 		}
 		$this->addWatchingMembers($request);
 	}
 
 	/**
-	 * Function downloads settings for watched members
-	 * @param Vtiger_Request $request
+	 * Function downloads settings for watched members.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function addWatchingMembers(Vtiger_Request $request)
+	public function addWatchingMembers(\App\Request $request)
 	{
 		$moduleName = $request->getModule(false);
 		$srcModule = $request->get('srcModule');
@@ -52,10 +57,11 @@ class Settings_Notifications_Members_View extends Settings_Vtiger_BasicModal_Vie
 	}
 
 	/**
-	 * Function downloads settings for exceptions
-	 * @param Vtiger_Request $request
+	 * Function downloads settings for exceptions.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function exceptions(Vtiger_Request $request)
+	public function exceptions(\App\Request $request)
 	{
 		$moduleName = $request->getModule(false);
 		$srcModule = $request->get('srcModule');

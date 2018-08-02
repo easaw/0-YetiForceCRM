@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Advanced Filter Class
- * @package YetiForce.Helpers
- * @license licenses/License.html
+ * Advanced Filter Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Vtiger_AdvancedFilter_Helper
 {
-
 	public static function getMetaVariables()
 	{
 		return [
@@ -26,12 +26,13 @@ class Vtiger_AdvancedFilter_Helper
 	}
 
 	/**
-	 * Function to get all the supported advanced filter operations
+	 * Function to get all the supported advanced filter operations.
+	 *
 	 * @return <Array>
 	 */
 	public static function getAdvancedFilterOptions()
 	{
-		return array(
+		return [
 			'is' => 'is',
 			'is not' => 'is not',
 			'contains' => 'contains',
@@ -66,16 +67,17 @@ class Vtiger_AdvancedFilter_Helper
 			'None' => 'None',
 			'is Watching Record' => 'is Watching Record',
 			'is Not Watching Record' => 'is Not Watching Record',
-		);
+		];
 	}
 
 	/**
-	 * Function to get the advanced filter option names by Field type
-	 * @return <Array>
+	 * Function to get the advanced filter option names by Field type.
+	 *
+	 * @return array
 	 */
 	public static function getAdvancedFilterOpsByFieldType()
 	{
-		return array(
+		return [
 			'string' => ['is', 'contains', 'does not contain', 'starts with', 'ends with', 'has changed', 'is empty', 'is not empty'],
 			'salutation' => ['is', 'contains', 'does not contain', 'starts with', 'ends with', 'has changed', 'is empty', 'is not empty'],
 			'text' => ['is', 'contains', 'does not contain', 'starts with', 'ends with', 'has changed', 'is empty', 'is not empty'],
@@ -90,7 +92,7 @@ class Vtiger_AdvancedFilter_Helper
 			'datetime' => ['is', 'is not', 'has changed', 'less than hours before', 'less than hours later', 'more than hours before', 'more than hours later', 'is not empty'],
 			'time' => ['is', 'is not', 'has changed', 'is not empty'],
 			'date' => ['is', 'is not', 'has changed', 'between', 'before', 'after', 'is today', 'less than days ago', 'more than days ago', 'in less than', 'in more than',
-				'days ago', 'days later', 'is not empty'],
+				'days ago', 'days later', 'is not empty', ],
 			'boolean' => ['is', 'is not', 'has changed'],
 			'reference' => ['has changed', 'is empty', 'is not empty'],
 			'owner' => ['has changed', 'is', 'is not', 'is Watching Record', 'is Not Watching Record'],
@@ -102,36 +104,41 @@ class Vtiger_AdvancedFilter_Helper
 			'multiReferenceValue' => ['contains', 'does not contain', 'has changed', 'is empty', 'is not empty'],
 			'tree' => ['is', 'is not', 'has changed', 'has changed to', 'is empty', 'is not empty'],
 			'rangeTime' => ['is empty', 'is not empty'],
-		);
+			'documentsFileUpload' => ['is', 'contains', 'does not contain', 'starts with', 'ends with', 'is empty', 'is not empty', 'has changed'],
+		];
 	}
 
 	public static function getExpressions()
 	{
 		return ['concat' => 'concat(a,b)', 'time_diffdays(a,b)' => 'time_diffdays(a,b)', 'time_diffdays(a)' => 'time_diffdays(a)', 'time_diff(a,b)' => 'time_diff(a,b)', 'time_diff(a)' => 'time_diff(a)',
 			'add_days' => 'add_days(datefield, noofdays)', 'sub_days' => 'sub_days(datefield, noofdays)', 'add_time(timefield, minutes)' => 'add_time(timefield, minutes)', 'sub_time(timefield, minutes)' => 'sub_time(timefield, minutes)',
-			'today' => "get_date('today')", 'tomorrow' => "get_date('tomorrow')", 'yesterday' => "get_date('yesterday')"];
+			'today' => "get_date('today')", 'tomorrow' => "get_date('tomorrow')", 'yesterday' => "get_date('yesterday')", ];
 	}
 
 	/**
-	 * Functions transforms workflow filter to advanced filter
+	 * Functions transforms workflow filter to advanced filter.
+	 *
 	 * @return <Array>
 	 */
 	public static function transformToAdvancedFilterCondition($conditions = false)
 	{
 		$transformedConditions = [];
+		$firstGroup = [];
+		$secondGroup = [];
 		if (!empty($conditions)) {
 			foreach ($conditions as $index => $info) {
 				if (!($info['groupid'])) {
-					$firstGroup[] = array('columnname' => $info['fieldname'], 'comparator' => $info['operation'], 'value' => $info['value'],
-						'column_condition' => $info['joincondition'], 'valuetype' => $info['valuetype'], 'groupid' => $info['groupid']);
+					$firstGroup[] = ['columnname' => $info['fieldname'], 'comparator' => $info['operation'], 'value' => $info['value'],
+						'column_condition' => $info['joincondition'], 'valuetype' => $info['valuetype'], 'groupid' => $info['groupid'], ];
 				} else {
-					$secondGroup[] = array('columnname' => $info['fieldname'], 'comparator' => $info['operation'], 'value' => $info['value'],
-						'column_condition' => $info['joincondition'], 'valuetype' => $info['valuetype'], 'groupid' => $info['groupid']);
+					$secondGroup[] = ['columnname' => $info['fieldname'], 'comparator' => $info['operation'], 'value' => $info['value'],
+						'column_condition' => $info['joincondition'], 'valuetype' => $info['valuetype'], 'groupid' => $info['groupid'], ];
 				}
 			}
 		}
-		$transformedConditions[1] = array('columns' => $firstGroup);
-		$transformedConditions[2] = array('columns' => $secondGroup);
+		$transformedConditions[1] = ['columns' => $firstGroup];
+		$transformedConditions[2] = ['columns' => $secondGroup];
+
 		return $transformedConditions;
 	}
 
@@ -142,14 +149,14 @@ class Vtiger_AdvancedFilter_Helper
 			foreach ($conditions as $index => $condition) {
 				$columns = $condition['columns'];
 				if ($index == '1' && empty($columns)) {
-					$wfCondition[] = array('fieldname' => '', 'operation' => '', 'value' => '', 'valuetype' => '',
-						'joincondition' => '', 'groupid' => '0');
+					$wfCondition[] = ['fieldname' => '', 'operation' => '', 'value' => '', 'valuetype' => '',
+						'joincondition' => '', 'groupid' => '0', ];
 				}
 				if (!empty($columns) && is_array($columns)) {
 					foreach ($columns as $column) {
-						$wfCondition[] = array('fieldname' => $column['columnname'], 'operation' => $column['comparator'],
+						$wfCondition[] = ['fieldname' => $column['columnname'], 'operation' => $column['comparator'],
 							'value' => $column['value'], 'valuetype' => $column['valuetype'], 'joincondition' => $column['column_condition'],
-							'groupjoin' => $condition['condition'], 'groupid' => $column['groupid']);
+							'groupjoin' => $condition['condition'], 'groupid' => $column['groupid'], ];
 					}
 				}
 			}
@@ -162,83 +169,11 @@ class Vtiger_AdvancedFilter_Helper
 		foreach (\App\CustomView::getDateFilterTypes() as $comparatorKey => $comparatorInfo) {
 			$comparatorInfo['startdate'] = DateTimeField::convertToUserFormat($comparatorInfo['startdate']);
 			$comparatorInfo['enddate'] = DateTimeField::convertToUserFormat($comparatorInfo['enddate']);
-			$comparatorInfo['label'] = vtranslate($comparatorInfo['label'], $moduleName);
+			$comparatorInfo['label'] = \App\Language::translate($comparatorInfo['label'], $moduleName);
 			$dateFilters[$comparatorKey] = $comparatorInfo;
 		}
 		return $dateFilters;
 	}
 
 	protected static $recordStructure = false;
-
-	public static function getRecordStructure($recordModel)
-	{
-		$recordId = $recordModel->getId();
-		if (isset(self::$recordStructure[$recordId])) {
-			return self::$recordStructure[$recordId];
-		}
-		$values = [];
-		$baseModuleModel = $moduleModel = $recordModel->getModule();
-		$blockModelList = $moduleModel->getBlocks();
-		foreach ($blockModelList as $blockLabel => $blockModel) {
-			$fieldModelList = $blockModel->getFields();
-			if (!empty($fieldModelList)) {
-				$values[$blockLabel] = [];
-				foreach ($fieldModelList as $fieldName => $fieldModel) {
-					if ($fieldModel->isViewable()) {
-						if (in_array($moduleModel->getName(), array('Calendar', 'Events')) && $fieldName != 'modifiedby' && $fieldModel->getDisplayType() == 3) {
-							/* Restricting the following fields(Event module fields) for "Calendar" module
-							 * time_start, time_end, eventstatus, activitytype,	visibility, duration_hours,
-							 * duration_minutes, reminder_time, recurringtype, notime
-							 */
-							continue;
-						}
-						if (!empty($recordId)) {
-							//Set the fieldModel with the valuetype for the client side.
-							$fieldValueType = $recordModel->getFieldFilterValueType($fieldName);
-							$fieldInfo = $fieldModel->getFieldInfo();
-							$fieldInfo['workflow_valuetype'] = $fieldValueType;
-							$fieldModel->setFieldInfo($fieldInfo);
-						}
-						// This will be used during editing task like email, sms etc
-						$fieldModel->set('workflow_columnname', "$(record : $fieldName)$");
-						$values[$blockLabel][$fieldName] = clone $fieldModel;
-					}
-				}
-			}
-		}
-		//All the reference fields should also be sent
-		$fields = $moduleModel->getFieldsByType(array('reference', 'owner', 'multireference'));
-		foreach ($fields as $parentFieldName => $field) {
-			$type = $field->getFieldDataType();
-			$referenceModules = $field->getReferenceList();
-			if ($type === 'owner') {
-				$referenceModules = array('Users');
-			}
-			foreach ($referenceModules as $refModule) {
-				$moduleModel = Vtiger_Module_Model::getInstance($refModule);
-				$blockModelList = $moduleModel->getBlocks();
-				foreach ($blockModelList as $blockLabel => $blockModel) {
-					$fieldModelList = $blockModel->getFields();
-					if (!empty($fieldModelList)) {
-						foreach ($fieldModelList as $fieldName => $fieldModel) {
-							if ($fieldModel->isViewable()) {
-								$name = "$(reletedRecord : $parentFieldName|$fieldName|$refModule)$";
-								$label = vtranslate($field->get('label'), $baseModuleModel->getName()) . ' : (' . vtranslate($refModule, $refModule) . ') ' . vtranslate($fieldModel->get('label'), $refModule);
-								$fieldModel->set('workflow_columnname', $name);
-								if (!empty($recordId)) {
-									$fieldValueType = $recordModel->getFieldFilterValueType($name);
-									$fieldInfo = $fieldModel->getFieldInfo();
-									$fieldInfo['workflow_valuetype'] = $fieldValueType;
-									$fieldModel->setFieldInfo($fieldInfo);
-								}
-								$values[$field->get('label')][$name] = clone $fieldModel;
-							}
-						}
-					}
-				}
-			}
-		}
-		self::$recordStructure[$recordId] = $values;
-		return $values;
-	}
 }

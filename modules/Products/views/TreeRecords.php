@@ -1,26 +1,26 @@
 <?php
 
 /**
- * Products TreeView View Class
- * @package YetiForce.TreeView
- * @license licenses/License.html
+ * Products TreeView View Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Products_TreeRecords_View extends Vtiger_TreeRecords_View
 {
-
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 		$viewer = $this->getViewer($request);
 		$viewer->assign('SELECTABLE_CATEGORY', AppConfig::relation('SELECTABLE_CATEGORY') ? 1 : 0);
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$branches = $request->get('branches');
-		$filter = $request->get('filter');
-		$category = $request->get('category');
+		$branches = $request->getArray('branches');
+		$filter = $request->getByType('filter', 2);
+		$category = $request->getArray('category');
 		if (empty($branches) && empty($category)) {
 			return;
 		}
@@ -35,7 +35,7 @@ class Products_TreeRecords_View extends Vtiger_TreeRecords_View
 		}
 
 		$pagingModel = new Vtiger_Paging_Model();
-		$pagingModel->set('limit', 'no_limit');
+		$pagingModel->set('limit', 0);
 		$listViewModel = Vtiger_ListView_Model::getInstance($baseModuleName, $filter);
 		$queryGenerator = $listViewModel->get('query_generator');
 		if (!empty($branches)) {
@@ -46,7 +46,7 @@ class Products_TreeRecords_View extends Vtiger_TreeRecords_View
 				->select(['crmid'])
 				->from('u_#__crmentity_rel_tree')
 				->where(['module' => App\Module::getModuleId($baseModuleName), 'relmodule' => App\Module::getModuleId($moduleName), 'tree' => $category]);
-			$queryGenerator->addNativeCondition(['in', 'crmid', $query], false);
+			$queryGenerator->addNativeCondition(['in', 'vtiger_crmentity.crmid', $query], false);
 		}
 		$listViewModel->set('query_generator', $queryGenerator);
 		$listEntries = $listViewModel->getListViewEntries($pagingModel);
@@ -61,7 +61,7 @@ class Products_TreeRecords_View extends Vtiger_TreeRecords_View
 		$viewer->view('TreeRecords.tpl', $moduleName);
 	}
 
-	public function postProcess(Vtiger_Request $request, $display = true)
+	public function postProcess(\App\Request $request, $display = true)
 	{
 		$viewer = $this->getViewer($request);
 		$baseModuleName = 'Accounts';

@@ -1,21 +1,17 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Settings SharingAccess action model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 
 /**
- * Sharing Access Action Model Class
+ * Sharing Access Action Model Class.
  */
-class Settings_SharingAccess_Action_Model extends Vtiger_Base_Model
+class Settings_SharingAccess_Action_Model extends \App\Base
 {
-
-	static $nonConfigurableActions = array('Hide Details', 'Hide Details and Add Events', 'Show Details', 'Show Details and Add Events');
+	public static $nonConfigurableActions = ['Hide Details', 'Hide Details and Add Events', 'Show Details', 'Show Details and Add Events'];
 
 	public function getId()
 	{
@@ -35,53 +31,54 @@ class Settings_SharingAccess_Action_Model extends Vtiger_Base_Model
 	public function isModuleEnabled($module)
 	{
 		return (new \App\Db\Query())->from('vtiger_org_share_action2tab')
-				->where(['tabid' => $module->getId(), 'share_action_id' => $this->getId()])
-				->exists();
+			->where(['tabid' => $module->getId(), 'share_action_id' => $this->getId()])
+			->exists();
 	}
 
-	public static function getInstanceFromQResult($result, $rowNo = 0)
-	{
-		$db = PearDatabase::getInstance();
-		$row = $db->query_result_rowdata($result, $rowNo);
-		$actionModel = new self();
-		return $actionModel->setData($row);
-	}
-
+	/**
+	 * Function to get instance of class.
+	 *
+	 * @param int|string $value
+	 *
+	 * @return \self
+	 */
 	public static function getInstance($value)
 	{
-		$db = PearDatabase::getInstance();
-
+		$query = (new App\Db\Query())->from('vtiger_org_share_action_mapping');
 		if (vtlib\Utils::isNumber($value)) {
-			$sql = 'SELECT * FROM vtiger_org_share_action_mapping WHERE share_action_id = ?';
+			$query->where(['share_action_id' => $value]);
 		} else {
-			$sql = 'SELECT * FROM vtiger_org_share_action_mapping WHERE share_action_name = ?';
+			$query->where(['share_action_name' => $value]);
 		}
-		$params = array($value);
-		$result = $db->pquery($sql, $params);
-		if ($db->getRowCount($result) > 0) {
-			$actionModel = new self();
-			return $actionModel->setData($db->getRow($result));
+		$result = $query->one();
+		if ($result) {
+			return (new self())->setData($result);
 		}
 		return null;
 	}
 
+	/**
+	 * Function to get all action.
+	 *
+	 * @param bool $configurable
+	 *
+	 * @return \self[]
+	 */
 	public static function getAll($configurable = true)
 	{
-		$db = PearDatabase::getInstance();
-
-		$sql = 'SELECT * FROM vtiger_org_share_action_mapping';
-		$params = [];
+		$query = (new App\Db\Query())->from('vtiger_org_share_action_mapping');
 		if ($configurable) {
-			$sql .= sprintf(' WHERE share_action_name NOT IN (%s)', generateQuestionMarks(self::$nonConfigurableActions));
-			array_push($params, self::$nonConfigurableActions);
+			$query->where(['NOT IN', 'share_action_name', self::$nonConfigurableActions]);
 		}
-		$result = $db->pquery($sql, $params);
+		$dataReader = $query->createCommand()->query();
 		$actionModels = [];
-		while ($row = $db->getRow($result)) {
+		while ($row = $dataReader->read()) {
 			$actionModel = new self();
 			$actionModel->setData($row);
 			$actionModels[] = $actionModel;
 		}
+		$dataReader->close();
+
 		return $actionModels;
 	}
 }

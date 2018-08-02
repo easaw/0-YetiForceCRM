@@ -11,26 +11,25 @@
 
 class Vtiger_ShowWidget_View extends Vtiger_IndexAjax_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 
 		$moduleName = $request->getModule();
-		$componentName = $request->get('name');
-		$linkId = $request->get('linkid');
+		$componentName = $request->getByType('name', 1);
+		$linkId = $request->getInteger('linkid');
 		$id = $request->get('widgetid');
 		if (!empty($componentName)) {
 			$className = Vtiger_Loader::getComponentClassName('Dashboard', $componentName, $moduleName);
 			if (!empty($className)) {
-				$widget = NULL;
+				$widget = null;
 				if (!empty($linkId)) {
 					$widget = new Vtiger_Widget_Model();
-					$widget->set('linkid', $linkId);
+					$widget->set('linkid', (int) $linkId);
 					$widget->set('userid', $currentUser->getId());
-					$widget->set('widgetid', $id);
+					$widget->set('widgetid', (int) $id);
 					$widget->set('active', $request->get('active'));
-					$widget->set('filterid', $request->get('filterid', NULL));
+					$widget->set('filterid', $request->get('filterid', null));
 					if ($request->has('data')) {
 						$widget->set('data', $request->get('data'));
 					}
@@ -38,16 +37,17 @@ class Vtiger_ShowWidget_View extends Vtiger_IndexAjax_View
 				}
 				$classInstance = new $className();
 				$classInstance->process($request, $widget);
+
 				return;
 			}
 		}
 
 		$response = new Vtiger_Response();
-		$response->setResult(array('success' => false, 'message' => vtranslate('NO_DATA')));
+		$response->setResult(['success' => false, 'message' => \App\Language::translate('NO_DATA')]);
 		$response->emit();
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

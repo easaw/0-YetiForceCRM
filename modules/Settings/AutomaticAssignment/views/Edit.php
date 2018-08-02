@@ -1,43 +1,45 @@
 <?php
 
 /**
- * Automatic assignment edit view
- * @package YetiForce.Settings.View
- * @license licenses/License.html
+ * Automatic assignment edit view.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_AutomaticAssignment_Edit_View extends Settings_Vtiger_Index_View
 {
-
 	/**
-	 * Checking permission 
-	 * @param Vtiger_Request $request
-	 * @throws \Exception\NoPermittedForAdmin
+	 * Checking permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedForAdmin
 	 */
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserModel = \App\User::getCurrentUserModel();
-		if (!$currentUserModel->isAdmin() || empty($request->get('record'))) {
-			throw new \Exception\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
+		if (!\App\User::getCurrentUserModel()->isAdmin() || $request->isEmpty('record')) {
+			throw new \App\Exceptions\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
 		}
 	}
 
 	/**
-	 * Process
-	 * @param Vtiger_Request $request
+	 * Process.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$qualifiedModuleName = $request->getModule(false);
-		$recordModel = Settings_AutomaticAssignment_Record_Model::getInstanceById($request->get('record'));
+		$recordModel = Settings_AutomaticAssignment_Record_Model::getInstanceById($request->getInteger('record'));
 		$sourceModuleName = $recordModel->getSourceModuleName();
 		$viewer = $this->getViewer($request);
 		$viewer->assign('RECORD_MODEL', $recordModel);
 		$viewer->assign('SOURCE_MODULE', $sourceModuleName);
 
 		if ($request->has('tab')) {
-			$viewer->assign('FIELD_NAME', $request->get('tab'));
-			$viewer->assign('LABEL', $recordModel->getEditFields()[$request->get('tab')]);
+			$viewer->assign('FIELD_NAME', $request->getByType('tab'));
+			$viewer->assign('LABEL', $recordModel->getEditFields()[$request->getByType('tab')]);
 			$viewer->view('Tab.tpl', $qualifiedModuleName);
 		} else {
 			$this->getVariablesToAdvancedFilter($viewer, $recordModel);
@@ -46,8 +48,9 @@ class Settings_AutomaticAssignment_Edit_View extends Settings_Vtiger_Index_View
 	}
 
 	/**
-	 * Function gets variables to advanced filter
-	 * @param Vtiger_Viewer $viewer
+	 * Function gets variables to advanced filter.
+	 *
+	 * @param Vtiger_Viewer                             $viewer
 	 * @param Settings_AutomaticAssignment_Record_Model $recordModel
 	 */
 	private function getVariablesToAdvancedFilter(Vtiger_Viewer $viewer, $recordModel)
@@ -61,7 +64,6 @@ class Settings_AutomaticAssignment_Edit_View extends Settings_Vtiger_Index_View
 		if ($conditions) {
 			$conditions = \App\Json::decode($conditions);
 		}
-		$criteria = Vtiger_AdvancedFilter_Helper::transformToAdvancedFilterCondition($conditions);
 		$viewer->assign('ADVANCE_CRITERIA', Vtiger_AdvancedFilter_Helper::transformToAdvancedFilterCondition($conditions));
 
 		$viewer->assign('CURRENTDATE', date('Y-n-j'));
@@ -77,23 +79,21 @@ class Settings_AutomaticAssignment_Edit_View extends Settings_Vtiger_Index_View
 	}
 
 	/**
-	 * Scripts
-	 * @param Vtiger_Request $request
+	 * Scripts.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return Vtiger_JsScript_Model[]
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
-		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
-
 		$jsFileNames = [
 			'modules.Settings.Vtiger.resources.Edit',
 			"modules.Settings.$moduleName.resources.Edit",
-			'modules.CustomView.resources.CustomView'
+			'modules.CustomView.resources.CustomView',
 		];
 
-		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
-		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
-		return $headerScriptInstances;
+		return array_merge(parent::getFooterScripts($request), $this->checkAndConvertJsScripts($jsFileNames));
 	}
 }

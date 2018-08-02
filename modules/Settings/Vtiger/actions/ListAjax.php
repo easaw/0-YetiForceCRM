@@ -8,9 +8,8 @@
  * All Rights Reserved.
  * ********************************************************************************** */
 
-class Settings_Vtiger_ListAjax_Action extends Settings_Vtiger_ListAjax_View
+class Settings_Vtiger_ListAjax_Action extends Settings_Vtiger_Basic_Action
 {
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -18,16 +17,17 @@ class Settings_Vtiger_ListAjax_Action extends Settings_Vtiger_ListAjax_View
 	}
 
 	/**
-	 * Function returns the number of records for the current filter
-	 * @param Vtiger_Request $request
+	 * Function returns the number of records for the current filter.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function getRecordsCount(Vtiger_Request $request)
+	public function getRecordsCount(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$cvId = $request->get('viewname');
+		$cvId = $request->getByType('viewname', 2);
 		$count = $this->getListViewCount($request);
 
-		$result = array();
+		$result = [];
 		$result['module'] = $moduleName;
 		$result['viewname'] = $cvId;
 		$result['count'] = $count;
@@ -38,21 +38,20 @@ class Settings_Vtiger_ListAjax_Action extends Settings_Vtiger_ListAjax_View
 		$response->emit();
 	}
 
-	public function getListViewCount(Vtiger_Request $request)
+	public function getListViewCount(\App\Request $request)
 	{
 		$qualifiedModuleName = $request->getModule(false);
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 
 		$listViewModel = Settings_Vtiger_ListView_Model::getInstance($qualifiedModuleName);
 
 		if (!empty($sourceModule)) {
 			$listViewModel->set('sourceModule', $sourceModule);
 		}
-
 		return $listViewModel->getListViewCount();
 	}
 
-	public function getPageCount(Vtiger_Request $request)
+	public function getPageCount(\App\Request $request)
 	{
 		$numOfRecords = $this->getListViewCount($request);
 		$pagingModel = new Vtiger_Paging_Model();
@@ -61,7 +60,7 @@ class Settings_Vtiger_ListAjax_Action extends Settings_Vtiger_ListAjax_View
 		if ($pageCount == 0) {
 			$pageCount = 1;
 		}
-		$result = array();
+		$result = [];
 		$result['page'] = $pageCount;
 		$result['numberOfRecords'] = $numOfRecords;
 		$response = new Vtiger_Response();

@@ -1,16 +1,17 @@
 <?php
 
 /**
- * RecalculateStock Handler Class
- * @package YetiForce.Handler
- * @license licenses/License.html
+ * RecalculateStock Handler Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class IStorages_RecalculateStockHandler_Handler
 {
-
 	/**
-	 * EntityAfterSave handler function
+	 * EntityAfterSave handler function.
+	 *
 	 * @param App\EventHandler $eventHandler
 	 */
 	public function entityAfterSave(App\EventHandler $eventHandler)
@@ -46,7 +47,7 @@ class IStorages_RecalculateStockHandler_Handler
 		$moduleName = $recordModel->getModuleName();
 		$inventoryData = $recordModel->getInventoryData();
 		if (!empty($inventoryData) && $recordModel->get('storageid')) {
-			IStorages_Module_Model::RecalculateStock($moduleName, $inventoryData, $recordModel->get('storageid'), $action);
+			IStorages_Module_Model::recalculateStock($moduleName, $inventoryData, $recordModel->get('storageid'), $action);
 		}
 	}
 }

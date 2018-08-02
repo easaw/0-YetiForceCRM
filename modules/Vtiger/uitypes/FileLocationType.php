@@ -11,34 +11,49 @@
 
 class Vtiger_FileLocationType_UIType extends Vtiger_Picklist_UIType
 {
-
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param string $value
-	 * @param int $record
-	 * @param Vtiger_Record_Model $recordInstance
-	 * @param bool $rawText
-	 * @return string
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function validate($value, $isUserFormat = false)
 	{
-		$values = $this->getPicklistValues();
-		return isset($values[$value]) ? $values[$value] : $value;
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		parent::validate($value, $isUserFormat);
+		$this->validate = false;
+		$allowedPicklist = $this->getPicklistValues();
+		if (!isset($allowedPicklist[$value])) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate[$value] = true;
 	}
 
 	/**
-	 * Function to get all the available picklist values for the current field
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		$values = $this->getPicklistValues();
+
+		return \App\Purifier::encodeHtml($values[$value] ?? $value);
+	}
+
+	/**
+	 * Function to get all the available picklist values for the current field.
+	 *
 	 * @return array List of picklist values if the field
 	 */
 	public function getPicklistValues()
 	{
-		$moduleName = $this->get('field')->getModuleName();
+		$moduleName = $this->getFieldModel()->getModuleName();
+
 		return ['I' => \App\Language::translate('LBL_INTERNAL', $moduleName), 'E' => \App\Language::translate('LBL_EXTERNAL', $moduleName)];
 	}
 
 	/**
-	 * Function defines empty picklist element availability
-	 * @return boolean
+	 * Function defines empty picklist element availability.
+	 *
+	 * @return bool
 	 */
 	public function isEmptyPicklistOptionAllowed()
 	{

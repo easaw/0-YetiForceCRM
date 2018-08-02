@@ -1,44 +1,42 @@
 <?php
 
 /**
- * Send mail modal class
- * @package YetiForce.ModalView
- * @license licenses/License.html
+ * Send mail modal class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Vtiger_SendMailModal_View extends Vtiger_BasicModal_View
 {
-
 	public $fields = [];
 
 	/**
-	 * Checking permissions
-	 * @param Vtiger_Request $request
-	 * @throws \Exception\AppException
-	 * @throws \Exception\NoPermittedToRecord
+	 * Checking permissions.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 * @throws \App\Exceptions\NoPermittedToRecord
 	 */
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$currentUserPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPrivilegesModel->hasModulePermission($moduleName)) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
-		}
-		if (!$request->isEmpty('sourceRecord') && !\App\Privilege::isPermitted($request->get('sourceModule'), 'DetailView', $request->get('sourceRecord'))) {
-			throw new \Exception\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD');
+		if (!$request->isEmpty('sourceRecord') && !\App\Privilege::isPermitted($request->getByType('sourceModule', 2), 'DetailView', $request->getInteger('sourceRecord'))) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
 	/**
-	 * Pocess function
-	 * @param Vtiger_Request $request
+	 * Pocess function.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$this->preProcess($request);
 		$viewer = $this->getViewer($request);
 		$templateModule = $moduleName = $request->getModule();
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 		if ($sourceModule && isset(\App\TextParser::$sourceModules[$sourceModule]) && in_array($moduleName, \App\TextParser::$sourceModules[$sourceModule])) {
 			$templateModule = $sourceModule;
 		}
@@ -52,11 +50,13 @@ class Vtiger_SendMailModal_View extends Vtiger_BasicModal_View
 	}
 
 	/**
-	 * Get records list from request
-	 * @param Vtiger_Request $request
+	 * Get records list from request.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return int[]
 	 */
-	public function getRecordsListFromRequest(Vtiger_Request $request)
+	public function getRecordsListFromRequest(\App\Request $request)
 	{
 		$dataReader = $this->getQuery($request)->createCommand()->query();
 		$count = ['all' => 0, 'emails' => 0];
@@ -76,27 +76,29 @@ class Vtiger_SendMailModal_View extends Vtiger_BasicModal_View
 	}
 
 	/**
-	 * Get query instance
-	 * @param Vtiger_Request $request
+	 * Get query instance.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return \App\Db\Query
 	 */
-	public function getQuery(Vtiger_Request $request)
+	public function getQuery(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 		if ($sourceModule) {
-			$parentRecordModel = Vtiger_Record_Model::getInstanceById($request->get('sourceRecord'), $sourceModule);
+			$parentRecordModel = Vtiger_Record_Model::getInstanceById($request->getInteger('sourceRecord'), $sourceModule);
 			$listView = Vtiger_RelationListView_Model::getInstance($parentRecordModel, $moduleName);
 		} else {
-			$listView = Vtiger_ListView_Model::getInstance($moduleName, $request->get('viewname'));
+			$listView = Vtiger_ListView_Model::getInstance($moduleName, $request->getByType('viewname', 2));
 		}
 		$searchResult = $request->get('searchResult');
 		if (!empty($searchResult)) {
 			$listView->set('searchResult', $searchResult);
 		}
-		$searchKey = $request->get('search_key');
+		$searchKey = $request->getByType('search_key', 1);
 		$searchValue = $request->get('search_value');
-		$operator = $request->get('operator');
+		$operator = $request->getByType('operator', 1);
 		if (!empty($searchKey) && !empty($searchValue)) {
 			$listView->set('operator', $operator);
 			$listView->set('search_key', $searchKey);

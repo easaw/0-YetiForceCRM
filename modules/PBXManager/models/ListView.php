@@ -9,13 +9,12 @@
  * *********************************************************************************** */
 
 /**
- * PBXManager ListView Model Class
+ * PBXManager ListView Model Class.
  */
 class PBXManager_ListView_Model extends Vtiger_ListView_Model
 {
-
 	/**
-	 * Overrided to remove add button 
+	 * Overrided to remove add button.
 	 */
 	public function getBasicLinks()
 	{
@@ -23,35 +22,61 @@ class PBXManager_ListView_Model extends Vtiger_ListView_Model
 	}
 
 	/**
-	 * Overrided to remove Mass Edit Option 
+	 * Overrided to remove Mass Edit Option.
 	 */
 	public function getListViewMassActions($linkParams)
 	{
-		$currentUserModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		$moduleModel = $this->getModule();
-
-		$linkTypes = array('LISTVIEWMASSACTION');
-		$links = Vtiger_Link_Model::getAllByType($moduleModel->getId(), $linkTypes, $linkParams);
-
-
-		if ($currentUserModel->hasModuleActionPermission($moduleModel->getId(), 'Delete')) {
-			$massActionLinks[] = array(
+		$links = Vtiger_Link_Model::getAllByType($moduleModel->getId(), ['LISTVIEWMASSACTION'], $linkParams);
+		$massActionLinks = [];
+		if ($moduleModel->isPermitted('MassActive')) {
+			$massActionLinks[] = [
 				'linktype' => 'LISTVIEWMASSACTION',
-				'linklabel' => 'LBL_DELETE',
-				'linkurl' => 'javascript:Vtiger_List_Js.massDeleteRecords("index.php?module=' . $moduleModel->get('name') . '&action=MassDelete");',
-				'linkicon' => ''
-			);
-
-			foreach ($massActionLinks as $massActionLink) {
-				$links['LISTVIEWMASSACTION'][] = Vtiger_Link_Model::getInstanceFromValues($massActionLink);
-			}
+				'linklabel' => 'LBL_MASS_ACTIVATE',
+				'linkurl' => 'javascript:',
+				'dataUrl' => 'index.php?module=' . $moduleModel->getName() . '&action=MassState&state=Active&sourceView=List',
+				'linkclass' => 'massRecordEvent',
+				'linkicon' => 'fas fa-undo-alt',
+			];
 		}
-
+		if ($moduleModel->isPermitted('MassArchived')) {
+			$massActionLinks[] = [
+				'linktype' => 'LISTVIEWMASSACTION',
+				'linklabel' => 'LBL_MASS_ARCHIVE',
+				'linkurl' => 'javascript:',
+				'dataUrl' => 'index.php?module=' . $moduleModel->getName() . '&action=MassState&state=Archived&sourceView=List',
+				'linkclass' => 'massRecordEvent',
+				'linkicon' => 'fas fa-archive',
+			];
+		}
+		if ($moduleModel->isPermitted('MassTrash')) {
+			$massActionLinks[] = [
+				'linktype' => 'LISTVIEWMASSACTION',
+				'linklabel' => 'LBL_MASS_MOVE_TO_TRASH',
+				'linkurl' => 'javascript:',
+				'dataUrl' => 'index.php?module=' . $moduleModel->getName() . '&action=MassState&state=Trash&sourceView=List',
+				'linkclass' => 'massRecordEvent',
+				'linkicon' => 'fas fa-trash-alt',
+			];
+		}
+		if ($moduleModel->isPermitted('MassDelete')) {
+			$massActionLinks[] = [
+				'linktype' => 'LISTVIEWMASSACTION',
+				'linklabel' => 'LBL_MASS_DELETE',
+				'linkurl' => 'javascript:',
+				'dataUrl' => 'index.php?module=' . $moduleModel->getName() . '&action=MassDelete&sourceView=List',
+				'linkclass' => 'massRecordEvent',
+				'linkicon' => 'fas fa-eraser',
+			];
+		}
+		foreach ($massActionLinks as $massActionLink) {
+			$links['LISTVIEWMASSACTION'][] = Vtiger_Link_Model::getInstanceFromValues($massActionLink);
+		}
 		return $links;
 	}
 
 	/**
-	 * Overrided to add HTML content for callstatus irrespective of the filters
+	 * Overrided to add HTML content for callstatus irrespective of the filters.
 	 */
 	public function getListViewEntries(Vtiger_Paging_Model $pagingModel)
 	{
@@ -59,7 +84,7 @@ class PBXManager_ListView_Model extends Vtiger_ListView_Model
 		$queryGenerator->setField('direction');
 		$orderBy = $this->getForSql('orderby');
 		$sortOrder = $this->getForSql('sortorder');
-		if (empty($orderBy) && empty($sortOrder) && $this->getModule()->getName() != "Users") {
+		if (empty($orderBy) && empty($sortOrder) && $this->getModule()->getName() != 'Users') {
 			$this->set('orderby', 'modifiedtime');
 			$this->set('sortorder', 'DESC');
 		}

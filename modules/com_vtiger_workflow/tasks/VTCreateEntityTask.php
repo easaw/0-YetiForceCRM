@@ -8,25 +8,24 @@
  * All Rights Reserved.
  * Contributor(s): YetiForce.com.
  * ********************************************************************************** */
-require_once('modules/com_vtiger_workflow/VTWorkflowUtils.php');
+require_once 'modules/com_vtiger_workflow/VTWorkflowUtils.php';
 
 class VTCreateEntityTask extends VTTask
 {
-
 	public $executeImmediately = true;
 
 	public function getFieldNames()
 	{
-		return array('entity_type', 'reference_field', 'field_value_mapping', 'mappingPanel');
+		return ['entity_type', 'reference_field', 'field_value_mapping', 'mappingPanel'];
 	}
 
 	/**
-	 * Execute task
+	 * Execute task.
+	 *
 	 * @param Vtiger_Record_Model $recordModel
 	 */
 	public function doTask($recordModel)
 	{
-		$current_user = vglobal('current_user');
 		$moduleName = $recordModel->getModuleName();
 		$recordId = $recordModel->getId();
 		$entityType = $this->entity_type;
@@ -39,20 +38,15 @@ class VTCreateEntityTask extends VTTask
 		}
 		if (!empty($entityType) && !empty($fieldValueMapping) && count($fieldValueMapping) > 0 && !$this->mappingPanel) {
 			$newRecordModel = Vtiger_Record_Model::getCleanInstance($entityType);
-
-			$newEntityData = VTEntityData::fromCRMEntity($newRecordModel->getEntity());
-			$entityModuleHandler = vtws_getModuleHandlerFromName($entityType, $current_user);
-			$handlerMeta = $entityModuleHandler->getMeta();
-			$ownerFields = $handlerMeta->getOwnerFields();
-			foreach ($fieldValueMapping as &$fieldInfo) {
+			$ownerFields = array_keys($newRecordModel->getModule()->getFieldsByType('owner'));
+			foreach ($fieldValueMapping as $fieldInfo) {
 				$fieldName = $fieldInfo['fieldname'];
 				$referenceModule = $fieldInfo['modulename'];
-				$fieldType = '';
 				$fieldValueType = $fieldInfo['valuetype'];
 				$fieldValue = trim($fieldInfo['value']);
 
 				if ($fieldValueType === 'fieldname') {
-					if ($referenceModule == $entityType) {
+					if ($referenceModule === $entityType) {
 						$fieldValue = $newRecordModel->get($fieldValue);
 					} else {
 						$fieldValue = $recordModel->get($fieldValue);
@@ -63,8 +57,8 @@ class VTCreateEntityTask extends VTTask
 					$parser = new VTExpressionParser(new VTExpressionSpaceFilter(new VTExpressionTokenizer($fieldValue)));
 					$expression = $parser->expression();
 					$exprEvaluater = new VTFieldExpressionEvaluater($expression);
-					if ($referenceModule == $entityType) {
-						$fieldValue = $exprEvaluater->evaluate($newEntityData);
+					if ($referenceModule === $entityType) {
+						$fieldValue = $exprEvaluater->evaluate($newRecordModel);
 					} else {
 						$fieldValue = $exprEvaluater->evaluate($recordModel);
 					}
@@ -77,22 +71,21 @@ class VTCreateEntityTask extends VTTask
 					}
 				}
 				if (in_array($fieldName, $ownerFields) && !is_numeric($fieldValue)) {
-					$userId = getUserId_Ol($fieldValue);
+					$userId = App\User::getUserIdByName($fieldValue);
 					$groupId = \App\Fields\Owner::getGroupId($fieldValue);
-
-					if ($userId == 0 && $groupId == 0) {
+					if (!$userId && !$groupId) {
 						$fieldValue = $recordModel->get($fieldName);
 					} else {
-						$fieldValue = ($userId == 0) ? $groupId : $userId;
+						$fieldValue = (!$userId) ? $groupId : $userId;
 					}
 				}
 				$newRecordModel->set($fieldName, $fieldValue);
 			}
 			$newRecordModel->set($this->reference_field, $recordId);
 			// To handle cyclic process
-			//$newEntity->_from_workflow = true;
+			$newRecordModel->setHandlerExceptions(['disableWorkflow' => true]);
 			$newRecordModel->save();
-			relateEntities($recordModel->getEntity(), $moduleName, $recordId, $entityType, $newRecordModel->getId());
+			vtlib\Deprecated::relateEntities($recordModel->getEntity(), $moduleName, $recordId, $entityType, $newRecordModel->getId());
 		} elseif ($entityType && $this->mappingPanel) {
 			$saveContinue = true;
 			$newRecordModel = Vtiger_Record_Model::getCleanInstance($entityType);
@@ -119,20 +112,20 @@ class VTCreateEntityTask extends VTTask
 	public function setFieldMapping($fieldValueMapping, $recordModel, $parentRecordModel)
 	{
 		$ownerFields = [];
+		$entityType = $this->entity_type;
 		foreach ($recordModel->getModule()->getFields() as $name => $fieldModel) {
-			if ($fieldModel->getFieldDataType() == 'owner') {
+			if ($fieldModel->getFieldDataType() === 'owner') {
 				$ownerFields[] = $name;
 			}
 		}
 		foreach ($fieldValueMapping as $fieldInfo) {
 			$fieldName = $fieldInfo['fieldname'];
 			$referenceModule = $fieldInfo['modulename'];
-			$fieldType = '';
 			$fieldValueType = $fieldInfo['valuetype'];
 			$fieldValue = trim($fieldInfo['value']);
 
-			if ($fieldValueType == 'fieldname') {
-				if ($referenceModule == $entityType) {
+			if ($fieldValueType === 'fieldname') {
+				if ($referenceModule === $entityType) {
 					$fieldValue = $recordModel->get($fieldValue);
 				} else {
 					$fieldValue = $parentRecordModel->get($fieldValue);
@@ -143,27 +136,26 @@ class VTCreateEntityTask extends VTTask
 				$parser = new VTExpressionParser(new VTExpressionSpaceFilter(new VTExpressionTokenizer($fieldValue)));
 				$expression = $parser->expression();
 				$exprEvaluater = new VTFieldExpressionEvaluater($expression);
-				if ($referenceModule == $entityType) {
-					$fieldValue = $exprEvaluater->evaluate($newEntityData);
+				if ($referenceModule === $entityType) {
+					$fieldValue = $exprEvaluater->evaluate($recordModel);
 				} else {
-					$fieldValue = $exprEvaluater->evaluate($entity);
+					$fieldValue = $exprEvaluater->evaluate($parentRecordModel);
 				}
 			} elseif (preg_match('/([^:]+):boolean$/', $fieldValue, $match)) {
 				$fieldValue = $match[1];
 				if ($fieldValue == 'true') {
-					$fieldValue = '1';
+					$fieldValue = 1;
 				} else {
-					$fieldValue = '0';
+					$fieldValue = 0;
 				}
 			}
 			if (in_array($fieldName, $ownerFields) && !is_numeric($fieldValue)) {
-				$userId = getUserId_Ol($fieldValue);
+				$userId = App\User::getUserIdByName($fieldValue);
 				$groupId = \App\Fields\Owner::getGroupId($fieldValue);
-
-				if ($userId == 0 && $groupId == 0) {
+				if (!$userId && !$groupId) {
 					$fieldValue = $parentRecordModel->get($fieldName);
 				} else {
-					$fieldValue = ($userId == 0) ? $groupId : $userId;
+					$fieldValue = (!$userId) ? $groupId : $userId;
 				}
 			}
 			$recordModel->set($fieldName, $fieldValue);
@@ -192,7 +184,8 @@ class VTCreateEntityTask extends VTTask
 				$invDat[$name . $i] = $value;
 			}
 		}
-		$recordModel->setInventoryRawData(new Vtiger_Base_Model($invDat));
+		$recordModel->setInventoryRawData(new App\Request($invDat, false));
+
 		return $recordModel;
 	}
 }

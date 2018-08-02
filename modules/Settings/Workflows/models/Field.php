@@ -11,9 +11,9 @@
 
 class Settings_Workflows_Field_Model extends Vtiger_Field_Model
 {
-
 	/**
-	 * Function to get all the supported advanced filter operations
+	 * Function to get all the supported advanced filter operations.
+	 *
 	 * @return <Array>
 	 */
 	public static function getAdvancedFilterOptions()
@@ -22,7 +22,8 @@ class Settings_Workflows_Field_Model extends Vtiger_Field_Model
 	}
 
 	/**
-	 * Function to get the advanced filter option names by Field type
+	 * Function to get the advanced filter option names by Field type.
+	 *
 	 * @return <Array>
 	 */
 	public static function getAdvancedFilterOpsByFieldType()
@@ -31,8 +32,10 @@ class Settings_Workflows_Field_Model extends Vtiger_Field_Model
 	}
 
 	/**
-	 * Function to get comment field which will useful in creating conditions
+	 * Function to get comment field which will useful in creating conditions.
+	 *
 	 * @param Vtiger_Module_Model $moduleModel
+	 *
 	 * @return <Vtiger_Field_Model>
 	 */
 	public static function getCommentFieldForFilterConditions($moduleModel)
@@ -47,15 +50,17 @@ class Settings_Workflows_Field_Model extends Vtiger_Field_Model
 	}
 
 	/**
-	 * Function to get comment fields list which are useful in tasks
+	 * Function to get comment fields list which are useful in tasks.
+	 *
 	 * @param Vtiger_Module_Model $moduleModel
+	 *
 	 * @return <Array> list of Field models <Vtiger_Field_Model>
 	 */
 	public static function getCommentFieldsListForTasks($moduleModel)
 	{
-		$commentsFieldsInfo = array('$(record : Comments 1)$' => 'Last Comment', 'last5Comments' => '$(record : Comments 5)$', 'allComments' => '$(record : Comments)$');
+		$commentsFieldsInfo = ['$(record : Comments 1)$' => 'Last Comment', 'last5Comments' => '$(record : Comments 5)$', 'allComments' => '$(record : Comments)$'];
 
-		$commentFieldModelsList = array();
+		$commentFieldModelsList = [];
 		foreach ($commentsFieldsInfo as $fieldName => $fieldLabel) {
 			$commentField = new Vtiger_Field_Model();
 			$commentField->setModule($moduleModel);

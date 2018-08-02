@@ -7,30 +7,28 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  * ********************************************************************************** */
+
 namespace vtlib;
 
 /**
  * Provides API to package vtiger CRM layout files.
- * @package vtlib
  */
 class LayoutExport extends Package
 {
-
 	const TABLENAME = 'vtiger_layout';
 
 	/**
-	 * Generate unique id for insertion
-	 * @access private
+	 * Generate unique id for insertion.
 	 */
-	static function __getUniqueId()
+	public static function __getUniqueId()
 	{
 		$adb = \PearDatabase::getInstance();
+
 		return $adb->getUniqueID(self::TABLENAME);
 	}
 
 	/**
-	 * Initialize Export
-	 * @access private
+	 * Initialize Export.
 	 */
 	public function __initExport($layoutName)
 	{
@@ -43,59 +41,55 @@ class LayoutExport extends Package
 
 	/**
 	 * Export Module as a zip file.
+	 *
 	 * @param Layout name to be export
 	 * @param Path Output directory path
-	 * @param String Zipfilename to use
-	 * @param Boolean True for sending the output as download
+	 * @param string Zipfilename to use
+	 * @param bool True for sending the output as download
 	 */
 	public function export($layoutName, $todir = '', $zipfilename = '', $directDownload = false)
 	{
 		$this->__initExport($layoutName);
 
 		// Call layout export function
-		$this->export_Layout($layoutName);
+		$this->exportLayout($layoutName);
 
 		$this->__finishExport();
 
 		// Export as Zip
-		if ($zipfilename == '')
-			$zipfilename = "$layoutName-" . date('YmdHis') . ".zip";
+		if ($zipfilename == '') {
+			$zipfilename = "$layoutName-" . date('YmdHis') . '.zip';
+		}
 		$zipfilename = "$this->_export_tmpdir/$zipfilename";
 
-		$zip = new Zip($zipfilename);
-
+		$zip = \App\Zip::createFile($zipfilename);
 		// Add manifest file
 		$zip->addFile($this->__getManifestFilePath(), 'manifest.xml');
-
 		// Copy module directory
-		$zip->copyDirectoryFromDisk('layouts/' . $layoutName);
-
-		$zip->save();
-
-		if ($todir) {
-			copy($zipfilename, $todir);
-		}
-
+		$zip->addDirectory('layouts/' . $layoutName);
 		if ($directDownload) {
-			$zip->forceDownload($zipfilename);
-			unlink($zipfilename);
+			$zip->download($layoutName);
+		} else {
+			$zip->close();
+			if ($todir) {
+				copy($zipfilename, $todir);
+			}
 		}
 		$this->__cleanupExport();
 	}
 
 	/**
-	 * Export Layout Handler
-	 * @access private
+	 * Export Layout Handler.
 	 */
-	public function export_Layout($layoutName)
+	public function exportLayout($layoutName)
 	{
 		$adb = \PearDatabase::getInstance();
 		$query = sprintf('SELECT * FROM %s WHERE name = ?', self::TABLENAME);
 		$sqlresult = $adb->pquery($query, [$layoutName]);
-		$layoutresultrow = $adb->fetch_array($sqlresult);
+		$layoutresultrow = $adb->fetchArray($sqlresult);
 
-		$layoutname = decode_html($layoutresultrow['name']);
-		$layoutlabel = decode_html($layoutresultrow['label']);
+		$layoutname = \App\Purifier::decodeHtml($layoutresultrow['name']);
+		$layoutlabel = \App\Purifier::decodeHtml($layoutresultrow['label']);
 
 		$this->openNode('module');
 		$this->outputNode(date('Y-m-d H:i:s'), 'exporttime');
@@ -104,33 +98,34 @@ class LayoutExport extends Package
 		$this->outputNode('layout', 'type');
 
 		// Export dependency information
-		$this->export_Dependencies();
+		$this->exportLayoutDependencies();
 		$this->closeNode('module');
 	}
 
 	/**
-	 * Export vtiger dependencies
-	 * @access private
+	 * Export vtiger dependencies.
 	 */
-	public function export_Dependencies()
+	public function exportLayoutDependencies()
 	{
 		$maxVersion = false;
 		$this->openNode('dependencies');
 		$this->outputNode(\App\Version::get(), 'vtiger_version');
-		if ($maxVersion !== false)
+		if ($maxVersion !== false) {
 			$this->outputNode($maxVersion, 'vtiger_max_version');
+		}
 		$this->closeNode('dependencies');
 	}
 
 	/**
 	 * Register layout pack information.
 	 */
-	static function register($name, $label = '', $isdefault = false, $isactive = true, $overrideCore = false)
+	public static function register($name, $label = '', $isdefault = false, $isactive = true, $overrideCore = false)
 	{
 		$prefix = trim($prefix);
 		// We will not allow registering core layouts unless forced
-		if (strtolower($name) == 'basic' && $overrideCore === false)
+		if (strtolower($name) == 'basic' && $overrideCore === false) {
 			return;
+		}
 
 		$useisdefault = ($isdefault) ? 1 : 0;
 		$useisactive = ($isactive) ? 1 : 0;
@@ -158,17 +153,18 @@ class LayoutExport extends Package
 				'active' => $useisactive,
 			]);
 		}
-		self::log("Registering Layout $name ... DONE");
+		\App\Log::trace("Registering Layout $name ... DONE", __METHOD__);
 	}
 
-	static function deregister($name)
+	public static function deregister($name)
 	{
-		if (strtolower($name) == 'basic')
+		if (strtolower($name) == 'basic') {
 			return;
+		}
 
 		$adb = \PearDatabase::getInstance();
 		$adb->delete(self::TABLENAME, 'name = ?', [$name]);
 		Functions::recurseDelete('layouts' . DIRECTORY_SEPARATOR . $name);
-		self::log("Deregistering Layout $name ... DONE");
+		\App\Log::trace("Deregistering Layout $name ... DONE", __METHOD__);
 	}
 }

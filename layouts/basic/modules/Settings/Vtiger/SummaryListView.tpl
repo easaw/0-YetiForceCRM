@@ -1,16 +1,16 @@
 ﻿{strip}
-<div class="row">
+	<div class="row">
 		<div class="titleBar row">
 			<div class="col-md-8">
-				<h3 class="title">{vtranslate($MENU->getLabel(), $QUALIFIED_MODULE)}</h3>
+				<h3 class="title">{\App\Language::translate($MENU->getLabel(), $QUALIFIED_MODULE)}</h3>
 				<p>&nbsp;</p>
 			</div>
 			<div class="col-md-4">
-				<div class="pull-right">
+				<div class="float-right">
 					<div class="btn-toolbar">
-						<span class="btn-group">
-							<a class="btn btn-xs vtButton btn-default" href="javascript:window.history.back();">Back ...</a>
-						</span>
+					<span class="btn-group">
+						<a class="btn btn-sm vtButton btn-light" role="button" href="javascript:window.history.back();">Back ...</a>
+					</span>
 					</div>
 				</div>
 			</div>
@@ -19,14 +19,14 @@
 			{foreach item=MENU_ITEM from=$MENU_ITEMS}
 				<div class="row item">
 					<div class="col-md-1">
-						<img src="{vimage_path($MENU_ITEM->get('iconpath'))}" />
+						<img src="{\App\Layout::getImagePath($MENU_ITEM->get('iconpath'))}"/>
 					</div>
 					<div class="col-md-10">
 						<h4>
-							<a href="{$MENU_ITEM->getUrl()}">{vtranslate($MENU_ITEM->get('name'), $MENU_ITEM->getModuleName())}</a>
+							<a href="{$MENU_ITEM->getUrl()}">{\App\Language::translate($MENU_ITEM->get('name'), $MENU_ITEM->getModuleName())}</a>
 						</h4>
 						<p>
-							{vtranslate($MENU_ITEM->get('description'), $MENU_ITEM->getModuleName())}
+							{\App\Language::translate($MENU_ITEM->get('description'), $MENU_ITEM->getModuleName())}
 						</p>
 					</div>
 					<div class="col-md-1"></div>
@@ -34,5 +34,5 @@
 			{/foreach}
 		</div>
 	</div>
-</div>
+	</div>
 {/strip}

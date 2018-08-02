@@ -1,18 +1,19 @@
 <?php
+
 namespace Api;
 
 /**
- * Base class to handle communication via web services
- * @package YetiForce.Webservice
- * @license licenses/License.html
+ * Base class to handle communication via web services.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Controller
 {
-
 	/**
 	 * Property: method
-	 * The HTTP method this request was made in, either GET, POST, PUT or DELETE
+	 * The HTTP method this request was made in, either GET, POST, PUT or DELETE.
 	 */
 	protected static $acceptableMethods = ['GET', 'POST', 'PUT', 'DELETE'];
 
@@ -30,17 +31,18 @@ class Controller
 	public $app;
 
 	/**
-	 * Construct
+	 * Construct.
 	 */
 	public function __construct()
 	{
 		$this->request = Core\Request::init();
 		$this->response = Core\Response::getInstance();
-		$this->method = strtoupper($this->request->getRequestMetod());
+		$this->method = strtoupper($this->request->getRequestMethod());
 	}
 
 	/**
-	 * Get controller instance
+	 * Get controller instance.
+	 *
 	 * @return \self
 	 */
 	public static function getInstance()
@@ -61,11 +63,12 @@ class Controller
 		set_error_handler([$this, 'exceptionErrorHandler']);
 		if ($this->method === 'OPTIONS') {
 			$this->response->addHeader('Allow', strtoupper(implode(', ', static::$acceptableMethods)));
+
 			return false;
 		}
 		$this->app = Core\Auth::init($this);
 		$this->headers = $this->request->getHeaders();
-		if ($this->headers['X-API-KEY'] !== $this->app['api_key']) {
+		if ($this->headers['X-API-KEY'] !== \App\Encryption::getInstance()->decrypt($this->app['api_key'])) {
 			throw new Core\Exception('Invalid api key', 401);
 		}
 		if (empty($this->request->get('action'))) {
@@ -88,7 +91,7 @@ class Controller
 		if (!empty($return)) {
 			$return = [
 				'status' => 1,
-				'result' => $return
+				'result' => $return,
 			];
 			$this->response->setBody($return);
 		}
@@ -108,7 +111,7 @@ class Controller
 			$className = "Api\\$type\\$module\\$action";
 			if (class_exists($className)) {
 				return $className;
-			};
+			}
 			$className = "Api\\$type\\BaseModule\\$action";
 			if (class_exists($className)) {
 				return $className;
@@ -118,14 +121,14 @@ class Controller
 		if (!$module && class_exists($className)) {
 			return $className;
 		}
-		throw new Core\Exception("No action found", 405);
+		throw new Core\Exception('No action found', 405);
 	}
 
 	public function debugRequest()
 	{
 		if (\AppConfig::debug('WEBSERVICE_DEBUG')) {
 			$log = '============ Request ======  ' . date('Y-m-d H:i:s') . "  ======\n";
-			$log .= 'REQUEST_METHOD: ' . $this->request->getRequestMetod() . PHP_EOL;
+			$log .= 'REQUEST_METHOD: ' . $this->request->getRequestMethod() . PHP_EOL;
 			$log .= "Headers: \n";
 			foreach ($this->request->getHeaders() as $key => $header) {
 				$log .= "$key : $header\n";

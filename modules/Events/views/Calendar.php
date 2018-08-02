@@ -10,19 +10,10 @@
 
 class Events_Calendar_View extends Vtiger_Index_View
 {
+	use App\Controller\ClearProcess;
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function process(\App\Request $request)
 	{
-		
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		header("Location: index.php?module=Calendar&view=Calendar");
+		header('Location: index.php?module=Calendar&view=Calendar');
 	}
 }

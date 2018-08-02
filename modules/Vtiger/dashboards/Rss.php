@@ -1,28 +1,27 @@
 <?php
 
 /**
- * Widget to display RSS
- * @package YetiForce.View
- * @license licenses/License.html
+ * Widget to display RSS.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Vtiger_Rss_Dashboard extends Vtiger_IndexAjax_View
 {
-
-	public function process(Vtiger_Request $request, $widget = NULL)
+	public function process(\App\Request $request, $widget = null)
 	{
-		vimport('~libraries/RSSFeeds/Feed.php');
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		if ($widget && !$request->has('widgetid')) {
 			$widgetId = $widget->get('id');
 		} else {
-			$widgetId = $request->get('widgetid');
+			$widgetId = $request->getInteger('widgetid');
 		}
 		$widget = Vtiger_Widget_Model::getInstanceWithWidgetId($widgetId, $currentUser->getId());
 		$data = $widget->get('data');
-		$data = \App\Json::decode(decode_html($data));
+		$data = \App\Json::decode(App\Purifier::decodeHtml($data));
 		$listSubjects = [];
 		foreach ($data['channels'] as $rss) {
 			try {
@@ -39,7 +38,7 @@ class Vtiger_Rss_Dashboard extends Vtiger_IndexAjax_View
 						'link' => $item->link,
 						'date' => $date,
 						'fullTitle' => $item->title,
-						'source' => $rss
+						'source' => $rss,
 					];
 				}
 			}
@@ -47,8 +46,7 @@ class Vtiger_Rss_Dashboard extends Vtiger_IndexAjax_View
 		$viewer->assign('LIST_SUCJECTS', $listSubjects);
 		$viewer->assign('WIDGET', $widget);
 		$viewer->assign('MODULE_NAME', $moduleName);
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/RssContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/RssHeader.tpl', $moduleName);

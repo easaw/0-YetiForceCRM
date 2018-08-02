@@ -1,31 +1,52 @@
 <?php
 
 /**
- * ZipReader Class
- * @package YetiForce.Reader
- * @license licenses/License.html
+ * ZipReader class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Import_ZipReader_Reader extends Import_FileReader_Reader
 {
-
 	protected $moduleName;
 	protected $importFolderLocation;
 	protected $filelist = [];
 
-	public function __construct(Vtiger_Request $request, $user)
+	/**
+	 * Construct.
+	 *
+	 * @param \App\Request $request
+	 * @param \App\User    $user
+	 */
+	public function __construct(\App\Request $request, \App\User $user)
 	{
-		$instance = Vtiger_Cache::get('ZipReader', $request->get('module') . $user->id);
+		$instance = Vtiger_Cache::get('ZipReader', $request->getModule() . $user->getId());
 		if (!empty($instance)) {
 			$this->setInstanceProperties($instance);
 			$this->request = $request;
 			return;
 		}
-		$this->moduleName = $request->get('module');
-		$this->extension = $request->get('extension');
+		$this->moduleName = $request->getModule();
+		$this->extension = $request->getByType('extension');
+		$allowedExtension = static::getAllowedExtension();
+		if (!isset($allowedExtension[$this->extension])) {
+			\App\Log::error('purifyByType: ' . $this->extension, 'IllegalValue');
+			throw new \App\Exceptions\IllegalValue('ERR_NOT_ALLOWED_VALUE||' . $this->extension, 406);
+		}
 		parent::__construct($request, $user);
 		$this->initialize($request, $user);
-		Vtiger_Cache::set('ZipReader', $this->moduleName . $user->id, $this);
+		Vtiger_Cache::set('ZipReader', $this->moduleName . $user->getId(), $this);
+	}
+
+	/**
+	 * Returns allowed extension files in zip package.
+	 *
+	 * @return string[]
+	 */
+	public static function getAllowedExtension()
+	{
+		return ['xml' => 'XML'];
 	}
 
 	public function setInstanceProperties($instance)
@@ -36,27 +57,31 @@ class Import_ZipReader_Reader extends Import_FileReader_Reader
 		}
 	}
 
-	public function initialize($request, $user)
+	/**
+	 * Initialize zip file.
+	 *
+	 * @param \App\Request $request
+	 * @param \App\User    $user
+	 *
+	 * @throws \App\Exceptions\AppException
+	 */
+	public function initialize(\App\Request $request, \App\User $user)
 	{
 		$zipfile = Import_Utils_Helper::getImportFilePath($user);
-		$this->importFolderLocation = $zipfile . '_' . $user->id;
+		$this->importFolderLocation = "{$zipfile}_{$this->extension}";
 		// clean old data
-		if ($request->getMode() == 'uploadAndParse') {
+		if ($request->getMode() === 'uploadAndParse') {
 			$this->deleteFolder();
 		}
 		if ($this->extension && file_exists($zipfile) && !file_exists($this->importFolderLocation)) {
 			mkdir($this->importFolderLocation);
-			$unzip = new vtlib\Unzip($zipfile);
-			$unzip->unzipAllEx($this->importFolderLocation);
-			foreach ($unzip->getList() as $name => $data) {
-				$this->filelist[] = $name;
-			}
-			$unzip->__destroy();
+			$zip = \App\Zip::openFile($zipfile, ['onlyExtensions' => [$this->extension]]);
+			$this->filelist = $zip->unzip($this->importFolderLocation);
 			unlink($zipfile);
 		} elseif (is_dir($this->importFolderLocation)) {
 			foreach (new DirectoryIterator($this->importFolderLocation) as $file) {
 				if (!$file->isDot()) {
-					if (strpos($file->getFilename(), '.xml') !== false) {
+					if (strpos($file->getFilename(), '.' . $this->extension) !== false) {
 						$this->filelist[] = $file->getFilename();
 					}
 				}
@@ -82,10 +107,10 @@ class Import_ZipReader_Reader extends Import_FileReader_Reader
 		return $return;
 	}
 
-	public function getFirstRowData($hasHeader)
+	public function getFirstRowData($hasHeader = true)
 	{
 		$data = $this->request->getAll();
-		$newRequest = new Vtiger_Request($data);
+		$newRequest = new \App\Request($data);
 		$newRequest->set('type', $this->extension);
 		$fileReader = Import_Module_Model::getFileReader($newRequest, $this->user);
 		if (!$fileReader) {
@@ -94,9 +119,11 @@ class Import_ZipReader_Reader extends Import_FileReader_Reader
 		$filePath = $this->getNextFile(false);
 		if (!$filePath) {
 			$this->deleteFolder();
+
 			return false;
 		}
 		$fileReader->filePath = $filePath;
+
 		return $fileReader->getFirstRowData($hasHeader);
 	}
 
@@ -120,7 +147,7 @@ class Import_ZipReader_Reader extends Import_FileReader_Reader
 	public function read()
 	{
 		$data = $this->request->getAll();
-		$newRequest = new Vtiger_Request($data);
+		$newRequest = new \App\Request($data);
 		$newRequest->set('type', $this->extension);
 		$fileReader = Import_Module_Model::getFileReader($newRequest, $this->user);
 		if (!$fileReader) {
@@ -136,19 +163,8 @@ class Import_ZipReader_Reader extends Import_FileReader_Reader
 
 	public function deleteFolder()
 	{
-		if (!empty($this->importFolderLocation) && is_dir($this->importFolderLocation)) {
-			$dirs[] = $this->importFolderLocation;
-			foreach ($iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($this->importFolderLocation, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST) as $item) {
-				if ($item->isDir()) {
-					$dirs[] = $this->importFolderLocation . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
-				} else {
-					unlink($this->importFolderLocation . DIRECTORY_SEPARATOR . $iterator->getSubPathName());
-				}
-			}
-			arsort($dirs);
-			foreach ($dirs as $dir) {
-				rmdir($dir);
-			}
+		if (!empty($this->importFolderLocation)) {
+			\vtlib\Functions::recurseDelete($this->importFolderLocation, true);
 		}
 	}
 }

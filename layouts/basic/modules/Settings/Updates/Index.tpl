@@ -1,4 +1,4 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 
 <style>
 	.blockHeader th{
@@ -10,42 +10,46 @@
 		vertical-align:middle !important; 
 	}	
 </style>
-<div class="">
+<div class="tpl-Settings-Updates-Index">
 	<div class="widget_header row">
 		<div class="col-md-7">
-			{include file='BreadCrumbs.tpl'|@vtemplate_path:$MODULE}
-			{if isset($SELECTED_PAGE)}
-				{vtranslate($SELECTED_PAGE->get('description'),$QUALIFIED_MODULE)}
-			{/if}
+			{include file=\App\Layout::getTemplatePath('BreadCrumbs.tpl', $MODULE)}
 		</div>
-		<div class="col-md-5">
-			<div class="pull-right">
-				<a class="btn btn-success addMenu" href="{Settings_ModuleManager_Module_Model::getUserModuleImportUrl()}"><strong>{vtranslate('LBL_IMPORT_UPDATE', $QUALIFIED_MODULE)}</strong></a>
-			</div>
+		<div class="col-md-5 align-items-center d-flex justify-content-end">
+			<a class="btn btn-success btn-sm addMenu" role="button" href="{Settings_ModuleManager_Module_Model::getUserModuleImportUrl()}">
+				<span class="fa fa-plus u-mr-5px" title="{\App\Language::translate('LBL_IMPORT_UPDATE', $QUALIFIED_MODULE)}"></span>
+				<span class="sr-only">{\App\Language::translate('LBL_IMPORT_UPDATE', $QUALIFIED_MODULE)}</span>
+				<strong>{\App\Language::translate('LBL_IMPORT_UPDATE', $QUALIFIED_MODULE)}</strong>
+			</a>
 		</div>
 	</div>
-	<hr>
-	<table class="table tableRWD table-bordered table-condensed themeTableColor">
+	<div class="badge badge-info mb-1 mt-2">
+		{if isset($SELECTED_PAGE)}
+			<a> {\App\Language::translate($SELECTED_PAGE->get('description'),$QUALIFIED_MODULE)}</a>
+		{/if}
+	</div>
+	<hr class="mt-1 mb-2">
+	<table class="table tableRWD table-bordered table-sm themeTableColor">
 		<thead>
 			<tr class="blockHeader">
 				<th colspan="1" class="mediumWidthType">
-					<span>{vtranslate('LBL_TIME', $MODULE)}</span>
+					<span>{\App\Language::translate('LBL_TIME', $MODULE)}</span>
 				</th>
 				<th colspan="1" class="mediumWidthType">
-					<span>{vtranslate('LBL_USER', $MODULE)}</span>
+					<span>{\App\Language::translate('LBL_USER', $MODULE)}</span>
 				</th>
 				<th colspan="1" class="mediumWidthType">
-					<span>{vtranslate('LBL_NAME', $MODULE)}</span>
+					<span>{\App\Language::translate('LBL_NAME', $MODULE)}</span>
 				</th>
 				</th>
 				<th colspan="1" class="mediumWidthType">
-					<span>{vtranslate('LBL_FROM_VERSION', $MODULE)}</span>
+					<span>{\App\Language::translate('LBL_FROM_VERSION', $MODULE)}</span>
 				</th>
 				<th colspan="1" class="mediumWidthType">
-					<span>{vtranslate('LBL_TO_VERSION', $MODULE)}</span>
+					<span>{\App\Language::translate('LBL_TO_VERSION', $MODULE)}</span>
 				</th>
 				<th colspan="1" class="mediumWidthType">
-					<span>{vtranslate('LBL_RESULT', $MODULE)}</span>
+					<span>{\App\Language::translate('LBL_RESULT', $MODULE)}</span>
 				</th>
 			</tr>
 		</thead>
@@ -57,7 +61,7 @@
 					<td width="16%"><label class="marginRight5px">{$foo.name}</label></td>
 					<td width="16%"><label class="marginRight5px">{$foo.from_version}</label></td>
 					<td width="16%"><label class="marginRight5px">{$foo.to_version}</label></td>
-					<td width="16%"><label class="marginRight5px">{if $foo.result eq 1}{vtranslate('LBL_YES', $MODULE)}{else}{vtranslate('LBL_NO', $MODULE)}{/if}</label></td>
+					<td width="16%"><label class="marginRight5px">{if $foo.result eq 1}{\App\Language::translate('LBL_YES', $MODULE)}{else}{\App\Language::translate('LBL_NO', $MODULE)}{/if}</label></td>
 				</tr>
 			{/foreach}
 		</tbody>

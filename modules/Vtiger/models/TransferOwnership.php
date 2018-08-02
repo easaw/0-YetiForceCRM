@@ -1,9 +1,13 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
-class Vtiger_TransferOwnership_Model extends Vtiger_Base_Model
+/**
+ * Vtiger TransferOwnership model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+class Vtiger_TransferOwnership_Model extends \App\Base
 {
-
 	protected $skipModules = [];
 
 	public function getSkipModules()
@@ -11,9 +15,8 @@ class Vtiger_TransferOwnership_Model extends Vtiger_Base_Model
 		return $this->skipModules;
 	}
 
-	public function getRelatedModuleRecordIds(Vtiger_Request $request, $recordIds = [], $relModData)
+	public function getRelatedModuleRecordIds(\App\Request $request, $recordIds, $relModData)
 	{
-		$db = PearDatabase::getInstance();
 		$basicModule = $request->getModule();
 		$parentModuleModel = Vtiger_Module_Model::getInstance($basicModule);
 		$relatedIds = [];
@@ -26,32 +29,20 @@ class Vtiger_TransferOwnership_Model extends Vtiger_Base_Model
 				$field = $relModData[2];
 				foreach ($recordIds as $recordId) {
 					$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $basicModule);
-					if ($recordModel->get($field) != 0 && vtlib\Functions::getCRMRecordType($recordModel->get($field)) == $relatedModule) {
+					if ($recordModel->get($field) != 0 && \App\Record::getType($recordModel->get($field)) == $relatedModule) {
 						$relatedIds[] = $recordModel->get($field);
 					}
 				}
 
 				break;
 			case 1:
-
-				$relatedModuleModel = Vtiger_Module_Model::getInstance($relatedModule);
-				$instance = CRMEntity::getInstance($relatedModule);
-				$relationModel = Vtiger_Relation_Model::getInstance($parentModuleModel, $relatedModuleModel);
-				$fieldModel = $relationModel->getRelationField();
-				$tablename = $fieldModel->get('table');
-				$tabIndex = $instance->table_index;
+				$tablename = Vtiger_Relation_Model::getInstance($parentModuleModel, Vtiger_Module_Model::getInstance($relatedModule))->getRelationField()->get('table');
+				$tabIndex = CRMEntity::getInstance($relatedModule)->table_index;
 				$relIndex = $this->getRelatedColumnName($relatedModule, $basicModule);
-
 				if (!$relIndex) {
 					break;
 				}
-				$sql = "SELECT vtiger_crmentity.crmid FROM vtiger_crmentity INNER JOIN $tablename ON $tablename.$tabIndex = vtiger_crmentity.crmid
-						WHERE $tablename.$relIndex IN (" . $db->generateQuestionMarks($recordIds) . ")";
-				$result = $db->pquery($sql, $recordIds);
-				while ($crmid = $db->getSingleValue($result)) {
-					$relatedIds[] = $crmid;
-				}
-
+				$relatedIds = (new \App\Db\Query())->select([$tabIndex])->from($tablename)->where([$relIndex => $recordIds])->column();
 				break;
 			case 2:
 				foreach ($recordIds as $recordId) {
@@ -70,30 +61,31 @@ class Vtiger_TransferOwnership_Model extends Vtiger_Base_Model
 	{
 		$db = \App\Db::getInstance();
 		$oldOwners = \vtlib\Functions::getCRMRecordMetadata($relatedModuleRecordIds);
-		$currentUser = vglobal('current_user');
 		$db->createCommand()->update('vtiger_crmentity', [
 			'smownerid' => $transferOwnerId,
-			'modifiedby' => $currentUser->id,
+			'modifiedby' => \App\User::getCurrentUserId(),
 			'modifiedtime' => date('Y-m-d H:i:s'),
 			], ['crmid' => $relatedModuleRecordIds]
 		)->execute();
-		vimport('~modules/ModTracker/ModTracker.php');
+		Vtiger_Loader::includeOnce('~modules/ModTracker/ModTracker.php');
 		$flag = ModTracker::isTrackingEnabledForModule($module);
 		if ($flag) {
 			foreach ($relatedModuleRecordIds as $record) {
-				$db->createCommand()->insert('vtiger_modtracker_basic', [
-					'crmid' => $record,
-					'module' => $module,
-					'whodid' => $currentUser->id,
-					'changedon' => date('Y-m-d H:i:s', time())
-				])->execute();
-				$id = $db->getLastInsertID('vtiger_modtracker_basic_id_seq');
-				$db->createCommand()->insert('vtiger_modtracker_detail', [
-					'id' => $id,
-					'fieldname' => 'assigned_user_id',
-					'postvalue' => $transferOwnerId,
-					'prevalue' => $oldOwners[$record]['smownerid']
-				])->execute();
+				if (\App\Privilege::isPermitted($module, 'DetailView', $record)) {
+					$db->createCommand()->insert('vtiger_modtracker_basic', [
+						'crmid' => $record,
+						'module' => $module,
+						'whodid' => \App\User::getCurrentUserId(),
+						'changedon' => date('Y-m-d H:i:s', time()),
+					])->execute();
+					$id = $db->getLastInsertID('vtiger_modtracker_basic_id_seq');
+					$db->createCommand()->insert('vtiger_modtracker_detail', [
+						'id' => $id,
+						'fieldname' => 'assigned_user_id',
+						'postvalue' => $transferOwnerId,
+						'prevalue' => $oldOwners[$record]['smownerid'],
+					])->execute();
+				}
 			}
 		}
 	}
@@ -121,7 +113,7 @@ class Vtiger_TransferOwnership_Model extends Vtiger_Base_Model
 			if ($fieldModel->isReferenceField()) {
 				$referenceList = $fieldModel->getReferenceList();
 				foreach ($referenceList as $relation) {
-					if (Users_Privileges_Model::isPermitted($relation, 'EditView')) {
+					if (\App\Privilege::isPermitted($relation, 'EditView')) {
 						$relatedModules[] = ['name' => $relation, 'field' => $fieldName];
 					}
 				}
@@ -134,13 +126,11 @@ class Vtiger_TransferOwnership_Model extends Vtiger_Base_Model
 	{
 		$module = $this->get('module');
 		$moduleModel = Vtiger_Module_Model::getInstance($module);
-		$relatedModelFields = $moduleModel->getFields();
-
 		$relatedModules = [];
 		$relations = $moduleModel->getRelations();
 		foreach ($relations as $relation) {
 			$relationModule = $relation->getRelationModuleName();
-			if (Users_Privileges_Model::isPermitted($relationModule, 'EditView')) {
+			if (\App\Privilege::isPermitted($relationModule, 'EditView')) {
 				$relatedModules[] = [
 					'name' => $relationModule,
 					'type' => $relation->getRelationType(),

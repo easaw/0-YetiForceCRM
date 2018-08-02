@@ -1,20 +1,45 @@
 <?php
 
 /**
- * Fields Action Class
- * @package YetiForce.Actions
- * @license licenses/License.html
+ * Fields Action Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-class Vtiger_Fields_Action extends Vtiger_Action_Controller
+class Vtiger_Fields_Action extends \App\Controller\Action
 {
+	use \App\Controller\ExposeMethod;
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Field model instance.
+	 *
+	 * @var Vtiger_Field_Model
+	 */
+	protected $fieldModel;
+
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+		if (!\App\Privilege::isPermitted($request->getModule(), 'EditView')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+		if ($request->getMode() !== 'findAddress') {
+			$this->fieldModel = Vtiger_Module_Model::getInstance($request->getModule())->getFieldByName($request->getByType('fieldName', 2));
+			if (!$this->fieldModel || !$this->fieldModel->isEditable()) {
+				throw new \App\Exceptions\NoPermitted('LBL_NO_PERMISSIONS_TO_FIELD');
+			}
 		}
 	}
 
@@ -22,30 +47,34 @@ class Vtiger_Fields_Action extends Vtiger_Action_Controller
 	{
 		parent::__construct();
 		$this->exposeMethod('getOwners');
-		$this->exposeMethod('searchReference');
-		$this->exposeMethod('searchValues');
+		$this->exposeMethod('getReference');
+		$this->exposeMethod('getUserRole');
+		$this->exposeMethod('verifyPhoneNumber');
+		$this->exposeMethod('findAddress');
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Get owners for ajax owners list.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function getOwners(\App\Request $request)
 	{
-		$mode = $request->get('mode');
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
+		if (!AppConfig::performance('SEARCH_OWNERS_BY_AJAX')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
-	}
-
-	public function getOwners(Vtiger_Request $request)
-	{
+		if ($this->fieldModel->getFieldDataType() !== 'owner' && $this->fieldModel->getFieldDataType() !== 'sharedOwner') {
+			throw new \App\Exceptions\NoPermitted('LBL_NO_PERMISSIONS_TO_FIELD');
+		}
+		$moduleName = $request->getModule();
 		$searchValue = $request->get('value');
-		$type = $request->get('type');
 		if ($request->has('result')) {
 			$result = $request->get('result');
 		} else {
 			$result = ['users', 'groups'];
 		}
-
-		$moduleName = $request->getModule();
 		$response = new Vtiger_Response();
 		if (empty($searchValue)) {
 			$response->setError('NO');
@@ -57,8 +86,8 @@ class Vtiger_Fields_Action extends Vtiger_Action_Controller
 			if (in_array('users', $result)) {
 				$users = $owner->getAccessibleUsers('', 'owner');
 				if (!empty($users)) {
-					$data[] = ['name' => vtranslate('LBL_USERS'), 'type' => 'optgroup'];
-					foreach ($users as $key => &$value) {
+					$data[] = ['name' => \App\Language::translate('LBL_USERS'), 'type' => 'optgroup'];
+					foreach ($users as $key => $value) {
 						$data[] = ['id' => $key, 'name' => $value];
 					}
 				}
@@ -66,8 +95,8 @@ class Vtiger_Fields_Action extends Vtiger_Action_Controller
 			if (in_array('groups', $result)) {
 				$grup = $owner->getAccessibleGroups('', 'owner', true);
 				if (!empty($grup)) {
-					$data[] = ['name' => vtranslate('LBL_GROUPS'), 'type' => 'optgroup'];
-					foreach ($grup as $key => &$value) {
+					$data[] = ['name' => \App\Language::translate('LBL_GROUPS'), 'type' => 'optgroup'];
+					foreach ($grup as $key => $value) {
 						$data[] = ['id' => $key, 'name' => $value];
 					}
 				}
@@ -78,54 +107,108 @@ class Vtiger_Fields_Action extends Vtiger_Action_Controller
 	}
 
 	/**
-	 * Function searches for value data 
-	 * @param Vtiger_Request $request
+	 * Search user roles.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
 	 */
-	public function searchValues(Vtiger_Request $request)
+	public function getUserRole(\App\Request $request)
 	{
+		if (!AppConfig::performance('SEARCH_ROLES_BY_AJAX')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+		if ($this->fieldModel->getFieldDataType() !== 'userRole') {
+			throw new \App\Exceptions\NoPermitted('LBL_NO_PERMISSIONS_TO_FIELD');
+		}
 		$searchValue = $request->get('value');
-		$fieldId = (int) $request->get('fld');
-		$moduleName = $request->getModule();
 		$response = new Vtiger_Response();
 		if (empty($searchValue)) {
 			$response->setError('NO');
 		} else {
-			if (\App\Field::getFieldPermission($moduleName, $fieldId) || $moduleName === 'Users') {
-				$fieldModel = Vtiger_Field_Model::getInstanceFromFieldId($fieldId);
-				$rows = $fieldModel->getUITypeModel()->getSearchValues($searchValue);
-				foreach ($rows as $key => $value) {
-					$data[] = ['id' => $key, 'name' => $value];
-				}
-				$response->setResult(['items' => $data]);
-			} else {
-				$response->setError('NO');
+			$rows = $this->fieldModel->getUITypeModel()->getSearchValues($searchValue);
+			foreach ($rows as $key => $value) {
+				$data[] = ['id' => $key, 'name' => $value];
 			}
+			$response->setResult(['items' => $data]);
 		}
 		$response->emit();
 	}
 
-	public function searchReference(Vtiger_Request $request)
+	/**
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function getReference(\App\Request $request)
 	{
-		$fieldId = $request->get('fid');
-		$searchValue = $request->get('value');
-
-		$fieldModel = Vtiger_Field_Model::getInstanceFromFieldId($fieldId);
-		$reference = $fieldModel->getReferenceList();
-		$rows = (new \App\RecordSearch($searchValue, $reference))->search();
+		if (!AppConfig::performance('SEARCH_REFERENCE_BY_AJAX')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+		if (!$this->fieldModel->isReferenceField()) {
+			throw new \App\Exceptions\NoPermitted('LBL_NO_PERMISSIONS_TO_FIELD');
+		}
+		$response = new Vtiger_Response();
+		$rows = (new \App\RecordSearch($request->get('value'), $this->fieldModel->getReferenceList()))->search();
 		$data = $modules = $ids = [];
-		foreach ($rows as &$row) {
+		foreach ($rows as $row) {
 			$ids[] = $row['crmid'];
 			$modules[$row['setype']][] = $row['crmid'];
 		}
 		$labels = \App\Record::getLabel($ids);
 		foreach ($modules as $moduleName => &$rows) {
-			$data[] = ['name' => Vtiger_Language_Handler::getTranslatedString($moduleName, $moduleName), 'type' => 'optgroup'];
-			foreach ($rows as &$id) {
+			$data[] = ['name' => App\Language::translateSingleMod($moduleName, $moduleName), 'type' => 'optgroup'];
+			foreach ($rows as $id) {
 				$data[] = ['id' => $id, 'name' => $labels[$id]];
 			}
 		}
-		$response = new Vtiger_Response();
 		$response->setResult(['items' => $data]);
+		$response->emit();
+	}
+
+	/**
+	 * Verify phone number.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function verifyPhoneNumber(\App\Request $request)
+	{
+		if ($this->fieldModel->getFieldDataType() !== 'phone') {
+			throw new \App\Exceptions\NoPermitted('LBL_NO_PERMISSIONS_TO_FIELD');
+		}
+		$response = new Vtiger_Response();
+		$data = ['isValidNumber' => false];
+		if ($request->isEmpty('phoneCountry', true)) {
+			$data['message'] = \App\Language::translate('LBL_NO_PHONE_COUNTRY');
+		}
+		if (empty($data['message'])) {
+			try {
+				$data = App\Fields\Phone::verifyNumber($request->get('phoneNumber'), $request->getByType('phoneCountry', 1));
+			} catch (\App\Exceptions\FieldException $e) {
+				$data = ['isValidNumber' => false];
+			}
+		}
+		if (!$data['isValidNumber'] && empty($data['message'])) {
+			$data['message'] = \App\Language::translate('LBL_INVALID_PHONE_NUMBER');
+		}
+		$response->setResult($data);
+		$response->emit();
+	}
+
+	/**
+	 * Find address.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function findAddress(\App\Request $request)
+	{
+		$instance = \App\AddressFinder::getInstance($request->getByType('type'));
+		$response = new Vtiger_Response();
+		if ($instance) {
+			$response->setResult($instance->find($request->getByType('value', 'Text')));
+		}
 		$response->emit();
 	}
 }

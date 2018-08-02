@@ -11,31 +11,34 @@
 
 class Campaigns_Module_Model extends Vtiger_Module_Model
 {
-
 	/**
-	 * Function to get Specific Relation Query for this Module
+	 * Function to get Specific Relation Query for this Module.
+	 *
 	 * @param <type> $relatedModule
+	 *
 	 * @return <type>
 	 */
 	public function getSpecificRelationQuery($relatedModule)
 	{
 		if ($relatedModule === 'Leads') {
 			$specificQuery = 'AND vtiger_leaddetails.converted = 0';
+
 			return $specificQuery;
 		}
 		return parent::getSpecificRelationQuery($relatedModule);
 	}
 
 	/**
-	 * Function to get list view query for popup window
-	 * @param string $sourceModule Parent module
-	 * @param string $field parent fieldname
-	 * @param string $record parent id
+	 * Function to get list view query for popup window.
+	 *
+	 * @param string              $sourceModule   Parent module
+	 * @param string              $field          parent fieldname
+	 * @param string              $record         parent id
 	 * @param \App\QueryGenerator $queryGenerator
 	 */
 	public function getQueryByModuleField($sourceModule, $field, $record, \App\QueryGenerator $queryGenerator)
 	{
-		if (in_array($sourceModule, array('Accounts', 'Leads', 'Vendors', 'Contacts', 'Partners', 'Competition'))) {
+		if (in_array($sourceModule, ['Accounts', 'Leads', 'Vendors', 'Contacts', 'Partners', 'Competition'])) {
 			$subQuery = (new App\Db\Query())->select(['campaignid'])->from('vtiger_campaign_records')->where(['crmid' => $record]);
 			$queryGenerator->addNativeCondition(['not in', 'vtiger_campaign.campaignid', $subQuery]);
 		}

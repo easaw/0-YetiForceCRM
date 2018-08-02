@@ -6,28 +6,32 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Calendar_Delete_Action extends Vtiger_Delete_Action
 {
-
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
-		$ajaxDelete = $request->get('ajaxDelete');
-
-		$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
-		$moduleModel = $recordModel->getModule();
-		$recordModel->delete();
-
-		$listViewUrl = $moduleModel->getListViewUrl();
-		if ($ajaxDelete) {
-			$response = new Vtiger_Response();
-			$response->setResult($listViewUrl);
-			return $response;
-		} else {
-			header("Location: $listViewUrl");
+		$this->record->delete();
+		$typeRemove = Events_RecuringEvents_Model::UPDATE_THIS_EVENT;
+		if (!$request->isEmpty('typeRemove')) {
+			$typeRemove = $request->getInteger('typeRemove');
 		}
+		$recurringEvents = Events_RecuringEvents_Model::getInstance();
+		$recurringEvents->typeSaving = $typeRemove;
+		$recurringEvents->recordModel = $this->record;
+		$recurringEvents->templateRecordId = $request->getInteger('record');
+		$recurringEvents->delete();
+		$response = new Vtiger_Response();
+		if ($request->getByType('sourceView') === 'List') {
+			$response->setResult(['notify' => ['type' => 'success', 'text' => \App\Language::translate('LBL_RECORD_HAS_BEEN_DELETED')]]);
+		} else {
+			$response->setResult($this->record->getModule()->getListViewUrl());
+		}
+		$response->emit();
 	}
 }

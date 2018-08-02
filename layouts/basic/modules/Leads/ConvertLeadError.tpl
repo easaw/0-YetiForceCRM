@@ -12,42 +12,34 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Yetiforce: {vtranslate('LBL_ERROR')}</title>
+		<title>Yetiforce: {\App\Language::translate('LBL_ERROR')}</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="SHORTCUT ICON" href="{vimage_path('favicon.ico')}">
+		<link rel="SHORTCUT ICON" href="{\App\Layout::getImagePath('favicon.ico')}">
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<link rel="stylesheet" href="libraries/bootstrap3/css/bootstrap.css" type="text/css" media="screen">
-		<script type="text/javascript" src="libraries/jquery/jquery.min.js"></script>
-		<script type="text/javascript" src="libraries/jquery/jquery-migrate.js"></script>
-		<style>
-			.shadow{
-				-webkit-box-shadow: 3px 3px 14px 0px rgba(50, 50, 50, 0.75);
-				-moz-box-shadow:    3px 3px 14px 0px rgba(50, 50, 50, 0.75);
-				box-shadow:         3px 3px 14px 0px rgba(50, 50, 50, 0.75);
-			}
-		</style>
+		<link rel="stylesheet" href="libraries/bootstrap/dist/css/bootstrap.css" type="text/css" media="screen">
+		<script type="text/javascript" src="libraries/jquery/dist/jquery.min.js"></script>
 	</head>
 	<body class="container">
-		<div style="margin-top: 10px;" class="col-md-12 alert alert-warning shadow">
-			<div style="position: relative;" >
+		<div class="col-md-12 alert alert-warning mt-4 u-box-shadow">
+			<div class="position-relative">
 				<div>
-					<h2 class="alert-heading">{vtranslate('CANNOT_CONVERT', $MODULE)}</h2>
+					<h2 class="alert-heading">{\App\Language::translate('CANNOT_CONVERT', $MODULE)}</h2>
 					<p>
-					<ul> {vtranslate('LBL_FOLLOWING_ARE_POSSIBLE_REASONS', $MODULE)}
-						<li>{vtranslate('LBL_LEADS_FIELD_MAPPING_INCOMPLETE', $MODULE)}</li>
-						<li>{vtranslate('LBL_MANDATORY_FIELDS_ARE_EMPTY', $MODULE)}</li>
+					<ul> {\App\Language::translate('LBL_FOLLOWING_ARE_POSSIBLE_REASONS', $MODULE)}
+						<li>{\App\Language::translate('LBL_LEADS_FIELD_MAPPING_INCOMPLETE', $MODULE)}</li>
+						<li>{\App\Language::translate('LBL_MANDATORY_FIELDS_ARE_EMPTY', $MODULE)}</li>
 							{if $EXCEPTION}
 							<li><strong>{$EXCEPTION}</strong></li>
 								{/if}
 					</ul>
 					</p>
 					<p class="clearfix"></p>
-					<p class="Buttons pull-right">
+					<p class="Buttons float-right">
 						{if $CURRENT_USER->isAdminUser()}
-							<a class="btn btn-info" href='index.php?parent=Settings&module=Leads&view=MappingDetail'>{vtranslate('LBL_LEADS_FIELD_MAPPING', $MODULE)}</a>
+							<a class="btn btn-info" role="button" href='index.php?parent=Settings&module=Leads&view=MappingDetail'>{\App\Language::translate('LBL_LEADS_FIELD_MAPPING', $MODULE)}</a>
 						{/if}
-						<a class="btn btn-warning" href="javascript:window.history.back();">{vtranslate('LBL_GO_BACK')}</a>
-						<a class="btn btn-primary" href="index.php">{vtranslate('LBL_MAIN_PAGE')}</a>
+						<a class="btn btn-warning" role="button" href="javascript:window.history.back();">{\App\Language::translate('LBL_GO_BACK')}</a>
+						<a class="btn btn-primary" role="button" href="index.php">{\App\Language::translate('LBL_MAIN_PAGE')}</a>
 					</p>
 				</div>
 			</div>

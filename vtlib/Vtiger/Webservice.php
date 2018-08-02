@@ -7,51 +7,25 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  * ********************************************************************************** */
+
 namespace vtlib;
 
 /**
- * Provides API to work with vtiger CRM Webservice (available from vtiger 5.1)
- * @package vtlib
+ * Provides API to work with vtiger CRM Webservice (available from vtiger 5.1).
  */
 class Webservice
 {
-
 	/**
-	 * Helper function to log messages
-	 * @param String Message to log
-	 * @param Boolean true appends linebreak, false to avoid it
-	 * @access private
+	 * Initialize webservice for the given module.
+	 *
+	 * @param \vtlib\ModuleBasic $moduleInstance
 	 */
-	static function log($message, $delim = true)
-	{
-		Utils::Log($message, $delim);
-	}
-
-	/**
-	 * Initialize webservice for the given module
-	 * @param Module Instance of the module.
-	 */
-	static function initialize($moduleInstance)
+	public static function initialize(ModuleBasic $moduleInstance)
 	{
 		if ($moduleInstance->isentitytype) {
 			if (function_exists('vtws_addDefaultModuleTypeEntity')) {
 				vtws_addDefaultModuleTypeEntity($moduleInstance->name);
-				self::log("Initializing webservices support ...DONE");
-			}
-		}
-	}
-
-	/**
-	 * Initialize webservice for the given module
-	 * @param Module Instance of the module.
-	 */
-	static function uninitialize($moduleInstance)
-	{
-		if ($moduleInstance->isentitytype) {
-
-			if (function_exists('vtws_deleteWebserviceEntity')) {
-				vtws_deleteWebserviceEntity($moduleInstance->name);
-				self::log("De-Initializing webservices support ...DONE");
+				\App\Log::trace('Initializing webservices support ...DONE', __METHOD__);
 			}
 		}
 	}

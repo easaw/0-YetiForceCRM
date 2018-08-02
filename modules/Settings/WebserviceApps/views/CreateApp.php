@@ -1,28 +1,20 @@
 <?php
 
 /**
- * Create Key
- * @package YetiForce.View
- * @license licenses/License.html
+ * Create Key.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Settings_WebserviceApps_CreateApp_View extends Settings_Vtiger_BasicModal_View
 {
-
-	public function checkPermission(Vtiger_Request $request)
-	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUserModel->isAdminUser()) {
-			throw new \Exception\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
-		}
-	}
-
-	public function getSize(Vtiger_Request $request)
+	public function getSize(\App\Request $request)
 	{
 		return 'modal-lg';
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		parent::preProcess($request);
 		$moduleName = $request->getModule();
@@ -48,13 +40,14 @@ class Settings_WebserviceApps_CreateApp_View extends Settings_Vtiger_BasicModal_
 		parent::postProcess($request);
 	}
 
-	public function getModalScripts(Vtiger_Request $request)
+	public function getModalScripts(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$scripts = array(
+		$scripts = [
 			"modules.Settings.$moduleName.resources.Edit",
-		);
+		];
 		$scriptInstances = $this->checkAndConvertJsScripts($scripts);
+
 		return $scriptInstances;
 	}
 }

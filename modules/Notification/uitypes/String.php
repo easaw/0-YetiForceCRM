@@ -1,17 +1,16 @@
 <?php
 
 /**
- * Uitype model 
- * @package YetiForce.UIType
- * @license licenses/License.html
+ * Uitype model.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Notification_String_UIType extends Vtiger_Base_UIType
 {
-
 	/**
-	 * If edit by ajax
-	 * @return boolean
+	 * {@inheritdoc}
 	 */
 	public function isAjaxEditable()
 	{
@@ -19,15 +18,12 @@ class Notification_String_UIType extends Vtiger_Base_UIType
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param string $value
-	 * @param int $record id record
-	 * @param <Vtiger_Record_Model> $recordInstance 
-	 * @param mixed $rawText
-	 * @return string
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		return $recordInstance->getParseField($this->get('field')->getName());
+		$value = $recordModel->getParseField($this->get('field')->getName());
+
+		return parent::getDisplayValue($value, $record, $recordModel, $rawText, $length);
 	}
 }

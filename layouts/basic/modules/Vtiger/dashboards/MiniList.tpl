@@ -10,30 +10,30 @@
 {strip}
 	{assign var=ACCESSIBLE_USERS value=\App\Fields\Owner::getInstance()->getAccessibleUsers()}
 	{assign var=ACCESSIBLE_GROUPS value=\App\Fields\Owner::getInstance()->getAccessibleGroups()}
-	{assign var=CURRENTUSERID value=$CURRENTUSER->getId()}
-	<div class="dashboardWidgetHeader">
-		<div class="row">
-			<div class="col-md-8">
-				<div class="dashboardTitle" title="{$WIDGET->getTitle()}"><strong>{$WIDGET->getTitle()}</strong></div>
-			</div>
-			<div class="col-md-4">
-				<div class="box pull-right">
-					{include file="dashboards/DashboardHeaderIcons.tpl"|@vtemplate_path:$MODULE_NAME}
-				</div>
-			</div>
+	{assign var=CURRENTUSERID value=$USER_MODEL->getId()}
+	<div class="tpl-dashboards-Minilist dashboardWidgetHeader">
+		<div class="d-flex flex-row flex-nowrap no-gutters justify-content-between">
+			{include file=\App\Layout::getTemplatePath('dashboards/WidgetHeaderTitle.tpl', $MODULE_NAME)}
+			{include file=\App\Layout::getTemplatePath('dashboards/WidgetHeaderButtons.tpl', $MODULE_NAME)}
 		</div>
-		<hr class="widgetHr"/>
+		<hr class="widgetHr" />
 		<div class="row" >
-			<div class="col-sm-6 pull-right">
-				{include file="dashboards/SelectAccessibleTemplate.tpl"|@vtemplate_path:$MODULE_NAME}
+			<div class="col-sm-6">
+				{if $FILTER_FIELD}
+					<div class="widgetFilterByField">
+						{include file=\App\Layout::getTemplatePath($FILTER_FIELD->getUITypeModel()->getListSearchTemplateName(), $BASE_MODULE) MODULE=$BASE_MODULE FIELD_MODEL=$FILTER_FIELD SEARCH_INFO=[] USER_MODEL=$USER_MODEL}
+					</div>
+				{/if}
+			</div>
+			<div class="col-sm-6">
+				{include file=\App\Layout::getTemplatePath('dashboards/SelectAccessibleTemplate.tpl', $MODULE_NAME)}
 			</div>
 		</div>
 	</div>
-
 	<div class="dashboardWidgetContent">
-		{include file="dashboards/MiniListContents.tpl"|@vtemplate_path:$MODULE_NAME}
+		{include file=\App\Layout::getTemplatePath('dashboards/MiniListContents.tpl', $MODULE_NAME)}
 	</div>
 	<div class="dashboardWidgetFooter">
-		{include file="dashboards/MiniListFooter.tpl"|@vtemplate_path:$MODULE_NAME}
+		{include file=\App\Layout::getTemplatePath('dashboards/MiniListFooter.tpl', $MODULE_NAME)}
 	</div>
 {/strip}

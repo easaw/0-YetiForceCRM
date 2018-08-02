@@ -8,31 +8,27 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-abstract class Vtiger_Header_View extends Vtiger_View_Controller
+abstract class Vtiger_Header_View extends \App\Controller\View
 {
-
 	public function __construct()
 	{
 		parent::__construct();
 	}
-	//Note : To get the right hook for immediate parent in PHP,
-	// specially in case of deep hierarchy
-	/* function preProcessParentTplName(Vtiger_Request $request) {
-	  return parent::preProcessTplName($request);
-	  } */
 
 	/**
-	 * Function to determine file existence in relocated module folder (under vtiger6)
-	 * @param String $fileuri
-	 * @return Boolean
+	 * Function to determine file existence in relocated module folder (under vtiger6).
+	 *
+	 * @param string $fileuri
+	 *
+	 * @return bool
 	 *
 	 * Utility function to manage the backward compatible file load
-	 * which are registered for 5.x modules (and now provided for 6.x as well).
+	 * which are registered for 5.x modules (and now provided for 6.x as well)
 	 */
 	protected function checkFileUriInRelocatedMouldesFolder($fileuri)
 	{
 		if (strpos($fileuri, '?') !== false) {
-			list ($filename, $query) = explode('?', $fileuri);
+			list($filename) = explode('?', $fileuri);
 		} else {
 			$filename = $fileuri;
 		}
@@ -40,60 +36,60 @@ abstract class Vtiger_Header_View extends Vtiger_View_Controller
 		if (strpos($filename, 'modules') === 0) {
 			$filename = $filename;
 		}
-
-		return file_exists($filename);
+		return file_exists(ROOT_DIRECTORY . DIRECTORY_SEPARATOR . 'public_html' . DIRECTORY_SEPARATOR . $filename);
 	}
 
 	/**
-	 * Function to get the list of Header Links
+	 * Function to get the list of Header Links.
+	 *
 	 * @return <Array> - List of Vtiger_Link_Model instances
 	 */
-	public function getMenuHeaderLinks(Vtiger_Request $request)
+	public function getMenuHeaderLinks(\App\Request $request)
 	{
 		$userModel = Users_Record_Model::getCurrentUserModel();
 		$headerLinks = [];
-		if ($userModel->isAdminUser()) {
-			if ($request->get('parent') != 'Settings') {
-				$headerLinks[] = [
-					'linktype' => 'HEADERLINK',
-					'linklabel' => 'LBL_SYSTEM_SETTINGS',
-					'linkurl' => 'index.php?module=Vtiger&parent=Settings&view=Index',
-					'glyphicon' => 'glyphicon glyphicon-cog',
-				];
-			} else {
-				$headerLinks[] = [
-					'linktype' => 'HEADERLINK',
-					'linklabel' => 'LBL_USER_PANEL',
-					'linkurl' => 'index.php',
-					'glyphicon' => 'glyphicon glyphicon-user',
-				];
-			}
+		if (Users_Module_Model::getSwitchUsers()) {
+			$headerLinks[] = [
+				'linktype' => 'HEADERLINK',
+				'linklabel' => 'SwitchUsers',
+				'linkurl' => '',
+				'icon' => 'fas fa-exchange-alt fa-fw',
+				'nocaret' => true,
+				'linkdata' => ['url' => $userModel->getSwitchUsersUrl()],
+				'linkclass' => 'showModal',
+			];
 		}
 		if (AppConfig::security('SHOW_MY_PREFERENCES')) {
 			$headerLinks[] = [
 				'linktype' => 'HEADERLINK',
 				'linklabel' => 'LBL_MY_PREFERENCES',
 				'linkurl' => $userModel->getPreferenceDetailViewUrl(),
-				'glyphicon' => 'glyphicon glyphicon-tasks',
+				'icon' => 'fas fa-user fa-fw',
 			];
 		}
-		if (Users_Module_Model::getSwitchUsers()) {
-			$headerLinks[] = [
-				'linktype' => 'HEADERLINK',
-				'linklabel' => 'SwitchUsers',
-				'linkurl' => '',
-				'glyphicon' => 'glyphicon glyphicon-transfer',
-				'nocaret' => true,
-				'linkdata' => ['url' => $userModel->getSwitchUsersUrl()],
-				'linkclass' => 'showModal',
-			];
+		if ($userModel->isAdminUser()) {
+			if ($request->getByType('parent', 2) !== 'Settings') {
+				$headerLinks[] = [
+					'linktype' => 'HEADERLINK',
+					'linklabel' => 'LBL_SYSTEM_SETTINGS',
+					'linkurl' => 'index.php?module=Vtiger&parent=Settings&view=Index',
+					'icon' => 'fas fa-cog fa-fw',
+				];
+			} else {
+				$headerLinks[] = [
+					'linktype' => 'HEADERLINK',
+					'linklabel' => 'LBL_USER_PANEL',
+					'linkurl' => 'index.php',
+					'icon' => 'fas fa-user-cog fa-fw',
+				];
+			}
 		}
 		$headerLinks[] = [
 			'linktype' => 'HEADERLINK',
 			'linklabel' => 'LBL_SIGN_OUT',
 			'linkurl' => 'index.php?module=Users&parent=Settings&action=Logout',
-			'glyphicon' => 'glyphicon glyphicon-off',
-			'linkclass' => 'signOutButtonBlue'
+			'icon' => 'fas fa-power-off fa-fw',
+			'linkclass' => 'btn-danger',
 		];
 		$headerLinkInstances = [];
 		foreach ($headerLinks as $headerLink) {
@@ -115,17 +111,22 @@ abstract class Vtiger_Header_View extends Vtiger_View_Controller
 	}
 
 	/**
-	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
-	 * @return <Array> - List of Vtiger_JsScript_Model instances
+	 * Function to get the list of Script models to be included.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @return Vtiger_JsScript_Model[]
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
-		$headerScripts = Vtiger_Link_Model::getAllByType(vtlib\Link::IGNORE_MODULE, array('HEADERSCRIPT'));
+		$headerScripts = Vtiger_Link_Model::getAllByType(vtlib\Link::IGNORE_MODULE, ['HEADERSCRIPT']);
 		foreach ($headerScripts as $headerType => $headerScripts) {
 			foreach ($headerScripts as $headerScript) {
 				if ($this->checkFileUriInRelocatedMouldesFolder($headerScript->linkurl)) {
+					if (!IS_PUBLIC_DIR) {
+						$headerScript->linkurl = 'public_html/' . $headerScript->linkurl;
+					}
 					$headerScriptInstances[] = Vtiger_JsScript_Model::getInstanceFromLinkObject($headerScript);
 				}
 			}
@@ -134,17 +135,15 @@ abstract class Vtiger_Header_View extends Vtiger_View_Controller
 	}
 
 	/**
-	 * Function to get the list of Css models to be included
-	 * @param Vtiger_Request $request
-	 * @return <Array> - List of Vtiger_CssScript_Model instances
+	 * Function to get the list of Css models to be included.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @return Vtiger_CssScript_Model[]
 	 */
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
-		$baseStyleCssPath = Vtiger_Theme::getBaseStylePath();
-		$baseStyleCssPath = $this->checkAndConvertCssStyles(['~' . $baseStyleCssPath]);
-		$headerCssInstances = array_merge($headerCssInstances, $baseStyleCssPath);
-
 		$headerCss = Vtiger_Link_Model::getAllByType(vtlib\Link::IGNORE_MODULE, ['HEADERCSS']);
 		$selectedThemeCssPath = Vtiger_Theme::getThemeStyle();
 		$cssScriptModel = new Vtiger_CssScript_Model();

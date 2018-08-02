@@ -1,8 +1,14 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
-class OSSTimeControl_Calendar_Action extends Vtiger_Action_Controller
+/**
+ * OSSPasswords calendar action class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+class OSSTimeControl_Calendar_Action extends \App\Controller\Action
 {
+	use \App\Controller\ExposeMethod;
 
 	public function __construct()
 	{
@@ -11,33 +17,22 @@ class OSSTimeControl_Calendar_Action extends Vtiger_Action_Controller
 		$this->exposeMethod('updateEvent');
 	}
 
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->getMode();
-		if (!empty($mode)) {
-			echo $this->invokeExposedMethod($mode, $request);
-		}
-	}
-
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
 		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function getEvent(Vtiger_Request $request)
+	public function getEvent(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$id = $request->get('id');
-
 		$record = OSSTimeControl_Calendar_Model::getInstance();
-		$record->set('user', $request->get('user'));
-		$record->set('types', $request->get('types'));
-		if ($request->get('start') && $request->get('end')) {
-			$record->set('start', $request->get('start'));
-			$record->set('end', $request->get('end'));
+		$record->set('user', $request->getArray('user'));
+		$record->set('types', $request->getArray('types'));
+		if ($request->has('start') && $request->has('end')) {
+			$record->set('start', $request->getByType('start', 'DateInUserFormat'));
+			$record->set('end', $request->getByType('end', 'DateInUserFormat'));
 		}
 		$entity = $record->getEntity();
 
@@ -46,34 +41,32 @@ class OSSTimeControl_Calendar_Action extends Vtiger_Action_Controller
 		$response->emit();
 	}
 
-	public function updateEvent(Vtiger_Request $request)
+	public function updateEvent(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$recordId = $request->get('id');
+		$recordId = $request->getInteger('id');
 		$date_start = date('Y-m-d', strtotime($request->get('start')));
 		$time_start = date('H:i:s', strtotime($request->get('start')));
 		$succes = false;
-		if (isPermitted($moduleName, 'EditView', $recordId) === 'no') {
+		if (!\App\Privilege::isPermitted($moduleName, 'EditView', $recordId)) {
 			$succes = false;
 		} else {
-			if (!empty($recordId)) {
-				try {
-					$delta = $request->get('delta');
-					$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
-					$recordData = $recordModel->entity->column_fields;
-					$end = self::changeDateTime($recordData['due_date'] . ' ' . $recordData['time_end'], $delta);
-					$due_date = $end['date'];
-					$time_end = $end['time'];
-					$recordModel->set('id', $recordId);
-					$recordModel->set('date_start', $date_start);
-					$recordModel->set('time_start', $time_start);
-					$recordModel->set('due_date', $due_date);
-					$recordModel->set('time_end', $time_end);
-					$recordModel->save();
-					$succes = true;
-				} catch (Exception $e) {
-					$succes = false;
-				}
+			try {
+				$delta = $request->getArray('delta');
+				$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
+				$recordData = $recordModel->entity->column_fields;
+				$end = self::changeDateTime($recordData['due_date'] . ' ' . $recordData['time_end'], $delta);
+				$due_date = $end['date'];
+				$time_end = $end['time'];
+				$recordModel->setId($recordId);
+				$recordModel->set('date_start', $date_start);
+				$recordModel->set('time_start', $time_start);
+				$recordModel->set('due_date', $due_date);
+				$recordModel->set('time_end', $time_end);
+				$recordModel->save();
+				$succes = true;
+			} catch (Exception $e) {
+				$succes = false;
 			}
 		}
 		$response = new Vtiger_Response();

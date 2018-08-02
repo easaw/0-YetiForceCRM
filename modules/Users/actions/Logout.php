@@ -8,22 +8,27 @@
  * All Rights Reserved.
  * ********************************************************************************** */
 
-class Users_Logout_Action extends Vtiger_Action_Controller
+class Users_Logout_Action extends \App\Controller\Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		return true;
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$eventHandler = new App\EventHandler();
 		$eventHandler->trigger('UserLogoutBefore');
 		if (AppConfig::main('session_regenerate_id')) {
-			Vtiger_Session::regenerateId(true); // to overcome session id reuse.
+			App\Session::regenerateId(true); // to overcome session id reuse.
 		}
-		Vtiger_Session::destroy();
+		App\Session::destroy();
 
 		//Track the logout History
 		$moduleName = $request->getModule();
@@ -31,5 +36,13 @@ class Users_Logout_Action extends Vtiger_Action_Controller
 		$moduleModel->saveLogoutHistory();
 		//End
 		header('Location: index.php');
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function validateRequest(\App\Request $request)
+	{
+		$request->validateReadAccess();
 	}
 }

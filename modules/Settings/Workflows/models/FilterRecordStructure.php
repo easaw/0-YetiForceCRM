@@ -10,9 +10,9 @@
 
 class Settings_Workflows_FilterRecordStructure_Model extends Settings_Workflows_RecordStructure_Model
 {
-
 	/**
-	 * Function to get the values in stuctured format
+	 * Function to get the values in stuctured format.
+	 *
 	 * @return <array> - values in structure array('block'=>array(fieldinfo));
 	 */
 	public function getStructure()
@@ -23,18 +23,18 @@ class Settings_Workflows_FilterRecordStructure_Model extends Settings_Workflows_
 		$recordModel = $this->getWorkFlowModel();
 		$recordId = $recordModel->getId();
 		$values = [];
-		$baseModuleModel = $moduleModel = $this->getModule();
+		$moduleModel = $this->getModule();
 		$blockModelList = $moduleModel->getBlocks();
 		foreach ($blockModelList as $blockLabel => $blockModel) {
 			$fieldModelList = $blockModel->getFields();
 			if (!empty($fieldModelList)) {
-				$values[$blockLabel] = array();
+				$values[$blockLabel] = [];
 				foreach ($fieldModelList as $fieldName => $fieldModel) {
 					if ($fieldModel->isViewable()) {
-						if (in_array($moduleModel->getName(), array('Calendar', 'Events')) && $fieldModel->getDisplayType() == 3) {
+						if (in_array($moduleModel->getName(), ['Calendar', 'Events']) && $fieldModel->getDisplayType() == 3) {
 							/* Restricting the following fields(Event module fields) for "Calendar" module
 							 * time_start, time_end, eventstatus, activitytype,	visibility, duration_hours,
-							 * duration_minutes, reminder_time, recurringtype, notime
+							 * duration_minutes, reminder_time, notime
 							 */
 							continue;
 						}
@@ -54,20 +54,21 @@ class Settings_Workflows_FilterRecordStructure_Model extends Settings_Workflows_
 		}
 		if ($moduleModel->isCommentEnabled()) {
 			$commentFieldModel = Settings_Workflows_Field_Model::getCommentFieldForFilterConditions($moduleModel);
-			$commentFieldModelsList = array($commentFieldModel->getName() => $commentFieldModel);
-			$labelName = vtranslate($moduleModel->getSingularLabelKey(), $moduleModel->getName()) . ' ' . vtranslate('LBL_COMMENTS', $moduleModel->getName());
+			$commentFieldModelsList = [$commentFieldModel->getName() => $commentFieldModel];
+			$labelName = \App\Language::translate($moduleModel->getSingularLabelKey(), $moduleModel->getName()) . ' ' . \App\Language::translate('LBL_COMMENTS', $moduleModel->getName());
 			foreach ($commentFieldModelsList as $commentFieldName => $commentFieldModel) {
 				$commentFieldModel->set('workflow_columnname', $commentFieldName);
 				$values[$labelName][$commentFieldName] = $commentFieldModel;
 			}
 		}
 		//All the reference fields should also be sent
-		$fields = $moduleModel->getFieldsByType(array('reference', 'owner', 'multireference'));
+		$fields = $moduleModel->getFieldsByType(['reference', 'owner', 'multireference']);
 		foreach ($fields as $parentFieldName => $field) {
 			$type = $field->getFieldDataType();
 			$referenceModules = $field->getReferenceList();
-			if ($type == 'owner')
-				$referenceModules = array('Users');
+			if ($type == 'owner') {
+				$referenceModules = ['Users'];
+			}
 			foreach ($referenceModules as $refModule) {
 				$moduleModel = Vtiger_Module_Model::getInstance($refModule);
 				$blockModelList = $moduleModel->getBlocks();
@@ -90,10 +91,11 @@ class Settings_Workflows_FilterRecordStructure_Model extends Settings_Workflows_
 					}
 				}
 
-				$commentFieldModelsList = array();
+				$commentFieldModelsList = [];
 			}
 		}
 		$this->structuredValues = $values;
+
 		return $values;
 	}
 }

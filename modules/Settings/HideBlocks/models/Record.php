@@ -1,19 +1,16 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings HideBlocks record model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 {
-
 	/**
-	 * Function to get Id of this record instance
+	 * Function to get Id of this record instance.
+	 *
 	 * @return <Integer> Id
 	 */
 	public function getId()
@@ -22,7 +19,8 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Name of this record instance
+	 * Function to get Name of this record instance.
+	 *
 	 * @return string Name
 	 */
 	public function getName()
@@ -31,7 +29,8 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get module instance of this record
+	 * Function to get module instance of this record.
+	 *
 	 * @return <type>
 	 */
 	public function getModule()
@@ -40,7 +39,8 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Detail view url
+	 * Function to get Detail view url.
+	 *
 	 * @return string Url
 	 */
 	public function getDetailViewUrl()
@@ -49,25 +49,28 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Edit view url
+	 * Function to get Edit view url.
+	 *
 	 * @return string Url
 	 */
 	public function getEditViewUrl()
 	{
-		return "index.php?module=HideBlocks&parent=Settings&view=Edit&record=" . $this->getId();
+		return 'index.php?module=HideBlocks&parent=Settings&view=Edit&record=' . $this->getId();
 	}
 
 	/**
-	 * Function to get Delete url
+	 * Function to get Delete url.
+	 *
 	 * @return string Url
 	 */
 	public function getDeleteUrl()
 	{
-		return "index.php?module=HideBlocks&parent=Settings&action=Delete&record=" . $this->getId();
+		return 'index.php?module=HideBlocks&parent=Settings&action=Delete&record=' . $this->getId();
 	}
 
 	/**
-	 * Function to get record links
+	 * Function to get record links.
+	 *
 	 * @return <Array> list of link models <Vtiger_Link_Model>
 	 */
 	public function getRecordLinks()
@@ -78,53 +81,53 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 				'linktype' => 'LISTVIEWRECORD',
 				'linklabel' => 'LBL_EDIT',
 				'linkurl' => $this->getEditViewUrl(),
-				'linkicon' => 'glyphicon glyphicon-pencil'
+				'linkicon' => 'fas fa-edit',
 			],
 			[
 				'linktype' => 'LISTVIEWRECORD',
 				'linklabel' => 'LBL_DELETE',
 				'linkurl' => $this->getDeleteUrl(),
-				'linkicon' => 'glyphicon glyphicon-trash'
-			]
+				'linkicon' => 'fas fa-trash-alt',
+			],
 		];
 		foreach ($recordLinks as $recordLink) {
 			$links[] = Vtiger_Link_Model::getInstanceFromValues($recordLink);
 		}
-
 		return $links;
 	}
 
 	/**
-	 * Function to delete this record
+	 * Function to delete this record.
 	 */
 	public function delete()
 	{
 		$recordId = $this->getId();
 		\App\Db::getInstance()->createCommand()->delete('vtiger_blocks_hide', ['id' => $recordId])->execute();
+
 		return true;
 	}
 
 	/**
-	 * Function to save the record
+	 * Function to save the record.
 	 */
 	public function save()
 	{
 		$db = \App\Db::getInstance();
 		$conditions = $this->get('conditions');
-		$wfCondition = array();
+		$wfCondition = [];
 
 		if (!empty($conditions)) {
 			foreach ($conditions as $index => $condition) {
 				$columns = $condition['columns'];
 				if ($index == '1' && empty($columns)) {
-					$wfCondition[] = array('fieldname' => '', 'operation' => '', 'value' => '', 'valuetype' => '',
-						'joincondition' => '', 'groupid' => '0');
+					$wfCondition[] = ['fieldname' => '', 'operation' => '', 'value' => '', 'valuetype' => '',
+						'joincondition' => '', 'groupid' => '0', ];
 				}
 				if (!empty($columns) && is_array($columns)) {
 					foreach ($columns as $column) {
-						$wfCondition[] = array('fieldname' => $column['columnname'], 'operation' => $column['comparator'],
+						$wfCondition[] = ['fieldname' => $column['columnname'], 'operation' => $column['comparator'],
 							'value' => $column['value'], 'valuetype' => $column['valuetype'], 'joincondition' => $column['column_condition'],
-							'groupjoin' => $condition['condition'], 'groupid' => $column['groupid']);
+							'groupjoin' => $condition['condition'], 'groupid' => $column['groupid'], ];
 					}
 				}
 			}
@@ -136,7 +139,7 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 			'blockid' => $this->get('blockid'),
 			'conditions' => $conditions,
 			'enabled' => ($this->get('enabled') == 'true') ? 1 : 0,
-			'view' => $views
+			'view' => $views,
 		];
 		if ($this->getId()) {
 			$db->createCommand()->update('vtiger_blocks_hide', $params, ['id' => $this->getId()])->execute();
@@ -146,12 +149,14 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get record instance by using id and moduleName
-	 * @param int $recordId
+	 * Function to get record instance by using id and moduleName.
+	 *
+	 * @param int    $recordId
 	 * @param string $qualifiedModuleName
+	 *
 	 * @return Settings_HideBlocks_Record_Model RecordModel
 	 */
-	static public function getInstanceById($recordId, $qualifiedModuleName)
+	public static function getInstanceById($recordId, $qualifiedModuleName)
 	{
 		$rowData = [];
 		if (!empty($recordId)) {
@@ -164,21 +169,25 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 			if ($rowData) {
 				$recordModel->setData($rowData);
 			}
+
 			return $recordModel;
 		}
 		return false;
 	}
 
-	static public function getCleanInstance($qualifiedModuleName)
+	public static function getCleanInstance($qualifiedModuleName)
 	{
 		$recordModelClass = Vtiger_Loader::getComponentClassName('Model', 'Record', $qualifiedModuleName);
 		$recordModel = new $recordModelClass();
+
 		return $recordModel;
 	}
 
 	/**
-	 * Function to get display value of every field from this record
+	 * Function to get display value of every field from this record.
+	 *
 	 * @param string $fieldName
+	 *
 	 * @return string
 	 */
 	public function getDisplayValue($fieldName)
@@ -186,21 +195,21 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 		$fieldValue = $this->get($fieldName);
 
 		switch ($fieldName) {
-			case 'name' :
-				$fieldValue = vtranslate($fieldValue, $fieldValue);
+			case 'name':
+				$fieldValue = \App\Language::translate($fieldValue, $fieldValue);
 				break;
-			case 'blocklabel' :
-				$fieldValue = vtranslate($fieldValue, $this->get('name'));
+			case 'blocklabel':
+				$fieldValue = \App\Language::translate($fieldValue, $this->get('name'));
 				break;
-			case 'enabled' :
-				$fieldValue = vtranslate($this->get('enabled') == 1 ? 'LBL_YES' : 'LBL_NO', $this->get('name'));
+			case 'enabled':
+				$fieldValue = \App\Language::translate($this->get('enabled') == 1 ? 'LBL_YES' : 'LBL_NO', $this->get('name'));
 				break;
-			case 'view' :
+			case 'view':
 				$fieldValue = '';
 				if ($this->get('view') != '') {
 					$selectedViews = explode(',', $this->get('view'));
 					foreach ($selectedViews as $view) {
-						$views[] = vtranslate('LBL_VIEW_' . strtoupper($view), $this->get('name'));
+						$views[] = \App\Language::translate('LBL_VIEW_' . strtoupper($view), $this->get('name'));
 					}
 					$fieldValue = implode($views, ',');
 				}
@@ -209,11 +218,11 @@ class Settings_HideBlocks_Record_Model extends Settings_Vtiger_Record_Model
 		return $fieldValue;
 	}
 
-	public function getModuleInstanceByBlockId($blockId)
+	public static function getModuleInstanceByBlockId($blockId)
 	{
 		$tabid = (new \App\Db\Query())->select('tabid')
-				->from('vtiger_blocks')
-				->where(['blockid' => $blockId])->scalar();
+			->from('vtiger_blocks')
+			->where(['blockid' => $blockId])->scalar();
 		if (!empty($tabid)) {
 			return Vtiger_Module_Model::getInstance($tabid);
 		}

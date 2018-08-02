@@ -1,19 +1,20 @@
 <?php
 
 /**
- * Edit view class for MailSmtp
- * @package YetiForce.Settings.View
- * @license licenses/License.html
+ * Edit view class for MailSmtp.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Adrian Koń <a.kon@yetiforce.com>
  */
 class Settings_MailSmtp_Edit_View extends Settings_Vtiger_Index_View
 {
-
 	/**
-	 * Function proccess
-	 * @param Vtiger_Request $request
+	 * Function proccess.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule(false);
 		$viewer = $this->getViewer($request);
@@ -30,11 +31,13 @@ class Settings_MailSmtp_Edit_View extends Settings_Vtiger_Index_View
 	}
 
 	/**
-	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * Function to get the list of Script models to be included.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return array - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
@@ -43,6 +46,7 @@ class Settings_MailSmtp_Edit_View extends Settings_Vtiger_Index_View
 		];
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 }

@@ -7,17 +7,16 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  * *********************************************************************************** */
-vimport('~libraries/RSSFeeds/Feed.php');
 
 // for rss caching
 Feed::$cacheDir = 'cache/rss_cache';
 
 class Rss_Record_Model extends Vtiger_Record_Model
 {
-
 	/**
-	 * Function to get the id of the Record
-	 * @return <Number> - Report Id
+	 * Function to get the id of the Record.
+	 *
+	 * @return int - Report Id
 	 */
 	public function getId()
 	{
@@ -25,9 +24,11 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to set the id of the Record
-	 * @param <type> $value - id value
-	 * @return <Object> - current instance
+	 * Function to set the id of the Record.
+	 *
+	 * @param int $value - id value
+	 *
+	 * @return Rss_Record_Model - current instance
 	 */
 	public function setId($value)
 	{
@@ -35,7 +36,8 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Fuction to get the Name of the Record
+	 * Fuction to get the Name of the Record.
+	 *
 	 * @return string
 	 */
 	public function getName()
@@ -44,7 +46,8 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Rss fetched object
+	 * Function to get Rss fetched object.
+	 *
 	 * @return <object> - Rss Object
 	 */
 	public function getRssObject()
@@ -53,7 +56,8 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to set Rss Object
+	 * Function to set Rss Object.
+	 *
 	 * @param <object> $rss - rss fetched object
 	 */
 	public function setRssObject($rss)
@@ -62,7 +66,8 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to set Rss values
+	 * Function to set Rss values.
+	 *
 	 * @param <object> $rss - Rss fetched object
 	 */
 	public function setRssValues($rss)
@@ -72,7 +77,8 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to save the record
+	 * Function to save the record.
+	 *
 	 * @param string $url
 	 */
 	public function saveRecord($url)
@@ -87,6 +93,7 @@ class Rss_Record_Model extends Vtiger_Record_Model
 		if ($insert) {
 			$id = $db->getLastInsertID('vtiger_rss_rssid_seq');
 			$this->setId($id);
+
 			return $id;
 		} else {
 			return false;
@@ -94,41 +101,35 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to delete a record
+	 * Function to delete a record.
 	 */
 	public function delete()
 	{
-		$db = PearDatabase::getInstance();
-		$recordId = $this->getId();
-
-		$sql = 'DELETE FROM vtiger_rss where rssid = ?';
-		$db->pquery($sql, array($recordId));
+		\App\Db::getInstance()->createCommand()->delete('vtiger_rss', ['rssid' => $this->getId()])->execute();
 	}
 
 	/**
-	 * Function to make a record default for an rss record
+	 * Function to make a record default for an rss record.
 	 */
 	public function makeDefault()
 	{
-		$db = PearDatabase::getInstance();
 		$recordId = $this->getId();
-
-		$sql = 'UPDATE vtiger_rss set starred = 0';
-		$db->pquery($sql, array());
-
-		$sql = 'UPDATE vtiger_rss set starred = 1 where rssid = ?';
-		$db->pquery($sql, array($recordId));
+		$dbCommand = \App\Db::getInstance()->createCommand();
+		$dbCommand->update('vtiger_rss', ['starred' => 0])->execute();
+		$dbCommand->update('vtiger_rss', ['starred' => 1], ['rssid' => $recordId])->execute();
 	}
 
 	/**
-	 * Function to get record instance by using id and moduleName
-	 * @param integer $recordId
+	 * Function to get record instance by using id and moduleName.
+	 *
+	 * @param int    $recordId
 	 * @param string $qualifiedModuleName
+	 *
 	 * @return Rss_Record_Model RecordModel
 	 */
-	static public function getInstanceById($recordId, $qualifiedModuleName = null)
+	public static function getInstanceById($recordId, $qualifiedModuleName = null)
 	{
-		$rowData = (new \App\Db\Query)->from('vtiger_rss')->where(['rssid' => $recordId])->one();
+		$rowData = (new \App\Db\Query())->from('vtiger_rss')->where(['rssid' => $recordId])->one();
 
 		if ($rowData) {
 			$recordModel = new self();
@@ -141,14 +142,15 @@ class Rss_Record_Model extends Vtiger_Record_Model
 
 			return $recordModel;
 		}
-
 		return false;
 	}
 
 	/**
-	 * Function to set the sender address to the record
-	 * @param <array> $rssItems
-	 * @return <array> $items
+	 * Function to set the sender address to the record.
+	 *
+	 * @param array $rssItems
+	 *
+	 * @return array $items
 	 */
 	public function setSenderInfo(&$rssItems)
 	{
@@ -158,20 +160,25 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get clean record instance by using moduleName
+	 * Function to get clean record instance by using moduleName.
+	 *
 	 * @param string $qualifiedModuleName
-	 * @return <Settings_SMSNotifier_Record_Model>
+	 *
+	 * @return Rss_Record_Model
 	 */
-	static public function getCleanInstance($qualifiedModuleName)
+	public static function getCleanInstance($qualifiedModuleName)
 	{
 		$recordModel = new self();
+
 		return $recordModel->setModule($qualifiedModuleName);
 	}
 
 	/**
-	 * Function to validate the rss url
+	 * Function to validate the rss url.
+	 *
 	 * @param string $url
-	 * @return <boolean> 
+	 *
+	 * @return bool
 	 */
 	public function validateRssUrl($url)
 	{
@@ -179,6 +186,7 @@ class Rss_Record_Model extends Vtiger_Record_Model
 			$rss = Feed::loadRss($url);
 			if ($rss) {
 				$this->setRssValues($rss);
+
 				return true;
 			} else {
 				return false;
@@ -189,21 +197,16 @@ class Rss_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the default rss
+	 * Function to get the default rss.
 	 */
 	public function getDefaultRss()
 	{
-		$db = PearDatabase::getInstance();
-
-		$result = $db->pquery('SELECT rssid FROM vtiger_rss where starred = 1', array());
-		$recordId = $db->query_result($result, '0', 'rssid');
+		$recordId = (new \App\Db\Query())->select(['rssid'])->from('vtiger_rss')->where(['starred' => 1])->scalar();
 		if ($recordId) {
 			$this->setId($recordId);
 		} else {
-			$result = $db->pquery('SELECT rssid FROM vtiger_rss', array());
-			$recordId = $db->query_result($result, '0', 'rssid');
+			$recordId = (new \App\Db\Query())->select(['rssid'])->from('vtiger_rss')->scalar();
 			$this->setId($recordId);
 		}
 	}
-
 }

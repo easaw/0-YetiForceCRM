@@ -11,8 +11,7 @@
 
 class Settings_Workflows_EditTask_View extends Settings_Vtiger_Index_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -37,7 +36,7 @@ class Settings_Workflows_EditTask_View extends Settings_Vtiger_Index_View
 		$viewer->assign('TASK_TEMPLATE_PATH', $taskTypeModel->getTemplatePath());
 		$moduleModel = $workflowModel->getModule();
 		$sourceModule = $moduleModel->getName();
-		$dateTimeFields = $moduleModel->getFieldsByType(array('date', 'datetime'));
+		$dateTimeFields = $moduleModel->getFieldsByType(['date', 'datetime']);
 
 		$taskObject = $taskModel->getTaskObject();
 		$taskType = get_class($taskObject);
@@ -70,8 +69,8 @@ class Settings_Workflows_EditTask_View extends Settings_Vtiger_Index_View
 			}
 		}
 		if ($taskType === 'VTUpdateFieldsTask') {
-			if ($sourceModule == "Documents") {
-				$restrictFields = array('folderid', 'filename', 'filelocationtype');
+			if ($sourceModule === 'Documents') {
+				$restrictFields = ['folderid', 'filename', 'filelocationtype'];
 				$viewer->assign('RESTRICTFIELDS', $restrictFields);
 			}
 		}
@@ -85,28 +84,23 @@ class Settings_Workflows_EditTask_View extends Settings_Vtiger_Index_View
 		$viewer->assign('TASK_MODEL', $taskModel);
 		$viewer->assign('CURRENTDATE', date('Y-n-j'));
 		// Adding option Line Item block for Individual tax mode
-		$individualTaxBlockLabel = vtranslate("LBL_LINEITEM_BLOCK_GROUP", $qualifiedModuleName);
-		$individualTaxBlockValue = $viewer->view('LineItemsGroupTemplate.tpl', $qualifiedModuleName, $fetch = true);
+		$individualTaxBlockLabel = \App\Language::translate('LBL_LINEITEM_BLOCK_GROUP', $qualifiedModuleName);
+		$individualTaxBlockValue = $viewer->view('LineItemsGroupTemplate.tpl', $qualifiedModuleName, true);
 
 		// Adding option Line Item block for group tax mode
-		$groupTaxBlockLabel = vtranslate("LBL_LINEITEM_BLOCK_INDIVIDUAL", $qualifiedModuleName);
-		$groupTaxBlockValue = $viewer->view('LineItemsIndividualTemplate.tpl', $qualifiedModuleName, $fetch = true);
+		$groupTaxBlockLabel = \App\Language::translate('LBL_LINEITEM_BLOCK_INDIVIDUAL', $qualifiedModuleName);
+		$groupTaxBlockValue = $viewer->view('LineItemsIndividualTemplate.tpl', $qualifiedModuleName, true);
 
-		$templateVariables = array(
+		$templateVariables = [
 			$individualTaxBlockValue => $individualTaxBlockLabel,
-			$groupTaxBlockValue => $groupTaxBlockLabel
-		);
+			$groupTaxBlockValue => $groupTaxBlockLabel,
+		];
 		$viewer->assign('TEMPLATE_VARIABLES', $templateVariables);
 		$viewer->assign('TASK_OBJECT', $taskObject);
 		$viewer->assign('FIELD_EXPRESSIONS', Settings_Workflows_Module_Model::getExpressions());
-		$repeat_date = $taskModel->getTaskObject()->calendar_repeat_limit_date;
-		if (!empty($repeat_date)) {
-			$repeat_date = Vtiger_Date_UIType::getDisplayDateValue($repeat_date);
-		}
-		$viewer->assign('REPEAT_DATE', $repeat_date);
-		$userModel = Users_Record_Model::getCurrentUserModel();
-		$viewer->assign('dateFormat', $userModel->get('date_format'));
-		$viewer->assign('timeFormat', $userModel->get('hour_format'));
+		$userModel = \App\User::getCurrentUserModel();
+		$viewer->assign('dateFormat', $userModel->getDetail('date_format'));
+		$viewer->assign('timeFormat', $userModel->getDetail('hour_format'));
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
 		$emailFieldoptions = [];
@@ -117,7 +111,7 @@ class Settings_Workflows_EditTask_View extends Settings_Vtiger_Index_View
 				$emailFieldoptions[$blockName][$field['var_value']] = \App\Language::translate($field['label'], $sourceModule);
 			}
 		}
-		foreach ($textParser->getReletedVariable('email') as $modules) {
+		foreach ($textParser->getRelatedVariable('email') as $modules) {
 			foreach ($modules as $blockName => $fields) {
 				$blockName = \App\Language::translate($blockName, $sourceModule);
 				foreach ($fields as $field) {
@@ -128,7 +122,7 @@ class Settings_Workflows_EditTask_View extends Settings_Vtiger_Index_View
 		$fromEmailFieldOptions = array_merge(['' => ['' => \App\Language::translate('Optional', $qualifiedModuleName)]], $emailFieldoptions);
 		$assignedToValues = [
 			\App\Language::translate('LBL_USERS') => \App\Fields\Owner::getInstance()->getAccessibleUsers(),
-			\App\Language::translate('LBL_GROUPS') => \App\Fields\Owner::getInstance()->getAccessibleGroups()
+			\App\Language::translate('LBL_GROUPS') => \App\Fields\Owner::getInstance()->getAccessibleGroups(),
 		];
 		$viewer->assign('TEXT_PARSER', $textParser);
 		$viewer->assign('ASSIGNED_TO', $assignedToValues);

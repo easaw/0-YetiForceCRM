@@ -1,16 +1,17 @@
 <?php
 
 /**
- * HelpDesk Handler Class
- * @package YetiForce.Handler
- * @license licenses/License.html
+ * HelpDesk Handler Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class HelpDesk_TicketRangeTime_Handler
 {
-
 	/**
-	 * EntityAfterLink handler function
+	 * EntityAfterLink handler function.
+	 *
 	 * @param App\EventHandler $eventHandler
 	 */
 	public function entityAfterLink(App\EventHandler $eventHandler)
@@ -23,7 +24,8 @@ class HelpDesk_TicketRangeTime_Handler
 	}
 
 	/**
-	 * EntityAfterSave handler function
+	 * EntityAfterSave handler function.
+	 *
 	 * @param App\EventHandler $eventHandler
 	 */
 	public function entityAfterSave(App\EventHandler $eventHandler)

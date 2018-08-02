@@ -11,10 +11,12 @@
 
 class Products_Detail_View extends Vtiger_Detail_View
 {
-
-	public function showModuleDetailView(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function showModuleDetailView(\App\Request $request)
 	{
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 		$moduleName = $request->getModule();
 
 		$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
@@ -22,31 +24,31 @@ class Products_Detail_View extends Vtiger_Detail_View
 
 		$viewer = $this->getViewer($request);
 		$viewer->assign('BASE_CURRENCY_SYMBOL', $baseCurrenctDetails['symbol']);
-		$viewer->assign('IMAGE_DETAILS', $recordModel->getImageDetails());
-
 		return parent::showModuleDetailView($request);
 	}
 
-	public function showModuleBasicView(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function showModuleBasicView(\App\Request $request)
 	{
 		return $this->showModuleDetailView($request);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 		$moduleDetailFile = 'modules.' . $moduleName . '.resources.Detail';
 		$moduleRelatedListFile = 'modules.' . $moduleName . '.resources.RelatedList';
-		unset($headerScriptInstances[$moduleDetailFile]);
-		unset($headerScriptInstances[$moduleRelatedListFile]);
+		unset($headerScriptInstances[$moduleDetailFile], $headerScriptInstances[$moduleRelatedListFile]);
 
-		$jsFileNames = array(
-			'~libraries/jquery/jquery.cycle.min.js',
-			'modules.PriceBooks.resources.Detail',
+		$jsFileNames = [
 			'modules.PriceBooks.resources.RelatedList',
-		);
-
+		];
 		$jsFileNames[] = $moduleDetailFile;
 		$jsFileNames[] = $moduleRelatedListFile;
 

@@ -1,18 +1,14 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings OSSMailView index view class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Widgets_Widget_View extends Settings_Vtiger_Index_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if ($mode) {
@@ -22,10 +18,15 @@ class Settings_Widgets_Widget_View extends Settings_Vtiger_Index_View
 		}
 	}
 
-	public function createStep1(Vtiger_Request $request)
+	/**
+	 * Create widget - first step.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function createStep1(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
-		$sourceModule = $request->get('mod');
+		$sourceModule = $request->getInteger('mod');
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
 		$moduleModel = Settings_Widgets_Module_Model::getInstance($qualifiedModuleName);
@@ -36,7 +37,7 @@ class Settings_Widgets_Widget_View extends Settings_Vtiger_Index_View
 		$viewer->view('WidgetList.tpl', $qualifiedModuleName);
 	}
 
-	public function createStep2(Vtiger_Request $request)
+	public function createStep2(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -50,10 +51,10 @@ class Settings_Widgets_Widget_View extends Settings_Vtiger_Index_View
 		$viewer->assign('SOURCE', $tabId);
 		$viewer->assign('WID', '');
 		$viewer->assign('WIDGETINFO', ['data' => [
-				'limit' => 5, 'relatedmodule' => '', 'columns' => '', 'action' => '', 'switchHeader' => '', 'filter' => '', 'checkbox' => ''
-			], 'nomargin' => '', 'label' => ''
+				'limit' => 5, 'relatedmodule' => '', 'columns' => '', 'action' => '', 'switchHeader' => '', 'filter' => '', 'checkbox' => '',
+			], 'label' => '',
 		]);
-		$viewer->assign('SOURCEMODULE', vtlib\Functions::getModuleName($tabId));
+		$viewer->assign('SOURCEMODULE', \App\Module::getModuleName($tabId));
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('MODULE_MODEL', $moduleModel);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
@@ -62,11 +63,11 @@ class Settings_Widgets_Widget_View extends Settings_Vtiger_Index_View
 		if (class_exists($widgetName)) {
 			$widgetInstance = new $widgetName();
 			$tplName = $widgetInstance->getConfigTplName();
-			$viewer->view("widgets/$tplName.tpl", 'Vtiger');
+			$viewer->view("Detail/Widget/$tplName.tpl", 'Vtiger');
 		}
 	}
 
-	public function edit(Vtiger_Request $request)
+	public function edit(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
@@ -77,7 +78,7 @@ class Settings_Widgets_Widget_View extends Settings_Vtiger_Index_View
 		$type = $WidgetInfo['type'];
 		$viewer = $this->getViewer($request);
 		$viewer->assign('SOURCE', $WidgetInfo['tabid']);
-		$viewer->assign('SOURCEMODULE', vtlib\Functions::getModuleName($WidgetInfo['tabid']));
+		$viewer->assign('SOURCEMODULE', \App\Module::getModuleName($WidgetInfo['tabid']));
 		$viewer->assign('WID', $wid);
 		$viewer->assign('WIDGETINFO', $WidgetInfo);
 		$viewer->assign('TYPE', $type);
@@ -89,7 +90,7 @@ class Settings_Widgets_Widget_View extends Settings_Vtiger_Index_View
 		if (class_exists($widgetName)) {
 			$widgetInstance = new $widgetName();
 			$tplName = $widgetInstance->getConfigTplName();
-			$viewer->view("widgets/$tplName.tpl", 'Vtiger');
+			$viewer->view("Detail/Widget/$tplName.tpl", 'Vtiger');
 		}
 	}
 }

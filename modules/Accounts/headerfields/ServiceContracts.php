@@ -1,14 +1,14 @@
 <?php
 
 /**
- * ServiceContracts Header Field Class
- * @package YetiForce.HeaderField
- * @license licenses/License.html
+ * ServiceContracts Header Field Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Accounts_ServiceContracts_HeaderField
 {
-
 	public function process(Vtiger_DetailView_Model $viewModel)
 	{
 		$row = (new \App\Db\Query())->select('MAX(due_date) AS date,count(*) AS total')->from('vtiger_servicecontracts')
@@ -18,9 +18,9 @@ class Accounts_ServiceContracts_HeaderField
 		if (!empty($row['date']) || !empty($row['total'])) {
 			return [
 				'class' => 'btn-success',
-				'title' => vtranslate('LBL_NUMBER_OF_ACTIVE_CONTRACTS', 'Accounts') . ': ' . $row['total'],
+				'title' => \App\Language::translate('LBL_NUMBER_OF_ACTIVE_CONTRACTS', 'Accounts') . ': ' . $row['total'],
 				'badge' => DateTimeField::convertToUserFormat($row['date']),
-				'action' => 'Vtiger_Detail_Js.getInstance().getTabContainer().find(\'[data-reference="ServiceContracts"]:not(.hide)\').trigger("click");'
+				'action' => 'Vtiger_Detail_Js.getInstance().getTabContainer().find(\'[data-reference="ServiceContracts"]:not(.hide)\').trigger("click");',
 			];
 		}
 		return false;

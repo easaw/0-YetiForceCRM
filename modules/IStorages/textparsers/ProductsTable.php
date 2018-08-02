@@ -1,14 +1,14 @@
 <?php
 
 /**
- * IStorages storage products table parser class
- * @package YetiForce.TextParser
- * @license licenses/License.html
+ * IStorages storage products table parser class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-class IStorages_ProductsTable_TextParser extends \App\TextParser\Base
+class IStorages_ProductsTable_Textparser extends \App\TextParser\Base
 {
-
 	/** @var string Class name */
 	public $name = 'LBL_PRODUCTS_TABLE';
 
@@ -16,7 +16,8 @@ class IStorages_ProductsTable_TextParser extends \App\TextParser\Base
 	public $type = 'pdf';
 
 	/**
-	 * Process
+	 * Process.
+	 *
 	 * @return string
 	 */
 	public function process()
@@ -25,16 +26,17 @@ class IStorages_ProductsTable_TextParser extends \App\TextParser\Base
 		$relationModuleName = 'Products';
 		$relationListView = Vtiger_RelationListView_Model::getInstance($this->textParser->recordModel, $relationModuleName);
 		$pagingModel = new Vtiger_Paging_Model();
-		$pagingModel->set('limit', 'no_limit');
+		$pagingModel->set('limit', 0);
 		$entries = $relationListView->getEntries($pagingModel);
 		$headers = $relationListView->getHeaders();
 		$columns = ['Product Name', 'FL_EAN_13', 'Product Category'];
-		$db = PearDatabase::getInstance();
 		// Gets sum of products quantity in current storage
 		$productsQty = [];
-		$query = 'SELECT SUM(qtyinstock) AS qtyinstock, relcrmid FROM u_yf_istorages_products WHERE crmid = ? GROUP BY relcrmid';
-		$result = $db->pquery($query, [$this->textParser->record]);
-		while ($row = $db->getRow($result)) {
+		$dataReader = (new App\Db\Query())->select(['qtyinstock' => new yii\db\Expression('SUM(qtyinstock)'), 'relcrmid'])
+			->from('u_#__istorages_products')
+			->where(['crmid' => $this->textParser->record])
+			->groupBy(['relcrmid'])->createCommand()->query();
+		while ($row = $dataReader->read()) {
 			if ($row['qtyinstock'] > 0) {
 				$productsQty[$row['relcrmid']] = $row['qtyinstock'];
 			}

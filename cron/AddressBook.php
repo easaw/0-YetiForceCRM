@@ -1,27 +1,40 @@
 <?php
 /**
- * Address boock cron file
- * @package YetiForce.Cron
- * @license licenses/License.html
+ * Address book cron file.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-\App\Log::trace('Start create AddressBoock');
+\App\Log::trace('Start create AddressBook');
 
-$limit = AppConfig::performance('CRON_MAX_NUMERS_RECORD_ADDRESS_BOOCK_UPDATER');
-$db = PearDatabase::getInstance();
+$limit = AppConfig::performance('CRON_MAX_NUMBERS_RECORD_ADDRESS_BOOK_UPDATER');
+$db = \App\Db::getInstance();
+$dbCommand = $db->createCommand();
 $currentUser = Users::getActiveAdminUser();
 $usersIds = \App\Fields\Owner::getUsersIds();
 $i = ['rows' => [], 'users' => count($usersIds)];
 $l = 0;
 $break = false;
-$table = OSSMail_AddressBoock_Model::TABLE;
-$last = OSSMail_AddressBoock_Model::getLastRecord();
-$dataReader = (new App\Db\Query())->select(['module_name', 'task'])->from('com_vtiger_workflows')
-		->leftJoin('com_vtiger_workflowtasks', 'com_vtiger_workflowtasks.workflow_id = com_vtiger_workflows.workflow_id')
-		->where(['like', 'task', 'VTAddressBookTask'])
-		->createCommand()->query();
-while ($row = $dataReader->read()) {
+$processOrder = ['OSSEmployees', 'Contacts'];
+$table = OSSMail_AddressBook_Model::TABLE;
+$last = OSSMail_AddressBook_Model::getLastRecord();
+$rows = (new App\Db\Query())->select(['module_name', 'task'])->from('com_vtiger_workflows')
+	->leftJoin('com_vtiger_workflowtasks', 'com_vtiger_workflowtasks.workflow_id = com_vtiger_workflows.workflow_id')
+	->where(['like', 'task', 'VTAddressBookTask'])
+	->indexBy('module_name')->all();
+$workflows = [];
+foreach ($processOrder as $processModule) {
+	if (isset($rows[$processModule])) {
+		$workflows[] = $rows[$processModule];
+		unset($rows[$processModule]);
+	}
+}
+foreach ($rows as $row) {
+	$workflows = array_merge($workflows, $row);
+}
+foreach ($workflows as $row) {
 	$task = (array) unserialize($row['task']);
 	$moduleName = $row['module_name'];
 	if (empty($task['active']) || ($last !== false && $last['module'] != $moduleName)) {
@@ -54,8 +67,8 @@ while ($row = $dataReader->read()) {
 		$emailCondition[] = ['<>', $fieldName, ''];
 	}
 	$query->andWhere($emailCondition)->limit($limit + 1);
-	$dataReader = $query->createCommand()->query();
-	while ($row = $dataReader->read()) {
+	$dataReaderRows = $query->createCommand()->query();
+	while ($row = $dataReaderRows->read()) {
 		$users = $name = '';
 		foreach ($metainfo['fieldnameArr'] as $entityName) {
 			$name .= ' ' . $row[$entityName];
@@ -68,26 +81,27 @@ while ($row = $dataReader->read()) {
 			}
 		}
 		$added = [];
-		$db->delete($table, 'id = ?', [$record]);
+		$dbCommand->delete($table, ['id' => $record])->execute();
 		foreach ($emailFields as &$fieldName) {
 			if (!empty($row[$fieldName]) && !in_array($row[$fieldName], $added)) {
 				$added[] = $row[$fieldName];
-				$db->insert($table, ['id' => $record, 'email' => $row[$fieldName], 'name' => trim($name), 'users' => $users]);
+				$dbCommand->insert($table, ['id' => $record, 'email' => $row[$fieldName], 'name' => trim($name), 'users' => $users])->execute();
 			}
 		}
-		$i['rows'][$moduleName] ++;
-		$l++;
+		++$i['rows'][$moduleName];
+		++$l;
 		if ($limit == $l) {
-			OSSMail_AddressBoock_Model::saveLastRecord($record, $moduleName);
+			OSSMail_AddressBook_Model::saveLastRecord($record, $moduleName);
 			$break = true;
 			break;
 		}
 	}
+	$dataReaderRows->close();
 	if (!$break && $last !== false) {
-		OSSMail_AddressBoock_Model::clearLastRecord();
+		OSSMail_AddressBook_Model::clearLastRecord();
 	}
 	$last = false;
 }
-OSSMail_AddressBoock_Model::createABFile();
-\App\Log::trace(vtlib\Functions::varExportMin($i));
-\App\Log::trace('End create AddressBoock');
+OSSMail_AddressBook_Model::createABFile();
+\App\Log::trace(App\Utils::varExport($i));
+\App\Log::trace('End create AddressBook');

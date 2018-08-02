@@ -10,31 +10,17 @@
 
 class Users_ListAjax_View extends Users_List_View
 {
+	use \App\Controller\ExposeMethod,
+	 App\Controller\ClearProcess;
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function __construct()
 	{
 		parent::__construct();
 		$this->exposeMethod('getListViewCount');
 		$this->exposeMethod('getRecordsCount');
 		$this->exposeMethod('getPageCount');
-	}
-
-	public function preProcess(Vtiger_Request $request, $display = true)
-	{
-		return true;
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		return true;
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
-		}
 	}
 }

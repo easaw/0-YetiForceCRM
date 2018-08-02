@@ -1,15 +1,14 @@
 <?php
 
 /**
- * @package YetiForce.views
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class OSSPasswords_QuickCreateAjax_View extends Vtiger_QuickCreateAjax_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		// get min, max, allow_chars from vtiger_passwords_config
 		$passwordConfig = (new App\Db\Query())->from('vtiger_passwords_config')->one();
@@ -17,17 +16,13 @@ class OSSPasswords_QuickCreateAjax_View extends Vtiger_QuickCreateAjax_View
 		$moduleName = $request->getModule();
 		$recordModel = Vtiger_Record_Model::getCleanInstance($moduleName);
 		$moduleModel = $recordModel->getModule();
-
 		$fieldList = $moduleModel->getFields();
-		$requestFieldList = array_intersect_key($request->getAll(), $fieldList);
-
-		foreach ($requestFieldList as $fieldName => $fieldValue) {
+		foreach (array_intersect($request->getKeys(), array_keys($fieldList)) as $fieldName) {
 			$fieldModel = $fieldList[$fieldName];
-			if ($fieldModel->isEditable()) {
-				$recordModel->set($fieldName, $fieldModel->getDBValue($fieldValue));
+			if ($fieldModel->isWritable()) {
+				$fieldModel->getUITypeModel()->setValueFromRequest($request, $recordModel);
 			}
 		}
-
 		$recordStructureInstance = Vtiger_RecordStructure_Model::getInstanceFromRecordModel($recordModel, Vtiger_RecordStructure_Model::RECORD_STRUCTURE_MODE_QUICKCREATE);
 		$recordStructure = $recordStructureInstance->getStructure();
 		$sourceRelatedField = $moduleModel->getValuesFromSource($request);
@@ -41,16 +36,16 @@ class OSSPasswords_QuickCreateAjax_View extends Vtiger_QuickCreateAjax_View
 			}
 		}
 
-		$picklistDependencyDatasource = Vtiger_DependencyPicklist::getPicklistDependencyDatasource($moduleName);
+		$picklistDependencyDatasource = \App\Fields\Picklist::getPicklistDependencyDatasource($moduleName);
 		$relatedModule = 'OSSPasswords';
 
 		$viewer = $this->getViewer($request);
 		$viewer->assign('QUICKCREATE_LINKS', Vtiger_Link_Model::getAllByType($moduleModel->getId(), ['QUICKCREATE_VIEW_HEADER']));
 		$viewer->assign('RELATEDMODULE', $relatedModule);
 		$viewer->assign('GENERATEPASS', 'Generate Password');
-		$viewer->assign('VIEW', $request->get('view'));
-		$viewer->assign('VALIDATE_STRINGS', vtranslate('Very Weak', $relatedModule) . ',' . vtranslate('Weak', $relatedModule) . ',' . vtranslate('Better', $relatedModule) . ',' .
-			vtranslate('Medium', $relatedModule) . ',' . vtranslate('Strong', $relatedModule) . ',' . vtranslate('Very Strong', $relatedModule));
+		$viewer->assign('VIEW', $request->getByType('view', 1));
+		$viewer->assign('VALIDATE_STRINGS', \App\Language::translate('Very Weak', $relatedModule) . ',' . \App\Language::translate('Weak', $relatedModule) . ',' . \App\Language::translate('Better', $relatedModule) . ',' .
+			\App\Language::translate('Medium', $relatedModule) . ',' . \App\Language::translate('Strong', $relatedModule) . ',' . \App\Language::translate('Very Strong', $relatedModule));
 		$viewer->assign('Very Weak', 'Very Weak');
 		$viewer->assign('Weak', 'Weak');
 		$viewer->assign('Better', 'Better');

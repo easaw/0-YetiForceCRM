@@ -11,35 +11,35 @@
 
 class HelpDesk_Record_Model extends Vtiger_Record_Model
 {
-
 	/**
-	 * Function to get URL for Convert FAQ
+	 * Function to get URL for Convert FAQ.
+	 *
 	 * @return string
 	 */
 	public function getConvertFAQUrl()
 	{
-		return "index.php?module=" . $this->getModuleName() . "&action=ConvertFAQ&record=" . $this->getId();
+		return 'index.php?module=' . $this->getModuleName() . '&action=ConvertFAQ&record=' . $this->getId();
 	}
 
 	/**
-	 * Function to get Comments List of this Record
+	 * Function to get Comments List of this Record.
+	 *
 	 * @return string
 	 */
 	public function getCommentsList()
 	{
-		$db = PearDatabase::getInstance();
-		$commentsList = array();
-
-		$result = $db->pquery("SELECT commentcontent AS comments FROM vtiger_modcomments WHERE related_to = ?", array($this->getId()));
-		$numOfRows = $db->num_rows($result);
-
-		for ($i = 0; $i < $numOfRows; $i++) {
-			array_push($commentsList, $db->query_result($result, $i, 'comments'));
-		}
-
-		return $commentsList;
+		return (new \App\Db\Query())
+			->select(['comments' => 'commentcontent'])
+			->from('vtiger_modcomments')
+			->where(['related_to' => $this->getId()])->column();
 	}
 
+	/**
+	 * Update ticket range time field.
+	 *
+	 * @param Vtiger_Record_Model $recordModel
+	 * @param bool                $updateFieldImmediately
+	 */
 	public static function updateTicketRangeTimeField($recordModel, $updateFieldImmediately = false)
 	{
 		if (!$recordModel->isNew() && ($recordModel->getPreviousValue('ticketstatus') || $updateFieldImmediately)) {
@@ -51,11 +51,11 @@ class HelpDesk_Record_Model extends Vtiger_Record_Model
 				->update('vtiger_troubletickets', [
 					'response_time' => $currentDate,
 					], ['ticketid' => $recordModel->getId()])
-				->execute();
+					->execute();
 		}
 		$closedTime = $recordModel->get('closedtime');
 		if (!empty($closedTime) && $recordModel->has('report_time')) {
-			$timeMinutesRange = round(vtlib\Functions::getDateTimeMinutesDiff($recordModel->get('createdtime'), $closedTime));
+			$timeMinutesRange = round(\App\Fields\Date::getDiff($recordModel->get('createdtime'), $closedTime, 'minutes'));
 			if (!empty($timeMinutesRange)) {
 				App\Db::getInstance()->createCommand()
 					->update('vtiger_troubletickets', ['report_time' => $timeMinutesRange], ['ticketid' => $recordModel->getId()])
@@ -64,25 +64,31 @@ class HelpDesk_Record_Model extends Vtiger_Record_Model
 		}
 	}
 
+	/**
+	 * Get active service contracts.
+	 *
+	 * @return array
+	 */
 	public function getActiveServiceContracts()
 	{
 		$query = (new \App\Db\Query())->from('vtiger_servicecontracts')
 			->innerJoin('vtiger_crmentity', 'vtiger_servicecontracts.servicecontractsid = vtiger_crmentity.crmid')
 			->where(['deleted' => 0, 'contract_status' => 'In Progress', 'sc_related_to' => $this->get('parent_id')]);
 		\App\PrivilegeQuery::getConditions($query, 'ServiceContracts');
+
 		return $query->all();
 	}
 
 	/**
-	 * Function to save record
+	 * Function to save record.
 	 */
 	public function saveToDb()
 	{
 		parent::saveToDb();
-		$forModule = AppRequest::get('return_module');
-		$forCrmid = AppRequest::get('return_id');
-		if (AppRequest::get('return_action') && $forModule && $forCrmid && $forModule === 'ServiceContracts') {
-			CRMEntity::getInstance($forModule)->save_related_module($forModule, $forCrmid, AppRequest::get('module'), $this->getId());
+		$forModule = \App\Request::_get('return_module');
+		$forCrmid = \App\Request::_get('return_id');
+		if (\App\Request::_get('return_action') && $forModule && $forCrmid && $forModule === 'ServiceContracts') {
+			CRMEntity::getInstance($forModule)->saveRelatedModule($forModule, $forCrmid, \App\Request::_get('module'), $this->getId());
 		}
 	}
 }

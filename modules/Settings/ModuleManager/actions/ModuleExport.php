@@ -8,8 +8,9 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-Class Settings_ModuleManager_ModuleExport_Action extends Settings_Vtiger_IndexAjax_View
+class Settings_ModuleManager_ModuleExport_Action extends Settings_Vtiger_Basic_Action
 {
+	use \App\Controller\ExposeMethod;
 
 	public function __construct()
 	{
@@ -17,27 +18,21 @@ Class Settings_ModuleManager_ModuleExport_Action extends Settings_Vtiger_IndexAj
 		$this->exposeMethod('exportModule');
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Action to export module.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\AppException
+	 */
+	protected function exportModule(\App\Request $request)
 	{
-		$mode = $request->getMode();
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
-		}
-	}
-
-	protected function exportModule(Vtiger_Request $request)
-	{
-		$moduleName = $request->get('forModule');
-
-		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-
+		$moduleName = $request->getByType('forModule', 2);
+		$moduleModel = \vtlib\Module::getInstance($moduleName);
 		if (!$moduleModel->isExportable()) {
-			echo 'Module not exportable!';
-			return;
+			throw new \App\Exceptions\AppException('ERR_NOT_ACCESSIBLE');
 		}
-
 		$package = new vtlib\PackageExport();
-		$package->export($moduleModel, '', sprintf("%s-%s.zip", $moduleModel->get('name'), $moduleModel->get('version')), true);
+		$package->export($moduleModel, '', sprintf('%s-%s.zip', $moduleModel->name, $moduleModel->version), true);
 	}
 }

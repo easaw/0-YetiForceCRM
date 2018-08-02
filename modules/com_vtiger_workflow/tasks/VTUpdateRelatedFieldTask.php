@@ -1,15 +1,15 @@
 <?php
 /**
- * Update Related Field Task Handler Class
- * @package YetiForce.WorkflowTask
- * @license licenses/License.html
+ * Update Related Field Task Handler Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-require_once('modules/com_vtiger_workflow/VTWorkflowUtils.php');
+require_once 'modules/com_vtiger_workflow/VTWorkflowUtils.php';
 
 class VTUpdateRelatedFieldTask extends VTTask
 {
-
 	public $executeImmediately = false;
 
 	public function getFieldNames()
@@ -18,22 +18,18 @@ class VTUpdateRelatedFieldTask extends VTTask
 	}
 
 	/**
-	 * Execute task
+	 * Execute task.
+	 *
 	 * @param Vtiger_Record_Model $recordModel
 	 */
 	public function doTask($recordModel)
 	{
-		$util = new VTWorkflowUtils();
-		$util->adminUser();
-
 		$fieldValueMapping = [];
 		if (!empty($this->field_value_mapping)) {
 			$fieldValueMapping = \App\Json::decode($this->field_value_mapping);
 		}
 		if (!empty($fieldValueMapping)) {
-			$util->loggedInUser();
 			foreach ($fieldValueMapping as $fieldInfo) {
-				$reletedData = $fieldInfo['fieldname'];
 				$fieldValue = trim($fieldInfo['value']);
 				switch ($fieldInfo['valuetype']) {
 					case 'fieldname':
@@ -58,41 +54,74 @@ class VTUpdateRelatedFieldTask extends VTTask
 						}
 						break;
 				}
-				if (!empty($fieldValue) || $fieldValue == 0) {
-					$this->updateRecords($recordModel, $reletedData, $fieldValue);
+				$relatedData = explode('::', $fieldInfo['fieldname']);
+				if (count($relatedData) === 2) {
+					if (!empty($fieldValue) || $fieldValue == 0) {
+						$this->updateRecords($recordModel, $relatedData, $fieldValue);
+					}
+				} else {
+					$recordId = $recordModel->get($relatedData[0]);
+					if ($recordId) {
+						$relRecordModel = Vtiger_Record_Model::getInstanceById($recordId, $relatedData[1]);
+						$fieldModel = $relRecordModel->getField($relatedData[2]);
+						if ($fieldModel->isEditable()) {
+							$fieldModel->getUITypeModel()->validate($fieldValue);
+							$relRecordModel->setHandlerExceptions(['disableWorkflow' => true]);
+							$relRecordModel->set($relatedData[2], $fieldValue);
+							$relRecordModel->save();
+						} else {
+							\App\Log::warning('No permissions to edit field: ' . $fieldModel->getName());
+						}
+					}
 				}
 			}
-		}
-		$util->revertUser();
-	}
-
-	function updateRecords($recordModel, $relatedData, $fieldValue)
-	{
-		$reletedDataEx = explode('::', $relatedData);
-		$reletedModuleName = $reletedDataEx[0];
-		$reletedFieldName = $reletedDataEx[1];
-		$targetModel = Vtiger_RelationListView_Model::getInstance($recordModel, $reletedModuleName);
-		if (!$targetModel->getRelationModel()) {
-			return false;
-		}
-		$dataReader = $targetModel->getRelationQuery()->select(['vtiger_crmentity.crmid'])
-				->createCommand()->query();
-		while ($recordId = $dataReader->readColumn(0)) {
-			$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $reletedModuleName);
-			$recordModel->setHandlerExceptions(['disableWorkflow' => true]);
-			$recordModel->set($reletedFieldName, $fieldValue);
-			$recordModel->save();
 		}
 	}
 
 	/**
-	 * Function to get contents of this task
-	 * @param <Object> $entity
-	 * @return <Array> contents
+	 * Update related records by releted module.
+	 *
+	 * @param Vtiger_Record_Model $recordModel
+	 * @param string[]            $relatedData
+	 * @param string              $fieldValue
+	 *
+	 * @return bool
+	 */
+	private function updateRecords($recordModel, $relatedData, $fieldValue)
+	{
+		$relatedModuleName = $relatedData[0];
+		$relatedFieldName = $relatedData[1];
+		$targetModel = Vtiger_RelationListView_Model::getInstance($recordModel, $relatedModuleName);
+		if (!$targetModel || !$targetModel->getRelationModel()) {
+			return false;
+		}
+		$dataReader = $targetModel->getRelationQuery()->select(['vtiger_crmentity.crmid'])
+			->createCommand()->query();
+		while ($recordId = $dataReader->readColumn(0)) {
+			$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $relatedModuleName);
+			$fieldModel = $recordModel->getField($relatedFieldName);
+			if ($fieldModel->isEditable()) {
+				$fieldModel->getUITypeModel()->validate($fieldValue);
+				$recordModel->setHandlerExceptions(['disableWorkflow' => true]);
+				$recordModel->set($relatedFieldName, $fieldValue);
+				$recordModel->save();
+			} else {
+				\App\Log::warning('No permissions to edit field: ' . $fieldModel->getName());
+			}
+		}
+	}
+
+	/**
+	 * Function to get contents of this task.
+	 *
+	 * @param Vtiger_Record_Model $recordModel
+	 *
+	 * @return bool contents
 	 */
 	public function getContents($recordModel)
 	{
 		$this->contents = true;
+
 		return $this->contents;
 	}
 }

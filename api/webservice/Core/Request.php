@@ -1,24 +1,34 @@
 <?php
+
 namespace Api\Core;
 
 /**
- * Web service request class 
- * @package YetiForce.Webservice
- * @license licenses/License.html
+ * Web service request class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-class Request extends \Vtiger_Request
+class Request extends \App\Request
 {
-
-	public static function init()
+	/**
+	 * Static instance initialization.
+	 *
+	 * @param bool|array $request
+	 *
+	 * @return Request
+	 */
+	public static function init($request = false)
 	{
-		return new self($_REQUEST);
+		if (!static::$request) {
+			static::$request = new self($request ? $request : $_REQUEST);
+		}
+		return static::$request;
 	}
 
 	public function getData()
 	{
-		if ($this->getRequestMetod() === 'GET') {
-			$this->rawValueMap = $_REQUEST;
+		if ($this->getRequestMethod() === 'GET') {
 			return $this;
 		} else {
 			$encrypted = $this->getHeader('Encrypted');
@@ -30,13 +40,14 @@ class Request extends \Vtiger_Request
 		if (empty($content)) {
 			return false;
 		}
-		$this->rawValueMap = array_merge($this->contentParse($content), $_REQUEST);
+		$this->rawValues = array_merge($this->contentParse($content), $this->rawValues);
+
 		return $this;
 	}
 
 	public function contentParse($content)
 	{
-		$type = isset($_SERVER['CONTENT_TYPE']) ? $_SERVER['CONTENT_TYPE'] : $this->getHeader('Content-Type');
+		$type = isset($_SERVER['CONTENT_TYPE']) ? $this->getServer('CONTENT_TYPE') : $this->getHeader('Content-Type');
 		if (empty($type)) {
 			$type = $this->getHeader('Accept');
 		}
@@ -46,6 +57,7 @@ class Request extends \Vtiger_Request
 		switch ($type) {
 			case 'form-data':
 				parse_str($content, $data);
+
 				return $data;
 			case 'json':
 			default:
@@ -55,12 +67,13 @@ class Request extends \Vtiger_Request
 
 	public function decryptData($data)
 	{
-		$privateKey = 'file://' . ROOT_DIRECTORY . DIRECTORY_SEPARATOR . vglobal('privateKey');
+		$privateKey = 'file://' . ROOT_DIRECTORY . DIRECTORY_SEPARATOR . \AppConfig::api('PRIVATE_KEY');
 		if (!$privateKey = openssl_pkey_get_private($privateKey)) {
-			throw new \Exception\AppException('Private Key failed');
+			throw new \App\Exceptions\AppException('Private Key failed');
 		}
 		$privateKey = openssl_pkey_get_private($privateKey);
 		openssl_private_decrypt($data, $decrypted, $privateKey);
+
 		return $decrypted;
 	}
 }

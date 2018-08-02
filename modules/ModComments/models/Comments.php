@@ -10,9 +10,8 @@
 
 class ModComments_CommentsModel
 {
-
 	private $data;
-	static $ownerNamesCache = array();
+	public static $ownerNamesCache = [];
 
 	public function __construct($datarow)
 	{
@@ -31,11 +30,12 @@ class ModComments_CommentsModel
 	public function timestamp()
 	{
 		$date = new DateTimeField($this->data['modifiedtime']);
+
 		return $date->getDisplayDateTimeValue();
 	}
 
 	public function content()
 	{
-		return decode_html($this->data['commentcontent']);
+		return App\Purifier::decodeHtml($this->data['commentcontent']);
 	}
 }

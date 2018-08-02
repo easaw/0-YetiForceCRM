@@ -11,16 +11,60 @@
 
 class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 {
+	/**
+	 * @var string[] Base module tools.
+	 */
+	public static $baseModuleTools = ['Import', 'Export', 'Merge', 'CreateCustomFilter',
+		'DuplicateRecord', 'MassEdit', 'MassArchived', 'MassActive', 'MassDelete', 'MassAddComment', 'MassTransferOwnership',
+		'ReadRecord', 'WorkflowTrigger', 'Dashboard', 'CreateDashboardFilter', 'QuickExportToExcel', 'ExportPdf', 'RecordMapping',
+		'RecordMappingList', 'FavoriteRecords', 'WatchingRecords', 'WatchingModule', 'RemoveRelation', 'ReviewingUpdates'];
+
+	/**
+	 * @var array Base module tools exceptions.
+	 */
+	public static $baseModuleToolsExceptions = [
+		'Documents' => ['notAllowed' => ['Import']],
+		'Faq' => ['notAllowed' => ['Import', 'Export']],
+		'Events' => ['notAllowed' => 'all'],
+		'PBXManager' => ['notAllowed' => 'all'],
+		'OSSMailView' => ['notAllowed' => 'all'],
+		'CallHistory' => ['allowed' => ['QuickExportToExcel']],
+	];
+
+	/**
+	 * Get module base tools exceptions parse to ids.
+	 *
+	 * @return array
+	 */
+	public static function getBaseModuleToolsExceptions()
+	{
+		$exceptions = [];
+		$actionIds = (new \App\Db\Query())->select(['actionname', 'actionid'])->from('vtiger_actionmapping')->createCommand()->queryAllByGroup();
+		foreach (static::$baseModuleToolsExceptions as $moduleName => $moduleException) {
+			foreach ($moduleException as $type => $exception) {
+				if (is_array($exception)) {
+					$moduleExceptions = [];
+					foreach ($exception as $actionName) {
+						$moduleExceptions[$actionIds[$actionName]] = $actionName;
+					}
+					$exceptions[App\Module::getModuleId($moduleName)][$type] = $moduleExceptions;
+				} else {
+					$exceptions[App\Module::getModuleId($moduleName)][$type] = false;
+				}
+			}
+		}
+		return $exceptions;
+	}
 
 	public static function getNonVisibleModulesList()
 	{
-		return ['ModTracker', 'Portal', 'Users', 'Integration', 'WSAPP',
+		return ['ModTracker', 'Portal', 'Users', 'Integration',
 			'ConfigEditor', 'FieldFormulas', 'VtigerBackup', 'CronTasks', 'Import', 'Tooltip',
-			'Home'];
+			'Home', ];
 	}
 
 	/**
-	 * Function to get the url of new module import
+	 * Function to get the url of new module import.
 	 */
 	public static function getNewModuleImportUrl()
 	{
@@ -28,7 +72,7 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get the url of new module import 
+	 * Function to get the url of new module import.
 	 */
 	public static function getUserModuleImportUrl()
 	{
@@ -36,7 +80,8 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to disable a module 
+	 * Function to disable a module.
+	 *
 	 * @param type $moduleName - name of the module
 	 */
 	public function disableModule($moduleName)
@@ -46,7 +91,8 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to enable the module
+	 * Function to enable the module.
+	 *
 	 * @param type $moduleName -- name of the module
 	 */
 	public function enableModule($moduleName)
@@ -56,22 +102,37 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Static Function to get the instance of Vtiger Module Model for all the modules
+	 * Function to check module name.
+	 *
+	 * @param string $name
+	 *
+	 * @return bool
+	 */
+	public static function checkModuleName($name)
+	{
+		return (bool) (strpos($name, 'Settings') !== false || preg_match('/[^A-Za-z]/i', $name));
+	}
+
+	/**
+	 * Static Function to get the instance of Vtiger Module Model for all the modules.
+	 *
 	 * @return <Array> - List of Vtiger Module Model or sub class instances
 	 */
 	public static function getAll($presence = [], $restrictedModulesList = [], $isEntityType = false)
 	{
-		return parent::getAll(array(0, 1), self::getNonVisibleModulesList());
+		return parent::getAll([0, 1], self::getNonVisibleModulesList());
 	}
 
 	/**
-	 * Function which will get count of modules
-	 * @param boolean $onlyActive - if true get count of only active modules else all the modules
+	 * Function which will get count of modules.
+	 *
+	 * @param bool $onlyActive - if true get count of only active modules else all the modules
+	 *
 	 * @return <integer> number of modules
 	 */
 	public static function getModulesCount($onlyActive = false)
 	{
-		$query = (new \App\Db\Query)->from('vtiger_tab');
+		$query = (new \App\Db\Query())->from('vtiger_tab');
 		if ($onlyActive) {
 			$nonVisibleModules = self::getNonVisibleModulesList();
 			$query->where(['and', ['presence' => 0], ['NOT IN', 'name', $nonVisibleModules]]);
@@ -80,25 +141,29 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function that returns all those modules that support Module Sequence Numbering
+	 * Function that returns all those modules that support Module Sequence Numbering.
+	 *
 	 * @return <Array of Vtiger_Module_Model>
 	 */
 	public static function getModulesSupportingSequenceNumbering()
 	{
 		$subQuery = (new \App\Db\Query())->select('tabid')->from('vtiger_field')->where(['uitype' => 4])->distinct('tabid');
 		$dataReader = (new \App\Db\Query())->select(['tabid', 'name'])
-				->from('vtiger_tab')
-				->where(['isentitytype' => 1, 'presence' => 0, 'tabid' => $subQuery])
-				->createCommand()->query();
+			->from('vtiger_tab')
+			->where(['isentitytype' => 1, 'presence' => 0, 'tabid' => $subQuery])
+			->createCommand()->query();
 		$moduleModels = [];
 		while ($row = $dataReader->read()) {
 			$moduleModels[$row['name']] = self::getInstanceFromArray($row);
 		}
+		$dataReader->close();
+
 		return $moduleModels;
 	}
 
 	/**
-	 * Function to get restricted modules list
+	 * Function to get restricted modules list.
+	 *
 	 * @return array List module names
 	 */
 	public static function getActionsRestrictedModulesList()
@@ -113,7 +178,7 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 		$module = new vtlib\Module();
 		$module->name = ucfirst($moduleInformation['module_name']);
 		$module->label = $moduleInformation['module_label'];
-		$module->type = $moduleInformation['entitytype'];
+		$module->type = (int) $moduleInformation['entitytype'];
 		$module->save();
 		$module->initTables();
 
@@ -201,12 +266,7 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 		$module->setDefaultSharing();
 
 		// Enable and Disable available tools
-		$module->enableTools(['Import', 'Export', 'DuplicatesHandling', 'CreateCustomFilter',
-			'DuplicateRecord', 'MassEdit', 'MassDelete', 'MassAddComment', 'MassTransferOwnership',
-			'ReadRecord', 'WorkflowTrigger', 'Dashboard', 'CreateDashboardFilter',
-			'QuickExportToExcel', 'DetailTransferOwnership', 'ExportPdf',
-			'RecordMapping', 'RecordMappingList', 'FavoriteRecords', 'WatchingRecords',
-			'WatchingModule', 'RemoveRelation', 'ReviewingUpdates']);
+		$module->enableTools(static::$baseModuleTools);
 
 		// Initialize Webservice support
 		$module->initWebservice();
@@ -218,12 +278,13 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 
 	public static function toAlphaNumeric($value)
 	{
-		return preg_replace("/[^a-zA-Z0-9_]/", '', $value);
+		return preg_replace('/[^a-zA-Z0-9_]/', '', $value);
 	}
 
 	public static function getUploadDirectory()
 	{
 		$uploadDir = 'cache/vtlib';
+
 		return $uploadDir;
 	}
 }

@@ -1,16 +1,17 @@
 <?php
 
 /**
- * Save Changes Handler Class
- * @package YetiForce.Handler
- * @license licenses/License.html
+ * Save Changes Handler Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Accounts_SaveChanges_Handler
 {
-
 	/**
-	 * EntityAfterSave handler function
+	 * EntityAfterSave handler function.
+	 *
 	 * @param App\EventHandler $eventHandler
 	 */
 	public function entityAfterSave(App\EventHandler $eventHandler)

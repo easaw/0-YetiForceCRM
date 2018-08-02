@@ -8,8 +8,9 @@
  * All Rights Reserved.
  * ********************************************************************************** */
 
-class Settings_Vtiger_Basic_Action extends Vtiger_Action_Controller
+class Settings_Vtiger_Basic_Action extends \App\Controller\Action
 {
+	use \App\Controller\ExposeMethod;
 
 	public function __construct()
 	{
@@ -17,24 +18,21 @@ class Settings_Vtiger_Basic_Action extends Vtiger_Action_Controller
 		$this->exposeMethod('updateFieldPinnedStatus');
 	}
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Checking permissions.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedForAdmin
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUserModel->isAdminUser()) {
-			throw new \Exception\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
+		if (!\App\User::getCurrentUserModel()->isAdmin()) {
+			throw new \App\Exceptions\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
 		}
 	}
 
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->getMode();
-		if (!empty($mode)) {
-			echo $this->invokeExposedMethod($mode, $request);
-			return;
-		}
-	}
-
-	public function updateFieldPinnedStatus(Vtiger_Request $request)
+	public function updateFieldPinnedStatus(\App\Request $request)
 	{
 		$fieldId = $request->get('fieldid');
 		$menuItemModel = Settings_Vtiger_MenuItem_Model::getInstanceById($fieldId);
@@ -47,12 +45,7 @@ class Settings_Vtiger_Basic_Action extends Vtiger_Action_Controller
 		}
 
 		$response = new Vtiger_Response();
-		$response->setResult(array('SUCCESS' => 'OK'));
+		$response->setResult(['SUCCESS' => 'OK']);
 		$response->emit();
-	}
-
-	public function validateRequest(Vtiger_Request $request)
-	{
-		$request->validateWriteAccess();
 	}
 }

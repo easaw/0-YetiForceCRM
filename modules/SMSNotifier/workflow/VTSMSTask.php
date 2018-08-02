@@ -8,37 +8,40 @@
  * All Rights Reserved.
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
-require_once('modules/SMSNotifier/SMSNotifier.php');
 
 class VTSMSTask extends VTTask
 {
-
 	public $executeImmediately = true;
 
 	public function getFieldNames()
 	{
-		return array('content', 'sms_recepient');
+		return ['content', 'sms_recepient'];
 	}
 
 	/**
-	 * Execute task
+	 * Execute task.
+	 *
 	 * @param Vtiger_Record_Model $recordModel
 	 */
 	public function doTask($recordModel)
 	{
-		if (SMSNotifier::checkServer()) {
+		if (SMSNotifier_Module_Model::checkServer()) {
 			$textParser = \App\TextParser::getInstanceByModel($recordModel);
 			$content = $textParser->setContent($this->content)->parse()->getContent();
 			$recepient = $textParser->setContent($this->sms_recepient)->parse()->getContent();
 			$recepients = explode(',', $recepient);
-			/** Pickup only non-empty numbers */
-			$tonumbers = [];
-			foreach ($recepients as &$tonumber) {
-				if (!empty($tonumber)) {
-					$tonumbers[] = $tonumber;
+			$toNumbers = [];
+			foreach ($recepients as $toNumber) {
+				$parseNumber = preg_replace_callback('/[^\d]/s', function ($m) {
+					return '';
+				}, $toNumber);
+				if (!empty($parseNumber) && !in_array($parseNumber, $toNumbers)) {
+					$toNumbers[] = $parseNumber;
 				}
 			}
-			SMSNotifier::sendsms($content, $tonumbers, \App\User::getCurrentUserId(), $recordModel->getId(), $recordModel->getModuleName());
+			if ($toNumbers) {
+				SMSNotifier_Record_Model::sendSMS($content, $toNumbers, [$recordModel->getId()], $recordModel->getModuleName());
+			}
 		}
 	}
 }

@@ -8,24 +8,27 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class HelpDesk_ConvertFAQ_Action extends Vtiger_Action_Controller
+class HelpDesk_ConvertFAQ_Action extends \App\Controller\Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$recordPermission = Users_Privileges_Model::isPermitted('Faq', 'EditView');
-
-		if (!$recordPermission) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if (!\App\Privilege::isPermitted('Faq', 'CreateView')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 
-		$result = array();
 		if (!empty($recordId)) {
 			$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
 
@@ -34,9 +37,9 @@ class HelpDesk_ConvertFAQ_Action extends Vtiger_Action_Controller
 			$answer = $faqRecordModel->get('faq_answer');
 			if ($answer) {
 				$faqRecordModel->save();
-				header("Location: " . $faqRecordModel->getDetailViewUrl());
+				header('Location: ' . $faqRecordModel->getDetailViewUrl());
 			} else {
-				header("Location: " . $faqRecordModel->getEditViewUrl() . "&parentId=$recordId&parentModule=$moduleName");
+				header('Location: ' . $faqRecordModel->getEditViewUrl() . "&parentId=$recordId&parentModule=$moduleName");
 			}
 		}
 	}

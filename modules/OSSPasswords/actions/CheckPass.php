@@ -1,20 +1,24 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
-class OSSPasswords_CheckPass_Action extends Vtiger_Action_Controller
+/**
+ * OSSPasswords CheckPass action class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+class OSSPasswords_CheckPass_Action extends \App\Controller\Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
 		$userPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		$permission = $userPrivilegesModel->hasModulePermission($request->getModule());
 
 		if (!$permission) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$password = $request->get('password');
@@ -24,9 +28,9 @@ class OSSPasswords_CheckPass_Action extends Vtiger_Action_Controller
 		$passOK = $recordModel->checkPassword($password);
 
 		if ($passOK['error'] === true) {
-			$result = array('success' => false, 'message' => $passOK['message']);
+			$result = ['success' => false, 'message' => $passOK['message']];
 		} else {
-			$result = array('success' => true, 'message' => '');
+			$result = ['success' => true, 'message' => ''];
 		}
 
 		$response = new Vtiger_Response();

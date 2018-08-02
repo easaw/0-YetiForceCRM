@@ -10,15 +10,14 @@
 
 class Portal_Detail_View extends Vtiger_Index_View
 {
-
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 		$module = $request->getModule();
 
 		$url = Portal_Module_Model::getWebsiteUrl($recordId);
@@ -34,20 +33,21 @@ class Portal_Detail_View extends Vtiger_Index_View
 		$viewer->view('DetailView.tpl', $module);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
+		$jsFileNames = [
 			'modules.Vtiger.resources.List',
 			'modules.Vtiger.resources.Detail',
 			"modules.$moduleName.resources.List",
 			"modules.$moduleName.resources.Detail",
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 }

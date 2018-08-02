@@ -1,15 +1,16 @@
 <?php
+
 namespace Api\Core;
 
 /**
- * Base action class
- * @package YetiForce.WebserviceAction
- * @license licenses/License.html
+ * Base action class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class BaseAction
 {
-
 	/** @var array Permitted modules */
 	public $allowedMethod;
 
@@ -24,19 +25,28 @@ class BaseAction
 		if ((isset($this->allowedMethod) && !in_array($this->controller->method, $this->allowedMethod)) || !method_exists($this, $this->controller->method)) {
 			throw new \Api\Core\Exception('Invalid method', 405);
 		}
-		$this->checkPermissionToModule();
 		$this->checkPermission();
-		/*
-		  $acceptableUrl = $this->controller->app['acceptable_url'];
-		  if ($acceptableUrl && rtrim($this->controller->app['acceptable_url'], '/') != rtrim($params['fromUrl'], '/')) {
-		  throw new \Api\Core\Exception('LBL_INVALID_SERVER_URL', 401);
-		  }
-		 */
+		$this->checkPermissionToModule();
+
 		return true;
 	}
 
 	/**
-	 * Check permission to module
+	 * Unfinished.
+	 *
+	 * @throws \Api\Core\Exception
+	 */
+	public function checkAction2()
+	{
+		$acceptableUrl = $this->controller->app['acceptable_url'];
+		if ($acceptableUrl && rtrim($this->controller->app['acceptable_url'], '/') != rtrim($params['fromUrl'], '/')) {
+			throw new \Api\Core\Exception('LBL_INVALID_SERVER_URL', 401);
+		}
+	}
+
+	/**
+	 * Check permission to module.
+	 *
 	 * @throws \Api\Core\Exception
 	 */
 	public function checkPermissionToModule()
@@ -47,47 +57,50 @@ class BaseAction
 	}
 
 	/**
-	 * Check permission to method
-	 * @return boolean
+	 * Check permission to method.
+	 *
 	 * @throws \Api\Core\Exception
+	 *
+	 * @return bool
 	 */
 	public function checkPermission()
 	{
 		if (empty($this->controller->headers['X-TOKEN'])) {
-			throw new \Api\Core\Exception('Invalid token', 401);
+			throw new \Api\Core\Exception('No sent token', 401);
 		}
 		$apiType = strtolower($this->controller->app['type']);
 		$sessionTable = "w_#__{$apiType}_session";
 		$userTable = "w_#__{$apiType}_user";
 		$db = \App\Db::getInstance('webservice');
-		$row = (new \App\Db\Query())->from($sessionTable)->innerJoin($userTable, "$sessionTable.user_id = $userTable.id")
-				->where(["$sessionTable.id" => $this->controller->headers['X-TOKEN'], "$userTable.status" => 1])->one($db);
+		$row = (new \App\Db\Query())->select(["$userTable.*", "$sessionTable.id", 'sessionLanguage' => "$sessionTable.language", "$sessionTable.created", "$sessionTable.changed", "$sessionTable.params"])->from($userTable)
+			->innerJoin($sessionTable, "$sessionTable.user_id = $userTable.id")
+			->where(["$sessionTable.id" => $this->controller->headers['X-TOKEN'], "$userTable.status" => 1])
+			->one($db);
 		if (empty($row)) {
 			throw new \Api\Core\Exception('Invalid token', 401);
 		}
 		$this->session = new \App\Base();
 		$this->session->setData($row);
 		\App\User::setCurrentUserId($this->session->get('user_id'));
-		$currentUser = (new \Users())->retrieveCurrentUserInfoFromFile($this->session->get('user_id'));
-		vglobal('current_user', $currentUser);
 		$db->createCommand()
 			->update($sessionTable, ['changed' => date('Y-m-d H:i:s')], ['id' => $this->session->get('id')])
 			->execute();
 	}
 
 	/**
-	 * Pre process function
+	 * Pre process function.
 	 */
 	public function preProcess()
 	{
 		$language = $this->getLanguage();
 		if ($language) {
-			\Vtiger_Language_Handler::$language = $language;
+			\App\Language::setTemporaryLanguage($language);
 		}
 	}
 
 	/**
-	 * Get current language
+	 * Get current language.
+	 *
 	 * @return string
 	 */
 	public function getLanguage()
@@ -103,7 +116,8 @@ class BaseAction
 	}
 
 	/**
-	 * Get permission type
+	 * Get permission type.
+	 *
 	 * @return int
 	 */
 	public function getPermissionType()
@@ -112,7 +126,8 @@ class BaseAction
 	}
 
 	/**
-	 * Get crmid for portal user
+	 * Get crmid for portal user.
+	 *
 	 * @return int
 	 */
 	public function getUserCrmId()
@@ -121,7 +136,8 @@ class BaseAction
 	}
 
 	/**
-	 * Get parent record
+	 * Get parent record.
+	 *
 	 * @return int
 	 */
 	public function getParentCrmId()

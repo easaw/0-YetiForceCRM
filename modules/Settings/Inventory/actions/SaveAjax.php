@@ -1,12 +1,13 @@
 <?php
 
 /**
- * @package YetiForce.Action
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_Inventory_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 {
+	use \App\Controller\ExposeMethod;
 
 	public function __construct()
 	{
@@ -16,16 +17,16 @@ class Settings_Inventory_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 		$this->exposeMethod('saveConfig');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
-		$currentUser = Users_Record_Model::getCurrentUserModel();
 		if (!empty($mode)) {
 			echo $this->invokeExposedMethod($mode, $request);
+
 			return;
 		}
 		$id = $request->get('id');
-		$type = $request->get('view');
+		$type = $request->getByType('view', 1);
 		if (empty($id)) {
 			$recordModel = new Settings_Inventory_Record_Model();
 		} else {
@@ -37,33 +38,35 @@ class Settings_Inventory_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 				$recordModel->set($fieldName, $fieldValue);
 			}
 		}
+		if ($type === 'Discounts') {
+			$recordModel->set('value', CurrencyField::convertToDBFormat($recordModel->get('value')));
+		}
 		$recordModel->setType($type);
 
 		$response = new Vtiger_Response();
 		try {
 			$id = $recordModel->save();
 			$recordModel = Settings_Inventory_Record_Model::getInstanceById($id, $type);
-			$response->setResult(array_merge(['_editurl' => $recordModel->getEditUrl(), 'row_type' => $currentUser->get('rowheight')], $recordModel->getData()));
+			$response->setResult(array_merge(['_editurl' => $recordModel->getEditUrl(), 'row_type' => \App\User::getCurrentUserModel()->getDetail('rowheight')], $recordModel->getData()));
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
 	}
 
-	public function checkDuplicateName(Vtiger_Request $request)
+	public function checkDuplicateName(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
 		$id = $request->get('id');
 		$name = $request->get('name');
-		$type = $request->get('view');
+		$type = $request->getByType('view', 1);
 
 		$exists = Settings_Inventory_Record_Model::checkDuplicate($name, $id, $type);
 
 		if (!$exists) {
-			$result = array('success' => false);
+			$result = ['success' => false];
 		} else {
-			$result = array('success' => true, 'message' => vtranslate('LBL_NAME_EXIST', $qualifiedModuleName));
+			$result = ['success' => true, 'message' => \App\Language::translate('LBL_NAME_EXIST', $qualifiedModuleName)];
 		}
 
 		$response = new Vtiger_Response();
@@ -71,9 +74,8 @@ class Settings_Inventory_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 		$response->emit();
 	}
 
-	public function deleteInventory(Vtiger_Request $request)
+	public function deleteInventory(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
 		$params = $request->get('param');
 		$id = $params['id'];
@@ -83,9 +85,9 @@ class Settings_Inventory_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 		$status = $recordModel->delete();
 
 		if (!$status) {
-			$result = array('success' => false);
+			$result = ['success' => false];
 		} else {
-			$result = array('success' => true, 'message' => vtranslate('LBL_DELETE_OK', $qualifiedModuleName));
+			$result = ['success' => true, 'message' => \App\Language::translate('LBL_DELETE_OK', $qualifiedModuleName)];
 		}
 
 		$response = new Vtiger_Response();
@@ -93,10 +95,8 @@ class Settings_Inventory_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 		$response->emit();
 	}
 
-	public function saveConfig(Vtiger_Request $request)
+	public function saveConfig(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$qualifiedModuleName = $request->getModule(false);
 		$params = $request->get('param');
 		$type = $params['view'];
 
@@ -104,18 +104,13 @@ class Settings_Inventory_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 		$status = $recordModel->setConfig($type, $params['param']);
 
 		if (!$status) {
-			$result = array('success' => false);
+			$result = ['success' => false];
 		} else {
-			$result = array('success' => true);
+			$result = ['success' => true];
 		}
 
 		$response = new Vtiger_Response();
 		$response->setResult($result);
 		$response->emit();
-	}
-
-	public function validateRequest(Vtiger_Request $request)
-	{
-		$request->validateWriteAccess();
 	}
 }

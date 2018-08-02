@@ -11,10 +11,10 @@
 
 class Products_Relation_Model extends Vtiger_Relation_Model
 {
-
 	/**
-	 * Function that deletes PriceBooks related records information
-	 * @param <Integer> $sourceRecordId - Product/Service Id
+	 * Function that deletes PriceBooks related records information.
+	 *
+	 * @param <Integer> $sourceRecordId  - Product/Service Id
 	 * @param <Integer> $relatedRecordId - Related Record Id
 	 */
 	public function deleteRelation($sourceRecordId, $relatedRecordId)
@@ -22,9 +22,9 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 		$sourceModuleName = $this->getParentModuleModel()->get('name');
 		$relatedModuleName = $this->getRelationModuleModel()->get('name');
 		if (($sourceModuleName == 'Products' || $sourceModuleName == 'Services') && $relatedModuleName == 'PriceBooks') {
-			//Description: deleteListPrice function is deleting the relation between Pricebook and Product/Service 
+			//Description: deleteListPrice function is deleting the relation between Pricebook and Product/Service
 			return Vtiger_Record_Model::getInstanceById($relatedRecordId, $relatedModuleName)->deleteListPrice($sourceRecordId);
-		} else if ($sourceModuleName == $relatedModuleName) {
+		} elseif ($sourceModuleName == $relatedModuleName) {
 			return $this->deleteProductToProductRelation($sourceRecordId, $relatedRecordId);
 		} else {
 			return parent::deleteRelation($sourceRecordId, $relatedRecordId);
@@ -32,15 +32,18 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 	}
 
 	/**
-	 * Function to delete the product to product relation(product bundles)
+	 * Function to delete the product to product relation(product bundles).
+	 *
 	 * @param type $sourceRecordId
 	 * @param type $relatedRecordId true / false
+	 *
 	 * @return <boolean>
 	 */
 	public function deleteProductToProductRelation($sourceRecordId, $relatedRecordId)
 	{
 		if (!empty($sourceRecordId) && !empty($relatedRecordId)) {
 			App\Db::getInstance()->createCommand()->delete('vtiger_seproductsrel', ['crmid' => $relatedRecordId, 'productid' => $sourceRecordId])->execute();
+
 			return true;
 		}
 		return false;
@@ -48,17 +51,14 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 
 	public function isSubProduct($subProductId)
 	{
-		if (!empty($subProductId)) {
-			$db = PearDatabase::getInstance();
-			$result = $db->pquery('SELECT crmid FROM vtiger_seproductsrel WHERE crmid = ?', array($subProductId));
-			if ($db->num_rows($result) > 0) {
-				return true;
-			}
+		if ($subProductId) {
+			return (new \App\Db\Query())->select(['crmid'])->from('vtiger_seproductsrel')->where(['crmid' => $subProductId])->exists();
 		}
 	}
 
 	/**
-	 * Function to add Products/Services-PriceBooks Relation
+	 * Function to add Products/Services-PriceBooks Relation.
+	 *
 	 * @param <Integer> $sourceRecordId
 	 * @param <Integer> $destinationRecordId
 	 * @param <Integer> $listPrice
@@ -70,11 +70,11 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 		$relationModuleModel = Vtiger_Record_Model::getInstanceById($destinationRecordId, $relatedModuleName);
 
 		$productModel = Vtiger_Record_Model::getInstanceById($sourceRecordId, $sourceModuleName);
-		$productModel->updateListPrice($destinationRecordId, $listPrice, $relationModuleModel->get('currency_id'));
+		return $productModel->updateListPrice($destinationRecordId, $listPrice, $relationModuleModel->get('currency_id'));
 	}
 
 	/**
-	 * Get products
+	 * Get products.
 	 */
 	public function getProducts()
 	{
@@ -84,7 +84,7 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 	}
 
 	/**
-	 * Get products pricebooks
+	 * Get products pricebooks.
 	 */
 	public function getProductPricebooks()
 	{
@@ -96,7 +96,7 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 	}
 
 	/**
-	 * Get parent products
+	 * Get parent products.
 	 */
 	public function getParentProducts()
 	{
@@ -106,7 +106,7 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 	}
 
 	/**
-	 * Get leads
+	 * Get leads.
 	 */
 	public function getLeads()
 	{
@@ -117,11 +117,10 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 	}
 
 	/**
-	 * Get accounts
+	 * Get accounts.
 	 */
 	public function getAccounts()
 	{
-
 		$queryGenerator = $this->getQueryGenerator();
 		$queryGenerator->addJoin(['INNER JOIN', 'vtiger_seproductsrel', 'vtiger_seproductsrel.crmid = vtiger_account.accountid']);
 		$queryGenerator->addJoin(['INNER JOIN', 'vtiger_products', 'vtiger_seproductsrel.productid = vtiger_products.productid']);
@@ -129,7 +128,7 @@ class Products_Relation_Model extends Vtiger_Relation_Model
 	}
 
 	/**
-	 * Get many to many
+	 * Get many to many.
 	 */
 	public function getManyToMany()
 	{

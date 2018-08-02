@@ -1,58 +1,70 @@
 <?php
 
 /**
- * TimeLineModal View Class
- * @package YetiForce.Modal
- * @license licenses/License.html
+ * TimeLineModal View Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Vtiger_TimeLineModal_View extends Vtiger_BasicModal_View
 {
-
 	/**
-	 * Checking permission
-	 * @param Vtiger_Request $request
-	 * @throws \Exception\NoPermittedToRecord
+	 * Checking permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedToRecord
 	 */
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
+		if ($request->isEmpty('record', true)) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+		if (!\App\Privilege::isPermitted('ModTracker')) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
 		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
-		if (!\App\Privilege::isPermitted($moduleName, 'TimeLineList') || !\App\Privilege::isPermitted($moduleName, 'DetailView', $recordId)) {
-			throw new \Exception\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD');
+		if (!\App\Privilege::isPermitted($moduleName, 'TimeLineList') || !\App\Privilege::isPermitted($moduleName, 'DetailView', $request->getInteger('record'))) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
 	/**
-	 * The initial process
-	 * @param Vtiger_Request $request
-	 * @param type $display
+	 * The initial process.
+	 *
+	 * @param \App\Request $request
+	 * @param type         $display
 	 */
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 		echo '<div class="modal-header">
-				<button class="close" data-dismiss="modal" title="' . \App\Language::translate('LBL_CLOSE') . '">x</button>
-				<h3 class="modal-title">' . \App\Language::translate('LBL_TIMELINE', $request->getModule()) . ' </h3>
+				<h5 class="modal-title">' . \App\Language::translate('LBL_TIMELINE', $request->getModule()) . ' </h5>
+				<button type="button" class="close" data-dismiss="modal" title="' . \App\Language::translate('LBL_CLOSE') . '">
+					<span aria-hidden="true">&times;</span>
+				</button>
 			</div>
 			<div class="modal-body">';
 	}
 
 	/**
-	 * The final process
-	 * @param Vtiger_Request $request
+	 * The final process.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function postProcess(Vtiger_Request $request)
+	public function postProcess(\App\Request $request, $display = true)
 	{
 		parent::postProcess($request);
 		echo '</div>';
 	}
 
 	/**
-	 * Proceess
-	 * @param Vtiger_Request $request
+	 * Proceess.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$request->set('limit', AppConfig::module('ModTracker', 'TIMELINE_IN_LISTVIEW_LIMIT'));

@@ -8,15 +8,14 @@
  * All Rights Reserved.
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
+
 namespace vtlib;
 
 /**
- * Provides basic API to work with vtiger CRM Fields
- * @package vtlib
+ * Provides basic API to work with vtiger CRM Fields.
  */
 class FieldBasic
 {
-
 	/** ID of this field instance */
 	public $id;
 	public $name;
@@ -38,7 +37,7 @@ class FieldBasic
 	public $readonly = 1;
 	public $presence = 2;
 	public $defaultvalue = '';
-	public $maximumlength = 100;
+	public $maximumlength;
 	public $sequence = false;
 	public $quickcreate = 1;
 	public $quicksequence = false;
@@ -47,46 +46,46 @@ class FieldBasic
 	public $fieldparams = '';
 
 	/**
-	 * Initialize this instance
-	 * @param Array 
-	 * @param Module Instance of module to which this field belongs
-	 * @param vtlib\Block Instance of block to which this field belongs
-	 * @access private
+	 * Initialize this instance.
+	 *
+	 * @param array        $valuemap
+	 * @param mixed        $module        Mixed id or name of the module
+	 * @param \vtlib\Block $blockInstance Instance of block to which this field belongs
 	 */
-	public function initialize($valuemap, $moduleInstance = false, $blockInstance = false)
+	public function initialize($valuemap, $module = false, $blockInstance = false)
 	{
-		$this->id = $valuemap['fieldid'];
-		$this->tabid = $valuemap['tabid'];
+		$this->id = (int) $valuemap['fieldid'];
+		$this->tabid = (int) $valuemap['tabid'];
 		$this->name = $valuemap['fieldname'];
 		$this->label = $valuemap['fieldlabel'];
 		$this->column = $valuemap['columnname'];
 		$this->table = $valuemap['tablename'];
-		$this->uitype = $valuemap['uitype'];
+		$this->uitype = (int) $valuemap['uitype'];
 		$this->typeofdata = $valuemap['typeofdata'];
 		$this->helpinfo = $valuemap['helpinfo'];
-		$this->masseditable = $valuemap['masseditable'];
+		$this->masseditable = (int) $valuemap['masseditable'];
 		$this->header_field = $valuemap['header_field'];
-		$this->maxlengthtext = $valuemap['maxlengthtext'];
-		$this->maxwidthcolumn = $valuemap['maxwidthcolumn'];
-		$this->displaytype = $valuemap['displaytype'];
-		$this->generatedtype = $valuemap['generatedtype'];
-		$this->readonly = $valuemap['readonly'];
-		$this->presence = $valuemap['presence'];
+		$this->maximumlength = $valuemap['maximumlength'];
+		$this->maxlengthtext = (int) $valuemap['maxlengthtext'];
+		$this->maxwidthcolumn = (int) $valuemap['maxwidthcolumn'];
+		$this->displaytype = (int) $valuemap['displaytype'];
+		$this->generatedtype = (int) $valuemap['generatedtype'];
+		$this->readonly = (int) $valuemap['readonly'];
+		$this->presence = (int) $valuemap['presence'];
 		$this->defaultvalue = $valuemap['defaultvalue'];
-		$this->quickcreate = $valuemap['quickcreate'];
-		$this->sequence = $valuemap['sequence'];
-		$this->quicksequence = $valuemap['quickcreatesequence'];
-		$this->summaryfield = $valuemap['summaryfield'];
+		$this->quickcreate = (int) $valuemap['quickcreate'];
+		$this->sequence = (int) $valuemap['sequence'];
+		$this->quicksequence = (int) $valuemap['quickcreatesequence'];
+		$this->summaryfield = (int) $valuemap['summaryfield'];
 		$this->fieldparams = $valuemap['fieldparams'];
-		$this->block = $blockInstance ? $blockInstance : Block::getInstance($valuemap['block'], $moduleInstance);
+		$this->block = $blockInstance ? $blockInstance : Block::getInstance($valuemap['block'], $module);
 	}
 
 	/** Cache (Record) the schema changes to improve performance */
-	static $__cacheSchemaChanges = [];
+	public static $__cacheSchemaChanges = [];
 
 	/**
-	 * Get unique id for this instance
-	 * @access private
+	 * Get unique id for this instance.
 	 */
 	public function __getUniqueId()
 	{
@@ -94,8 +93,7 @@ class FieldBasic
 	}
 
 	/**
-	 * Get next sequence id to use within a block for this instance
-	 * @access private
+	 * Get next sequence id to use within a block for this instance.
 	 */
 	public function __getNextSequence()
 	{
@@ -109,8 +107,7 @@ class FieldBasic
 	}
 
 	/**
-	 * Get next quick create sequence id for this instance
-	 * @access private
+	 * Get next quick create sequence id for this instance.
 	 */
 	public function __getNextQuickCreateSequence()
 	{
@@ -124,9 +121,9 @@ class FieldBasic
 	}
 
 	/**
-	 * Create this field instance
+	 * Create this field instance.
+	 *
 	 * @param vtlib\Block Instance of the block to use
-	 * @access private
 	 */
 	public function __create($blockInstance)
 	{
@@ -158,12 +155,22 @@ class FieldBasic
 		if (!$this->label) {
 			$this->label = $this->name;
 		}
+		if (!empty($this->columntype)) {
+			Utils::addColumn($this->table, $this->column, $this->columntype);
+			if ($this->uitype === 10) {
+				$db->createCommand()->createIndex("{$this->table}_{$this->column}_idx", $this->table, $this->column)->execute();
+			}
+		}
+		$this->createAdditionalField();
+		if (!$this->maximumlength && method_exists($this, 'getRangeValues')) {
+			$this->maximumlength = $this->getRangeValues();
+		}
 		$db->createCommand()->insert('vtiger_field', [
 			'tabid' => $this->getModuleId(),
 			'fieldid' => $this->id,
 			'columnname' => $this->column,
 			'tablename' => $this->table,
-			'generatedtype' => intval($this->generatedtype),
+			'generatedtype' => (int) ($this->generatedtype),
 			'uitype' => $this->uitype,
 			'fieldname' => $this->name,
 			'fieldlabel' => $this->label,
@@ -175,32 +182,43 @@ class FieldBasic
 			'block' => $this->getBlockId(),
 			'displaytype' => $this->displaytype,
 			'typeofdata' => $this->typeofdata,
-			'quickcreate' => intval($this->quickcreate),
-			'quickcreatesequence' => intval($this->quicksequence),
+			'quickcreate' => (int) ($this->quickcreate),
+			'quickcreatesequence' => (int) ($this->quicksequence),
 			'info_type' => $this->info_type,
 			'helpinfo' => $this->helpinfo,
-			'summaryfield' => intval($this->summaryfield),
+			'summaryfield' => (int) ($this->summaryfield),
 			'fieldparams' => $this->fieldparams,
 			'masseditable' => $this->masseditable,
 		])->execute();
 		Profile::initForField($this);
-		if (!empty($this->columntype)) {
-			Utils::AddColumn($this->table, $this->column, $this->columntype);
-			if ($this->uitype === 10) {
-				$db->createCommand()->createIndex("{$this->table}_{$this->column}_idx", $this->table, $this->column)->execute();
-			}
+		\App\Log::trace("Creating field $this->name ... DONE", __METHOD__);
+	}
+
+	/**
+	 * Create additional fields.
+	 */
+	public function createAdditionalField()
+	{
+		if ($this->uitype === 11) {
+			$fieldInstance = new Field();
+			$fieldInstance->name = $this->name . '_extra';
+			$fieldInstance->table = $this->table;
+			$fieldInstance->label = 'FL_PHONE_CUSTOM_INFORMATION';
+			$fieldInstance->column = $this->column . '_extra';
+			$fieldInstance->uitype = 1;
+			$fieldInstance->displaytype = 3;
+			$fieldInstance->typeofdata = 'V~O';
+			$fieldInstance->save($this->block);
 		}
-		self::log("Creating field $this->name ... DONE");
 	}
 
 	public function __update()
 	{
-		self::log("Updating Field $this->name ... DONE");
+		\App\Log::trace("Updating Field $this->name ... DONE", __METHOD__);
 	}
 
 	/**
-	 * Delete this field instance
-	 * @access private
+	 * Delete this field instance.
 	 */
 	public function __delete()
 	{
@@ -208,12 +226,18 @@ class FieldBasic
 		\App\Db::getInstance()->createCommand()->delete('vtiger_field', ['fieldid' => $this->id])->execute();
 		if ($this->uitype === 10) {
 			\App\Db::getInstance()->createCommand()->delete('vtiger_fieldmodulerel', ['fieldid' => $this->id])->execute();
+		} elseif ($this->uitype === 11) {
+			$rowExtra = (new \App\Db\Query())->from('vtiger_field')->where(['fieldname' => $this->name . '_extra'])->one();
+			if ($rowExtra === false) {
+				throw new \App\Exceptions\AppException('Extra field does not exist');
+			}
+			\App\Db::getInstance()->createCommand()->delete('vtiger_field', ['fieldid' => $rowExtra['fieldid']])->execute();
 		}
-		self::log("Deleteing Field $this->name ... DONE");
+		\App\Log::trace("Deleteing Field $this->name ... DONE", __METHOD__);
 	}
 
 	/**
-	 * Get block id to which this field instance is associated
+	 * Get block id to which this field instance is associated.
 	 */
 	public function getBlockId()
 	{
@@ -221,18 +245,23 @@ class FieldBasic
 	}
 
 	/**
-	 * Get module id to which this field instance is associated
+	 * Get module id to which this field instance is associated.
 	 */
 	public function getModuleId()
 	{
 		if ($this->tabid) {
 			return $this->tabid;
 		}
-		return $this->block->module->id;
+		if (!empty($this->block)) {
+			return $this->block->module->id;
+		}
+		return false;
 	}
 
 	/**
-	 * Get module name to which this field instance is associated
+	 * Get module name to which this field instance is associated.
+	 *
+	 * @return bool|string
 	 */
 	public function getModuleName()
 	{
@@ -243,7 +272,9 @@ class FieldBasic
 	}
 
 	/**
-	 * Get module instance to which this field instance is associated
+	 * Get module instance to which this field instance is associated.
+	 *
+	 * @return mixed
 	 */
 	public function getModuleInstance()
 	{
@@ -251,20 +282,22 @@ class FieldBasic
 	}
 
 	/**
-	 * Save this field instance
-	 * @param vtlib\Block Instance of block to which this field should be added.
+	 * Save this field instance.
+	 *
+	 * @param vtlib\Block Instance of block to which this field should be added
 	 */
 	public function save($blockInstance = false)
 	{
-		if ($this->id)
+		if ($this->id) {
 			$this->__update();
-		else
+		} else {
 			$this->__create($blockInstance);
+		}
 		return $this->id;
 	}
 
 	/**
-	 * Delete this field instance
+	 * Delete this field instance.
 	 */
 	public function delete()
 	{
@@ -273,7 +306,8 @@ class FieldBasic
 
 	/**
 	 * Set Help Information for this instance.
-	 * @param String Help text (content)
+	 *
+	 * @param string Help text (content)
 	 */
 	public function setHelpInfo($helptext)
 	{
@@ -281,46 +315,38 @@ class FieldBasic
 		\App\Db::getInstance()->createCommand()
 			->update('vtiger_field', ['helpinfo' => $helptext], ['fieldid' => $this->id])
 			->execute();
-		self::log("Updated help information of $this->name ... DONE");
+		\App\Log::trace("Updated help information of $this->name ... DONE", __METHOD__);
 	}
 
 	/**
 	 * Set Masseditable information for this instance.
-	 * @param Integer Masseditable value
+	 *
+	 * @param int Masseditable value
 	 */
 	public function setMassEditable($value)
 	{
 		\App\Db::getInstance()->createCommand()
 			->update('vtiger_field', ['masseditable' => $value], ['fieldid' => $this->id])
 			->execute();
-		self::log("Updated masseditable information of $this->name ... DONE");
+		\App\Log::trace("Updated masseditable information of $this->name ... DONE", __METHOD__);
 	}
 
 	/**
-	 * Set Summaryfield information for this instance. 
-	 * @param Integer Summaryfield value 
+	 * Set Summaryfield information for this instance.
+	 *
+	 * @param int Summaryfield value
 	 */
 	public function setSummaryField($value)
 	{
 		\App\Db::getInstance()->createCommand()
 			->update('vtiger_field', ['summaryfield' => $value], ['fieldid' => $this->id])
 			->execute();
-		self::log("Updated summaryfield information of $this->name ... DONE");
+		\App\Log::trace("Updated summaryfield information of $this->name ... DONE", __METHOD__);
 	}
 
 	/**
-	 * Helper function to log messages
-	 * @param String Message to log
-	 * @param Boolean true appends linebreak, false to avoid it
-	 * @access private
-	 */
-	static function log($message, $delim = true)
-	{
-		Utils::Log($message, $delim);
-	}
-
-	/**
-	 * Get block name
+	 * Get block name.
+	 *
 	 * @return string
 	 */
 	public function getBlockName()

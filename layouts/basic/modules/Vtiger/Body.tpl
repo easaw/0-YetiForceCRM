@@ -1,17 +1,18 @@
 {strip}
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+	{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
+	{assign var="ANNOUNCEMENTS" value=Vtiger_Module_Model::getInstance('Announcements')}
+	{if $ANNOUNCEMENTS->checkActive()}
+		{include file=\App\Layout::getTemplatePath('Announcement.tpl', $MODULE)}
+	{/if}
+	{assign var=LEFTPANELHIDE value=$USER_MODEL->get('leftpanelhide')}
 	<div class="container-fluid container-fluid-main">
-		<div class="baseContainer {if AppConfig::module('Users','IS_VISIBLE_USER_INFO_FOOTER')}userInfoFooter{/if}">
-			{assign var=LEFTPANELHIDE value=$USER_MODEL->get('leftpanelhide')}	
-			{include file='BodyHeaderMobile.tpl'|@vtemplate_path:$MODULE}
-			<div class="mobileLeftPanel noSpaces">
-				{include file='BodyLeft.tpl'|@vtemplate_path:$MODULE DEVICE=Mobile}
+		<div class="o-base-container js-base-container c-menu--animation {if $LEFTPANELHIDE} c-menu--open{/if} {if AppConfig::module('Users','IS_VISIBLE_USER_INFO_FOOTER')}userInfoFooter{/if}"
+			 data-js="container | class: c-menu--animation">
+			<div class="js-sidebar c-menu__container noSpaces" data-js="class: .js-expand">
+				{include file=\App\Layout::getTemplatePath('BodyLeft.tpl', $MODULE)}
 			</div>
-			<div class="leftPanel noSpaces">
-				{include file='BodyLeft.tpl'|@vtemplate_path:$MODULE DEVICE=Desktop}
-			</div>
-			{include file='BodyHeader.tpl'|@vtemplate_path:$MODULE}
-			<div class="basePanel noSpaces {if $LEFTPANELHIDE} menuOpen{/if}">
+			{include file=\App\Layout::getTemplatePath('BodyHeader.tpl', $MODULE)}
+			<div class="basePanel {$MODULE}_{$VIEW}">
 				<div class="mainBody {if AppConfig::module('Users','IS_VISIBLE_USER_INFO_FOOTER')}userInfoFooter{/if}">
-				{include file='BodyContent.tpl'|@vtemplate_path:$MODULE}
-{/strip}
+					{include file=\App\Layout::getTemplatePath('BodyContent.tpl', $MODULE)}
+				{/strip}

@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Inventory Field View Class
- * @package YetiForce.Views
- * @license licenses/License.html
+ * Inventory Field View Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_LayoutEditor_CreateInventoryFields_View extends Settings_Vtiger_IndexAjax_View
 {
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -16,7 +16,7 @@ class Settings_LayoutEditor_CreateInventoryFields_View extends Settings_Vtiger_I
 		$this->exposeMethod('step2');
 	}
 
-	public function step1(Vtiger_Request $request)
+	public function step1(\App\Request $request)
 	{
 		$qualifiedModuleName = $request->getModule(false);
 		$moduleName = $request->get('type');
@@ -25,7 +25,7 @@ class Settings_LayoutEditor_CreateInventoryFields_View extends Settings_Vtiger_I
 		$models = $instance->getAllFields();
 
 		$fieldsName = [];
-		foreach ($instance->getFields(1, [], 'Settings') AS $fields) {
+		foreach ($instance->getFields(1, [], 'Settings') as $fields) {
 			$fieldsName = array_merge(array_keys($fields), $fieldsName);
 		}
 		$viewer = $this->getViewer($request);
@@ -37,7 +37,7 @@ class Settings_LayoutEditor_CreateInventoryFields_View extends Settings_Vtiger_I
 		$viewer->view('CreateInventoryFieldsStep1.tpl', $qualifiedModuleName);
 	}
 
-	public function step2(Vtiger_Request $request)
+	public function step2(\App\Request $request)
 	{
 		$qualifiedModuleName = $request->getModule(false);
 		$type = $request->get('mtype');

@@ -1,20 +1,22 @@
 <?php
+
 namespace Api\Core;
 
 /**
- * Module class 
- * @package YetiForce.Webservice
- * @license licenses/License.html
+ * Module class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Module
 {
-
 	/** @var array Permitted modules */
-	static protected $permittedModules;
+	protected static $permittedModules;
 
 	/**
-	 * Get permitted modules
+	 * Get permitted modules.
+	 *
 	 * @return array
 	 */
 	public static function getPermittedModules()
@@ -22,8 +24,6 @@ class Module
 		if (isset(static::$permittedModules)) {
 			return static::$permittedModules;
 		}
-		$action = \Api\Controller::getAction();
-		//$permissionType = $action->getPermissionType();
 		$modules = [];
 		foreach (\vtlib\Functions::getAllModules(true, false, 0) as $value) {
 			if (\App\Privilege::isPermitted($value['name'])) {
@@ -34,15 +34,17 @@ class Module
 	}
 
 	/**
-	 * Check module access
+	 * Check module access.
+	 *
 	 * @param string $moduleName
+	 *
 	 * @return bool
 	 */
 	public static function checkModuleAccess($moduleName)
 	{
-		if (!isset(static::$permittedModules)) {
-			self::getPermittedModules();
+		if (isset(static::$permittedModules)) {
+			return isset(static::$permittedModules[$moduleName]);
 		}
-		return isset(static::$permittedModules[$moduleName]);
+		return \App\Privilege::isPermitted($moduleName);
 	}
 }

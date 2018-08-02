@@ -11,39 +11,40 @@
 
 class Documents_MoveDocuments_Action extends Vtiger_Mass_Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-
-		if (!Users_Privileges_Model::isPermitted($moduleName, 'EditView')) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if (!\App\Privilege::isPermitted($request->getModule(), 'EditView')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$documentIdsList = $this->getRecordsListFromRequest($request);
-		$folderId = $request->get('folderid');
-
 		if (!empty($documentIdsList)) {
 			foreach ($documentIdsList as $documentId) {
-				$documentModel = Vtiger_Record_Model::getInstanceById($documentId, $moduleName);
-				if (Users_Privileges_Model::isPermitted($moduleName, 'EditView', $documentId)) {
-					$documentModel->set('folderid', $folderId);
-					$documentModel->save();
+				$recordModel = Vtiger_Record_Model::getInstanceById($documentId, $moduleName);
+				$fieldModel = $recordModel->getModule()->getFieldByName('folderid');
+				if ($fieldModel && $fieldModel->isEditable()) {
+					$fieldModel->getUITypeModel()->setValueFromRequest($request, $recordModel);
+					$recordModel->save();
 				} else {
-					$documentsMoveDenied[] = $documentModel->getName();
+					$documentsMoveDenied[] = $recordModel->getName();
 				}
 			}
 		}
 		if (empty($documentsMoveDenied)) {
-			$result = array('success' => true, 'message' => vtranslate('LBL_DOCUMENTS_MOVED_SUCCESSFULLY', $moduleName));
+			$result = ['success' => true, 'message' => \App\Language::translate('LBL_DOCUMENTS_MOVED_SUCCESSFULLY', $moduleName)];
 		} else {
-			$result = array('success' => false, 'message' => vtranslate('LBL_DENIED_DOCUMENTS', $moduleName), 'LBL_RECORDS_LIST' => $documentsMoveDenied);
+			$result = ['success' => false, 'message' => \App\Language::translate('LBL_DENIED_DOCUMENTS', $moduleName), 'LBL_RECORDS_LIST' => $documentsMoveDenied];
 		}
-
 		$response = new Vtiger_Response();
 		$response->setResult($result);
 		$response->emit();

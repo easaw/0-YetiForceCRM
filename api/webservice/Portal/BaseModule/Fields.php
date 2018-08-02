@@ -1,20 +1,22 @@
 <?php
+
 namespace Api\Portal\BaseModule;
 
 /**
- * Get fields class
- * @package YetiForce.WebserviceAction
- * @license licenses/License.html
+ * Get fields class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Fields extends \Api\Core\BaseAction
 {
-
 	/** @var string[] Allowed request methods */
 	public $allowedMethod = ['GET'];
 
 	/**
-	 * Get method
+	 * Get method.
+	 *
 	 * @return array
 	 */
 	public function get()
@@ -26,7 +28,7 @@ class Fields extends \Api\Core\BaseAction
 			$block = $field->get('block');
 			if (!isset($blocks[$block->id])) {
 				$blockProperties = get_object_vars($block);
-				$blocks[$block->id] = array_filter($blockProperties, function($v, $k) {
+				$blocks[$block->id] = array_filter($blockProperties, function ($v, $k) {
 					return !is_object($v);
 				}, ARRAY_FILTER_USE_BOTH);
 				$blocks[$block->id]['name'] = \App\Language::translate($block->label, $moduleName);
@@ -39,6 +41,9 @@ class Fields extends \Api\Core\BaseAction
 			$fieldInfo['sequence'] = $field->get('sequence');
 			$fieldInfo['fieldparams'] = $field->getFieldParams();
 			$fieldInfo['blockId'] = $block->id;
+			if (isset($fieldInfo['picklistvalues']) && $field->isEmptyPicklistOptionAllowed()) {
+				$fieldInfo['isEmptyPicklistOptionAllowed'] = $field->isEmptyPicklistOptionAllowed();
+			}
 			if ($field->isReferenceField()) {
 				$fieldInfo['referenceList'] = $field->getReferenceList();
 			}

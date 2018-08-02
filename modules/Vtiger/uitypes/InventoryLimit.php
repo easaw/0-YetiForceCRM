@@ -1,41 +1,81 @@
 <?php
 
 /**
- * UIType InventoryLimit Field Class
- * @package YetiForce.Fields
- * @license licenses/License.html
+ * UIType InventoryLimit Field Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author YetiForce.com
  */
 class Vtiger_InventoryLimit_UIType extends Vtiger_Picklist_UIType
 {
-
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param string $value
-	 * @param int $record
-	 * @param Vtiger_Record_Model $recordInstance
-	 * @param bool $rawText
-	 * @return string
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDBValue($value, $recordModel = false)
 	{
-		$limits = $this->getPicklistValues();
-		return isset($limits[$value]) ? $limits[$value] : '';
+		if (is_array($value)) {
+			$value = implode(',', $value);
+		}
+		return \App\Purifier::decodeHtml($value);
 	}
 
 	/**
-	 * Function to get credit limits
+	 * {@inheritdoc}
+	 */
+	public function validate($value, $isUserFormat = false)
+	{
+		$hashValue = is_array($value) ? implode('|', $value) : $value;
+		if (isset($this->validate[$hashValue]) || empty($value)) {
+			return;
+		}
+		if (!is_numeric($value)) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$maximumLength = $this->getFieldModel()->get('maximumlength');
+		if ($maximumLength) {
+			$rangeValues = explode(',', $maximumLength);
+			if (($rangeValues[1] ?? $rangeValues[0]) < $value || (isset($rangeValues[1]) ? $rangeValues[0] : 0) > $value) {
+				throw new \App\Exceptions\Security('ERR_VALUE_IS_TOO_LONG||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+			}
+		}
+		if (is_array($value)) {
+			foreach ($value as $value) {
+				if (!is_numeric($value)) {
+					throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+				}
+			}
+		}
+		$this->validate[$hashValue] = true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		$limits = $this->getPicklistValues();
+
+		return \App\Purifier::encodeHtml($limits[$value] ?? '');
+	}
+
+	/**
+	 * Function to get credit limits.
+	 *
 	 * @param int $value
+	 *
 	 * @return array
 	 */
 	public static function getValues($value)
 	{
 		$limits = self::getLimits();
-		return isset($limits[$value]) ? $limits[$value] : [];
+
+		return $limits[$value] ?? [];
 	}
 
 	/**
-	 * Function to get all credit limits
+	 * Function to get all credit limits.
+	 *
 	 * @return array
 	 */
 	public static function getLimits()
@@ -44,13 +84,15 @@ class Vtiger_InventoryLimit_UIType extends Vtiger_Picklist_UIType
 			return \App\Cache::get('Inventory', 'CreditLimits');
 		}
 		$limits = (new App\Db\Query())->from('a_#__inventory_limits')->where(['status' => 0])
-				->createCommand(App\Db::getInstance('admin'))->queryAllByGroup(1);
+			->createCommand(App\Db::getInstance('admin'))->queryAllByGroup(1);
 		\App\Cache::save('Inventory', 'CreditLimits', $limits, \App\Cache::LONG);
+
 		return $limits;
 	}
 
 	/**
-	 * Function to get all the available picklist values for the current field
+	 * Function to get all the available picklist values for the current field.
+	 *
 	 * @return array List of picklist values if the field
 	 */
 	public function getPicklistValues()
@@ -63,16 +105,10 @@ class Vtiger_InventoryLimit_UIType extends Vtiger_Picklist_UIType
 	}
 
 	/**
-	 * Function to get the DB Insert Value, for the current field type with given User Value
-	 * @param mixed $value
-	 * @param \Vtiger_Record_Model $recordModel
-	 * @return mixed
+	 * {@inheritdoc}
 	 */
-	public function getDBValue($value, $recordModel = false)
+	public function getAllowedColumnTypes()
 	{
-		if (is_array($value)) {
-			$value = implode(',', $value);
-		}
-		return $value;
+		return ['integer'];
 	}
 }

@@ -1,32 +1,35 @@
 <?php
-
 /**
- * IStorages products table with storages hierarchy parser class
- * @package YetiForce.TextParser
- * @license licenses/License.html
+ * IStorages products table with storages hierarchy parser class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-class IStorages_ProductsTableHierarchy_TextParser extends \App\TextParser\Base
-{
 
+/**
+ * Class IStorages_ProductsTableHierarchy_TextParser.
+ */
+class IStorages_ProductsTableHierarchy_Textparser extends \App\TextParser\Base
+{
 	/** @var string Class name */
-	public $name = 'LBL_PRODUCTS_TABLE';
+	public $name = 'LBL_PRODUCTS_TABLE_HIERARCHY';
 
 	/** @var mixed Parser type */
 	public $type = 'pdf';
 
 	/**
-	 * Process
+	 * Process.
+	 *
 	 * @return string
 	 */
 	public function process()
 	{
 		$html = '';
 		$pagingModel = new Vtiger_Paging_Model();
-		$pagingModel->set('limit', 'no_limit');
+		$pagingModel->set('limit', 0);
 		$relationModuleName = 'Products';
 		$columns = ['Product Name', 'FL_EAN_13', 'Product Category'];
-		$db = PearDatabase::getInstance();
 		// Products from main storage
 		$relationListView = Vtiger_RelationListView_Model::getInstance($this->textParser->recordModel, $relationModuleName);
 		// Summary table with products from all storages
@@ -49,12 +52,12 @@ class IStorages_ProductsTableHierarchy_TextParser extends \App\TextParser\Base
 		foreach ($hierarchyList as $storageId => $storageInfo) {
 			$storegeSubjectArray[$storageId]['name'] = $storageInfo[0];
 			$storegeSubjectArray[$storageId]['rowNum'] = $rowNum;
-			$rowNum++;
+			++$rowNum;
 			if ($storageId !== $this->textParser->record) {
 				$storageSubjectList .= $storageInfo[0] . ', ';
 			}
 			$storageIdsArray[] = $storageId;
-			if (is_array($storageInfo) && intval($storageId) && $storageId != $this->textParser->record) {
+			if (is_array($storageInfo) && (int) $storageId && $storageId != $this->textParser->record) {
 				// Getting storage products if it is child of main storage
 				$storageRecordModel = Vtiger_Record_Model::getInstanceById($storageId);
 				$storageRelationListView = Vtiger_RelationListView_Model::getInstance($storageRecordModel, $relationModuleName);
@@ -64,10 +67,8 @@ class IStorages_ProductsTableHierarchy_TextParser extends \App\TextParser\Base
 		$storageSubjectList = rtrim($storageSubjectList, ', ');
 		// Gets the sum of products quantity in all storages
 		$productsQty = [];
-		$query = sprintf('SELECT qtyinstock, relcrmid, crmid FROM u_yf_istorages_products WHERE crmid IN (%s)', generateQuestionMarks($storageIdsArray));
-		$result = $db->pquery($query, [$storageIdsArray]);
-
-		while ($row = $db->getRow($result)) {
+		$dataReader = (new \App\Db\Query())->select(['qtyinstock', 'relcrmid', 'crmid'])->from('u_#__istorages_products')->where(['crmid' => $storageIdsArray])->createCommand()->query();
+		while ($row = $dataReader->read()) {
 			$productId = $row['relcrmid'];
 			$storageId = $row['crmid'];
 			$qty = $row['qtyinstock'];
@@ -79,9 +80,10 @@ class IStorages_ProductsTableHierarchy_TextParser extends \App\TextParser\Base
 					$storegeSubjectArray[$i]['products'][$productId] = 0;
 				}
 			}
-			$storegeSubjectArray[$storageId]['products'][$productId] += floatval($qty);
-			$productsQty[$productId] += floatval($qty);
+			$storegeSubjectArray[$storageId]['products'][$productId] += (float) $qty;
+			$productsQty[$productId] += (float) $qty;
 		}
+		$dataReader->close();
 		$html .= '<style>' .
 			'.productTable {color:#000; font-size:10px; width:100%}' .
 			'.productTable th {text-transform: uppercase;font-weight:normal}' .

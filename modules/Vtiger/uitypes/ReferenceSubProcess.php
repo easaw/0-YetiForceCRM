@@ -1,23 +1,17 @@
 <?php
 
 /**
- * UIType ReferenceSubProcess Field Class
- * @package YetiForce.Fields
- * @license licenses/License.html
+ * UIType ReferenceSubProcess Field Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Vtiger_ReferenceSubProcess_UIType extends Vtiger_ReferenceLink_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return string - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
-	{
-		return 'uitypes/ReferenceSubProcess.tpl';
-	}
-
 	public function getReferenceList()
 	{
 		$modules = \App\ModuleHierarchy::getModulesByLevel(2);
@@ -34,5 +28,13 @@ class Vtiger_ReferenceSubProcess_UIType extends Vtiger_ReferenceLink_UIType
 			return $modules[$module]['parentModule'];
 		}
 		return '';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'Edit/Field/ReferenceSubProcess.tpl';
 	}
 }

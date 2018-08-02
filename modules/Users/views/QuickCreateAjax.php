@@ -10,33 +10,32 @@
 
 class Users_QuickCreateAjax_View extends Vtiger_QuickCreateAjax_View
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-
 		if (!$currentUserModel->isAdminUser()) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-
 		$recordModel = Users_Record_Model::getCleanInstance($moduleName);
 		$moduleModel = $recordModel->getModule();
-
 		$fieldList = $moduleModel->getFields();
-		$requestFieldList = array_intersect_key($request->getAll(), $fieldList);
-
-		foreach ($requestFieldList as $fieldName => $fieldValue) {
+		foreach (array_intersect($request->getKeys(), array_keys($fieldList)) as $fieldName) {
 			$fieldModel = $fieldList[$fieldName];
-			if ($fieldModel->isEditable()) {
-				$recordModel->set($fieldName, $fieldModel->getDBValue($fieldValue));
+			if ($fieldModel->isWritable()) {
+				$fieldModel->getUITypeModel()->setValueFromRequest($request, $recordModel);
 			}
 		}
-
 		$recordStructureInstance = Users_RecordStructure_Model::getInstanceFromRecordModel($recordModel, Users_RecordStructure_Model::RECORD_STRUCTURE_MODE_QUICKCREATE);
 
 		$viewer = $this->getViewer($request);
@@ -53,15 +52,19 @@ class Users_QuickCreateAjax_View extends Vtiger_QuickCreateAjax_View
 		echo $viewer->view('QuickCreate.tpl', $moduleName, true);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getFooterScripts(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
-			"modules.$moduleName.resources.Edit"
-		);
+		$jsFileNames = [
+			"modules.$moduleName.resources.Edit",
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
+
 		return $jsScriptInstances;
 	}
 }

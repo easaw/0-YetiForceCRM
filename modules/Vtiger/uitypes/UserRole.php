@@ -11,29 +11,38 @@
 
 class Vtiger_UserRole_UIType extends Vtiger_Picklist_UIType
 {
+	/**
+	 * {@inheritdoc}
+	 */
+	public function validate($value, $isUserFormat = false)
+	{
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		if (substr($value, 0, 1) !== 'H' || !is_numeric(substr($value, 1)) || is_null(\App\PrivilegeUtil::getRoleName($value))) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate[$value] = true;
+	}
 
 	/**
-	 * Function to get display value
-	 * @param string $value
-	 * @param int $recordId
-	 * @param Vtiger_Record_Model $recordInstance
-	 * @param bool $rawText
-	 * @return string
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $recordId = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		$displayValue = \App\Language::translate(\App\PrivilegeUtil::getRoleName($value), $this->get('field')->getModuleName());
-		$currentUserModel = \App\User::getCurrentUserModel();
-		if ($currentUserModel->isAdmin() && $rawText === false) {
+		$displayValue = \App\TextParser::textTruncate(\App\Language::translate(\App\PrivilegeUtil::getRoleName($value), $this->getFieldModel()->getModuleName()), is_int($length) ? $length : false);
+		if (\App\User::getCurrentUserModel()->isAdmin() && $rawText !== false) {
 			$roleRecordModel = new Settings_Roles_Record_Model();
 			$roleRecordModel->set('roleid', $value);
-			return '<a href="' . $roleRecordModel->getEditViewUrl() . '">' . \vtlib\Functions::textLength($displayValue) . '</a>';
+
+			return '<a href="' . $roleRecordModel->getEditViewUrl() . '">' . \App\Purifier::encodeHtml($displayValue) . '</a>';
 		}
 		return $displayValue;
 	}
 
 	/**
-	 * Function to get all the available picklist values for the current field
+	 * Function to get all the available picklist values for the current field.
+	 *
 	 * @return string[]
 	 */
 	public function getPicklistValues()
@@ -41,29 +50,31 @@ class Vtiger_UserRole_UIType extends Vtiger_Picklist_UIType
 		$roleModels = Settings_Roles_Record_Model::getAll();
 		$roles = [];
 		foreach ($roleModels as $roleId => $roleModel) {
-			$roles[$roleId] = \App\Language::translate($roleModel->getName(), $this->get('field')->getModuleName());
+			$roles[$roleId] = \App\Language::translate($roleModel->getName(), $this->getFieldModel()->getModuleName());
 		}
 		return $roles;
 	}
 
 	/**
-	 * Function searches for value data 
+	 * Function searches for value data.
+	 *
 	 * @param string $value
+	 *
 	 * @return string[]
 	 */
 	public function getSearchValues($value)
 	{
 		$roles = (new App\Db\Query())->select(['roleid', 'rolename'])->from('vtiger_role')->where(['like', 'rolename', $value])
-				->createCommand()->queryAllByGroup();
+			->createCommand()->queryAllByGroup();
+
 		return $roles;
 	}
 
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return string - Template Name
+	 * {@inheritdoc}
 	 */
 	public function getListSearchTemplateName()
 	{
-		return 'uitypes/UserRoleFieldSearchView.tpl';
+		return 'List/Field/UserRole.tpl';
 	}
 }

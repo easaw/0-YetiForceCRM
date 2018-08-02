@@ -1,20 +1,21 @@
 <?php
 
 /**
- * Companies record model class
- * @package YetiForce.Settings.Model
- * @license licenses/License.html
+ * Companies record model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 {
-
 	public static $logoNames = ['logo_login', 'logo_main', 'logo_mail'];
 	public static $logoSupportedFormats = ['jpeg', 'jpg', 'png', 'gif', 'pjpeg', 'x-png'];
-	public $logoPath = 'storage/Logo/';
+	public $logoPath = 'public_html/layouts/resources/Logo/';
 
 	/**
-	 * Function to get the Id
+	 * Function to get the Id.
+	 *
 	 * @return int Id
 	 */
 	public function getId()
@@ -23,7 +24,8 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the Name
+	 * Function to get the Name.
+	 *
 	 * @return string
 	 */
 	public function getName()
@@ -32,7 +34,8 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the Edit View Url
+	 * Function to get the Edit View Url.
+	 *
 	 * @return string URL
 	 */
 	public function getEditViewUrl($step = false)
@@ -41,16 +44,8 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the Delete Action Url
-	 * @return string URL
-	 */
-	public function getDeleteActionUrl()
-	{
-		return 'index.php?module=Companies&parent=Settings&action=DeleteAjax&record=' . $this->getId();
-	}
-
-	/**
-	 * Function to get the Detail Url
+	 * Function to get the Detail Url.
+	 *
 	 * @return string URL
 	 */
 	public function getDetailViewUrl()
@@ -59,9 +54,11 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the instance of companies record model
+	 * Function to get the instance of companies record model.
+	 *
 	 * @param int $id
-	 * @return \self instance, if exists.
+	 *
+	 * @return \self instance, if exists
 	 */
 	public static function getInstance($id)
 	{
@@ -76,7 +73,7 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to save
+	 * Function to save.
 	 */
 	public function save()
 	{
@@ -93,8 +90,10 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
+	 * Function to get the Display Value, for the current field type with given DB Insert Value.
+	 *
 	 * @param string $key
+	 *
 	 * @return string
 	 */
 	public function getDisplayValue($key)
@@ -107,18 +106,27 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 			case 'tabid':
 				$value = \App\Module::getModuleName($value);
 				break;
+			case 'industry':
+				$value = App\Language::translate($value);
+				break;
+			case 'country':
+				$value = \App\Language::translateSingleMod($value, 'Other.Country');
+				break;
 			case 'logo_login':
 			case 'logo_main':
 			case 'logo_mail':
-				$value = "<img src='{$this->getLogoPath($value)}' class='alignMiddle'/>";
+				$src = \App\Fields\File::getImageBaseData($this->getLogoPath($value));
+				$value = "<img src='$src' class='img-thumbnail'/>";
 				break;
 		}
 		return $value;
 	}
 
 	/**
-	 * Function to get the Display Value, for the checbox field type with given DB Insert Value
+	 * Function to get the Display Value, for the checbox field type with given DB Insert Value.
+	 *
 	 * @param int $value
+	 *
 	 * @return string
 	 */
 	public function getDisplayCheckboxValue($value)
@@ -132,7 +140,7 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to delete the current Record Model
+	 * Function to delete the current Record Model.
 	 */
 	public function delete()
 	{
@@ -144,7 +152,8 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the list view actions for the record
+	 * Function to get the list view actions for the record.
+	 *
 	 * @return Vtiger_Link_Model[] - Associate array of Vtiger_Link_Model instances
 	 */
 	public function getRecordLinks()
@@ -155,15 +164,17 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 				'linktype' => 'LISTVIEWRECORD',
 				'linklabel' => 'LBL_EDIT_RECORD',
 				'linkurl' => $this->getEditViewUrl(),
-				'linkicon' => 'glyphicon glyphicon-pencil btn btn-xs btn-info',
+				'linkicon' => 'fas fa-edit',
+				'linkclass' => 'btn btn-xs btn-info',
 			],
 		];
 		if (0 === $this->get('default')) {
 			$recordLinks[] = [
 				'linktype' => 'LISTVIEWRECORD',
 				'linklabel' => 'LBL_DELETE_RECORD',
-				'linkurl' => $this->getDeleteActionUrl(),
-				'linkicon' => 'glyphicon glyphicon-trash btn btn-xs btn-danger',
+				'linkurl' => "javascript:Settings_Vtiger_List_Js.deleteById('{$this->getId()}')",
+				'linkicon' => 'fas fa-trash-alt',
+				'linkclass' => 'btn btn-xs btn-danger',
 			];
 		}
 		foreach ($recordLinks as $recordLink) {
@@ -173,8 +184,10 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Logo path to display
+	 * Function to get Logo path to display.
+	 *
 	 * @param string $name logo name
+	 *
 	 * @return string path
 	 */
 	public function getLogoPath($name)
@@ -193,7 +206,7 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to save the logoinfo
+	 * Function to save the logoinfo.
 	 */
 	public function saveLogo($name)
 	{
@@ -204,11 +217,13 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to check if company duplicated
-	 * @param Vtiger_Request $request	
-	 * @return boolean
+	 * Function to check if company duplicated.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @return bool
 	 */
-	public function isCompanyDuplicated(Vtiger_Request $request)
+	public function isCompanyDuplicated(\App\Request $request)
 	{
 		$db = App\Db::getInstance('admin');
 		$query = new \App\Db\Query();
@@ -222,8 +237,9 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to set companies not default
-	 * @param string $name 
+	 * Function to set companies not default.
+	 *
+	 * @param string $name
 	 */
 	public function setCompaniesNotDefault($default)
 	{
@@ -233,11 +249,13 @@ class Settings_Companies_Record_Model extends Settings_Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to save company logos
+	 * Function to save company logos.
+	 *
 	 * @return array
 	 */
 	public function saveCompanyLogos()
 	{
+		$logoDetails = [];
 		foreach (self::$logoNames as $image) {
 			$saveLogo[$image] = true;
 			if (!empty($_FILES[$image]['name'])) {

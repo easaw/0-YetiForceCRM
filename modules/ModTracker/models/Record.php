@@ -11,21 +11,47 @@
 
 class ModTracker_Record_Model extends Vtiger_Record_Model
 {
-
 	const UPDATE = 0;
 	const DELETE = 1;
 	const CREATE = 2;
-	const RESTORE = 3;
+	const ACTIVE = 3;
 	const LINK = 4;
 	const UNLINK = 5;
 	const CONVERTTOACCOUNT = 6;
 	const DISPLAYED = 7;
+	const TRANSFER_EDIT = 10;
+	const TRANSFER_DELETE = 11;
+	const TRANSFER_UNLINK = 12;
+	const TRANSFER_LINK = 13;
 
 	/**
-	 * Function to get the history of updates on a record
-	 * @param int $parentRecordId
+	 * Status labels.
+	 *
+	 * @var string[]
+	 */
+	public static $statusLabel = [
+		0 => 'LBL_UPDATED',
+		1 => 'LBL_DELETED',
+		2 => 'LBL_CREATED',
+		4 => 'LBL_ADDED',
+		5 => 'LBL_REMOVED',
+		6 => 'LBL_CONVERTED_FROM_LEAD',
+		7 => 'LBL_DISPLAYED',
+		3 => 'LBL_ACTIVE',
+		8 => 'LBL_ARCHIVED',
+		10 => 'LBL_TRANSFER_EDIT',
+		11 => 'LBL_TRANSFER_DELETE',
+		12 => 'LBL_TRANSFER_UNLINK',
+		13 => 'LBL_TRANSFER_LINK',
+	];
+
+	/**
+	 * Function to get the history of updates on a record.
+	 *
+	 * @param int                 $parentRecordId
 	 * @param Vtiger_Paging_Model $pagingModel
-	 * @param string $type
+	 * @param string              $type
+	 *
 	 * @return array - list of  ModTracker_Record_Model
 	 */
 	public static function getUpdates($parentRecordId, Vtiger_Paging_Model $pagingModel, $type)
@@ -47,6 +73,8 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 			$recordInstance->setData($row)->setParent($row['crmid'], $row['module']);
 			$recordInstances[] = $recordInstance;
 		}
+		$dataReader->close();
+
 		return $recordInstances;
 	}
 
@@ -65,6 +93,7 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 			\App\Db::getInstance()->createCommand()
 				->update('vtiger_modtracker_basic', ['last_reviewed_users' => '#' . implode('#', array_filter($lastReviewedUsers)) . '#'], ['id' => $row['id']])
 				->execute();
+
 			return $row['id'];
 		}
 		return false;
@@ -88,6 +117,7 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 			$key = array_search($userId, $lastReviewedUsers);
 			unset($lastReviewedUsers[$key]);
 			$value = empty($lastReviewedUsers) ? '' : '#' . implode('#', array_filter($lastReviewedUsers)) . '#';
+
 			return App\Db::getInstance()->createCommand()->update('vtiger_modtracker_basic', ['last_reviewed_users' => $value], ['id' => $row['id']])->execute();
 		}
 		return false;
@@ -101,8 +131,8 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		}
 
 		$lastReviewedUsers = (new \App\Db\Query())->select('last_reviewed_users')->from('vtiger_modtracker_basic')
-				->where(['crmid' => $recordId])
-				->andWhere(['<>', 'status', self::DISPLAYED])->orderBy(['changedon' => SORT_DESC, 'id' => SORT_DESC])->limit(1)->scalar();
+			->where(['crmid' => $recordId])
+			->andWhere(['<>', 'status', self::DISPLAYED])->orderBy(['changedon' => SORT_DESC, 'id' => SORT_DESC])->limit(1)->scalar();
 		if ($lastReviewedUsers !== false) {
 			return strpos($lastReviewedUsers, "#$userId#") === false;
 		}
@@ -114,10 +144,6 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		if ($userId === false) {
 			$currentUser = Users_Record_Model::getCurrentUserModel();
 			$userId = $currentUser->getId();
-		}
-
-		if (!is_array($recordsId)) {
-			$recordsId = [$recordsId];
 		}
 		$query = (new \App\Db\Query())->select('crmid, last_reviewed_users AS u')->from('vtiger_modtracker_basic')
 			->where(['crmid' => $recordsId])
@@ -134,6 +160,7 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		while ($row = $dataReader->read()) {
 			$changes[$row['crmid']][] = $row;
 		}
+		$dataReader->close();
 		$unreviewed = [];
 		foreach ($changes as $crmId => $rows) {
 			$all = $mails = 0;
@@ -154,7 +181,8 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the name of the module to which the record belongs
+	 * Function to get the name of the module to which the record belongs.
+	 *
 	 * @return string - Record Module Name
 	 */
 	public function getModule()
@@ -166,7 +194,8 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the name of the module to which the record belongs
+	 * Function to get the name of the module to which the record belongs.
+	 *
 	 * @return string - Record Module Name
 	 */
 	public function getModuleName()
@@ -175,21 +204,23 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the Detail View url for the record
+	 * Function to get the Detail View url for the record.
+	 *
 	 * @return string - Record Detail View Url
 	 */
 	public function getDetailViewUrl()
 	{
 		$moduleName = $this->getModuleName();
 		switch ($moduleName) {
-			case 'Documents': $action = 'action=DownloadFile';
+			case 'Documents':
+				return 'file.php?module=Documents&action=DownloadFile&record=' . $this->get('crmid');
 				break;
 			case 'OSSMailView': $action = 'view=preview';
 				break;
 			default: $action = 'view=Detail';
 				break;
 		}
-		if ($moduleName == 'Events') {
+		if ($moduleName === 'Events') {
 			$moduleName = 'Calendar';
 		}
 		return "index.php?module=$moduleName&$action&record=" . $this->get('crmid');
@@ -229,16 +260,6 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		return $this->checkStatus(self::UPDATE);
 	}
 
-	public function isDelete()
-	{
-		return $this->checkStatus(self::DELETE);
-	}
-
-	public function isRestore()
-	{
-		return $this->checkStatus(self::RESTORE);
-	}
-
 	public function isRelationLink()
 	{
 		return $this->checkStatus(self::LINK);
@@ -254,6 +275,56 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		return $this->checkStatus(self::DISPLAYED);
 	}
 
+	/**
+	 * Function check if status is Transfer.
+	 *
+	 * @return bool
+	 */
+	public function isTransferEdit()
+	{
+		return $this->checkStatus(static::TRANSFER_EDIT);
+	}
+
+	/**
+	 * Function check if status is Transfer.
+	 *
+	 * @return bool
+	 */
+	public function isTransferLink()
+	{
+		return $this->checkStatus(static::TRANSFER_LINK);
+	}
+
+	/**
+	 * Function check if status is Transfer.
+	 *
+	 * @return bool
+	 */
+	public function isTransferUnLink()
+	{
+		return $this->checkStatus(static::TRANSFER_UNLINK);
+	}
+
+	/**
+	 * Function check if status is Transfer.
+	 *
+	 * @return bool
+	 */
+	public function isTransferDelete()
+	{
+		return $this->checkStatus(static::TRANSFER_DELETE);
+	}
+
+	/**
+	 * Has changed state.
+	 *
+	 * @return bool
+	 */
+	public function isChangeState()
+	{
+		return in_array($this->get('status'), [1, 3, 8]);
+	}
+
 	public function isReviewed($userId = false)
 	{
 		if ($userId === false) {
@@ -267,9 +338,20 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		return strpos($reviewed, "#$userId#") !== false;
 	}
 
+	/**
+	 * Get status label.
+	 *
+	 * @return string
+	 */
+	public function getStatusLabel()
+	{
+		return static::$statusLabel[$this->get('status')];
+	}
+
 	public function getModifiedBy()
 	{
 		$changeUserId = $this->get('whodid');
+
 		return Users_Record_Model::getInstanceById($changeUserId, 'Users');
 	}
 
@@ -277,6 +359,7 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 	{
 		$time = $this->getActivityTime();
 		$time = new DateTimeField($time);
+
 		return $time->getFullcalenderDateTimevalue();
 	}
 
@@ -285,40 +368,45 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		return $this->get('changedon');
 	}
 
+	/**
+	 * Function return Modtracker Field Model.
+	 *
+	 * @return \ModTracker_Field_Model[]
+	 */
 	public function getFieldInstances()
 	{
-		$id = $this->get('id');
-		$db = PearDatabase::getInstance();
-
 		$fieldInstances = [];
-		if ($this->isCreate() || $this->isUpdate()) {
-			$result = $db->pquery('SELECT * FROM vtiger_modtracker_detail WHERE id = ?', array($id));
-			while ($data = $db->getRow($result)) {
-				$row = array_map('html_entity_decode', $data);
-
-				if ($row['fieldname'] == 'record_id' || $row['fieldname'] == 'record_module')
+		if ($this->isCreate() || $this->isUpdate() || $this->isTransferEdit()) {
+			$dataReader = (new \App\Db\Query())->from('vtiger_modtracker_detail')->where(['id' => $this->get('id')])->createCommand()->query();
+			while ($row = $dataReader->read()) {
+				$row = array_map('html_entity_decode', $row);
+				if ($row['fieldname'] === 'record_id' || $row['fieldname'] === 'record_module') {
 					continue;
+				}
 
 				$fieldModel = Vtiger_Field_Model::getInstance($row['fieldname'], $this->getModule());
-				if (!$fieldModel)
+				if (!$fieldModel) {
 					continue;
+				}
 
 				$fieldInstance = new ModTracker_Field_Model();
 				$fieldInstance->setData($row)->setParent($this)->setFieldInstance($fieldModel);
 				$fieldInstances[] = $fieldInstance;
 			}
+			$dataReader->close();
 		}
 		return $fieldInstances;
 	}
 
+	/**
+	 * Function return modtracker relation model.
+	 *
+	 * @return \ModTracker_Relation_Model
+	 */
 	public function getRelationInstance()
 	{
-		$id = $this->get('id');
-		$db = PearDatabase::getInstance();
-
-		if ($this->isRelationLink() || $this->isRelationUnLink()) {
-			$result = $db->pquery('SELECT * FROM vtiger_modtracker_relations WHERE id = ?', array($id));
-			$row = $db->query_result_rowdata($result, 0);
+		if ($this->isRelationLink() || $this->isRelationUnLink() || $this->isTransferLink() || $this->isTransferUnLink()) {
+			$row = (new \App\Db\Query())->from('vtiger_modtracker_relations')->where(['id' => $this->get('id')])->one();
 			$relationInstance = new ModTracker_Relation_Model();
 			$relationInstance->setData($row)->setParent($this);
 		}
@@ -329,6 +417,7 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 	{
 		$where = self::getConditionByType($type);
 		$count = (new \App\Db\Query())->from('vtiger_modtracker_basic')->where(['crmid' => $recordId])->andWhere($where)->count();
+
 		return $count;
 	}
 
@@ -350,21 +439,26 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 
 	public static function addConvertToAccountRelation($sourceModule, $sourceId, $current_user)
 	{
-		\App\Db::getInstance()->createCommand()->insert('vtiger_modtracker_basic', [
+		$db = \App\Db::getInstance();
+		$db->createCommand()->insert('vtiger_modtracker_basic', [
 			'crmid' => $sourceId,
 			'module' => $sourceModule,
 			'whodid' => $current_user,
 			'changedon' => date('Y-m-d H:i:s'),
 			'status' => 6,
-			'last_reviewed_users' => '#' . App\User::getCurrentUserRealId() . '#'
+			'last_reviewed_users' => '#' . App\User::getCurrentUserRealId() . '#',
 		])->execute();
+		$id = $db->getLastInsertID('vtiger_modtracker_basic_id_seq');
+		self::unsetReviewed($sourceId, \App\User::getCurrentUserRealId(), $id);
 	}
 
 	/**
-	 * Function sets the closest time-wise related record from selected modules
-	 * @param int $sourceId
+	 * Function sets the closest time-wise related record from selected modules.
+	 *
+	 * @param int    $sourceId
 	 * @param string $sourceModule
-	 * @param bool $byUser
+	 * @param bool   $byUser
+	 *
 	 * @return array
 	 */
 	public static function setLastRelation($sourceId, $sourceModule, $byUser = false)
@@ -385,15 +479,18 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		$db->createCommand()->insert('u_#__timeline', [
 			'crmid' => $sourceId,
 			'type' => $type,
-			'userid' => $userId
+			'userid' => $userId,
 		])->execute();
+
 		return [$sourceId => $type];
 	}
 
 	/**
-	 * Function gets the closest time-wise related record from database
-	 * @param int $sourceIds
+	 * Function gets the closest time-wise related record from database.
+	 *
+	 * @param int    $sourceIds
 	 * @param string $sourceModule
+	 *
 	 * @return array
 	 */
 	public static function getLastRelation($sourceIds, $sourceModule)
@@ -406,7 +503,7 @@ class ModTracker_Record_Model extends Vtiger_Record_Model
 		if (count($data) !== count($sourceIds)) {
 			$reSearch = array_diff_key(array_flip($sourceIds), $data);
 			foreach (array_keys($reSearch) as $id) {
-				$result = ModTracker_Record_Model::setLastRelation($id, $sourceModule, true);
+				$result = self::setLastRelation($id, $sourceModule, true);
 				if ($result) {
 					$data[key($result)]['type'] = current($result);
 				}

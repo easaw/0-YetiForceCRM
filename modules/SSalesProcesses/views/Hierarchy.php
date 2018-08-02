@@ -1,31 +1,39 @@
 <?php
 
 /**
- * Class to show hierarchy 
- * @package YetiForce.View
- * @license licenses/License.html
+ * Class to show hierarchy.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
-class SSalesProcesses_Hierarchy_View extends Vtiger_View_Controller
+class SSalesProcesses_Hierarchy_View extends \App\Controller\View
 {
+	use App\Controller\ClearProcess;
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedToRecord
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		if (!App\Privilege::isPermitted($request->getModule(), 'DetailView', $request->get('record'))) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		$recordId = $request->getInteger('record');
+		if (!$recordId) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+		if (!\App\Privilege::isPermitted($request->getModule(), 'DetailView', $recordId)) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
-	{
-		
-	}
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 
 		$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
 		$hierarchy = $recordModel->getHierarchy();
@@ -33,10 +41,5 @@ class SSalesProcesses_Hierarchy_View extends Vtiger_View_Controller
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('HIERARCHY', $hierarchy);
 		$viewer->view('Hierarchy.tpl', $moduleName);
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		
 	}
 }

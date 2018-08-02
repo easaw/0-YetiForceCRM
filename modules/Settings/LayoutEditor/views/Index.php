@@ -11,6 +11,7 @@
 
 class Settings_LayoutEditor_Index_View extends Settings_Vtiger_Index_View
 {
+	use \App\Controller\ExposeMethod;
 
 	public function __construct()
 	{
@@ -18,7 +19,7 @@ class Settings_LayoutEditor_Index_View extends Settings_Vtiger_Index_View
 		$this->exposeMethod('showRelatedListLayout');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if ($this->isMethodExposed($mode)) {
@@ -29,9 +30,9 @@ class Settings_LayoutEditor_Index_View extends Settings_Vtiger_Index_View
 		}
 	}
 
-	public function showFieldLayout(Vtiger_Request $request)
+	public function showFieldLayout(\App\Request $request)
 	{
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 		$supportedModulesList = Settings_LayoutEditor_Module_Model::getSupportedModules();
 
 		if (empty($sourceModule)) {
@@ -47,7 +48,7 @@ class Settings_LayoutEditor_Index_View extends Settings_Vtiger_Index_View
 		foreach ($fieldModels as $fieldModel) {
 			$blockIdFieldMap[$fieldModel->getBlockId()][$fieldModel->getName()] = $fieldModel;
 			if (!$fieldModel->isActiveField()) {
-				$inactiveFields[$fieldModel->getBlockId()][$fieldModel->getId()] = vtranslate($fieldModel->get('label'), $sourceModule);
+				$inactiveFields[$fieldModel->getBlockId()][$fieldModel->getId()] = \App\Language::translate($fieldModel->get('label'), $sourceModule);
 			}
 		}
 
@@ -67,7 +68,6 @@ class Settings_LayoutEditor_Index_View extends Settings_Vtiger_Index_View
 		$viewer->assign('BLOCKS', $blockModels);
 		$viewer->assign('ADD_SUPPORTED_FIELD_TYPES', $moduleModel->getAddSupportedFieldTypes());
 		$viewer->assign('DISPLAY_TYPE_LIST', Vtiger_Field_Model::showDisplayTypeList());
-		$viewer->assign('USER_MODEL', Users_Record_Model::getCurrentUserModel());
 		$viewer->assign('MODULE', $qualifiedModule);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModule);
 		$viewer->assign('IN_ACTIVE_FIELDS', $inactiveFields);
@@ -76,9 +76,9 @@ class Settings_LayoutEditor_Index_View extends Settings_Vtiger_Index_View
 		$viewer->view('Index.tpl', $qualifiedModule);
 	}
 
-	public function showRelatedListLayout(Vtiger_Request $request)
+	public function showRelatedListLayout(\App\Request $request)
 	{
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 		$supportedModulesList = Settings_LayoutEditor_Module_Model::getSupportedModules();
 
 		if (empty($sourceModule)) {
@@ -100,13 +100,13 @@ class Settings_LayoutEditor_Index_View extends Settings_Vtiger_Index_View
 		$viewer->view('RelatedList.tpl', $qualifiedModule);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
-		$moduleName = $request->getModule();
-		$jsFileNames = ['libraries.jquery.clipboardjs.clipboard'];
+		$jsFileNames = ['libraries.clipboard.dist.clipboard'];
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 }

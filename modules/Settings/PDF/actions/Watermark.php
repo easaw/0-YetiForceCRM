@@ -1,22 +1,22 @@
 <?php
 
 /**
- * Returns special functions for PDF Settings
- * @package YetiForce.Action
- * @license licenses/License.html
+ * Returns special functions for PDF Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_PDF_Watermark_Action extends Settings_Vtiger_Index_Action
 {
-
 	public function __construct()
 	{
-		$this->exposeMethod('Delete');
-		$this->exposeMethod('Upload');
+		$this->exposeMethod('delete');
+		$this->exposeMethod('upload');
 	}
 
-	public function Delete(Vtiger_Request $request)
+	public function delete(\App\Request $request)
 	{
 		$recordId = $request->get('id');
 		$pdfModel = Vtiger_PDF_Model::getInstanceById($recordId);
@@ -27,7 +27,7 @@ class Settings_PDF_Watermark_Action extends Settings_Vtiger_Index_Action
 		$response->emit();
 	}
 
-	public function Upload(Vtiger_Request $request)
+	public function upload(\App\Request $request)
 	{
 		$templateId = $request->get('template_id');
 		$newName = basename($_FILES['watermark']['name'][0]);
@@ -43,7 +43,7 @@ class Settings_PDF_Watermark_Action extends Settings_Vtiger_Index_Action
 		}
 
 		// Check allowed upload file size
-		if ($uploadOk && $_FILES['watermark']['size'][0] > vglobal('upload_maxsize')) {
+		if ($uploadOk && $_FILES['watermark']['size'][0] > \AppConfig::main('upload_maxsize')) {
 			$uploadOk = 0;
 		}
 		// Check if $uploadOk is set to 0 by an error

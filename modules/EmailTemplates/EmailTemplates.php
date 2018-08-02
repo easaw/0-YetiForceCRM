@@ -1,15 +1,15 @@
 <?php
 /**
- * EmailTemplates CRMEntity Class
- * @package YetiForce.CRMEntity
- * @license licenses/License.html
+ * EmailTemplates CRMEntity Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 include_once 'modules/Vtiger/CRMEntity.php';
 
 class EmailTemplates extends Vtiger_CRMEntity
 {
-
 	public $table_name = 'u_yf_emailtemplates';
 	public $table_index = 'emailtemplatesid';
 
@@ -28,20 +28,20 @@ class EmailTemplates extends Vtiger_CRMEntity
 	 */
 	public $tab_name_index = [
 		'vtiger_crmentity' => 'crmid',
-		'u_yf_emailtemplates' => 'emailtemplatesid'
+		'u_yf_emailtemplates' => 'emailtemplatesid',
 	];
 
 	/**
-	 * Mandatory for Listing (Related listview)
+	 * Mandatory for Listing (Related listview).
 	 */
 	public $list_fields = [
-		/* Format: Field Label => Array(tablename, columnname) */
+		// Format: Field Label => Array(tablename, columnname)
 		// tablename should not have prefix 'vtiger_'
 		'name' => ['emailtemplates', 'name'],
-		'Assigned To' => ['crmentity', 'smownerid']
+		'Assigned To' => ['crmentity', 'smownerid'],
 	];
 	public $list_fields_name = [
-		/* Format: Field Label => fieldname */
+		// Format: Field Label => fieldname
 		'name' => 'name',
 		'Assigned To' => 'assigned_user_id',
 	];
@@ -49,13 +49,13 @@ class EmailTemplates extends Vtiger_CRMEntity
 	public $list_link_field = 'name';
 	// For Popup listview and UI type support
 	public $search_fields = [
-		/* Format: Field Label => Array(tablename, columnname) */
+		// Format: Field Label => Array(tablename, columnname)
 		// tablename should not have prefix 'vtiger_'
 		'name' => ['emailtemplates', 'name'],
 		'Assigned To' => ['vtiger_crmentity', 'assigned_user_id'],
 	];
 	public $search_fields_name = [
-		/* Format: Field Label => fieldname */
+		// Format: Field Label => fieldname
 		'name' => 'name',
 		'Assigned To' => 'assigned_user_id',
 	];
@@ -70,24 +70,4 @@ class EmailTemplates extends Vtiger_CRMEntity
 	public $mandatory_fields = ['name', 'assigned_user_id'];
 	public $default_order_by = '';
 	public $default_sort_order = 'ASC';
-
-	/**
-	 * Invoked when special actions are performed on the module.
-	 * @param String Module name
-	 * @param String Event Type
-	 */
-	public function vtlib_handler($moduleName, $eventType)
-	{
-		if ($eventType == 'module.postinstall') {
-			
-		} else if ($eventType == 'module.disabled') {
-			
-		} else if ($eventType == 'module.preuninstall') {
-			
-		} else if ($eventType == 'module.preupdate') {
-			
-		} else if ($eventType == 'module.postupdate') {
-			
-		}
-	}
 }

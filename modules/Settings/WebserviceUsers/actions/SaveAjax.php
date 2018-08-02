@@ -1,24 +1,24 @@
 <?php
 
 /**
- * Save Application
- * @package YetiForce.Settings.Action
- * @license licenses/License.html
+ * Save Application.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_WebserviceUsers_SaveAjax_Action extends Settings_Vtiger_Save_Action
 {
-
 	/**
-	 * Save
-	 * @param Vtiger_Request $request
+	 * Save.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$data = $request->get('param');
 		$typeApi = $request->get('typeApi');
 		$recordId = $request->get('record');
-		$qualifiedModuleName = $request->getModule(false);
 		if ($recordId) {
 			$recordModel = Settings_WebserviceUsers_Record_Model::getInstanceById($recordId, $typeApi);
 		} else {

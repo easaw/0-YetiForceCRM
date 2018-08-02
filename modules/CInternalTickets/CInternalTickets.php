@@ -1,15 +1,15 @@
 <?php
 /**
- * CInternalTickets CRMEntity Class
- * @package YetiForce.CRMEntity
- * @license licenses/License.html
+ * CInternalTickets CRMEntity Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 include_once 'modules/Vtiger/CRMEntity.php';
 
 class CInternalTickets extends Vtiger_CRMEntity
 {
-
 	public $table_name = 'u_yf_cinternaltickets';
 	public $table_index = 'cinternalticketsid';
 
@@ -29,20 +29,20 @@ class CInternalTickets extends Vtiger_CRMEntity
 	public $tab_name_index = [
 		'vtiger_crmentity' => 'crmid',
 		'u_yf_cinternaltickets' => 'cinternalticketsid',
-		'u_yf_cinternalticketscf' => 'cinternalticketsid'
+		'u_yf_cinternalticketscf' => 'cinternalticketsid',
 	];
 
 	/**
-	 * Mandatory for Listing (Related listview)
+	 * Mandatory for Listing (Related listview).
 	 */
 	public $list_fields = [
-		/* Format: Field Label => Array(tablename, columnname) */
+		// Format: Field Label => Array(tablename, columnname)
 		// tablename should not have prefix 'vtiger_'
 		'FL_SUBJECT' => ['cinternaltickets', 'subject'],
-		'Assigned To' => ['crmentity', 'smownerid']
+		'Assigned To' => ['crmentity', 'smownerid'],
 	];
 	public $list_fields_name = [
-		/* Format: Field Label => fieldname */
+		// Format: Field Label => fieldname
 		'FL_SUBJECT' => 'subject',
 		'Assigned To' => 'assigned_user_id',
 	];
@@ -50,13 +50,13 @@ class CInternalTickets extends Vtiger_CRMEntity
 	public $list_link_field = 'subject';
 	// For Popup listview and UI type support
 	public $search_fields = [
-		/* Format: Field Label => Array(tablename, columnname) */
+		// Format: Field Label => Array(tablename, columnname)
 		// tablename should not have prefix 'vtiger_'
 		'FL_SUBJECT' => ['cinternaltickets', 'subject'],
 		'Assigned To' => ['vtiger_crmentity', 'assigned_user_id'],
 	];
 	public $search_fields_name = [
-		/* Format: Field Label => fieldname */
+		// Format: Field Label => fieldname
 		'FL_SUBJECT' => 'subject',
 		'Assigned To' => 'assigned_user_id',
 	];
@@ -71,25 +71,4 @@ class CInternalTickets extends Vtiger_CRMEntity
 	public $mandatory_fields = ['subject', 'assigned_user_id'];
 	public $default_order_by = '';
 	public $default_sort_order = 'ASC';
-
-	/**
-	 * Invoked when special actions are performed on the module.
-	 * @param String Module name
-	 * @param String Event Type
-	 */
-	public function vtlib_handler($moduleName, $eventType)
-	{
-		$adb = PearDatabase::getInstance();
-		if ($eventType == 'module.postinstall') {
-			
-		} else if ($eventType == 'module.disabled') {
-			
-		} else if ($eventType == 'module.preuninstall') {
-			
-		} else if ($eventType == 'module.preupdate') {
-			
-		} else if ($eventType == 'module.postupdate') {
-			
-		}
-	}
 }

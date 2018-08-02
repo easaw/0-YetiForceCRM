@@ -1,7 +1,12 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
-$CONFIG = [
-	// URL address characters limit for mailto links, 
+/**
+ * Mail module config.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+return [
+	// URL address characters limit for mailto links,
 	/*
 	  Recommended configuration
 	  Outlook = 2030

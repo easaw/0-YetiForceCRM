@@ -1,37 +1,34 @@
 <?php
 
 /**
- * Action to mass upload files
- * @package YetiForce.Action
- * @license licenses/License.html
+ * Action to mass upload files.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Documents_MassAdd_Action extends Vtiger_Mass_Action
 {
-
 	/**
-	 * Function to check permission
-	 * @param Vtiger_Request $request
-	 * @throws \Exception\NoPermitted
+	 * {@inheritdoc}
 	 */
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
-		if (!Users_Privileges_Model::isPermitted($request->getModule(), 'CreateView')) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if (!\App\Privilege::isPermitted($request->getModule(), 'CreateView')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
 	/**
-	 * Process
-	 * @param Vtiger_Request $request
+	 * {@inheritdoc}
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$nameFiles = $request->get('nameFile');
 		foreach ($_FILES as $file) {
 			$countFiles = count($file['name']);
-			for ($i = 0; $i < $countFiles; $i++) {
+			for ($i = 0; $i < $countFiles; ++$i) {
 				$originalFile = [
 					'name' => $file['name'][$i],
 					'type' => $file['type'][$i],

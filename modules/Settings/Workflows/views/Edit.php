@@ -10,8 +10,7 @@
 
 class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if ($mode) {
@@ -21,7 +20,7 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 		$viewer = $this->getViewer($request);
@@ -36,9 +35,8 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 		$viewer->view('EditHeader.tpl', $request->getModule(false));
 	}
 
-	public function step1(Vtiger_Request $request)
+	public function step1(\App\Request $request)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
@@ -52,13 +50,12 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 			$viewer->assign('MODE', 'edit');
 		} else {
 			$workflowModel = Settings_Workflows_Record_Model::getCleanInstance($moduleName);
-			$selectedModule = $request->get('source_module');
+			$selectedModule = $request->getByType('source_module', 2);
 			if (!empty($selectedModule)) {
 				$viewer->assign('SELECTED_MODULE', $selectedModule);
 			}
 		}
-		$db = PearDatabase::getInstance();
-		$workflowManager = new VTWorkflowManager($db);
+		$workflowManager = new VTWorkflowManager();
 		$viewer->assign('MAX_ALLOWED_SCHEDULED_WORKFLOWS', $workflowManager->getMaxAllowedScheduledWorkflows());
 		$viewer->assign('SCHEDULED_WORKFLOW_COUNT', $workflowManager->getScheduledWorkflowsCount());
 		$viewer->assign('WORKFLOW_MODEL', $workflowModel);
@@ -67,16 +64,14 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
-		$viewer->assign('CURRENT_USER', $currentUser);
 		$admin = Users::getActiveAdminUser();
 		$viewer->assign('ACTIVE_ADMIN', $admin);
-		$viewer->assign('WEEK_START_ID', $weekDays[$currentUser->get('dayoftheweek')]);
+		$viewer->assign('WEEK_START_ID', $weekDays[\App\User::getCurrentUserModel()->getDetail('dayoftheweek')]);
 		$viewer->view('Step1.tpl', $qualifiedModuleName);
 	}
 
-	public function step2(Vtiger_Request $request)
+	public function step2(\App\Request $request)
 	{
-
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
@@ -88,7 +83,7 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 			$selectedModule = $workFlowModel->getModule();
 			$selectedModuleName = $selectedModule->getName();
 		} else {
-			$selectedModuleName = $request->get('module_name');
+			$selectedModuleName = $request->getByType('module_name', 2);
 			$selectedModule = Vtiger_Module_Model::getInstance($selectedModuleName);
 			$workFlowModel = Settings_Workflows_Record_Model::getCleanInstance($selectedModuleName);
 		}
@@ -97,11 +92,12 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 		foreach ($requestData as $name => $value) {
 			if ($name == 'schdayofweek' || $name == 'schdayofmonth' || $name == 'schannualdates') {
 				if (is_string($value)) { // need to save these as json data
-					$value = array($value);
+					$value = [$value];
 				}
 			}
-			if ($name == 'summary')
+			if ($name == 'summary') {
 				$value = htmlspecialchars($value);
+			}
 			$workFlowModel->set($name, $value);
 		}
 		//Added to support advance filters
@@ -121,7 +117,7 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 		if ($workFlowModel->isFilterSavedInNew()) {
 			$viewer->assign('ADVANCE_CRITERIA', $workFlowModel->transformToAdvancedFilterCondition());
 		} else {
-			$viewer->assign('ADVANCE_CRITERIA', "");
+			$viewer->assign('ADVANCE_CRITERIA', '');
 		}
 
 		$viewer->assign('IS_FILTER_SAVED_NEW', $workFlowModel->isFilterSavedInNew());
@@ -131,7 +127,7 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 		$viewer->view('Step2.tpl', $qualifiedModuleName);
 	}
 
-	public function Step3(Vtiger_Request $request)
+	public function step3(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -144,7 +140,7 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 			$selectedModule = $workFlowModel->getModule();
 			$selectedModuleName = $selectedModule->getName();
 		} else {
-			$selectedModuleName = $request->get('module_name');
+			$selectedModuleName = $request->getByType('module_name', 2);
 			$selectedModule = Vtiger_Module_Model::getInstance($selectedModuleName);
 			$workFlowModel = Settings_Workflows_Record_Model::getCleanInstance($selectedModuleName);
 		}
@@ -161,38 +157,26 @@ class Settings_Workflows_Edit_View extends Settings_Vtiger_Index_View
 		$viewer->view('Step3.tpl', $qualifiedModuleName);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
-			'libraries.jquery.clipboardjs.clipboard',
+		$jsFileNames = [
+			'libraries.clipboard.dist.clipboard',
 			'modules.Settings.Vtiger.resources.Edit',
 			"modules.Settings.$moduleName.resources.Edit",
 			"modules.Settings.$moduleName.resources.Edit1",
 			"modules.Settings.$moduleName.resources.Edit2",
 			"modules.Settings.$moduleName.resources.Edit3",
 			"modules.Settings.$moduleName.resources.AdvanceFilter",
-			'~libraries/jquery/ckeditor/ckeditor.js',
-			"modules.Vtiger.resources.CkEditor",
-			'~libraries/jquery/jquery.datepick.package-4.1.0/jquery.datepick.js',
-		);
+			'~vendor/ckeditor/ckeditor/ckeditor.js',
+			'~vendor/ckeditor/ckeditor/adapters/jquery.js',
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
-		return $headerScriptInstances;
-	}
 
-	public function getHeaderCss(Vtiger_Request $request)
-	{
-		$headerCssInstances = parent::getHeaderCss($request);
-		$moduleName = $request->getModule();
-		$cssFileNames = array(
-			'~libraries/jquery/jquery.datepick.package-4.1.0/jquery.datepick.css',
-		);
-		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
-		$headerCssInstances = array_merge($cssInstances, $headerCssInstances);
-		return $headerCssInstances;
+		return $headerScriptInstances;
 	}
 }

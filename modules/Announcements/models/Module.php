@@ -1,36 +1,53 @@
 <?php
+/**
+ * Announcements Module Model Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ */
 
 /**
- * Announcements Module Model Class
- * @package YetiForce.Model
- * @license licenses/License.html
- * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ * Class Announcements_Module_Model.
  */
 class Announcements_Module_Model extends Vtiger_Module_Model
 {
-
+	/**
+	 * Announcements.
+	 *
+	 * @var array
+	 */
 	protected $announcements = [];
 
+	/**
+	 * Check active.
+	 *
+	 * @return bool
+	 */
 	public function checkActive()
 	{
-		if (AppRequest::get('view') == 'Login' || !$this->isActive()) {
+		if (\App\Request::_get('view') == 'Login' || !$this->isActive()) {
 			return false;
 		}
 		$this->loadAnnouncements();
+
 		return !empty($this->announcements);
 	}
 
+	/**
+	 * Load announcements.
+	 */
 	public function loadAnnouncements()
 	{
 		$queryGenerator = new \App\QueryGenerator($this->getName());
-		$queryGenerator->setFields(['id', 'subject', 'description', 'assigned_user_id', 'createdtime']);
+		$queryGenerator->setFields(['id', 'subject', 'description', 'assigned_user_id', 'createdtime', 'is_mandatory']);
 		$query = $queryGenerator->createQuery();
 		$query->andWhere(['announcementstatus' => 'PLL_PUBLISHED']);
 		$dataReader = $query->createCommand()->query();
 		while ($row = $dataReader->read()) {
 			$query = (new \App\Db\Query())
 				->from('u_#__announcement_mark')
-				->where(['announcementid' => $row['announcementid'], 'userid' => \App\User::getCurrentUserId()]);
+				->where(['announcementid' => $row['id'], 'userid' => \App\User::getCurrentUserId()]);
 			if (!empty($row['interval'])) {
 				$date = date('Y-m-d H:i:s', strtotime('+' . $row['interval'] . ' day', strtotime('now')));
 				$query->andWhere(['status' => 0]);
@@ -40,11 +57,17 @@ class Announcements_Module_Model extends Vtiger_Module_Model
 				continue;
 			}
 			$recordModel = $this->getRecordFromArray($row);
-			$recordModel->set('id', $row['announcementid']);
+			$recordModel->setId($row['id']);
 			$this->announcements[] = $recordModel;
 		}
+		$dataReader->close();
 	}
 
+	/**
+	 * Get announcements.
+	 *
+	 * @return array
+	 */
 	public function getAnnouncements()
 	{
 		if (empty($this->announcements)) {
@@ -53,40 +76,49 @@ class Announcements_Module_Model extends Vtiger_Module_Model
 		return $this->announcements;
 	}
 
+	/**
+	 * Set mark.
+	 *
+	 * @param int $record
+	 * @param int $state
+	 */
 	public function setMark($record, $state)
 	{
 		$db = \App\Db::getInstance();
-
 		$query = (new \App\Db\Query())
-				->from('u_#__announcement_mark')
-				->where(['announcementid' => $record, 'userid' => \App\User::getCurrentUserId()])->limit(1);
-		if ($query->scalar() !== false) {
+			->from('u_#__announcement_mark')
+			->where(['announcementid' => $record, 'userid' => \App\User::getCurrentUserId()])->limit(1);
+		if ($query->scalar() === false) {
 			$db->createCommand()
 				->insert('u_#__announcement_mark', [
 					'announcementid' => $record,
 					'userid' => \App\User::getCurrentUserId(),
 					'date' => date('Y-m-d H:i:s'),
-					'status' => $state
+					'status' => $state,
 				])->execute();
 		} else {
 			$db->createCommand()
 				->update('u_#__announcement_mark', [
 					'date' => date('Y-m-d H:i:s'),
-					'status' => $state
+					'status' => $state,
 					], ['announcementid' => $record, 'userid' => \App\User::getCurrentUserId()])
-				->execute();
+					->execute();
 		}
 		$this->checkStatus($record);
 	}
 
+	/**
+	 * Check status.
+	 *
+	 * @param int $record
+	 */
 	public function checkStatus($record)
 	{
 		$archive = true;
-		$db = PearDatabase::getInstance();
 		$users = $this->getUsers(true);
 		foreach ($users as $userId => $name) {
-			$result = $db->pquery('SELECT count(*) FROM u_yf_announcement_mark WHERE announcementid = ? && userid = ? && status = ?', [$record, $userId, 1]);
-			if ($db->getSingleValue($result) == 0) {
+			$result = (new App\Db\Query())->from('u_#__announcement_mark')->where(['announcementid' => $record, 'userid' => $userId, 'status' => 1])->count();
+			if (!$result) {
 				$archive = false;
 			}
 		}
@@ -108,13 +140,16 @@ class Announcements_Module_Model extends Vtiger_Module_Model
 		return $users;
 	}
 
+	/**
+	 * Get mark info.
+	 *
+	 * @param int $record
+	 * @param int $userId
+	 *
+	 * @return array
+	 */
 	public function getMarkInfo($record, $userId)
 	{
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT * FROM u_yf_announcement_mark WHERE announcementid = ? && userid = ?', [$record, $userId]);
-		while ($row = $db->getRow($result)) {
-			return $row;
-		}
-		return [];
+		return (new App\Db\Query())->from('u_#__announcement_mark')->where(['announcementid' => $record, 'userid' => $userId])->one();
 	}
 }

@@ -1,20 +1,22 @@
 <?php
 
 /**
- * Basic Inventory Model Class
- * @package YetiForce.Model
- * @license licenses/License.html
+ * Basic Inventory Model Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Vtiger_Inventory_Model
 {
-
 	public $name = false;
 
 	/**
-	 * Get invnetory instance
+	 * Get invnetory instance.
+	 *
 	 * @param string $moduleName Module name
+	 *
 	 * @return Vtiger_Inventory_Model instance
 	 */
 	public static function getInstance($moduleName)
@@ -30,7 +32,7 @@ class Vtiger_Inventory_Model
 	}
 
 	/**
-	 * Initialize this instance
+	 * Initialize this instance.
 	 */
 	public function initialize($name)
 	{
@@ -38,7 +40,8 @@ class Vtiger_Inventory_Model
 	}
 
 	/**
-	 * Get discounts configuration
+	 * Get discounts configuration.
+	 *
 	 * @return array config data
 	 */
 	public static function getDiscountsConfig()
@@ -60,7 +63,8 @@ class Vtiger_Inventory_Model
 	}
 
 	/**
-	 * Get global discounts list
+	 * Get global discounts list.
+	 *
 	 * @return array discounts list
 	 */
 	public function getGlobalDiscounts()
@@ -69,13 +73,14 @@ class Vtiger_Inventory_Model
 			return \App\Cache::get('Inventory', 'Discounts');
 		}
 		$discounts = (new App\Db\Query())->from('a_#__discounts_global')->where(['status' => 0])
-				->createCommand(App\Db::getInstance('admin'))->queryAllByGroup(1);
+			->createCommand(App\Db::getInstance('admin'))->queryAllByGroup(1);
 		\App\Cache::save('Inventory', 'Discounts', $discounts, \App\Cache::LONG);
 		return $discounts;
 	}
 
 	/**
-	 * Get tax configuration
+	 * Get tax configuration.
+	 *
 	 * @return array config data
 	 */
 	public static function getTaxesConfig()
@@ -97,7 +102,8 @@ class Vtiger_Inventory_Model
 	}
 
 	/**
-	 * Get global tax list
+	 * Get global tax list.
+	 *
 	 * @return array tax list
 	 */
 	public static function getGlobalTaxes()
@@ -106,15 +112,33 @@ class Vtiger_Inventory_Model
 			return \App\Cache::get('Inventory', 'Taxes');
 		}
 		$taxes = (new App\Db\Query())->from('a_#__taxes_global')->where(['status' => 0])
-				->createCommand(App\Db::getInstance('admin'))->queryAllByGroup(1);
+			->createCommand(App\Db::getInstance('admin'))->queryAllByGroup(1);
 		\App\Cache::save('Inventory', 'Taxes', $taxes, \App\Cache::LONG);
 		return $taxes;
 	}
 
 	/**
-	 * Get discount from the account
+	 * Get default global tax .
+	 *
+	 * @return array tax list
+	 */
+	public static function getDefaultGlobalTax()
+	{
+		if (\App\Cache::has('Inventory', 'DefaultTax')) {
+			return \App\Cache::get('Inventory', 'DefaultTax');
+		}
+		$defaultTax = (new App\Db\Query())->from('a_#__taxes_global')->where(['status' => 0])->andWhere(['default' => 1])
+			->one();
+		\App\Cache::save('Inventory', 'DefaultTax', $defaultTax, \App\Cache::LONG);
+		return $defaultTax;
+	}
+
+	/**
+	 * Get discount from the account.
+	 *
 	 * @param string $moduleName Module name
-	 * @param int $record Record ID
+	 * @param int    $record     Record ID
+	 *
 	 * @return array
 	 */
 	public function getAccountDiscount($relatedRecord)
@@ -131,9 +155,11 @@ class Vtiger_Inventory_Model
 	}
 
 	/**
-	 * Get tax from the account
+	 * Get tax from the account.
+	 *
 	 * @param string $moduleName Module name
-	 * @param int $record Record ID
+	 * @param int    $record     Record ID
+	 *
 	 * @return array
 	 */
 	public function getAccountTax($moduleName, $record)
@@ -143,7 +169,7 @@ class Vtiger_Inventory_Model
 		$accountTaxs = [];
 		$name = '';
 		$taxField = Vtiger_InventoryField_Model::getTaxField('Accounts');
-		if ($accountField != '' && $taxField != false) {
+		if ($accountField !== '' && $taxField !== false) {
 			$recordModel = Vtiger_Record_Model::getInstanceById($record, $moduleName);
 			$relationFieldValue = $recordModel->get($accountField);
 			if ($relationFieldValue != 0) {
@@ -152,13 +178,14 @@ class Vtiger_Inventory_Model
 				$name = $accountRecordModel->getName();
 			}
 		}
-
 		return ['taxs' => $accountTaxs, 'name' => $name];
 	}
 
 	/**
-	 * Active inventory blocks
+	 * Active inventory blocks.
+	 *
 	 * @param int/bool $type
+	 *
 	 * @return bool/self
 	 */
 	public function setMode($type)
@@ -177,7 +204,7 @@ class Vtiger_Inventory_Model
 	}
 
 	/**
-	 * Create inventory tables
+	 * Create inventory tables.
 	 */
 	public function createInventoryTables()
 	{
@@ -185,7 +212,6 @@ class Vtiger_Inventory_Model
 		$focus = CRMEntity::getInstance($this->name);
 		$moduleLowerCase = strtolower($this->name);
 		$basetable = $focus->table_name;
-		$basetableid = $focus->table_index;
 		$importer = new \App\Db\Importers\Base();
 		$tables = [
 			'_inventory' => [
@@ -197,7 +223,7 @@ class Vtiger_Inventory_Model
 					[$moduleLowerCase . '_inventory_idx', 'id'],
 				],
 				'engine' => 'InnoDB',
-				'charset' => 'utf8'
+				'charset' => 'utf8',
 			],
 			'_invfield' => [
 				'columns' => [
@@ -214,7 +240,7 @@ class Vtiger_Inventory_Model
 					'colspan' => $importer->smallInteger(1)->unsigned()->notNull()->defaultValue(1),
 				],
 				'engine' => 'InnoDB',
-				'charset' => 'utf8'
+				'charset' => 'utf8',
 			],
 			'_invmap' => [
 				'columns' => [
@@ -223,11 +249,11 @@ class Vtiger_Inventory_Model
 					'tofield' => $importer->stringType(50)->notNull(),
 				],
 				'primaryKeys' => [
-					[$moduleLowerCase . '_invmap_pk', ['module', 'field', 'tofield']]
+					[$moduleLowerCase . '_invmap_pk', ['module', 'field', 'tofield']],
 				],
 				'engine' => 'InnoDB',
-				'charset' => 'utf8'
-		]];
+				'charset' => 'utf8',
+		], ];
 		$base = new \App\Db\Importer();
 		$base->dieOnError = AppConfig::debug('SQL_DIE_ON_ERROR');
 		foreach ($tables as $postFix => $data) {

@@ -10,13 +10,12 @@
 
 class ModComments_List_View extends Vtiger_List_View
 {
-
 	public function isEditable($moduleName)
 	{
 		return false;
 	}
 
-	public function isDeletable($moduleName)
+	public function privilegeToDelete($moduleName)
 	{
 		return false;
 	}

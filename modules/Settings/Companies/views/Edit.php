@@ -1,19 +1,20 @@
 <?php
 
 /**
- * Companies edit view class
- * @package YetiForce.Settings.View
- * @license licenses/License.html
+ * Companies edit view class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_Companies_Edit_View extends Settings_Vtiger_Index_View
 {
-
 	/**
-	 * Process function
-	 * @param Vtiger_Request $request
+	 * Process function.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -33,11 +34,13 @@ class Settings_Companies_Edit_View extends Settings_Vtiger_Index_View
 	}
 
 	/**
-	 * Get footer JS scripts
-	 * @param Vtiger_Request $request
+	 * Get footer JS scripts.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return Vtiger_JsScript_Model[]
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$jsFileNames = [
@@ -45,6 +48,7 @@ class Settings_Companies_Edit_View extends Settings_Vtiger_Index_View
 			'modules.Settings.Companies.resources.Edit',
 		];
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
+
 		return array_merge($headerScriptInstances, $jsScriptInstances);
 	}
 }

@@ -1,37 +1,37 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Products SummaryWidget model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Products_SummaryWidget_Model
 {
-
 	const MODULES = ['Products', 'OutsourcedProducts', 'Assets', 'Services', 'OSSOutsourcedServices', 'OSSSoldServices'];
 	const CATEGORY_MODULES = ['Products', 'OutsourcedProducts', 'Services', 'OSSOutsourcedServices'];
 
 	public static function getCleanInstance()
 	{
 		$instance = new self();
+
 		return $instance;
 	}
 
-	public function getProductsServices(Vtiger_Request $request, Vtiger_Viewer $viewer)
+	public function getProductsServices(\App\Request $request, Vtiger_Viewer $viewer)
 	{
 		$fromModule = $request->get('fromModule');
-		$record = $request->get('record');
-		$mod = $request->get('mod');
+		$record = $request->getInteger('record');
+		$mod = $request->getByType('mod', 1);
+		if (!\App\Privilege::isPermitted($fromModule, 'DetailView', $record) || !\App\Privilege::isPermitted($mod)) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
 		if (!in_array($mod, self::MODULES)) {
-			throw new \Exception\AppException('Not supported Module');
+			throw new \App\Exceptions\AppException('Not supported Module');
 		}
 		$limit = 10;
-		if (!empty($request->get('limit'))) {
-			$limit = $request->get('limit');
+		if (!empty($request->getInteger('limit'))) {
+			$limit = $request->getInteger('limit');
 		}
 		$pagingModel = new Vtiger_Paging_Model();
 		$pagingModel->set('page', 0);
@@ -52,8 +52,10 @@ class Products_SummaryWidget_Model
 	}
 
 	/**
-	 * Get releted modules record counts
+	 * Get related modules record counts.
+	 *
 	 * @param Vtiger_Record_Model $parentRecordModel
+	 *
 	 * @return type
 	 */
 	public static function getModulesAndCount(Vtiger_Record_Model $parentRecordModel)

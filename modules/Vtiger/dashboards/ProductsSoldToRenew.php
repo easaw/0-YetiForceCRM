@@ -1,15 +1,15 @@
 <?php
 
 /**
- * ProductsSoldToRenew Dashboard Class
- * @package YetiForce.Dashboard
- * @license licenses/License.html
+ * ProductsSoldToRenew Dashboard Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Vtiger_ProductsSoldToRenew_Dashboard extends Vtiger_IndexAjax_View
 {
-
-	public function process(Vtiger_Request $request, $widget = NULL)
+	public function process(\App\Request $request, $widget = null)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$viewer = $this->getViewer($request);
@@ -20,7 +20,7 @@ class Vtiger_ProductsSoldToRenew_Dashboard extends Vtiger_IndexAjax_View
 		if ($widget && !$request->has('widgetid')) {
 			$widgetId = $widget->get('id');
 		} else {
-			$widgetId = $request->get('widgetid');
+			$widgetId = $request->getInteger('widgetid');
 		}
 
 		$widget = Vtiger_Widget_Model::getInstanceWithWidgetId($widgetId, $currentUser->getId());
@@ -35,9 +35,7 @@ class Vtiger_ProductsSoldToRenew_Dashboard extends Vtiger_IndexAjax_View
 		$viewer->assign('BASE_MODULE', $this->getTargetModule());
 		$viewer->assign('LISTVIEWLINKS', true);
 		$viewer->assign('DATA', $data);
-
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/ProductsSoldToRenewContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/ProductsSoldToRenew.tpl', $moduleName);
@@ -100,7 +98,7 @@ class Vtiger_ProductsSoldToRenew_Dashboard extends Vtiger_IndexAjax_View
 		if (!$this->queryGenerator) {
 			$this->queryGenerator = new \App\QueryGenerator($this->getTargetModule());
 			$this->queryGenerator->setFields($this->getTargetFields());
-			$this->listviewHeaders = $this->listviewRecords = NULL;
+			$this->listviewHeaders = $this->listviewRecords = null;
 		}
 	}
 
@@ -117,7 +115,6 @@ class Vtiger_ProductsSoldToRenew_Dashboard extends Vtiger_IndexAjax_View
 			}
 			$this->listviewHeaders = $headerFieldModels;
 		}
-
 		return $this->listviewHeaders;
 	}
 
@@ -128,7 +125,6 @@ class Vtiger_ProductsSoldToRenew_Dashboard extends Vtiger_IndexAjax_View
 
 	public function getRecords($user)
 	{
-
 		$this->initListViewController();
 		if (!$this->listviewRecords) {
 			$this->queryGenerator->addNativeCondition($this->getConditions());
@@ -144,6 +140,7 @@ class Vtiger_ProductsSoldToRenew_Dashboard extends Vtiger_IndexAjax_View
 			while ($row = $dataReader->read()) {
 				$this->listviewRecords[$row['id']] = $this->getTargetModuleModel()->getRecordFromArray($row);
 			}
+			$dataReader->close();
 		}
 		return $this->listviewRecords;
 	}
@@ -152,7 +149,7 @@ class Vtiger_ProductsSoldToRenew_Dashboard extends Vtiger_IndexAjax_View
 	{
 		return 'assets_renew';
 	}
-	
+
 	public function getConditions()
 	{
 		return ['assetstatus' => 'PLL_ACCEPTED', 'assets_renew' => 'PLL_WAITING_FOR_RENEWAL'];

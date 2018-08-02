@@ -10,14 +10,13 @@
  * *********************************************************************************** */
 
 /**
- * Portal ListView Model Class
+ * Portal ListView Model Class.
  */
 class Portal_ListView_Model extends Vtiger_ListView_Model
 {
-
 	public function getListViewEntries(Vtiger_Paging_Model $pagingModel, $searchResult = false)
 	{
-		$db = PearDatabase::getInstance();
+		$listViewRecordModels =[];
 		$moduleModel = Vtiger_Module_Model::getInstance('Portal');
 
 		$query = $this->getQuery();
@@ -41,17 +40,16 @@ class Portal_ListView_Model extends Vtiger_ListView_Model
 
 		$listViewEntries = [];
 		foreach ($dataReader as $row) {
-			$listViewEntries[$row['portalid']] = array();
+			$listViewEntries[$row['portalid']] = [];
 			$listViewEntries[$row['portalid']]['portalname'] = $row['portalname'];
 			$listViewEntries[$row['portalid']]['portalurl'] = $row['portalurl'];
-			$listViewEntries[$row['portalid']]['createdtime'] = Vtiger_Date_UIType::getDisplayDateValue($row['createdtime']);
+			$listViewEntries[$row['portalid']]['createdtime'] = App\Fields\Date::formatToDisplay($row['createdtime']);
 		}
 		$index = 0;
 		foreach ($listViewEntries as $recordId => $record) {
 			$record['id'] = $recordId;
 			$listViewRecordModels[$recordId] = $moduleModel->getRecordFromArray($record, $dataReader[$index++]);
 		}
-
 		return $listViewRecordModels;
 	}
 
@@ -73,27 +71,31 @@ class Portal_ListView_Model extends Vtiger_ListView_Model
 		$page = $pagingModel->get('page');
 
 		$startSequence = ($page - 1) * $pageLimit + 1;
+
 		$endSequence = $startSequence + count($record) - 1;
-		$recordCount = Portal_ListView_Model::getRecordCount();
+		$recordCount = self::getRecordCount();
 
-		$pageCount = intval($recordCount / $pageLimit);
-		if (($recordCount % $pageLimit) != 0)
+		$pageCount = (int) ($recordCount / $pageLimit);
+		if (($recordCount % $pageLimit) != 0) {
 			$pageCount++;
-		if ($pageCount == 0)
+		}
+		if ($pageCount == 0) {
 			$pageCount = 1;
-		if ($page < $pageCount)
+		}
+		if ($page < $pageCount) {
 			$nextPageExists = true;
-		else
+		} else {
 			$nextPageExists = false;
+		}
 
-		$result = array(
+		$result = [
 			'startSequence' => $startSequence,
 			'endSequence' => $endSequence,
 			'recordCount' => $recordCount,
 			'pageCount' => $pageCount,
 			'nextPageExists' => $nextPageExists,
-			'pageLimit' => $pageLimit
-		);
+			'pageLimit' => $pageLimit,
+		];
 
 		return $result;
 	}

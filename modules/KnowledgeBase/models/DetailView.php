@@ -1,35 +1,34 @@
 <?php
 
 /**
- * Detail View Model for KnowledgeBase
- * @package YetiForce.Model
- * @license licenses/License.html
+ * Detail View Model for KnowledgeBase.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Krzysztof Gastołek <krzysztof.gastolek@wars.pl>
  */
 class KnowledgeBase_DetailView_Model extends Vtiger_DetailView_Model
 {
-
 	public function getDetailViewLinks($linkParams)
 	{
 		$recordModel = $this->getRecord();
-		$recordId = $recordModel->get('id');
 		$moduleName = $recordModel->getModuleName();
 		$relatedLinkEntries = [
 			[
 				'linktype' => 'DETAILVIEWTAB',
-				'linklabel' => vtranslate('LBL_RECORD_PREVIEW', $moduleName),
+				'linklabel' => \App\Language::translate('LBL_RECORD_PREVIEW', $moduleName),
 				'linkKey' => 'LBL_RECORD_PREVIEW',
 				'linkurl' => $recordModel->getDetailViewUrl() . '&mode=showPreview',
 				'linkicon' => '',
-				'related' => 'Summary'
+				'related' => 'Summary',
 			],
 			[
-				'linktype' => 'DETAILVIEWBASIC',
-				'linkurl' => 'javascript:KnowledgeBase_Popup_Js.getInstance().showPresentationContent(' . $recordId . ');',
-				'linkicon' => 'glyphicon glyphicon-resize-full',
-				'title' => vtranslate('LBL_FULL_SCREEN', $moduleName),
-				'linkhint' => vtranslate('LBL_FULL_SCREEN', $moduleName)
-			]
+				'linktype' => 'DETAIL_VIEW_ADDITIONAL',
+				'linkurl' => 'javascript:KnowledgeBase_Detail_Js.showPresentation();',
+				'linkicon' => 'fas fa-expand',
+				'title' => \App\Language::translate('LBL_FULL_SCREEN', $moduleName),
+				'linkhint' => \App\Language::translate('LBL_FULL_SCREEN', $moduleName),
+			],
 		];
 		$relatedLinks = [];
 		foreach ($relatedLinkEntries as $relatedLinkEntry) {

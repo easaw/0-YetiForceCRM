@@ -1,22 +1,21 @@
 <?php
 
 /**
- * Import View Class for MappedFields Settings
- * @package YetiForce.View
- * @license licenses/License.html
+ * Import View Class for MappedFields Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_MappedFields_Import_View extends Settings_Vtiger_BasicModal_View
 {
-
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		echo '<div class="modal fade" id="mfImport"><div class="modal-dialog"><div class="modal-content">';
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		
 		\App\Log::trace('Entering ' . __METHOD__ . '() method ...');
 
 		$qualifiedModule = $request->getModule(false);

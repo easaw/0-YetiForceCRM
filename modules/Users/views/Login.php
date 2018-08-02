@@ -9,67 +9,90 @@
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
 
-class Users_Login_View extends Vtiger_View_Controller
+class Users_Login_View extends \App\Controller\View
 {
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function loginRequired()
 	{
 		return false;
 	}
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		return true;
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request, false);
 		$viewer = $this->getViewer($request);
 
 		$selectedModule = $request->getModule();
-		$companyDetails = App\Company::getInstanceById();
-		$companyLogo = $companyDetails->getLogo();
 		$viewer->assign('MODULE', $selectedModule);
 		$viewer->assign('MODULE_NAME', $selectedModule);
 		$viewer->assign('QUALIFIED_MODULE', $selectedModule);
-		$viewer->assign('VIEW', $request->get('view'));
-		$viewer->assign('COMPANY_LOGO', $companyLogo);
+		$viewer->assign('VIEW', $request->getByType('view'));
 		$viewer->assign('USER_MODEL', Users_Record_Model::getCurrentUserModel());
 		if ($display) {
 			$this->preProcessDisplay($request);
 		}
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function postProcess(\App\Request $request, $display = true)
 	{
-		
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$viewer->assign('MODULE', $request->getModule());
-		$viewer->assign('CURRENT_VERSION', \App\Version::get());
-		$viewer->assign('LANGUAGE_SELECTION', AppConfig::main('langInLoginView'));
-		$viewer->assign('LAYOUT_SELECTION', AppConfig::main('layoutInLoginView'));
-		$viewer->assign('ERROR', $request->get('error'));
-		$viewer->assign('FPERROR', $request->get('fpError'));
-		$viewer->assign('STATUS', $request->get('status'));
-		$viewer->assign('STATUS_ERROR', $request->get('statusError'));
-		$viewer->view('Login.tpl', 'Users');
+		$viewer->assign('IS_BLOCKED_IP', Settings_BruteForce_Module_Model::getCleanInstance()->isBlockedIp());
+		if (\App\Session::has('UserLoginMessage')) {
+			$viewer->assign('MESSAGE', \App\Session::get('UserLoginMessage'));
+			$viewer->assign('MESSAGE_TYPE', \App\Session::get('UserLoginMessageType'));
+			\App\Session::delete('UserLoginMessage');
+			\App\Session::delete('UserLoginMessageType');
+		}
+		if (\App\Session::get('LoginAuthyMethod') === '2fa') {
+			$viewer->view('Login2faTotp.tpl', 'Users');
+		} else {
+			$viewer->assign('LANGUAGE_SELECTION', AppConfig::main('langInLoginView'));
+			$viewer->assign('LAYOUT_SELECTION', AppConfig::main('layoutInLoginView'));
+			$viewer->view('Login.tpl', 'Users');
+		}
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getHeaderCss(\App\Request $request)
 	{
-		$headerCssInstances = parent::getHeaderCss($request);
+		return array_merge(parent::getHeaderCss($request), $this->checkAndConvertCssStyles([
+			'modules.Users.Login'
+		]));
+	}
 
-		$cssFileNames = [
-			'skins.login',
-		];
-		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
-		$headerCssInstances = array_merge($headerCssInstances, $cssInstances);
-
-		return $headerCssInstances;
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getHeaderScripts(\App\Request $request)
+	{
+		return array_merge(parent::getHeaderScripts($request), $this->checkAndConvertJsScripts([
+			'~libraries/device-uuid/lib/device-uuid.js'
+		]));
 	}
 }

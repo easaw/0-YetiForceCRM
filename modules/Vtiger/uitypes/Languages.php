@@ -11,26 +11,37 @@
 
 class Vtiger_Languages_UIType extends Vtiger_Picklist_UIType
 {
-
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param string $value
-	 * @param int $record
-	 * @param Vtiger_Record_Model $recordInstance
-	 * @param bool $rawText
-	 * @return string
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function validate($value, $isUserFormat = false)
 	{
-		return Vtiger_Language_Handler::getLanguageLabel($value);
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		parent::validate($value, $isUserFormat);
+		$this->validate = false;
+		if (\App\Language::getLanguageLabel($value) === false) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate[$value] = true;
 	}
 
 	/**
-	 * Function to get all the available picklist values for the current field
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		return \App\Purifier::encodeHtml(\App\Language::getLanguageLabel($value));
+	}
+
+	/**
+	 * Function to get all the available picklist values for the current field.
+	 *
 	 * @return array List of picklist values if the field
 	 */
 	public function getPicklistValues()
 	{
-		return Vtiger_Language_Handler::getAllLanguages();
+		return \App\Language::getAll();
 	}
 }

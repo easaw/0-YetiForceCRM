@@ -10,8 +10,7 @@
 
 class Settings_PickListDependency_List_View extends Settings_Vtiger_List_View
 {
-
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		$moduleModelList = Settings_PickListDependency_Module_Model::getPicklistSupportedModules();
 		$forModule = $request->get('formodule');
@@ -21,7 +20,7 @@ class Settings_PickListDependency_List_View extends Settings_Vtiger_List_View
 		parent::preProcess($request, $display);
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		if ($request->isAjax()) {
 			$moduleModelList = Settings_PickListDependency_Module_Model::getPicklistSupportedModules();
@@ -39,31 +38,32 @@ class Settings_PickListDependency_List_View extends Settings_Vtiger_List_View
 	}
 
 	/**
-	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * Function to get the list of Script models to be included.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
-		$moduleName = $request->getModule();
-
-		$jsFileNames = array(
-			'~libraries/jquery/malihu-custom-scrollbar/js/jquery.mCustomScrollbar.concat.min.js',
-		);
+		$jsFileNames = [
+			'~libraries/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js',
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
 
-		$cssFileNames = array(
-			'~libraries/jquery/malihu-custom-scrollbar/css/jquery.mCustomScrollbar.css',
-		);
+		$cssFileNames = [
+			'~libraries/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css',
+		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
 		$headerCssInstances = array_merge($headerCssInstances, $cssInstances);
 

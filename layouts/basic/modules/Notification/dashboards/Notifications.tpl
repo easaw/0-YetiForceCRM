@@ -1,40 +1,43 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} -->*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 	<div class="dashboardWidgetHeader">
-		<div class="row">
-			<div class="col-md-8">
-				<div class="dashboardTitle textOverflowEllipsis" title="{vtranslate($WIDGET->getTitle(), $MODULE_NAME)}"><strong>{vtranslate($WIDGET->getTitle(), $MODULE_NAME)}</strong></div>
-			</div>
-			<div class="col-md-4">
-				<div class="box pull-right">
-					{include file="dashboards/DashboardHeaderIcons.tpl"|@vtemplate_path:$MODULE_NAME}
+		<div class="d-flex flex-row flex-nowrap no-gutters justify-content-between">
+			{include file=\App\Layout::getTemplatePath('dashboards/WidgetHeaderTitle.tpl', $MODULE_NAME) TITLE=App\Purifier::encodeHtml(App\Language::translate($WIDGET->getTitle(), 'Home'))}
+			{include file=\App\Layout::getTemplatePath('dashboards/WidgetHeaderButtons.tpl', $MODULE_NAME)}
+		</div>
+		<hr class="widgetHr" />
+		<div class="row justify-content-end">
+			<div class="col-md-6">
+				<div class="input-group input-group-sm flex-nowrap">
+					<div class="input-group-prepend">
+						<span class="input-group-text">
+							<span class="fas fa-bell fa-fw"></span>
+						</span>
+					</div>
+					<div class="select2Wrapper">
+						<select class="widgetFilter form-control select2" aria-label="Small" aria-describedby="inputGroup-sizing-sm" name="type">
+							{foreach from=$TYPES_NOTIFICATION key=KEY item=TYPE}
+								<option value="{$KEY}">{$TYPE}</option>
+							{/foreach}
+						</select>
+					</div>
 				</div>
 			</div>
-		</div>
-		<hr class="widgetHr"/>
-		<div class="row" >
-			<div class="col-xs-6">
-				<select class="widgetFilter select2" name="type">
-					{foreach from=$TYPES_NOTIFICATION key=KEY item=TYPE}
-						<option value="{$KEY}">{$TYPE}</option>
-					{/foreach}
-				</select>
-			</div>
-			<div class="col-xs-6">
-				<div class="btn-toolbar pull-right">
+			<div class="col-md-6">
+				<div class="btn-toolbar float-right">
 					{if \App\Privilege::isPermitted('Notification', 'CreateView')}
-						<button type="button" class="btn btn-default" onclick="Vtiger_Index_Js.sendNotification()">
-							<span class="glyphicon glyphicon-plus" title="{vtranslate('LBL_ADD_RECORD')}" alt="{vtranslate('LBL_ADD_RECORD')}"></span>
+						<button type="button" class="btn btn-light" onclick="Vtiger_Index_Js.sendNotification()" title="{\App\Language::translate('LBL_ADD_RECORD')}" alt="{\App\Language::translate('LBL_ADD_RECORD')}">
+							<span class="fas fa-plus"></span>
 						</button>
 					{/if}
-					<button type="button"  class="btn btn-default" href="index.php?module=Notification&view=List">
-						<span class="glyphicon glyphicon-th-list" title="{vtranslate('LBL_GO_TO_RECORDS_LIST')}" alt="{vtranslate('LBL_GO_TO_RECORDS_LIST')}"></span>
+					<button type="button"  class="btn btn-light" href="index.php?module=Notification&view=List" title="{\App\Language::translate('LBL_GO_TO_RECORDS_LIST')}" alt="{\App\Language::translate('LBL_GO_TO_RECORDS_LIST')}">
+						<span class="fas fa-th-list"></span>
 					</button>
 				</div>
 			</div>
 		</div>
 	</div>
 	<div class="dashboardWidgetContent">
-		{include file="dashboards/NotificationsContents.tpl"|@vtemplate_path:$MODULE_NAME}
+		{include file=\App\Layout::getTemplatePath('dashboards/NotificationsContents.tpl', $MODULE_NAME)}
 	</div>
 {/strip}

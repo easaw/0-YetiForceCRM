@@ -8,11 +8,9 @@
  * All Rights Reserved.
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
-vimport('~~include/utils/RecurringType.php');
 
 class Calendar_Record_Model extends Vtiger_Record_Model
 {
-
 	public static function getNameByReference($refModuleName)
 	{
 		$fieldName = Vtiger_Cache::get('NameRelatedField', $refModuleName . '-Calendar');
@@ -30,8 +28,9 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Set crm activity
-	 * @param array $referenceIds
+	 * Set crm activity.
+	 *
+	 * @param array  $referenceIds
 	 * @param string $refModuleName
 	 */
 	public static function setCrmActivity($referenceIds, $refModuleName = false)
@@ -41,15 +40,16 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 			if (empty($fieldName)) {
 				$fieldName = self::getNameByReference($refModuleName);
 			}
+			if (empty($fieldName)) {
+				continue;
+			}
 			$row = (new \App\Db\Query())->select(['vtiger_activity.status', 'vtiger_activity.date_start'])
-					->from('vtiger_activity')
-					->innerJoin('vtiger_crmentity', 'vtiger_activity.activityid=vtiger_crmentity.crmid')
-					->where(['vtiger_crmentity.deleted' => 0, "vtiger_activity.$fieldName" => $id, 'vtiger_activity.status' => Calendar_Module_Model::getComponentActivityStateLabel('current')])
-					->orderBy(['date_start' => SORT_ASC])->limit(1)->one();
+				->from('vtiger_activity')
+				->innerJoin('vtiger_crmentity', 'vtiger_activity.activityid=vtiger_crmentity.crmid')
+				->where(['vtiger_crmentity.deleted' => 0, "vtiger_activity.$fieldName" => $id, 'vtiger_activity.status' => Calendar_Module_Model::getComponentActivityStateLabel('current')])
+				->orderBy(['vtiger_activity.date_start' => SORT_ASC])->one();
 			if ($row) {
-				$date = new DateTime(date('Y-m-d'));
-				$diff = $date->diff(new DateTime($row['date_start']));
-				$db->createCommand()->update('vtiger_entity_stats', ['crmactivity' => (int) $diff->format("%r%a")], ['crmid' => $id])->execute();
+				$db->createCommand()->update('vtiger_entity_stats', ['crmactivity' => (int) \App\Fields\Date::getDiff(date('Y-m-d'), $row['date_start'], '%r%a')], ['crmid' => $id])->execute();
 			} else {
 				$db->createCommand()->update(('vtiger_entity_stats'), ['crmactivity' => null], ['crmid' => $id])->execute();
 			}
@@ -57,12 +57,13 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function returns the Entity Name of Record Model
+	 * Function returns the Entity Name of Record Model.
+	 *
 	 * @return string
 	 */
 	public function getName()
 	{
-		$name = $this->get('subject');
+		$name = \App\Purifier::encodeHtml($this->get('subject'));
 		if (empty($name)) {
 			$name = parent::getName();
 		}
@@ -70,19 +71,21 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to insert details about reminder in to Database
-	 * @param <Date> $reminderSent
+	 * Function to insert details about reminder in to Database.
+	 *
+	 * @param <Date>    $reminderSent
 	 * @param <integer> $recurId
-	 * @param string $reminderMode like edit/delete
+	 * @param string    $reminderMode like edit/delete
 	 */
 	public function setActivityReminder($reminderSent = 0, $recurId = '', $reminderMode = '')
 	{
 		$moduleInstance = CRMEntity::getInstance($this->getModuleName());
-		$moduleInstance->activity_reminder($this->getId(), $this->get('reminder_time'), $reminderSent, $recurId, $reminderMode);
+		$moduleInstance->activityReminder($this->getId(), $this->get('reminder_time'), $reminderSent, $recurId, $reminderMode);
 	}
 
 	/**
-	 * Function returns the Module Name based on the activity type
+	 * Function returns the Module Name based on the activity type.
+	 *
 	 * @return string
 	 */
 	public function getType()
@@ -95,58 +98,22 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the Detail View url for the record
+	 * Function to get the Detail View url for the record.
+	 *
 	 * @return string - Record Detail View Url
 	 */
 	public function getDetailViewUrl()
 	{
 		$module = $this->getModule();
+
 		return 'index.php?module=Calendar&view=' . $module->getDetailViewName() . '&record=' . $this->getId();
-	}
-
-	/**
-	 * Function returns recurring information for EditView
-	 * @return <Array> - which contains recurring Information
-	 */
-	public function getRecurrenceInformation()
-	{
-		$recurringObject = $this->getRecurringObject();
-
-		if ($recurringObject) {
-			$recurringData['recurringcheck'] = 'Yes';
-			$recurringData['repeat_frequency'] = $recurringObject->getRecurringFrequency();
-			$recurringData['eventrecurringtype'] = $recurringObject->getRecurringType();
-			$recurringEndDate = $recurringObject->getRecurringEndDate();
-			if (!empty($recurringEndDate)) {
-				$recurringData['recurringenddate'] = $recurringEndDate->get_formatted_date();
-			}
-			$recurringInfo = $recurringObject->getUserRecurringInfo();
-
-			if ($recurringObject->getRecurringType() == 'Weekly') {
-				$noOfDays = count($recurringInfo['dayofweek_to_repeat']);
-				for ($i = 0; $i < $noOfDays; ++$i) {
-					$recurringData['week' . $recurringInfo['dayofweek_to_repeat'][$i]] = 'checked';
-				}
-			} elseif ($recurringObject->getRecurringType() == 'Monthly') {
-				$recurringData['repeatMonth'] = $recurringInfo['repeatmonth_type'];
-				if ($recurringInfo['repeatmonth_type'] == 'date') {
-					$recurringData['repeatMonth_date'] = $recurringInfo['repeatmonth_date'];
-				} else {
-					$recurringData['repeatMonth_daytype'] = $recurringInfo['repeatmonth_daytype'];
-					$recurringData['repeatMonth_day'] = $recurringInfo['dayofweek_to_repeat'][0];
-				}
-			}
-		} else {
-			$recurringData['recurringcheck'] = 'No';
-		}
-		return $recurringData;
 	}
 
 	public function saveToDb()
 	{
 		//Time should changed to 24hrs format
-		AppRequest::set('time_start', Vtiger_Time_UIType::getTimeValueWithSeconds(AppRequest::get('time_start')));
-		AppRequest::set('time_end', Vtiger_Time_UIType::getTimeValueWithSeconds(AppRequest::get('time_end')));
+		\App\Request::_set('time_start', Vtiger_Time_UIType::getTimeValueWithSeconds(\App\Request::_get('time_start')));
+		\App\Request::_set('time_end', Vtiger_Time_UIType::getTimeValueWithSeconds(\App\Request::_get('time_end')));
 		parent::saveToDb();
 		$this->updateActivityReminder();
 		$this->insertIntoInviteTable();
@@ -154,7 +121,8 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Prepare value to save
+	 * Prepare value to save.
+	 *
 	 * @return array
 	 */
 	public function getValuesForSave()
@@ -167,11 +135,12 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 			$forSave['vtiger_activity']['smownerid'] = $forSave['vtiger_crmentity']['smownerid'];
 		}
 		unset($forSave['vtiger_activity_reminder']);
+
 		return $forSave;
 	}
 
 	/**
-	 * Update cctivity reminder
+	 * Update cctivity reminder.
 	 */
 	public function updateActivityReminder()
 	{
@@ -188,14 +157,13 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 			if ($activityReminderExists) {
 				$db->createCommand()->update('vtiger_activity_reminder', [
 					'reminder_time' => $reminderTime,
-					'reminder_sent' => 0
+					'reminder_sent' => 0,
 					], ['activity_id' => $this->getId()])->execute();
 			} else {
 				$db->createCommand()->insert('vtiger_activity_reminder', [
 					'reminder_time' => $reminderTime,
 					'reminder_sent' => 0,
 					'activity_id' => $this->getId(),
-					'recurringid' => 0
 				])->execute();
 			}
 		} else {
@@ -204,22 +172,24 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to insert values in u_yf_activity_invitation table for the specified module,tablename ,invitees_array
+	 * Function to insert values in u_yf_activity_invitation table for the specified module,tablename ,invitees_array.
 	 */
 	public function insertIntoInviteTable()
 	{
-		if (!AppRequest::has('inviteesid')) {
+		if (!\App\Request::_has('inviteesid')) {
 			\App\Log::info('No invitations in request, Exiting insertIntoInviteeTable method ...');
+
 			return;
 		}
 		\App\Log::trace('Entering ' . __METHOD__);
 		$db = App\Db::getInstance();
-		$inviteesRequest = AppRequest::get('inviteesid');
+		$inviteesRequest = \App\Request::_getArray('inviteesid');
 		$dataReader = (new \App\Db\Query())->from('u_#__activity_invitation')->where(['activityid' => $this->getId()])->createCommand()->query();
 		$invities = [];
 		while ($row = $dataReader->read()) {
 			$invities[$row['inviteesid']] = $row;
 		}
+		$dataReader->close();
 		if (!empty($inviteesRequest)) {
 			foreach ($inviteesRequest as &$invitation) {
 				if (isset($invities[$invitation[2]])) {
@@ -228,7 +198,7 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 					$db->createCommand()->insert('u_#__activity_invitation', [
 						'email' => $invitation[0],
 						'crmid' => $invitation[1],
-						'activityid' => $this->getId()
+						'activityid' => $this->getId(),
 					])->execute();
 				}
 			}
@@ -240,13 +210,13 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Update event in popup reminder
+	 * Update event in popup reminder.
 	 */
 	public function insertIntoActivityReminderPopup()
 	{
 		$cbrecord = $this->getId();
 		if (!empty($cbrecord)) {
-			$cbdate = getValidDBInsertDateValue($this->get('date_start'));
+			$cbdate = $this->get('date_start');
 			$cbtime = $this->get('time_start');
 			$reminderid = (new \App\Db\Query())->select(['reminderid'])->from('vtiger_activity_reminder_popup')
 				->where(['recordid' => $cbrecord])
@@ -275,45 +245,7 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get recurring information for the current record in detail view
-	 * @return array - which contains Recurring Information
-	 */
-	public function getRecurringDetails()
-	{
-		$recurringObject = $this->getRecurringObject();
-		if ($recurringObject) {
-			$recurringInfoDisplayData = $recurringObject->getDisplayRecurringInfo();
-			$recurringEndDate = $recurringObject->getRecurringEndDate();
-		} else {
-			$recurringInfoDisplayData['recurringcheck'] = \App\Language::translate('LBL_NO');
-			$recurringInfoDisplayData['repeat_str'] = '';
-		}
-		if (!empty($recurringEndDate)) {
-			$recurringInfoDisplayData['recurringenddate'] = $recurringEndDate->get_formatted_date();
-		}
-
-		return $recurringInfoDisplayData;
-	}
-
-	/**
-	 * Function to get the recurring object
-	 * @return Object - recurring object
-	 */
-	public function getRecurringObject()
-	{
-		$result = (new \App\Db\Query())->select(['vtiger_recurringevents.*', 'vtiger_activity.date_start', 'vtiger_activity.time_start', 'vtiger_activity.due_date', 'vtiger_activity.time_end'])
-				->from('vtiger_recurringevents')
-				->innerJoin('vtiger_activity', 'vtiger_recurringevents.activityid = vtiger_activity.activityid')
-				->where(['vtiger_recurringevents.activityid' => (int) $this->getId()])->one();
-
-		if ($result) {
-			return RecurringType::fromDBRequest($result);
-		}
-		return false;
-	}
-
-	/**
-	 * Function updates the Calendar Reminder popup's status
+	 * Function updates the Calendar Reminder popup's status.
 	 */
 	public function updateReminderStatus($status = 1)
 	{
@@ -321,9 +253,14 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 			->update('vtiger_activity_reminder_popup', [
 				'status' => $status,
 				], ['recordid' => $this->getId()])
-			->execute();
+				->execute();
 	}
 
+	/**
+	 * Update reminder postpone.
+	 *
+	 * @param string $time
+	 */
 	public function updateReminderPostpone($time)
 	{
 		switch ($time) {
@@ -354,37 +291,38 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 				'status' => 0,
 				'datetime' => date('Y-m-d H:i:s', $datatimeSTR),
 				], ['recordid' => $this->getId()])
-			->execute();
+				->execute();
 		if ((new App\Db\Query())->select(['value'])->from('vtiger_calendar_config')
-				->where(['type' => 'reminder', 'name' => 'update_event', 'value' => 1])
-				->exists()) {
+			->where(['type' => 'reminder', 'name' => 'update_event', 'value' => 1])
+			->exists()) {
 			$row = (new App\Db\Query())->select(['date_start', 'time_start', 'due_date', 'time_end'])
-					->from('vtiger_activity')
-					->where(['activityid' => $this->getId()])->one();
+				->from('vtiger_activity')
+				->where(['activityid' => $this->getId()])->one();
 			$dueDateRecord = $row['due_date'];
 			$timeEndRecord = $row['time_end'];
 			$duration = strtotime($dueDateRecord . ' ' . $timeEndRecord) - strtotime($row['date_start'] . ' ' . $row['time_start']);
 			$timeEndRecord = date('H:i:s', $datatimeSTR + $duration);
 			$dueDateRecord = date('Y-m-d', $datatimeSTR + $duration);
-			App\Db::getInstance()->createCommand()->update('vtiger_activity', [
-				'date_start' => $dateStart,
-				'time_start' => $timeStart,
-				'due_date' => $dueDateRecord,
-				'time_end' => $timeEndRecord
-				], ['activityid' => $this->getId()])->execute();
+			$this->set('date_start', $dateStart);
+			$this->set('time_start', $timeStart);
+			$this->set('due_date', $dueDateRecord);
+			$this->set('time_end', $timeEndRecord);
+			$this->save();
 		}
 	}
 
 	public function getActivityTypeIcon()
 	{
 		$icon = $this->get('activitytype');
-		if ($icon == 'Task')
+		if ($icon == 'Task') {
 			$icon = 'Tasks';
+		}
 		return $icon . '.png';
 	}
 
 	/**
-	 * Function to get modal view url for the record
+	 * Function to get modal view url for the record.
+	 *
 	 * @return string - Record Detail View Url
 	 */
 	public function getActivityStateModalUrl()
@@ -393,18 +331,38 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to remove record
+	 * {@inheritdoc}
+	 */
+	public function changeState($state)
+	{
+		parent::changeState($state);
+		$stateId = 0;
+		switch ($state) {
+			case 'Active':
+				$stateId = 0;
+				break;
+			case 'Trash':
+				$stateId = 1;
+				break;
+			case 'Archived':
+				$stateId = 2;
+				break;
+		}
+		\App\Db::getInstance()->createCommand()->update('vtiger_activity', ['deleted' => $stateId], ['activityid' => $this->getId()])->execute();
+	}
+
+	/**
+	 * {@inheritdoc}
 	 */
 	public function delete()
 	{
 		parent::delete();
-		App\Db::getInstance()->createCommand()
-			->update('vtiger_activity', ['deleted' => 1], ['activityid' => $this->getId()])
-			->execute();
+		\App\Db::getInstance()->createCommand()->delete('vtiger_activity_reminder', ['activity_id' => $this->getId()])->execute();
 	}
 
 	/**
-	 * Function to get the list view actions for the record
+	 * Function to get the list view actions for the record.
+	 *
 	 * @return Vtiger_Link_Model[] - Associate array of Vtiger_Link_Model instances
 	 */
 	public function getRecordListViewLinksLeftSide()
@@ -417,13 +375,43 @@ class Calendar_Record_Model extends Vtiger_Record_Model
 				'linktype' => 'LIST_VIEW_ACTIONS_RECORD_LEFT_SIDE',
 				'linklabel' => 'LBL_SET_RECORD_STATUS',
 				'linkurl' => $this->getActivityStateModalUrl(),
-				'linkicon' => 'glyphicon glyphicon-ok',
+				'linkicon' => 'fas fa-check',
 				'linkclass' => 'btn-sm btn-default',
-				'modalView' => true
+				'modalView' => true,
 			];
 		}
 		foreach ($recordLinks as $recordLink) {
 			$links[] = Vtiger_Link_Model::getInstanceFromValues($recordLink);
+		}
+		return $links;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getRecordRelatedListViewLinksLeftSide(Vtiger_RelationListView_Model $viewModel)
+	{
+		$links = parent::getRecordRelatedListViewLinksLeftSide($viewModel);
+		if ($viewModel->getRelationModel()->isEditable() && $this->isEditable()) {
+			if (in_array($this->getValueByField('activitystatus'), Calendar_Module_Model::getComponentActivityStateLabel('current'))) {
+				$links['LBL_SET_RECORD_STATUS'] = Vtiger_Link_Model::getInstanceFromValues([
+						'linklabel' => 'LBL_SET_RECORD_STATUS',
+						'linkhref' => true,
+						'linkurl' => $this->getActivityStateModalUrl(),
+						'linkicon' => 'fas fa-check',
+						'linkclass' => 'btn-xs btn-default',
+						'modalView' => true,
+				]);
+			}
+			if ($viewModel->getRelationModel()->isEditable() && $this->isEditable()) {
+				$links['LBL_EDIT'] = Vtiger_Link_Model::getInstanceFromValues([
+						'linklabel' => 'LBL_EDIT',
+						'linkurl' => $this->getEditViewUrl(),
+						'linkhref' => true,
+						'linkicon' => 'fas fa-edit',
+						'linkclass' => 'btn-xs btn-default',
+				]);
+			}
 		}
 		return $links;
 	}

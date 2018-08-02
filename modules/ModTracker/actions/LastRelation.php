@@ -1,57 +1,50 @@
 <?php
 
 /**
- * LastRelation Class
- * @package YetiForce.Action
- * @license licenses/License.html
+ * LastRelation Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-class ModTracker_LastRelation_Action extends Vtiger_Action_Controller
+class ModTracker_LastRelation_Action extends \App\Controller\Action
 {
-
 	/**
-	 * Checking permission
-	 * @param Vtiger_Request $request
-	 * @throws \Exception\NoPermittedToRecord
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedToRecord
 	 */
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 		$records = $request->get('recordsId');
-		if (!empty($sourceModule)) {
+		if ($sourceModule) {
 			if (!in_array($sourceModule, AppConfig::module('ModTracker', 'SHOW_TIMELINE_IN_LISTVIEW')) || !\App\Privilege::isPermitted($sourceModule, 'TimeLineList')) {
-				throw new \Exception\NoPermittedToRecord('LBL_PERMISSION_DENIED');
+				throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 			}
-			foreach ($records as $key => $recordId) {
+			foreach ($records as $recordId) {
 				if (!App\Privilege::isPermitted($sourceModule, 'DetailView', $recordId)) {
-					throw new \Exception\NoPermittedToRecord('LBL_PERMISSION_DENIED');
+					throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 				}
 			}
 		} else {
-			throw new \Exception\NoPermittedToRecord('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
 	/**
-	 * Process
-	 * @param Vtiger_Request $request
+	 * Process.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$records = $request->get('recordsId');
-		$result = ModTracker_Record_Model::getLastRelation($records, $request->get('sourceModule'));
+		$result = ModTracker_Record_Model::getLastRelation($records, $request->getByType('sourceModule', 2));
 		$response = new Vtiger_Response();
 		$response->setResult($result);
 		$response->emit();
-	}
-
-	/**
-	 * Validate request
-	 * @param Vtiger_Request $request
-	 * @return type
-	 */
-	public function validateRequest(Vtiger_Request $request)
-	{
-		return $request->validateWriteAccess();
 	}
 }

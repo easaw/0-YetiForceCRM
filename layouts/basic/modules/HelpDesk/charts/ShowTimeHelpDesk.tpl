@@ -1,18 +1,18 @@
 {if $DATA['chart']}
 	{literal}
-		<script>  
-			$(document).ready(function(){
+		<script>
+			$(document).ready(function () {
 				function generateData() {
 					var jData = $('.chartData').val();
-					var data = JSON.parse(jData);   
+					var data = JSON.parse(jData);
 					var chartData = [];
-					
-					for(var index in data['chart']) {
+
+					for (var index in data['chart']) {
 						chartData.push(data['chart'][index]);
 						chartData[data['chart'][index].id] = data['chart'][index];
 					}
 
-					return {'chartData':chartData};
+					return {'chartData': chartData};
 				}
 				$(function () {
 					var chartData = generateData();
@@ -22,9 +22,9 @@
 							minTickSize: 0,
 							ticks: false
 						},
-						yaxis: { 
+						yaxis: {
 							min: 0
-						},			
+						},
 						series: {
 							bars: {
 								show: true,
@@ -37,21 +37,21 @@
 						}
 					};
 					$.plot($(css_id), chartData['chartData'], options);
-					
-					window.onresize = function(event) {
+
+					window.onresize = function (event) {
 						$.plot($(css_id), chartData['chartData'], options);
 					}
 				});
 			});
-{/literal}
+		{/literal}
 	</script>
-	<div style="width: 80%; margin: auto; text-align: center;">{vtranslate('OSSTimeControl','OSSTimeControl')}: {vtranslate('LBL_USERS')}<br/>
-		<input class="chartData" type="hidden" value='{Vtiger_Util_Helper::toSafeHTML(\App\Json::encode($DATA))}' />
+	<div style="width: 80%; margin: auto; text-align: center;">{\App\Language::translate('OSSTimeControl','OSSTimeControl')}: {\App\Language::translate('LBL_USERS')}<br />
+		<input class="chartData" type="hidden" value='{\App\Purifier::encodeHtml(\App\Json::encode($DATA))}' />
 		<div id="timeHelpDesk" style="height:400px;width:100%;"></div>
 	</div>
 {else}
 	<div class="alert alert-warning">
-		{vtranslate('LBL_RECORDS_NO_FOUND')}
+		{\App\Language::translate('LBL_RECORDS_NO_FOUND')}
 	</div>	
 {/if}
-	
+

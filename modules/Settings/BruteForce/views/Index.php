@@ -1,19 +1,20 @@
 <?php
 
 /**
- * Brute force index view class
- * @package YetiForce.Settings.View
- * @license licenses/License.html
+ * Brute force index view class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author YetiForce.com
  */
 class Settings_BruteForce_Index_View extends Settings_Vtiger_Index_View
 {
-
 	/**
-	 * Function gets module settings
-	 * @param Vtiger_Request $request
+	 * Function gets module settings.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$bfInstance = Settings_BruteForce_Module_Model::getCleanInstance();
 		$viewer = $this->getViewer($request);

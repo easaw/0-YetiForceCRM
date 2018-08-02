@@ -10,15 +10,14 @@
 
 class Import_Utils_Helper
 {
+	public static $AUTO_MERGE_NONE = 0;
+	public static $AUTO_MERGE_IGNORE = 1;
+	public static $AUTO_MERGE_OVERWRITE = 2;
+	public static $AUTO_MERGE_MERGEFIELDS = 3;
+	public static $supportedFileExtensions = ['csv', 'vcf', 'ical', 'xml', 'ics'];
+	public static $supportedFileExtensionsByModule = ['Contacts' => ['csv', 'vcf'], 'Calendar' => ['csv', 'ical', 'ics'], 'Default' => ['csv', 'xml', 'zip']];
 
-	static $AUTO_MERGE_NONE = 0;
-	static $AUTO_MERGE_IGNORE = 1;
-	static $AUTO_MERGE_OVERWRITE = 2;
-	static $AUTO_MERGE_MERGEFIELDS = 3;
-	static $supportedFileExtensions = ['csv', 'vcf', 'ical', 'xml', 'ics'];
-	static $supportedFileExtensionsByModule = ['Contacts' => ['csv', 'vcf'], 'Calendar' => ['csv', 'ical', 'ics'], 'Default' => ['csv', 'xml', 'zip']];
-
-	public function getSupportedFileExtensions($moduleName = null)
+	public static function getSupportedFileExtensions($moduleName = null)
 	{
 		if (!$moduleName) {
 			return self::$supportedFileExtensions;
@@ -27,7 +26,6 @@ class Import_Utils_Helper
 				case 'Contacts':
 				case 'Calendar':
 					return self::$supportedFileExtensionsByModule[$moduleName];
-
 				default:
 					return self::$supportedFileExtensionsByModule['Default'];
 			}
@@ -47,21 +45,19 @@ class Import_Utils_Helper
 
 	public static function getMaxUploadSize()
 	{
-		global $upload_maxsize;
-		return $upload_maxsize;
+		return \AppConfig::main('upload_maxsize');
 	}
 
-	public static function getImportDirectory()
+	/**
+	 * The function takes the path of the file to be imported.
+	 *
+	 * @param \App\User $user
+	 *
+	 * @return string
+	 */
+	public static function getImportFilePath(\App\User $user)
 	{
-		global $import_dir;
-		$importDir = dirname(__FILE__) . '/../../../' . $import_dir;
-		return $importDir;
-	}
-
-	public static function getImportFilePath($user)
-	{
-		$importDirectory = self::getImportDirectory();
-		return $importDirectory . "IMPORT_" . $user->id;
+		return App\Fields\File::getTmpPath() . 'IMPORT_' . $user->getId();
 	}
 
 	public static function showErrorPage($errorMessage, $errorDetails = false, $customActions = false)
@@ -78,20 +74,23 @@ class Import_Utils_Helper
 
 	public static function showImportLockedError($lockInfo)
 	{
-
-		$errorMessage = vtranslate('ERR_MODULE_IMPORT_LOCKED', 'Import');
-		$errorDetails = array(vtranslate('LBL_MODULE_NAME', 'Import') => \App\Module::getModuleName($lockInfo['tabid']),
-			vtranslate('LBL_USER_NAME', 'Import') => \App\Fields\Owner::getUserLabel($lockInfo['userid']),
-			vtranslate('LBL_LOCKED_TIME', 'Import') => $lockInfo['locked_since']);
+		$errorMessage = \App\Language::translate('ERR_MODULE_IMPORT_LOCKED', 'Import');
+		$errorDetails = [\App\Language::translate('LBL_MODULE_NAME', 'Import') => \App\Module::getModuleName($lockInfo['tabid']),
+			\App\Language::translate('LBL_USER_NAME', 'Import') => \App\Fields\Owner::getUserLabel($lockInfo['userid']),
+			\App\Language::translate('LBL_LOCKED_TIME', 'Import') => $lockInfo['locked_since'], ];
 
 		self::showErrorPage($errorMessage, $errorDetails);
 	}
 
-	public static function showImportTableBlockedError($moduleName, $user)
+	/**
+	 * Shows import errors in the table.
+	 *
+	 * @param string $moduleName
+	 */
+	public static function showImportTableBlockedError($moduleName)
 	{
-
-		$errorMessage = vtranslate('ERR_UNIMPORTED_RECORDS_EXIST', 'Import');
-		$customActions = array('LBL_CLEAR_DATA' => "location.href='index.php?module={$moduleName}&view=Import&mode=clearCorruptedData'");
+		$errorMessage = \App\Language::translate('ERR_UNIMPORTED_RECORDS_EXIST', 'Import');
+		$customActions = ['LBL_CLEAR_DATA' => "location.href='index.php?module={$moduleName}&view=Import&mode=clearCorruptedData'"];
 
 		self::showErrorPage($errorMessage, '', $customActions);
 	}
@@ -99,11 +98,12 @@ class Import_Utils_Helper
 	public static function getAssignedToUserList($module)
 	{
 		$cache = Vtiger_Cache::getInstance();
-		if ($cache->getUserList($module, $current_user->id)) {
-			return $cache->getUserList($module, $current_user->id);
+		if ($cache->getUserList($module, \App\User::getCurrentUserId())) {
+			return $cache->getUserList($module, \App\User::getCurrentUserId());
 		} else {
-			$userList = \App\Fields\Owner::getInstance()->getUsers(false, 'Active', $current_user->id);
-			$cache->setUserList($module, $userList, $current_user->id);
+			$userList = \App\Fields\Owner::getInstance()->getUsers(false, 'Active', \App\User::getCurrentUserId());
+			$cache->setUserList($module, $userList, \App\User::getCurrentUserId());
+
 			return $userList;
 		}
 	}
@@ -111,11 +111,12 @@ class Import_Utils_Helper
 	public static function getAssignedToGroupList($module)
 	{
 		$cache = Vtiger_Cache::getInstance();
-		if ($cache->getGroupList($module, $current_user->id)) {
-			return $cache->getGroupList($module, $current_user->id);
+		if ($cache->getGroupList($module, \App\User::getCurrentUserId())) {
+			return $cache->getGroupList($module, \App\User::getCurrentUserId());
 		} else {
 			$groupList = \App\Fields\Owner::getInstance()->getGroups(false);
-			$cache->setGroupList($module, $groupList, $current_user->id);
+			$cache->setGroupList($module, $groupList, \App\User::getCurrentUserId());
+
 			return $groupList;
 		}
 	}
@@ -133,54 +134,66 @@ class Import_Utils_Helper
 		return false;
 	}
 
-	public static function validateFileUpload($request)
+	/**
+	 * Validates uploads file.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @return bool
+	 */
+	public static function validateFileUpload(\App\Request $request)
 	{
-		$current_user = Users_Record_Model::getCurrentUserModel();
+		$currentUser = \App\User::getCurrentUserModel();
 
 		$uploadMaxSize = self::getMaxUploadSize();
-		$importDirectory = self::getImportDirectory();
-		$temporaryFileName = self::getImportFilePath($current_user);
+		$importDirectory = App\Fields\File::getTmpPath();
+		$temporaryFileName = self::getImportFilePath($currentUser);
 
 		if ($_FILES['import_file']['error']) {
 			$request->set('error_message', self::fileUploadErrorMessage($_FILES['import_file']['error']));
+
 			return false;
 		}
 		if (!is_uploaded_file($_FILES['import_file']['tmp_name'])) {
-			$request->set('error_message', vtranslate('LBL_FILE_UPLOAD_FAILED', 'Import'));
+			$request->set('error_message', \App\Language::translate('LBL_FILE_UPLOAD_FAILED', 'Import'));
+
 			return false;
 		}
 		if ($_FILES['import_file']['size'] > $uploadMaxSize) {
-			$request->set('error_message', vtranslate('LBL_IMPORT_ERROR_LARGE_FILE', 'Import') .
-				$uploadMaxSize . ' ' . vtranslate('LBL_IMPORT_CHANGE_UPLOAD_SIZE', 'Import'));
+			$request->set('error_message', \App\Language::translate('LBL_IMPORT_ERROR_LARGE_FILE', 'Import') .
+				$uploadMaxSize . ' ' . \App\Language::translate('LBL_IMPORT_CHANGE_UPLOAD_SIZE', 'Import'));
+
 			return false;
 		}
 		if (!is_writable($importDirectory)) {
-			$request->set('error_message', vtranslate('LBL_IMPORT_DIRECTORY_NOT_WRITABLE', 'Import'));
+			$request->set('error_message', \App\Language::translate('LBL_IMPORT_DIRECTORY_NOT_WRITABLE', 'Import'));
+
 			return false;
 		}
 
 		$fileCopied = move_uploaded_file($_FILES['import_file']['tmp_name'], $temporaryFileName);
 		if (!$fileCopied) {
-			$request->set('error_message', vtranslate('LBL_IMPORT_FILE_COPY_FAILED', 'Import'));
+			$request->set('error_message', \App\Language::translate('LBL_IMPORT_FILE_COPY_FAILED', 'Import'));
+
 			return false;
 		}
-		$fileReader = Import_Module_Model::getFileReader($request, $current_user);
+		$fileReader = Import_Module_Model::getFileReader($request, $currentUser);
 
 		if ($fileReader === null) {
-			$request->set('error_message', vtranslate('LBL_INVALID_FILE', 'Import'));
+			$request->set('error_message', \App\Language::translate('LBL_INVALID_FILE', 'Import'));
+
 			return false;
 		}
-
-		$hasHeader = $fileReader->hasHeader();
-		$firstRow = $fileReader->getFirstRowData($hasHeader);
+		$firstRow = $fileReader->getFirstRowData($fileReader->hasHeader());
 		if ($firstRow === false) {
-			$request->set('error_message', vtranslate('LBL_NO_ROWS_FOUND', 'Import'));
+			$request->set('error_message', \App\Language::translate('LBL_NO_ROWS_FOUND', 'Import'));
+
 			return false;
 		}
 		return true;
 	}
 
-	static function fileUploadErrorMessage($error_code)
+	public static function fileUploadErrorMessage($error_code)
 	{
 		switch ($error_code) {
 			case 1:

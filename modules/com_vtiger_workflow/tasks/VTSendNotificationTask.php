@@ -7,39 +7,41 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  * ********************************************************************************** */
-require_once('modules/com_vtiger_workflow/VTEntityCache.php');
-require_once('modules/com_vtiger_workflow/VTWorkflowUtils.php');
+require_once 'modules/com_vtiger_workflow/VTWorkflowUtils.php';
 
+/**
+ * Class VTSendNotificationTask.
+ */
 class VTSendNotificationTask extends VTTask
 {
-
-	// Sending email takes more time, this should be handled via queue all the time.
+	/**
+	 * Sending email takes more time, this should be handled via queue all the time.
+	 *
+	 * @var bool
+	 */
 	public $executeImmediately = true;
 
+	/**
+	 * Get field names.
+	 *
+	 * @return array
+	 */
 	public function getFieldNames()
 	{
-		return array("template");
+		return ['template'];
 	}
 
 	/**
-	 * Execute task
+	 * Execute task.
+	 *
 	 * @param Vtiger_Record_Model $recordModel
 	 */
 	public function doTask($recordModel)
 	{
-		if (is_numeric($this->template) && $this->template > 0) {
-			$db = PearDatabase::getInstance();
+		if (is_numeric($this->template) && $this->template) {
 			$entityId = $recordModel->getId();
-			$sql = 'SELECT vtiger_activity.*, vtiger_crmentity.description, vtiger_crmentity.smownerid as assigned_user_id,  vtiger_crmentity.modifiedtime, vtiger_crmentity.createdtime, vtiger_activity_reminder.reminder_time FROM vtiger_activity INNER JOIN vtiger_crmentity ON vtiger_activity.activityid = vtiger_crmentity.crmid LEFT JOIN vtiger_activity_reminder ON vtiger_activity_reminder.activity_id = vtiger_activity.activityid AND vtiger_activity_reminder.recurringid = 0 WHERE vtiger_crmentity.deleted = 0 AND vtiger_activity.activityid = ?';
-			$result = $db->pquery($sql, array($entityId));
-
-			$moduleModel = $recordModel->getModule();
-			$moduleModel->setEventFieldsForExport();
-			$moduleModel->setTodoFieldsForExport();
-			$exportData = new Calendar_Export_Model();
-			$iCal = $exportData->output('', $result, $moduleModel, '', true);
-			$result_invitees = $db->pquery('SELECT * FROM u_yf_activity_invitation WHERE activityid = ?', array($entityId));
-			while ($recordinfo = $db->fetch_array($result_invitees)) {
+			$resultInvitees = (new \App\Db\Query())->from('u_#__activity_invitation')->where(['activityid' => $entityId])->createCommand()->query();
+			while ($recordinfo = $resultInvitees->read()) {
 				$userModel = App\User::getUserModel($recordinfo['inviteeid']);
 				if ($userModel->getDetail('status') === 'Active') {
 					\App\Mailer::sendFromTemplate([
@@ -50,7 +52,6 @@ class VTSendNotificationTask extends VTTask
 						'cc' => $this->copy_email,
 						'language' => $userModel->getDetail('language'),
 						'to_email_mod' => 'Users',
-						'params' => ['ics' => $iCal]
 					]);
 				}
 			}
