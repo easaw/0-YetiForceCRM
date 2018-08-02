@@ -16,13 +16,11 @@ $languageStrings = [
 	'Contacts' => 'Contacts',
 	'Do Not Call' => 'Do not call',
 	'Email' => 'Primary email',
-	'LBL_ADD_RECORD' => 'Add record',
 	'LBL_CONTACT_INFORMATION' => 'Basic information',
 	'LBL_COPY_MAILING_ADDRESS' => 'Copy mailing address',
 	'LBL_COPY_OTHER_ADDRESS' => 'Copy other address',
 	'LBL_CUSTOMER_PORTAL_INFORMATION' => 'Customer portal details',
 	'LBL_IMAGE_INFORMATION' => 'Profile picture',
-	'LBL_RECORDS_LIST' => 'Contacts list',
 	'Office Phone' => 'Office phone',
 	'Portal User' => 'Portal user',
 	'Reference' => 'Reference',
@@ -56,7 +54,7 @@ $languageStrings = [
 	'SINGLE_Leads' => 'Lead',
 	'SINGLE_Vendors' => 'Vendor',
 	'LBL_SWITCH_ON_DECISION_MAKER' => 'Decision maker',
-	'LBL_SWITCH_OFF_DECISION_MAKER' => 'All', 
+	'LBL_SWITCH_OFF_DECISION_MAKER' => 'All',
 ];
 
 $jsLanguageStrings = [

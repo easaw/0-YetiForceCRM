@@ -1,28 +1,20 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
-class Settings_TreesManager_Save_Action extends Vtiger_Action_Controller
+/**
+ * Settings TreesManager save action class
+ * @package YetiForce.Action
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+class Settings_TreesManager_Save_Action extends Settings_Vtiger_Basic_Action
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Save tree
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUser->isAdminUser()) {
-			throw new \Exception\AppException('LBL_PERMISSION_DENIED');
-		}
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
 		$recordId = $request->get('record');
 		$name = $request->get('name');
@@ -39,6 +31,7 @@ class Settings_TreesManager_Save_Action extends Vtiger_Action_Controller
 		$recordModel->set('name', $name);
 		$recordModel->set('module', $templatemodule);
 		$recordModel->set('tree', $tree);
+		$recordModel->set('share', $request->get('share'));
 		$recordModel->set('replace', $replace);
 		$recordModel->save();
 		header('Location: ' . $moduleModel->getListViewUrl());

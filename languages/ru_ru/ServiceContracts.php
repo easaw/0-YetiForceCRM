@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * ServiceContracts russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_ACTIVE_SERVICE_CONTRACTS' => 'SLA активен',
 	'LBL_SUMMARY' => 'Дополнительная информация',
@@ -7,8 +12,6 @@ $languageStrings = [
 	'Contract No' => 'Контракт №',
 	'End Date' => 'Дата завершения',
 	'High' => 'Высокий',
-	'LBL_ADD_RECORD' => 'Сервисный контракт',
-	'LBL_RECORDS_LIST' => 'Сервисные контракты',
 	'LBL_SERVICE_CONTRACT_INFORMATION' => 'Основная информация',
 	'Low' => 'Низкий',
 	'Planned Duration' => 'Плановая продолжительность (в Днях)',

@@ -6,6 +6,7 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class SMSNotifier_Module_Model extends Vtiger_Module_Model
@@ -13,7 +14,7 @@ class SMSNotifier_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function to check whether the module is an entity type module or not
-	 * @return <Boolean> true/false
+	 * @return boolean true/false
 	 */
 	public function isQuickCreateSupported()
 	{
@@ -23,7 +24,7 @@ class SMSNotifier_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function to check whether the module is summary view supported
-	 * @return <Boolean> - true/false
+	 * @return boolean - true/false
 	 */
 	public function isSummaryViewSupported()
 	{
@@ -32,7 +33,7 @@ class SMSNotifier_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function to get the module is permitted to specific action
-	 * @param <String> $actionName
+	 * @param string $actionName
 	 * @return <boolean>
 	 */
 	public function isPermitted($actionName)
@@ -40,7 +41,7 @@ class SMSNotifier_Module_Model extends Vtiger_Module_Model
 		if ($actionName === 'EditView') {
 			return false;
 		}
-		return Users_Privileges_Model::isPermitted($this->getName(), $actionName);
+		return \App\Privilege::isPermitted($this->getName(), $actionName);
 	}
 
 	/**
@@ -49,27 +50,112 @@ class SMSNotifier_Module_Model extends Vtiger_Module_Model
 	 */
 	public function getSettingLinks()
 	{
-		vimport('~~modules/com_vtiger_workflow/VTWorkflowUtils.php');
+		Vtiger_Loader::includeOnce('~~modules/com_vtiger_workflow/VTWorkflowUtils.php');
 
 		$editWorkflowsImagePath = Vtiger_Theme::getImagePath('EditWorkflows.png');
-		$settingsLinks = array();
+		$settingsLinks = [];
 
 
 		if (VTWorkflowUtils::checkModuleWorkflow($this->getName())) {
-			$settingsLinks[] = array(
+			$settingsLinks[] = [
 				'linktype' => 'LISTVIEWSETTING',
 				'linklabel' => 'LBL_EDIT_WORKFLOWS',
 				'linkurl' => 'index.php?parent=Settings&module=Workflows&view=List&sourceModule=' . $this->getName(),
 				'linkicon' => $editWorkflowsImagePath
-			);
+			];
 		}
 
-		$settingsLinks[] = array(
+		$settingsLinks[] = [
 			'linktype' => 'LISTVIEWSETTING',
-			'linklabel' => vtranslate('LBL_SERVER_CONFIG', $this->getName()),
+			'linklabel' => \App\Language::translate('LBL_SERVER_CONFIG', $this->getName()),
 			'linkurl' => 'index.php?module=SMSNotifier&parent=Settings&view=List',
 			'linkicon' => ''
-		);
+		];
 		return $settingsLinks;
+	}
+
+	/**
+	 * Function to get instance of provider model
+	 * @param string $providerName
+	 * @return boolean|\SMSNotifier_Basic_Provider
+	 */
+	public static function getProviderInstance($providerName)
+	{
+		if (!empty($providerName)) {
+			$providerName = trim($providerName);
+			$className = Vtiger_Loader::getComponentClassName('Provider', $providerName, 'SMSNotifier');
+			if ($className && class_exists($className)) {
+				return new $className();
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Function to get All providers
+	 * @return \SMSNotifier_Basic_Provider[]
+	 */
+	public static function getProviders()
+	{
+		$iterator = new \DirectoryIterator(dirname(__FILE__) . '/../providers');
+		foreach ($iterator as $item) {
+			if ($item->isFile() && $item->getFilename() !== 'Basic.php' && $item->getExtension() === 'php') {
+				$providers[] = self::getProviderInstance($item->getBasename('.php'));
+			}
+		}
+		return $providers;
+	}
+
+	/**
+	 * Function to get active provider
+	 * @return \SMSNotifier_Basic_Provider[]
+	 */
+	public static function getActiveProviderInstance()
+	{
+		if (\App\Cache::has('SMSNotifierConfig', 'activeProviderInstance')) {
+			$provider = \App\Cache::get('SMSNotifierConfig', 'activeProviderInstance');
+			return $provider ? clone $provider : $provider;
+		}
+		$provider = false;
+		$data = (new App\Db\Query())->from('a_#__smsnotifier_servers')->where(['isactive' => 1])->one();
+		if ($data) {
+			$provider = self::getProviderInstance($data['providertype']);
+			if (!empty($data['parameters'])) {
+				$parameters = \App\Json::decode(App\Purifier::decodeHtml($data['parameters']));
+				foreach ($parameters as $k => $v) {
+					$provider->set($k, $v);
+				}
+			}
+			$provider->set('api_key', $data['api_key']);
+		}
+		\App\Cache::save('SMSNotifierConfig', 'activeProviderInstance', $provider, \App\Cache::LONG);
+		return $provider;
+	}
+
+	/**
+	 * Check server
+	 * @return bool
+	 */
+	public static function checkServer()
+	{
+		$provider = self::getActiveProviderInstance();
+		return ($provider !== false);
+	}
+
+	/**
+	 * Adds sms notifications to cron
+	 * @param string $message
+	 * @param string[] $toNumbers
+	 * @param int[] $recordIds
+	 * @param string $ralModuleName
+	 * @return int
+	 */
+	public static function addSmsToCron($message, $toNumbers, $recordIds, $ralModuleName)
+	{
+		return \App\Db::getInstance('admin')->createCommand()->insert('s_#__smsnotifier_queue', [
+				'message' => $message,
+				'tonumbers' => is_array($toNumbers) ? implode(',', $toNumbers) : $toNumbers,
+				'records' => is_array($recordIds) ? implode(',', $recordIds) : $recordIds,
+				'module' => $ralModuleName])->execute();
 	}
 }

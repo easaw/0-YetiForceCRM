@@ -16,15 +16,7 @@ class Reports_List_View extends Vtiger_Index_View
 	protected $listViewEntries = false;
 	protected $listViewCount = false;
 
-	public function checkPermission(Vtiger_Request $request)
-	{
-		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
-		}
-	}
-
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request, false);
 
@@ -36,23 +28,23 @@ class Reports_List_View extends Vtiger_Index_View
 		$listViewModel = new Reports_ListView_Model();
 		$listViewModel->set('module', $moduleModel);
 
-		$folderId = $request->get('viewname');
+		$folderId = $request->getByType('viewname', 2);
 		if (empty($folderId) || $folderId == 'undefined') {
 			$folderId = 'All';
 		}
-		$sortBy = $request->get('sortorder');
-		$orderBy = $request->get('orderby');
+		$sortBy = $request->getForSql('sortorder');
+		$orderBy = $request->getForSql('orderby');
 
 		$listViewModel->set('folderid', $folderId);
 		$listViewModel->set('orderby', $orderBy);
 		$listViewModel->set('sortorder', $sortBy);
 
 		$linkModels = $listViewModel->getListViewLinks(false);
-		$pageNumber = $request->get('page');
+		$pageNumber = $request->getInteger('page');
 		$listViewMassActionModels = $listViewModel->getListViewMassActions(false);
 
 		if (empty($pageNumber)) {
-			$pageNumber = '1';
+			$pageNumber = 1;
 		}
 		$pagingModel = new Vtiger_Paging_Model();
 		$pagingModel->set('page', $pageNumber);
@@ -73,7 +65,7 @@ class Reports_List_View extends Vtiger_Index_View
 		$viewer->assign('PAGE_NUMBER', $pageNumber);
 		$viewer->assign('LISTVIEW_MASSACTIONS', $listViewMassActionModels);
 		$viewer->assign('LISTVIEW_ENTRIES_COUNT', $noOfEntries);
-
+		$viewer->assign('VIEW_MODEL', $listViewModel);
 
 		if (!$this->listViewCount) {
 			$this->listViewCount = $listViewModel->getListViewCount();
@@ -92,25 +84,24 @@ class Reports_List_View extends Vtiger_Index_View
 		}
 	}
 
-	public function preProcessTplName(Vtiger_Request $request)
+	public function preProcessTplName(\App\Request $request)
 	{
 		return 'ListViewPreProcess.tpl';
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-		$folders = $moduleModel->getFolders();
-		$folderId = $request->get('viewname');
+		$folderId = $request->getByType('viewname', 2);
 		if (empty($folderId) || $folderId == 'undefined') {
 			$folderId = 'All';
 		}
-		$pageNumber = $request->get('page');
-		$orderBy = $request->get('orderby');
+		$pageNumber = $request->getInteger('page');
+		$orderBy = $request->getForSql('orderby');
 
-		$sortOrder = $request->get('sortorder');
+		$sortOrder = $request->getForSql('sortorder');
 		if ($sortOrder == "ASC") {
 			$nextSortOrder = "DESC";
 			$sortImage = "glyphicon glyphicon-chevron-down";
@@ -129,7 +120,7 @@ class Reports_List_View extends Vtiger_Index_View
 		}
 		$listViewMassActionModels = $listViewModel->getListViewMassActions(false);
 		if (empty($pageNumber)) {
-			$pageNumber = '1';
+			$pageNumber = 1;
 		}
 		$viewer->assign('MODULE', $moduleName);
 		$pagingModel = new Vtiger_Paging_Model();
@@ -181,7 +172,7 @@ class Reports_List_View extends Vtiger_Index_View
 		$viewer->view('ListViewContents.tpl', $moduleName);
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	public function postProcess(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -192,18 +183,18 @@ class Reports_List_View extends Vtiger_Index_View
 
 	/**
 	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
+		$jsFileNames = [
 			'modules.Vtiger.resources.List',
 			"modules.$moduleName.resources.List",
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
@@ -212,15 +203,15 @@ class Reports_List_View extends Vtiger_Index_View
 
 	/**
 	 * Function returns the number of records for the current filter
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function getRecordsCount(Vtiger_Request $request)
+	public function getRecordsCount(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$cvId = $request->get('viewname');
+		$cvId = $request->getByType('viewname', 2);
 		$count = $this->getListViewCount($request);
 
-		$result = array();
+		$result = [];
 		$result['module'] = $moduleName;
 		$result['viewname'] = $cvId;
 		$result['count'] = $count;
@@ -233,11 +224,11 @@ class Reports_List_View extends Vtiger_Index_View
 
 	/**
 	 * Function to get listView count
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function getListViewCount(Vtiger_Request $request)
+	public function getListViewCount(\App\Request $request)
 	{
-		$folderId = $request->get('viewname');
+		$folderId = $request->getByType('viewname', 2);
 		if (empty($folderId)) {
 			$folderId = 'All';
 		}
@@ -252,7 +243,7 @@ class Reports_List_View extends Vtiger_Index_View
 	 * Function to get the page count for list
 	 * @return total number of pages
 	 */
-	public function getPageCount(Vtiger_Request $request)
+	public function getPageCount(\App\Request $request)
 	{
 		$listViewCount = $this->getListViewCount($request);
 		$pagingModel = new Vtiger_Paging_Model();
@@ -262,7 +253,7 @@ class Reports_List_View extends Vtiger_Index_View
 		if ($pageCount == 0) {
 			$pageCount = 1;
 		}
-		$result = array();
+		$result = [];
 		$result['page'] = $pageCount;
 		$result['numberOfRecords'] = $listViewCount;
 		$response = new Vtiger_Response();

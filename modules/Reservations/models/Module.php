@@ -1,14 +1,11 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Reservations module model class
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Reservations_Module_Model extends Vtiger_Module_Model
 {
 
@@ -17,48 +14,38 @@ class Reservations_Module_Model extends Vtiger_Module_Model
 		return 'index.php?module=' . $this->get('name') . '&view=Calendar';
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public function getSideBarLinks($linkParams)
 	{
-		$linkTypes = ['SIDEBARLINK', 'SIDEBARWIDGET'];
-		$links = [];
-
-		$quickLinks = [
-			[
+		$links = Vtiger_Link_Model::getAllByType($this->getId(), ['SIDEBARLINK', 'SIDEBARWIDGET'], $linkParams);
+		$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues([
 				'linktype' => 'SIDEBARLINK',
 				'linklabel' => 'LBL_CALENDAR_VIEW',
 				'linkurl' => $this->getCalendarViewUrl(),
-				'linkicon' => '',
-			],
-			[
+				'linkicon' => 'glyphicon glyphicon-calendar',
+		]);
+		$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues([
 				'linktype' => 'SIDEBARLINK',
 				'linklabel' => 'LBL_RECORDS_LIST',
 				'linkurl' => $this->getListViewUrl(),
-				'linkicon' => '',
-			],
-		];
-		foreach ($quickLinks as $quickLink) {
-			$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues($quickLink);
+				'linkicon' => 'glyphicon glyphicon-list',
+		]);
+		if ($linkParams['ACTION'] === 'Calendar') {
+			$links['SIDEBARWIDGET'][] = Vtiger_Link_Model::getInstanceFromValues([
+					'linktype' => 'SIDEBARWIDGET',
+					'linklabel' => 'LBL_USERS',
+					'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getUsersList',
+					'linkicon' => ''
+			]);
+			$links['SIDEBARWIDGET'][] = Vtiger_Link_Model::getInstanceFromValues([
+					'linktype' => 'SIDEBARWIDGET',
+					'linklabel' => 'LBL_TYPE',
+					'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getTypesList',
+					'linkicon' => ''
+			]);
 		}
-
-		if ($linkParams['ACTION'] == 'Calendar') {
-			$quickWidgets = [];
-			$quickWidgets[] = [
-				'linktype' => 'SIDEBARWIDGET',
-				'linklabel' => 'LBL_USERS',
-				'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getUsersList',
-				'linkicon' => ''
-			];
-			$quickWidgets[] = [
-				'linktype' => 'SIDEBARWIDGET',
-				'linklabel' => 'LBL_TYPE',
-				'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getTypesList',
-				'linkicon' => ''
-			];
-			foreach ($quickWidgets as $quickWidget) {
-				$links['SIDEBARWIDGET'][] = Vtiger_Link_Model::getInstanceFromValues($quickWidget);
-			}
-		}
-
 		return $links;
 	}
 

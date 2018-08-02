@@ -29,7 +29,7 @@ class ThemeImport extends ThemeExport
 	 * Initialize Import
 	 * @access private
 	 */
-	public function initImport($zipfile, $overwrite)
+	public function initImport($zipfile, $overwrite = true)
 	{
 		$this->__initSchema();
 		$name = $this->getModuleNameFromZip($zipfile);
@@ -46,7 +46,7 @@ class ThemeImport extends ThemeExport
 		$this->initImport($zipfile, $overwrite);
 
 		// Call module import function
-		$this->import_Theme($zipfile);
+		$this->importTheme($zipfile);
 	}
 
 	/**
@@ -64,26 +64,24 @@ class ThemeImport extends ThemeExport
 	 * Import Module
 	 * @access private
 	 */
-	public function import_Theme($zipfile)
+	public function importTheme($zipfile)
 	{
 		$name = $this->_modulexml->name;
 		$label = $this->_modulexml->label;
 		$parent = $this->_modulexml->parent;
 
 		self::log("Importing $label ... STARTED");
-		$unzip = new Unzip($zipfile);
-		$filelist = $unzip->getList();
 		$vtiger6format = false;
 
-		foreach ($filelist as $filename => $fileinfo) {
-			if (!$unzip->isdir($filename)) {
-
-				if (strpos($filename, '/') === false)
+		$zip = new \App\Zip($zipfile);
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$fileName = $zip->getNameIndex($i);
+			if (!$zip->isdir($fileName)) {
+				if (strpos($fileName, '/') === false) {
 					continue;
-
-
-				$targetdir = substr($filename, 0, strripos($filename, '/'));
-				$targetfile = basename($filename);
+				}
+				$targetdir = substr($fileName, 0, strripos($fileName, '/'));
+				$targetfile = basename($fileName);
 				$dounzip = false;
 				// Case handling for jscalendar
 				if (stripos($targetdir, "layouts/$parent/skins/$label") === 0) {
@@ -93,27 +91,24 @@ class ThemeImport extends ThemeExport
 				if ($dounzip) {
 					// vtiger6 format
 					if ($vtiger6format) {
-						$targetdir = "layouts/$parent/skins/" . str_replace("layouts/$parent/skins", "", $targetdir);
+						$targetdir = "layouts/$parent/skins/" . str_replace("layouts/$parent/skins", '', $targetdir);
 						@mkdir($targetdir, 0777, true);
 					}
-
-					if ($unzip->unzip($filename, "$targetdir/$targetfile") !== false) {
-						self::log("Copying file $filename ... DONE");
+					if ($zip->unzipFile($fileName, "$targetdir/$targetfile") !== false) {
+						self::log("Copying file $fileName ... DONE");
 					} else {
-						self::log("Copying file $filename ... FAILED");
+						self::log("Copying file $fileName ... FAILED");
 					}
 				} else {
-					self::log("Copying file $filename ... SKIPPED");
+					self::log("Copying file $fileName ... SKIPPED");
 				}
 			}
 		}
-		if ($unzip)
-			$unzip->close();
-
+		if ($zip) {
+			$zip->close();
+		}
 		self::register($label, $name, $parent);
-
 		self::log("Importing $label [$prefix] ... DONE");
-
 		return;
 	}
 }

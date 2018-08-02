@@ -20,12 +20,12 @@ class VTScheduledReport extends Reports
 	public $scheduledInterval = null;
 	public $scheduledFormat = null;
 	public $scheduledRecipients = null;
-	static $SCHEDULED_HOURLY = 1;
-	static $SCHEDULED_DAILY = 2;
-	static $SCHEDULED_WEEKLY = 3;
-	static $SCHEDULED_BIWEEKLY = 4;
-	static $SCHEDULED_MONTHLY = 5;
-	static $SCHEDULED_ANNUALLY = 6;
+	public static $SCHEDULED_HOURLY = 1;
+	public static $SCHEDULED_DAILY = 2;
+	public static $SCHEDULED_WEEKLY = 3;
+	public static $SCHEDULED_BIWEEKLY = 4;
+	public static $SCHEDULED_MONTHLY = 5;
+	public static $SCHEDULED_ANNUALLY = 6;
 
 	public function __construct($adb, $user, $reportid = "")
 	{
@@ -40,20 +40,20 @@ class VTScheduledReport extends Reports
 		$adb = PearDatabase::getInstance();
 
 		if (!empty($this->id)) {
-			$cachedInfo = VTCacheUtils::lookupReport_ScheduledInfo($this->user->id, $this->id);
+			$cachedInfo = VTCacheUtils::lookupReportScheduledInfo($this->user->id, $this->id);
 
 			if ($cachedInfo === false) {
-				$result = $adb->pquery('SELECT * FROM vtiger_scheduled_reports WHERE reportid=?', array($this->id));
+				$result = $adb->pquery('SELECT * FROM vtiger_scheduled_reports WHERE reportid=?', [$this->id]);
 
-				if ($adb->num_rows($result) > 0) {
-					$reportScheduleInfo = $adb->raw_query_result_rowdata($result, 0);
+				if ($adb->numRows($result) > 0) {
+					$reportScheduleInfo = $adb->rawQueryResultRowData($result, 0);
 
-					$scheduledInterval = (!empty($reportScheduleInfo['schedule'])) ? \includes\utils\Json::decode($reportScheduleInfo['schedule']) : array();
-					$scheduledRecipients = (!empty($reportScheduleInfo['recipients'])) ? \includes\utils\Json::decode($reportScheduleInfo['recipients']) : array();
+					$scheduledInterval = (!empty($reportScheduleInfo['schedule'])) ? \App\Json::decode($reportScheduleInfo['schedule']) : [];
+					$scheduledRecipients = (!empty($reportScheduleInfo['recipients'])) ? \App\Json::decode($reportScheduleInfo['recipients']) : [];
 
-					VTCacheUtils::updateReport_ScheduledInfo($this->user->id, $this->id, true, $reportScheduleInfo['format'], $scheduledInterval, $scheduledRecipients, $reportScheduleInfo['next_trigger_time']);
+					VTCacheUtils::updateReportScheduledInfo($this->user->id, $this->id, true, $reportScheduleInfo['format'], $scheduledInterval, $scheduledRecipients, $reportScheduleInfo['next_trigger_time']);
 
-					$cachedInfo = VTCacheUtils::lookupReport_ScheduledInfo($this->user->id, $this->id);
+					$cachedInfo = VTCacheUtils::lookupReportScheduledInfo($this->user->id, $this->id);
 				}
 			}
 			if ($cachedInfo) {
@@ -68,49 +68,45 @@ class VTScheduledReport extends Reports
 		return false;
 	}
 
+	/**
+	 * Get recipient emails
+	 * @return array
+	 */
 	public function getRecipientEmails()
 	{
 		$recipientsInfo = $this->scheduledRecipients;
 
-		$recipientsList = array();
+		$recipientsList = [];
 		if (!empty($recipientsInfo)) {
 			if (!empty($recipientsInfo['users'])) {
 				$recipientsList = array_merge($recipientsList, $recipientsInfo['users']);
 			}
-
 			if (!empty($recipientsInfo['roles'])) {
 				foreach ($recipientsInfo['roles'] as $roleId) {
-					$roleUsers = getRoleUsers($roleId);
+					$roleUsers = \App\PrivilegeUtil::getUsersNameByRole($roleId);
 					foreach ($roleUsers as $userId => $userName) {
 						array_push($recipientsList, $userId);
 					}
 				}
 			}
-
 			if (!empty($recipientsInfo['rs'])) {
 				foreach ($recipientsInfo['rs'] as $roleId) {
-					$users = getRoleAndSubordinateUsers($roleId);
-					foreach ($users as $userId => $userName) {
+					foreach (\App\PrivilegeUtil::getUsersByRoleAndSubordinate($roleId) as $userId) {
 						array_push($recipientsList, $userId);
 					}
 				}
 			}
-
-
 			if (!empty($recipientsInfo['groups'])) {
-				require_once 'include/utils/GetGroupUsers.php';
 				foreach ($recipientsInfo['groups'] as $groupId) {
-					$userGroups = new GetGroupUsers();
-					$userGroups->getAllUsersInGroup($groupId);
-					$recipientsList = array_merge($recipientsList, $userGroups->group_users);
+					$recipientsList = array_merge($recipientsList, App\PrivilegeUtil::getUsersByGroup($groupId));
 				}
 			}
 		}
-		$recipientsEmails = array();
+		$recipientsEmails = [];
 		if (!empty($recipientsList) && count($recipientsList) > 0) {
 			foreach ($recipientsList as $userId) {
-				$userName = \includes\fields\Owner::getUserLabel($userId);
-				$userEmail = getUserEmail($userId);
+				$userName = \App\Fields\Owner::getUserLabel($userId);
+				$userEmail = \App\User::getUserModel($userId)->getDetail('email1');
 				if (!in_array($userEmail, $recipientsEmails)) {
 					$recipientsEmails[$userName] = $userEmail;
 				}
@@ -123,50 +119,41 @@ class VTScheduledReport extends Reports
 	{
 		$currentModule = vglobal('currentModule');
 
-		$vtigerMailer = new vtlib\Mailer();
-
 		$recipientEmails = $this->getRecipientEmails();
+		$to = [];
 		foreach ($recipientEmails as $name => $email) {
-			$vtigerMailer->AddAddress($email, $name);
+			$to[$email] = $name;
 		}
 
 		$currentTime = date('Y-m-d H:i:s');
 		$subject = $this->reportname . ' - ' . $currentTime . ' (' . DateTimeField::getDBTimeZone() . ')';
 
-		$contents = \includes\Language::translate('LBL_AUTO_GENERATED_REPORT_EMAIL', $currentModule) . '<br/><br/>';
-		$contents .= '<b>' . \includes\Language::translate('LBL_REPORT_NAME', $currentModule) . ' :</b> ' . $this->reportname . '<br/>';
-		$contents .= '<b>' . \includes\Language::translate('LBL_DESCRIPTION', $currentModule) . ' :</b><br/>' . $this->reportdescription . '<br/><br/>';
-
-		$vtigerMailer->Subject = $subject;
-		$vtigerMailer->Body = $contents;
-		$vtigerMailer->ContentType = "text/html";
+		$contents = \App\Language::translate('LBL_AUTO_GENERATED_REPORT_EMAIL', $currentModule) . '<br /><br />';
+		$contents .= '<b>' . \App\Language::translate('LBL_REPORT_NAME', $currentModule) . ' :</b> ' . $this->reportname . '<br />';
+		$contents .= '<b>' . \App\Language::translate('LBL_DESCRIPTION', $currentModule) . ' :</b><br />' . $this->reportdescription . '<br /><br />';
 
 		$baseFileName = preg_replace('/[^a-zA-Z0-9_-\s]/', '', $this->reportname) . '__' . preg_replace('/[^a-zA-Z0-9_-\s]/', '', $currentTime);
 
 		$oReportRun = ReportRun::getInstance($this->id);
 		$reportFormat = $this->scheduledFormat;
-		$attachments = array();
-
-		if ($reportFormat == 'pdf' || $reportFormat == 'both') {
+		$attachments = [];
+		if ($reportFormat === 'pdf' || $reportFormat === 'both') {
 			$fileName = $baseFileName . '.pdf';
 			$filePath = 'storage/' . $fileName;
-			$attachments[$fileName] = $filePath;
-			$pdf = $oReportRun->getReportPDF();
 		}
-		if ($reportFormat == 'excel' || $reportFormat == 'both') {
+		if ($reportFormat === 'excel' || $reportFormat === 'both') {
 			$fileName = $baseFileName . '.xls';
 			$filePath = 'storage/' . $fileName;
-			$attachments[$fileName] = $filePath;
+			$attachments[$filePath] = $fileName;
 			$oReportRun->writeReportToExcelFile($filePath);
 		}
-
-		foreach ($attachments as $attachmentName => $path) {
-			$vtigerMailer->AddAttachment($path, $attachmentName);
-		}
-
-		$vtigerMailer->Send(true);
-
-		foreach ($attachments as $attachmentName => $path) {
+		\App\Mailer::addMail([
+			'to' => $to,
+			'subject' => $subject,
+			'content' => $contents,
+			'attachments' => $attachments,
+		]);
+		foreach ($attachments as $path => $attachmentName) {
 			unlink($path);
 		}
 	}
@@ -193,7 +180,7 @@ class VTScheduledReport extends Reports
 			return date("Y-m-d H:i:s", strtotime("+ 1 day " . $scheduledTime));
 		}
 		if ($scheduleType == VTScheduledReport::$SCHEDULED_WEEKLY) {
-			$weekDays = array('0' => 'Sunday', '1' => 'Monday', '2' => 'Tuesday', '3' => 'Wednesday', '4' => 'Thursday', '5' => 'Friday', '6' => 'Saturday');
+			$weekDays = ['0' => 'Sunday', '1' => 'Monday', '2' => 'Tuesday', '3' => 'Wednesday', '4' => 'Thursday', '5' => 'Friday', '6' => 'Saturday'];
 
 			if (date('w', time()) == $scheduledDayOfWeek) {
 				return date("Y-m-d H:i:s", strtotime('+1 week ' . $scheduledTime));
@@ -202,7 +189,7 @@ class VTScheduledReport extends Reports
 			}
 		}
 		if ($scheduleType == VTScheduledReport::$SCHEDULED_BIWEEKLY) {
-			$weekDays = array('0' => 'Sunday', '1' => 'Monday', '2' => 'Tuesday', '3' => 'Wednesday', '4' => 'Thursday', '5' => 'Friday', '6' => 'Saturday');
+			$weekDays = ['0' => 'Sunday', '1' => 'Monday', '2' => 'Tuesday', '3' => 'Wednesday', '4' => 'Thursday', '5' => 'Friday', '6' => 'Saturday'];
 			if (date('w', time()) == $scheduledDayOfWeek) {
 				return date("Y-m-d H:i:s", strtotime('+2 weeks ' . $scheduledTime));
 			} else {
@@ -226,8 +213,8 @@ class VTScheduledReport extends Reports
 			}
 		}
 		if ($scheduleType == VTScheduledReport::$SCHEDULED_ANNUALLY) {
-			$months = array(0 => 'January', 1 => 'February', 2 => 'March', 3 => 'April', 4 => 'May', 5 => 'June', 6 => 'July',
-				7 => 'August', 8 => 'September', 9 => 'October', 10 => 'November', 11 => 'December');
+			$months = [0 => 'January', 1 => 'February', 2 => 'March', 3 => 'April', 4 => 'May', 5 => 'June', 6 => 'July',
+				7 => 'August', 8 => 'September', 9 => 'October', 10 => 'November', 11 => 'December'];
 			$currentTime = time();
 			$currentMonth = date('n', $currentTime);
 			if (($scheduledMonth + 1) == $currentMonth) {
@@ -247,97 +234,8 @@ class VTScheduledReport extends Reports
 	public function updateNextTriggerTime()
 	{
 		$adb = $this->db;
-
-		$currentTime = date('Y-m-d H:i:s');
-		$scheduledInterval = $this->scheduledInterval;
 		$nextTriggerTime = $this->getNextTriggerTime(); // Compute based on the frequency set
-
-		$adb->pquery('UPDATE vtiger_scheduled_reports SET next_trigger_time=? WHERE reportid=?', array($nextTriggerTime, $this->id));
-	}
-
-	public static function generateRecipientOption($type, $value, $name = '')
-	{
-		switch ($type) {
-			case 'users' : if (empty($name))
-					$name = \includes\fields\Owner::getUserLabel($value);
-				$optionName = 'User::' . addslashes(decode_html($name));
-				$optionValue = 'users::' . $value;
-				break;
-			case 'groups' : if (empty($name)) {
-					$name = \includes\fields\Owner::getGroupName($value);
-				}
-				$optionName = 'Group::' . addslashes(decode_html($name));
-				$optionValue = 'groups::' . $value;
-				break;
-			case 'roles' : if (empty($name))
-					$name = \App\PrivilegeUtil::getRoleName($value);
-				$optionName = 'Roles::' . addslashes(decode_html($name));
-				$optionValue = 'roles::' . $value;
-				break;
-			case 'rs' : if (empty($name))
-					$name = \App\PrivilegeUtil::getRoleName($value);
-				$optionName = 'RoleAndSubordinates::' . addslashes(decode_html($name));
-				$optionValue = 'rs::' . $value;
-				break;
-		}
-		return '<option value="' . $optionValue . '">' . $optionName . '</option>';
-	}
-
-	public function getSelectedRecipientsHTML()
-	{
-		$selectedRecipientsHTML = '';
-		if (!empty($this->scheduledRecipients)) {
-			foreach ($this->scheduledRecipients as $recipientType => $recipients) {
-				foreach ($recipients as $recipientId) {
-					$selectedRecipientsHTML .= VTScheduledReport::generateRecipientOption($recipientType, $recipientId);
-				}
-			}
-		}
-		return $selectedRecipientsHTML;
-	}
-
-	public static function getAvailableUsersHTML()
-	{
-		$userDetails = getAllUserName();
-		$usersHTML = '<select id="availableRecipients" name="availableRecipients" multiple size="10" class="small crmFormList">';
-		foreach ($userDetails as $userId => $userName) {
-			$usersHTML .= VTScheduledReport::generateRecipientOption('users', $userId, $userName);
-		}
-		$usersHTML .= '</select>';
-		return $usersHTML;
-	}
-
-	public static function getAvailableGroupsHTML()
-	{
-		$grpDetails = getAllGroupName();
-		$groupsHTML = '<select id="availableRecipients" name="availableRecipients" multiple size="10" class="small crmFormList">';
-		foreach ($grpDetails as $groupId => $groupName) {
-			$groupsHTML .= VTScheduledReport::generateRecipientOption('groups', $groupId, $groupName);
-		}
-		$groupsHTML .= '</select>';
-		return $groupsHTML;
-	}
-
-	public static function getAvailableRolesHTML()
-	{
-		$roleDetails = getAllRoleDetails();
-		$rolesHTML = '<select id="availableRecipients" name="availableRecipients" multiple size="10" class="small crmFormList">';
-		foreach ($roleDetails as $roleId => $roleInfo) {
-			$rolesHTML .= VTScheduledReport::generateRecipientOption('roles', $roleId, $roleInfo[0]);
-		}
-		$rolesHTML .= '</select>';
-		return $rolesHTML;
-	}
-
-	public static function getAvailableRolesAndSubordinatesHTML()
-	{
-		$roleDetails = getAllRoleDetails();
-		$rolesAndSubHTML = '<select id="availableRecipients" name="availableRecipients" multiple size="10" class="small crmFormList">';
-		foreach ($roleDetails as $roleId => $roleInfo) {
-			$rolesAndSubHTML .= VTScheduledReport::generateRecipientOption('rs', $roleId, $roleInfo[0]);
-		}
-		$rolesAndSubHTML .= '</select>';
-		return $rolesAndSubHTML;
+		$adb->pquery('UPDATE vtiger_scheduled_reports SET next_trigger_time=? WHERE reportid=?', [$nextTriggerTime, $this->id]);
 	}
 
 	public static function getScheduledReports($adb, $user)
@@ -345,15 +243,15 @@ class VTScheduledReport extends Reports
 
 		$currentTime = date('Y-m-d H:i:s');
 		$result = $adb->pquery("SELECT * FROM vtiger_scheduled_reports
-									WHERE next_trigger_time = '' || next_trigger_time <= ?", array($currentTime));
+									WHERE next_trigger_time = '' || next_trigger_time <= ?", [$currentTime]);
 
-		$scheduledReports = array();
-		$noOfScheduledReports = $adb->num_rows($result);
+		$scheduledReports = [];
+		$noOfScheduledReports = $adb->numRows($result);
 		for ($i = 0; $i < $noOfScheduledReports; ++$i) {
-			$reportScheduleInfo = $adb->raw_query_result_rowdata($result, $i);
+			$reportScheduleInfo = $adb->rawQueryResultRowData($result, $i);
 
-			$scheduledInterval = (!empty($reportScheduleInfo['schedule'])) ? \includes\utils\Json::decode($reportScheduleInfo['schedule']) : array();
-			$scheduledRecipients = (!empty($reportScheduleInfo['recipients'])) ? \includes\utils\Json::decode($reportScheduleInfo['recipients']) : array();
+			$scheduledInterval = (!empty($reportScheduleInfo['schedule'])) ? \App\Json::decode($reportScheduleInfo['schedule']) : [];
+			$scheduledRecipients = (!empty($reportScheduleInfo['recipients'])) ? \App\Json::decode($reportScheduleInfo['recipients']) : [];
 
 			$vtScheduledReport = new VTScheduledReport($adb, $user, $reportScheduleInfo['reportid']);
 			$vtScheduledReport->isScheduled = true;
@@ -388,5 +286,3 @@ class VTScheduledReport extends Reports
 		$util->revertUser();
 	}
 }
-
-?>

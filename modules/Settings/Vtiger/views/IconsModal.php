@@ -3,21 +3,26 @@
 /**
  * Icons Modal View Class
  * @package YetiForce.ModalView
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_Vtiger_IconsModal_View extends Vtiger_BasicModal_View
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Checking permissions
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermittedForAdmin
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUserModel->isAdminUser()) {
-			throw new \Exception\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
+		if (!Users_Record_Model::getCurrentUserModel()->isAdminUser()) {
+			throw new \App\Exceptions\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$this->preProcess($request);
 		$viewer = $this->getViewer($request);
@@ -30,11 +35,11 @@ class Settings_Vtiger_IconsModal_View extends Vtiger_BasicModal_View
 		$this->postProcess($request);
 	}
 
-	public function getModalScripts(Vtiger_Request $request)
+	public function getModalScripts(\App\Request $request)
 	{
-		$scripts = array(
+		$scripts = [
 			'modules.Settings.Vtiger.resources.IconsModal'
-		);
+		];
 		$scriptInstances = $this->checkAndConvertJsScripts($scripts);
 		return $scriptInstances;
 	}

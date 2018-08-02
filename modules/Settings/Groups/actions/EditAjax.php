@@ -17,27 +17,27 @@ Class Settings_Groups_EditAjax_Action extends Settings_Vtiger_Basic_Action
 		$this->exposeMethod('checkDuplicate');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 			return;
 		}
 	}
 
-	public function checkDuplicate(Vtiger_Request $request)
+	public function checkDuplicate(\App\Request $request)
 	{
 		$groupName = $request->get('groupname');
 		$recordId = $request->get('record');
 
-		$recordModel = Settings_Groups_Record_Model::getInstanceByName(decode_html($groupName), array($recordId));
+		$recordModel = Settings_Groups_Record_Model::getInstanceByName(App\Purifier::decodeHtml($groupName), [$recordId]);
 
 		$response = new Vtiger_Response();
 		if (!empty($recordModel)) {
-			$response->setResult(array('success' => true, 'message' => vtranslate('LBL_DUPLICATES_EXIST', $request->getModule(false))));
+			$response->setResult(['success' => true, 'message' => \App\Language::translate('LBL_DUPLICATES_EXIST', $request->getModule(false))]);
 		} else {
-			$response->setResult(array('success' => false));
+			$response->setResult(['success' => false]);
 		}
 		$response->emit();
 	}

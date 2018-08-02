@@ -1,18 +1,22 @@
 <?php
 
 /**
- * @package YetiForce.Views
- * @license licenses/License.html
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class KnowledgeBase_Tree_View extends Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-		$linkParams = array('MODULE' => $moduleName, 'ACTION' => $request->get('view'));
+		$linkParams = ['MODULE' => $moduleName, 'ACTION' => $request->getByType('view')];
 		$linkModels = $moduleModel->getSideBarLinks($linkParams);
 		$viewer = $this->getViewer($request);
 		$viewer->assign('MODULE', $moduleName);
@@ -20,7 +24,10 @@ class KnowledgeBase_Tree_View extends Vtiger_Index_View
 		$viewer->view('TreeHeader.tpl', $moduleName);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getFooterScripts(\App\Request $request)
 	{
 		$parentScriptInstances = parent::getFooterScripts($request);
 		$scripts = [
@@ -33,7 +40,10 @@ class KnowledgeBase_Tree_View extends Vtiger_Index_View
 		return $scriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getHeaderCss(\App\Request $request)
 	{
 		$parentCssInstances = parent::getHeaderCss($request);
 		$cssFileNames = [

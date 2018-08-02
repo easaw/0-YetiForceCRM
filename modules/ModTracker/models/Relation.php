@@ -27,24 +27,21 @@ class ModTracker_Relation_Model extends Vtiger_Record_Model
 		return $this->parent;
 	}
 
+	/**
+	 * Function return link to record
+	 * @return boolean|\Vtiger_Record_Model
+	 */
 	public function getLinkedRecord()
 	{
-		$db = PearDatabase::getInstance();
-
 		$targetId = $this->get('targetid');
 		$targetModule = $this->get('targetmodule');
-
-		$query = 'SELECT * FROM vtiger_crmentity WHERE crmid = ?';
-		$result = $db->pquery($query, [$targetId]);
-		$noOfRows = $db->num_rows($result);
-		$moduleModels = [];
-		if ($noOfRows) {
+		$row = (new \App\Db\Query())->from('vtiger_crmentity')->where(['crmid' => $targetId])->one();
+		if ($row) {
 			$moduleModel = Vtiger_Module_Model::getInstance($targetModule);
-			$row = $db->getRow($result);
 			$modelClassName = Vtiger_Loader::getComponentClassName('Model', 'Record', $targetModule);
 			$recordInstance = new $modelClassName();
 			$recordInstance->setData($row)->setModuleFromInstance($moduleModel);
-			$recordInstance->set('id', $row['crmid']);
+			$recordInstance->setId($row['crmid']);
 			return $recordInstance;
 		}
 		return false;
@@ -57,14 +54,14 @@ class ModTracker_Relation_Model extends Vtiger_Record_Model
 	 */
 	public static function reviewChangesQueue($data, $module)
 	{
-		$db = \App\DB::getInstance();
+		$db = \App\Db::getInstance();
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$id = (new \App\db\Query())->from('u_#__reviewed_queue')->max('id') + 1;
+		$id = (new \App\Db\Query())->from('u_#__reviewed_queue')->max('id') + 1;
 		$db->createCommand()->insert('u_#__reviewed_queue', [
 			'id' => $id,
 			'userid' => $currentUserModel->getRealId(),
-			'tabid' => \vtlib\Functions::getModuleId($module),
-			'data' => \includes\utils\Json::encode($data),
+			'tabid' => \App\Module::getModuleId($module),
+			'data' => \App\Json::encode($data),
 			'time' => date('Y-m-d H:i:s')
 		])->execute();
 	}

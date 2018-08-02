@@ -51,7 +51,7 @@ class ModTracker_Field_Model extends Vtiger_Record_Model
 
 	/**
 	 * Function to get Old value of this Field
-	 * @return <String>
+	 * @return string
 	 */
 	public function getOldValue()
 	{
@@ -61,7 +61,6 @@ class ModTracker_Field_Model extends Vtiger_Record_Model
 		}
 		$teaser = vtlib\Functions::textLength($value, AppConfig::module('ModTracker', 'TEASER_TEXT_LENGTH'));
 		if (substr($teaser, -3) == '...') {
-			$value = App\Purifier::purify(vtlib\Functions::removeHtmlTags(array('br', 'link', 'style', 'a', 'img', 'script', 'base'), $value));
 			$this->set('fullPreValue', $value);
 		}
 		return $teaser;
@@ -69,7 +68,7 @@ class ModTracker_Field_Model extends Vtiger_Record_Model
 
 	/**
 	 * Function to get new(updated) value of this Field
-	 * @return <String>
+	 * @return string
 	 */
 	public function getNewValue()
 	{
@@ -79,7 +78,6 @@ class ModTracker_Field_Model extends Vtiger_Record_Model
 		}
 		$teaser = vtlib\Functions::textLength($value, AppConfig::module('ModTracker', 'TEASER_TEXT_LENGTH'));
 		if (substr($teaser, -3) == '...') {
-			$value = App\Purifier::purify(vtlib\Functions::removeHtmlTags(array('br', 'link', 'style', 'a', 'img', 'script', 'base'), $value));
 			$this->set('fullPostValue', $value);
 		}
 		return $teaser;
@@ -95,18 +93,16 @@ class ModTracker_Field_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Display Value
-	 * @param <type> $value
-	 * @return <String>
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		return $this->getFieldInstance()->getDisplayValue($value, $record, $recordInstance, $rawText);
+		return $this->getFieldInstance()->getDisplayValue($value, $record, $recordModel, $rawText, $length);
 	}
 
 	/**
 	 * Function returns the module name of the field
-	 * @return <String>
+	 * @return string
 	 */
 	public function getModuleName()
 	{

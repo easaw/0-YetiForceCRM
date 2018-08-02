@@ -20,7 +20,7 @@ class Reports_Module_Model extends Vtiger_Module_Model
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$subOrdinateUsers = $currentUser->getSubordinateUsers();
 
-		$subOrdinates = array();
+		$subOrdinates = [];
 		foreach ($subOrdinateUsers as $id => $name) {
 			$subOrdinates[] = $id;
 		}
@@ -30,59 +30,27 @@ class Reports_Module_Model extends Vtiger_Module_Model
 		if ($currentUser->isAdminUser() || in_array($owner, $subOrdinates) || $owner == $currentUser->getId()) {
 			$reportId = $reportModel->getId();
 			$db = PearDatabase::getInstance();
-
-			$db->pquery('DELETE FROM vtiger_selectquery WHERE queryid = ?', array($reportId));
-
-			$db->pquery('DELETE FROM vtiger_report WHERE reportid = ?', array($reportId));
-
-			$db->pquery('DELETE FROM vtiger_schedulereports WHERE reportid = ?', array($reportId));
-
-			$db->pquery('DELETE FROM vtiger_reporttype WHERE reportid = ?', array($reportId));
-
-			$result = $db->pquery('SELECT * FROM vtiger_homereportchart WHERE reportid = ?', array($reportId));
-			$numOfRows = $db->num_rows($result);
-			for ($i = 0; $i < $numOfRows; $i++) {
-				$homePageChartIdsList[] = $adb->query_result($result, $i, 'stuffid');
-			}
-			if ($homePageChartIdsList) {
-				$where = sprintf('stuffid IN (%s)', implode(",", $homePageChartIdsList));
-				$db->delete('vtiger_homestuff', $where);
-			}
+			$db->pquery('DELETE FROM vtiger_selectquery WHERE queryid = ?', [$reportId]);
+			$db->pquery('DELETE FROM vtiger_report WHERE reportid = ?', [$reportId]);
+			$db->pquery('DELETE FROM vtiger_schedulereports WHERE reportid = ?', [$reportId]);
+			$db->pquery('DELETE FROM vtiger_reporttype WHERE reportid = ?', [$reportId]);
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Function returns quick links for the module
-	 * @return <Array of Vtiger_Link_Model>
+	 * {@inheritDoc}
 	 */
 	public function getSideBarLinks($linkParams = '')
 	{
-		$quickLinks = array(
-			array(
+		$links = [];
+		$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues([
 				'linktype' => 'SIDEBARLINK',
 				'linklabel' => 'LBL_REPORTS',
 				'linkurl' => $this->getListViewUrl(),
-				'linkicon' => '',
-			),
-		);
-		foreach ($quickLinks as $quickLink) {
-			$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues($quickLink);
-		}
-
-		$quickWidgets = array(
-			array(
-				'linktype' => 'SIDEBARWIDGET',
-				'linklabel' => 'LBL_RECENTLY_MODIFIED',
-				'linkurl' => 'module=' . $this->get('name') . '&view=IndexAjax&mode=showActiveRecords',
-				'linkicon' => ''
-			),
-		);
-		foreach ($quickWidgets as $quickWidget) {
-			$links['SIDEBARWIDGET'][] = Vtiger_Link_Model::getInstanceFromValues($quickWidget);
-		}
-
+				'linkicon' => 'glyphicon glyphicon-list',
+		]);
 		return $links;
 	}
 
@@ -95,12 +63,12 @@ class Reports_Module_Model extends Vtiger_Module_Model
 	{
 		$db = PearDatabase::getInstance();
 
-		$result = $db->pquery('SELECT * FROM vtiger_report ORDER BY reportid DESC LIMIT ?', array($limit));
-		$rows = $db->num_rows($result);
+		$result = $db->pquery('SELECT * FROM vtiger_report ORDER BY reportid DESC LIMIT ?', [$limit]);
+		$rows = $db->numRows($result);
 
-		$recentRecords = array();
+		$recentRecords = [];
 		for ($i = 0; $i < $rows; ++$i) {
-			$row = $db->query_result_rowdata($result, $i);
+			$row = $db->queryResultRowData($result, $i);
 			$recentRecords[$row['reportid']] = $this->getRecordFromArray($row);
 		}
 		return $recentRecords;
@@ -117,7 +85,7 @@ class Reports_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function to get the url for add folder from list view of the module
-	 * @return <string> - url
+	 * @return string - url
 	 */
 	public function getAddFolderUrl()
 	{

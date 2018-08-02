@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Search config
+ * @package YetiForce.Config
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $CONFIG = [
 	// Auto select current module in global search (true/false)
 	'GLOBAL_SEARCH_SELECT_MODULE' => true,
@@ -15,4 +20,12 @@ $CONFIG = [
 	'GLOBAL_SEARCH_AUTOCOMPLETE_LIMIT' => 15,
 	// Global search - The minimum number of characters a user must type before a search is performed. The parameter impacts system efficiency
 	'GLOBAL_SEARCH_AUTOCOMPLETE_MIN_LENGTH' => 3,
+	// Global search - Show operator
+	'GLOBAL_SEARCH_OPERATOR' => true,
+	// Colors for record state will be displayed in list view, history, and preview.
+	'LIST_ENTITY_STATE_COLOR' => [
+		'Archived' => '#0032a2',
+		'Trash' => '#ab0505',
+		'Active' => '#009405',
+	],
 ];

@@ -1,14 +1,11 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings QuickCreateEditor SaveSequenceNumber action class
+ * @package YetiForce.Action
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_QuickCreateEditor_SaveSequenceNumber_Action extends Settings_Vtiger_Index_Action
 {
 
@@ -17,15 +14,17 @@ class Settings_QuickCreateEditor_SaveSequenceNumber_Action extends Settings_Vtig
 		$this->exposeMethod('move');
 	}
 
-	public function move(Vtiger_Request $request)
+	/**
+	 * Process
+	 * @param \App\Request $request
+	 */
+	public function move(\App\Request $request)
 	{
 		$updatedFieldsList = $request->get('updatedFields');
-
-		//This will update the fields sequence for the updated blocks
-		Settings_QuickCreateEditor_Module_Model::updateFieldSequenceNumber($updatedFieldsList);
+		$result = Settings_QuickCreateEditor_Module_Model::updateFieldSequenceNumber($updatedFieldsList);
 
 		$response = new Vtiger_Response();
-		$response->setResult(array('success' => true));
+		$response->setResult(!empty($result));
 		$response->emit();
 	}
 }

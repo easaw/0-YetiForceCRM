@@ -11,17 +11,17 @@
 class Settings_Leads_MappingDelete_Action extends Settings_Vtiger_Index_Action
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$recordId = $request->get('mappingId');
 		$qualifiedModuleName = $request->getModule(false);
 
 		$response = new Vtiger_Response();
 		if ($recordId) {
-			Settings_Leads_Mapping_Model::deleteMapping(array($recordId));
-			$response->setResult(array(vtranslate('LBL_DELETED_SUCCESSFULLY', $qualifiedModuleName)));
+			Settings_Leads_Mapping_Model::deleteMapping([$recordId]);
+			$response->setResult([\App\Language::translate('LBL_DELETED_SUCCESSFULLY', $qualifiedModuleName)]);
 		} else {
-			$response->setError(vtranslate('LBL_INVALID_MAPPING', $qualifiedModuleName));
+			$response->setError(\App\Language::translate('LBL_INVALID_MAPPING', $qualifiedModuleName));
 		}
 		$response->emit();
 	}

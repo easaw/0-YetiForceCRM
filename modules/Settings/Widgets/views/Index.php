@@ -1,63 +1,58 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings OSSMailView index view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Widgets_Index_View extends Settings_Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
-		$source = $request->get('source');
-		$sourceModule = $request->get('sourceModule');
-		if ($sourceModule != '')
-			$source = vtlib\Functions::getModuleId($sourceModule);
-		if ($source == '')
-			$source = 6;
+		$source = $request->getInteger('source');
+		if (empty($source)) {
+			$source = \App\Module::getModuleId('Accounts');
+		}
 		$moduleModel = Settings_Widgets_Module_Model::getInstance($qualifiedModuleName);
-		$RelatedModule = $moduleModel->getRelatedModule($source);
+		$relatedModule = $moduleModel->getRelatedModule($source);
 		$viewer = $this->getViewer($request);
 		$viewer->assign('MODULE_MODEL', $moduleModel);
 		$viewer->assign('SOURCE', $source);
-		$viewer->assign('SOURCEMODULE', vtlib\Functions::getModuleName($source));
+		$viewer->assign('SOURCEMODULE', App\Module::getModuleName($source));
 		$viewer->assign('WIDGETS', $moduleModel->getWidgets($source));
-		$viewer->assign('RELATEDMODULES', $RelatedModule);
-		$viewer->assign('FILTERS', json_encode($moduleModel->getFiletrs($RelatedModule)));
-		$viewer->assign('CHECKBOXS', json_encode($moduleModel->getCheckboxs($RelatedModule)));
-		$viewer->assign('SWITCHES_HEADER', json_encode($moduleModel->getHeaderSwitch()));
+		$viewer->assign('RELATEDMODULES', $relatedModule);
+		$viewer->assign('FILTERS', \App\Json::encode($moduleModel->getFiletrs($relatedModule)));
+		$viewer->assign('CHECKBOXS', \App\Json::encode($moduleModel->getCheckboxs($relatedModule)));
+		$viewer->assign('SWITCHES_HEADER', \App\Json::encode($moduleModel->getHeaderSwitch()));
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->view('Index.tpl', $qualifiedModuleName);
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
-		$headerCssInstances = parent::getHeaderCss($request);
 		$moduleName = $request->getModule();
 		$cssFileNames = [
 			"modules.Settings.$moduleName.resources.$moduleName",
 		];
-		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
-		$headerCssInstances = array_merge($headerCssInstances, $cssInstances);
-
-		return $headerCssInstances;
+		return array_merge(parent::getHeaderCss($request), $this->checkAndConvertCssStyles($cssFileNames));
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
-		$jsFileNames = array(
+		$jsFileNames = [
 			"modules.Settings.$moduleName.resources.$moduleName"
-		);
+		];
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
 		return $headerScriptInstances;

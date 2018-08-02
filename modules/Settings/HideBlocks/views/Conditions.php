@@ -1,18 +1,15 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings HideBlocks conditions view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 Class Settings_HideBlocks_Conditions_View extends Settings_Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$recordId = $request->get('record');
 		$blockId = $request->get('blockid');
@@ -27,7 +24,7 @@ Class Settings_HideBlocks_Conditions_View extends Settings_Vtiger_Index_View
 		if ($recordId) {
 			$mode = 'edit';
 		} else {
-			
+
 		}
 		$moduleModel = Settings_HideBlocks_Record_Model::getModuleInstanceByBlockId($blockId);
 		$recordStrucure = Vtiger_RecordStructure_Model::getInstanceForModule($moduleModel);
@@ -38,9 +35,8 @@ Class Settings_HideBlocks_Conditions_View extends Settings_Vtiger_Index_View
 		$blockModelList = $moduleModel->getBlocks();
 		$blockModel = $blockModelList[$blockLabel];
 		$fieldModelList = $blockModel->getFields();
-		$mandatoryFields = array();
+		$mandatoryFields = [];
 		if (!empty($fieldModelList)) {
-			$values[$blockLabel] = array();
 			foreach ($fieldModelList as $fieldName => $fieldModel) {
 				if ($fieldModel->isMandatory()) {
 					$mandatoryFields[$fieldName] = $fieldModel;
@@ -48,16 +44,7 @@ Class Settings_HideBlocks_Conditions_View extends Settings_Vtiger_Index_View
 			}
 		}
 		$viewer->assign('MANDATORY_FIELDS', $mandatoryFields);
-
-		//var_dump($structuredValues);
-		$dateFilters = Vtiger_Field_Model::getDateFilterTypes();
-		foreach ($dateFilters as $comparatorKey => $comparatorInfo) {
-			$comparatorInfo['startdate'] = DateTimeField::convertToUserFormat($comparatorInfo['startdate']);
-			$comparatorInfo['enddate'] = DateTimeField::convertToUserFormat($comparatorInfo['enddate']);
-			$comparatorInfo['label'] = vtranslate($comparatorInfo['label'], $qualifiedModuleName);
-			$dateFilters[$comparatorKey] = $comparatorInfo;
-		}
-		$viewer->assign('DATE_FILTERS', $dateFilters);
+		$viewer->assign('DATE_FILTERS', Vtiger_AdvancedFilter_Helper::getDateFilter($qualifiedModuleName));
 		$viewer->assign('ADVANCED_FILTER_OPTIONS', Settings_Workflows_Field_Model::getAdvancedFilterOptions());
 		$viewer->assign('ADVANCED_FILTER_OPTIONS_BY_TYPE', Settings_Workflows_Field_Model::getAdvancedFilterOpsByFieldType());
 		$viewer->assign('COLUMNNAME_API', 'getName');
@@ -78,18 +65,18 @@ Class Settings_HideBlocks_Conditions_View extends Settings_Vtiger_Index_View
 
 	/**
 	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
+		$jsFileNames = [
 			"modules.Settings.$moduleName.resources.Conditions",
 			"modules.Settings.$moduleName.resources.AdvanceFilter"
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
@@ -98,21 +85,21 @@ Class Settings_HideBlocks_Conditions_View extends Settings_Vtiger_Index_View
 
 	public function transformToAdvancedFilterCondition($conditions)
 	{
-		$conditions = \includes\utils\Json::decode($conditions);
-		$transformedConditions = array();
+		$conditions = \App\Json::decode($conditions);
+		$transformedConditions = [];
 		if (!empty($conditions)) {
 			foreach ($conditions as $index => $info) {
 				if (!($info['groupid'])) {
-					$firstGroup[] = array('columnname' => $info['fieldname'], 'comparator' => $info['operation'], 'value' => $info['value'],
-						'column_condition' => $info['joincondition'], 'valuetype' => $info['valuetype'], 'groupid' => $info['groupid']);
+					$firstGroup[] = ['columnname' => $info['fieldname'], 'comparator' => $info['operation'], 'value' => $info['value'],
+						'column_condition' => $info['joincondition'], 'valuetype' => $info['valuetype'], 'groupid' => $info['groupid']];
 				} else {
-					$secondGroup[] = array('columnname' => $info['fieldname'], 'comparator' => $info['operation'], 'value' => $info['value'],
-						'column_condition' => $info['joincondition'], 'valuetype' => $info['valuetype'], 'groupid' => $info['groupid']);
+					$secondGroup[] = ['columnname' => $info['fieldname'], 'comparator' => $info['operation'], 'value' => $info['value'],
+						'column_condition' => $info['joincondition'], 'valuetype' => $info['valuetype'], 'groupid' => $info['groupid']];
 				}
 			}
 		}
-		$transformedConditions[1] = array('columns' => $firstGroup);
-		$transformedConditions[2] = array('columns' => $secondGroup);
+		$transformedConditions[1] = ['columns' => $firstGroup];
+		$transformedConditions[2] = ['columns' => $secondGroup];
 		return $transformedConditions;
 	}
 }

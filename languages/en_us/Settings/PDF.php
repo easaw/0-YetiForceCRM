@@ -1,12 +1,13 @@
 <?php
 /**
- * Polish language
+ * PDF english translation
  * @package YetiForce.Language
- * @license licenses/License.html
- * @author Maciej Stencel <m.stencel@yetiforce.com>
- * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  */
 $languageStrings = [
+	'PLL_TEXT' => 'Text',
+	'PLL_IMAGE' => 'Image',
 	'LBL_PDF' => 'PDF',
 	'LBL_PDF_DESCRIPTION' => 'Test version of the PDF template configuration',
 	'LBL_CREATING_PDF' => 'Create PDF template',
@@ -26,8 +27,8 @@ $languageStrings = [
 	'LBL_DOCUMENT_PERMISSIONS' => 'Permissions',
 	'LBL_DOCUMENT_WATERMARK' => 'Watermark',
 	'Module' => 'Module',
-	'active' => 'Active',
-	'inactive' => 'Inactive',
+	'PLL_ACTIVE' => 'Active',
+	'PLL_INACTIVE' => 'Inactive',
 	'LBL_PRIMARY_NAME' => 'Primary name',
 	'LBL_SECONDARY_NAME' => 'Additional name',
 	'LBL_FOLDER_NAME' => 'Folder name',

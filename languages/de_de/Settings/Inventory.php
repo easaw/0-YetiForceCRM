@@ -1,9 +1,16 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Inventory german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author skavenkf (K.Fink) 
+ */
 $languageStrings = [
-	'LBL_CREDITLIMITS' => 'Kreditlimit Grundlage',
+	'LBL_CREDITLIMITS' => 'Händlerlimits',
 	'LBL_CREDITLIMITS_DESCRIPTION' => ' ',
-	'LBL_CREDITLIMITS_SINGLE' => 'Kreditlimit',
+	'LBL_CREDITLIMITS_SINGLE' => 'Händlerlimit',
+	'LBL_CREDITLIMITS_INFO' => 'In the YetiForce system we got the ability to manage merchant limits for Accounts. This functionality is used to limit the Account\'s excessive debt in permanent cooperation. Merchant limits are mainly granted to these Accounts who cooperate with us for a longer period of time and we want to extend their payment deadline, which means that the Account won\'t be able to place a new order unless his previous balance has been regulated [current balance and issued document exceed granted limit].',
 	'LBL_ENTER_NAME' => 'Name eingeben',
 	'LBL_ENTER_VALUE' => 'Betrag eingeben',
 	'LBL_NAME' => 'Name',
@@ -36,7 +43,7 @@ $languageStrings = [
 	'LBL_NO' => 'Nein',
 	//history
 	'Inventory' => 'Erweiterte Module',
-	'LBL_VIEW_CREDITLIMITS' => 'Kreditlimit Grundlage',
+	'LBL_VIEW_CREDITLIMITS' => 'Händler Kreditlimit',
 	'LBL_VIEW_TAXES' => 'Basissteuer',
 	'LBL_VIEW_TAXCONFIGURATION' => 'Steuerkonfiguration',
 	'LBL_VIEW_DISCOUNTCONFIGURATION' => 'Rabattkonfiguration',

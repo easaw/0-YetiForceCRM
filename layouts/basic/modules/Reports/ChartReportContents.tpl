@@ -11,24 +11,24 @@
 -->*}
 
 <input type='hidden' name='charttype' value="{$CHART_TYPE}" />
-<input type='hidden' name='data' class="widgetData" value="{Vtiger_Util_Helper::toSafeHTML($DATA)}" />
+<input type='hidden' name='data' class="widgetData" value="{\App\Purifier::encodeHtml($DATA)}" />
 <input type='hidden' name='clickthrough' value="{$CLICK_THROUGH}" />
 
-<br>
+<br />
 <div style="margin:0px 20px;">
 	<div class='border1px' style="padding:30px 100px;">
 		<div class='chartcontent' style="min-height:400px;" ></div>
-		<br>
+		<br />
 		{if $CLICK_THROUGH neq 'true'}
 			<div class='row alert alert-info'>
 				<span class='col-md-3'></span>
 				<span class='span alert-info'>
 					<span class="glyphicon glyphicon-info-sign"></span>
-					{vtranslate('LBL_CLICK_THROUGH_NOT_AVAILABLE', $MODULE)}
+					{\App\Language::translate('LBL_CLICK_THROUGH_NOT_AVAILABLE', $MODULE)}
 				</span>
 			</div>
-			<br>
+			<br />
 		{/if}
 	</div>
 </div>
-<br>
+<br />

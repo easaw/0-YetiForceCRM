@@ -1,5 +1,11 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Back up german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author skavenkf (K.Fink) 
+ */
 $languageStrings = [
 	'LBL_BACKUP_DESCRIPTION' => 'Verwaltung von Sicherungen',
 	'LBL_SAVE_BACKUP' => 'Sicherung speichern',
@@ -21,7 +27,7 @@ $languageStrings = [
 	'LBL_ACTIVE' => 'Aktiv',
 	'LBL_PATH' => 'Pfad sichern',
 	'LBL_PATH_INFO' => 'Wenn kein Pfad gepflegt ist, wird die Datensicherung im Hauptordner gespeichert',
-	'LBL_EMAIL_NOTIFICATIONS' => 'E-mail Benachrichtigung',
+	'LBL_EMAIL_NOTIFICATIONS' => 'E-Mail Benachrichtigung',
 	'LBL_USERS_FOR_NOTIFICATIONS' => 'Benutzer für Benachrichtungen',
 	'LBL_SAVE_CHANGES' => 'Änderungen Sichern',
 	'LBL_GENERAL_SETTINGS' => 'Allgemeine Einstellungen',
@@ -34,8 +40,8 @@ $languageStrings = [
 	'LBL_BACKUP_OVERALL' => 'Voll',
 	'LBL_ALERT_NO_ZIP_EXTENSION_TITLE' => 'Keine aktive ZIP Bibliothek gefunden',
 	'LBL_ALERT_NO_ZIP_EXTENSION_DESC' => 'Komplette Datensicherung ist nicht möglich, Sicherung erzeugt nur eine unkomprimierte Datenbankkopie ',
-	'LBL_ALERT_CRON_NOT_ACTIVE_TITLE' => 'Cron - Datensicherung ist nicht aktiv',
-	'LBL_ALERT_CRON_NOT_ACTIVE_DESC' => 'Datensicherung ist nicht möglich, um diese zu aktivieren, gehe zu <a href="index.php?module=CronTasks&parent=Settings&view=List" target="_blank">Harmonogram</a> und aktiviere Datensicherung',
+	'LBL_ALERT_CRON_NOT_ACTIVE_TITLE' => 'CRON - Datensicherung ist nicht aktiv',
+	'LBL_ALERT_CRON_NOT_ACTIVE_DESC' => 'Datensicherung ist nicht möglich, um diese zu aktivieren, gehe zu <a href="index.php?module=CronTasks&parent=Settings&view=List" target="_blank">Cronübersicht</a> und aktiviere Datensicherung',
 	'LBL_ALERT_OUTGOING_MAIL_NOT_CONFIGURED_TITLE' => 'E-Mail Ausgangsserver ist nicht konfiguriert',
 	'LBL_BACKUP_TIME' => 'Sicherungsdauer',
 	'LBL_LOGS' => 'Protokolle',

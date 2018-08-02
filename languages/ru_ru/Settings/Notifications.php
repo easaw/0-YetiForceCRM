@@ -1,19 +1,17 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Notifications russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
-	'LBL_TYPE_NOTIFICATIONS' => 'Тип уведомлений',
+	'LBL_EXCEPTIONS' => 'Исключения',
 	'LBL_NOTIFICATIONS_CONFIGURATION' => 'Настройка уведомлений',
-	'LBL_DEFAULT_MENU' => 'По умолчанию',
-	'LBL_TITLE_ADDED' => 'Создать уведомление',
-	'LBL_NAME' => 'Название типа',
-	'LBL_WIDTH' => 'Ширина',
-	'LBL_HEIGHT' => 'Высота',
-	'LBL_MODULE' => 'Название модуля',
-	'LBL_USERS_WATCHING' => 'Показать пользователям',
-	'LBL_MESSAGES_FROM_USERS' => 'Сообщение для пользователей',
-	'LBL_WATCHDOG' => 'Отслеживать изменения',
+	'LBL_ADD_MEMBERS' => 'Добавить участников для уведомлений',
+	'LBL_SELECT_MEMBERS' => 'Выбрать участников для уведомлений',
+	'LBL_MEMBERS' => 'Участники',
+	'LBL_LOCK' => 'Заблокировать',
+	'LBL_NOTICE_CONFIG_WARNING' => 'Отслеживание модулей включено в настройках сайта. Отключите его, чтобы управлять уведомлениями.',
 ];
-$jsLanguageStrings = [
-	'JS_DELETE_CONFIRMATION' => 'Вы уверены, что хотите удалить этот элемент?',
-	'JS_SAVE_CAHNGES' => 'Изменения сохранены',
-];
+$jsLanguageStrings = [];

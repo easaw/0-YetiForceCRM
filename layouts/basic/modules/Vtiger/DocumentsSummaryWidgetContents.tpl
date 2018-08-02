@@ -12,18 +12,17 @@
 {strip}
 	<div class="row">
 		<span class="col-md-7">
-			<strong>{vtranslate('Title','Documents')}</strong>
+			<strong>{\App\Language::translate('Title','Documents')}</strong>
 		</span>
 		<span class="col-md-4 horizontalLeftSpacingForSummaryWidgetHeader">
 			<span class="pull-right">
-				<strong>{vtranslate('File Name', 'Documents')}</strong>
+				<strong>{\App\Language::translate('File Name', 'Documents')}</strong>
 			</span>
 		</span>
 	</div>
 	{foreach item=RELATED_RECORD from=$RELATED_RECORDS}
 		{assign var=DOWNLOAD_FILE_URL value=$RELATED_RECORD->getDownloadFileURL()}
 		{assign var=DOWNLOAD_STATUS value=$RELATED_RECORD->get('filestatus')}
-		{assign var=DOWNLOAD_LOCATION_TYPE value=$RELATED_RECORD->get('filelocationtype')}
 		<div class="recentActivitiesContainer" id="relatedDocuments">
 			<ul class="unstyled">
 				<li>
@@ -37,7 +36,7 @@
 							{if $DOWNLOAD_STATUS eq 1}
 								{$RELATED_RECORD->getDisplayValue('filename', $RELATED_RECORD->getId(), $RELATED_RECORD)}
 							{else}
-								{$RELATED_RECORD->get('filename')} 
+								{\App\Purifier::encodeHtml($RELATED_RECORD->get('filename'))} 
 							{/if}
 						</span>
 					</div>
@@ -49,7 +48,7 @@
 	{if $NUMBER_OF_RECORDS eq 5}
 		<div class="row">
 			<div class="pull-right">
-				<a class="moreRecentDocuments cursorPointer">{vtranslate('LBL_MORE',$MODULE_NAME)}</a>
+				<a class="moreRecentDocuments cursorPointer">{\App\Language::translate('LBL_MORE',$MODULE_NAME)}</a>
 			</div>
 		</div>
 	{/if}

@@ -1,6 +1,11 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
+/**
+ * Portal pagination view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Portal_Pagination_View extends Vtiger_IndexAjax_View
 {
 
@@ -10,14 +15,14 @@ class Portal_Pagination_View extends Vtiger_IndexAjax_View
 		$this->exposeMethod('getPagination');
 	}
 
-	public function getPagination(Vtiger_Request $request)
+	public function getPagination(\App\Request $request)
 	{
 		parent::preProcess($request, false);
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$pageNumber = $request->get('page');
-		$orderBy = $request->get('orderby');
-		$sortOrder = $request->get('sortorder');
+		$pageNumber = $request->getInteger('page');
+		$orderBy = $request->getForSql('orderby');
+		$sortOrder = $request->getForSql('sortorder');
 		$searchValue = $request->get('search_value');
 
 		if ($sortOrder == "ASC") {
@@ -29,7 +34,7 @@ class Portal_Pagination_View extends Vtiger_IndexAjax_View
 		}
 
 		if (empty($pageNumber)) {
-			$pageNumber = '1';
+			$pageNumber = 1;
 		}
 
 		$pagingModel = new Vtiger_Paging_Model();

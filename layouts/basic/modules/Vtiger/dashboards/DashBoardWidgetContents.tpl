@@ -10,12 +10,12 @@
  ********************************************************************************/
 -->*}
 {strip}
-<input class="widgetData" type="hidden" value='{Vtiger_Util_Helper::toSafeHTML(\includes\utils\Json::encode($DATA))}' />
+<input class="widgetData" type="hidden" value='{\App\Purifier::encodeHtml(\App\Json::encode($DATA))}' />
 {if count($DATA) gt 0 }
 	<div class="widgetChartContainer" style="height:98%;width:100%"></div>
 {else}
 	<span class="noDataMsg">
-		{vtranslate('LBL_NO_RECORDS_MATCHED_THIS_CRITERIA')}
+		{\App\Language::translate('LBL_NO_RECORDS_MATCHED_THIS_CRITERIA')}
 	</span>
 {/if}
 {/strip}

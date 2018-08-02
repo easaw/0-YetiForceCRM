@@ -1,8 +1,14 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * OSSMailScanner german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
-	'OSSMailScanner' => 'Mail Scanner',
-	'OSSMailScanner_manual' => 'Mail Scanner',
+	'show_identities' => 'zeige Identitäten',
+	'OSSMailScanner' => 'E-Mail Scanner',
+	'OSSMailScanner_manual' => 'E-Mail Scanner',
 	'E-mail Accounts' => 'E-Mail Konten',
 	'Action' => 'Aktion',
 	'Desc' => 'Beschreibung',
@@ -45,7 +51,7 @@ $languageStrings = [
 	'desc_BindServiceContracts' => 'E-Mail-Nachricht in Beziehung setzen mit dem Servicevertragsdatensatz, der diese E-Mail-Adresse enthält.',
 	'desc_BindCampaigns' => 'E-Mail-Nachricht in Beziehung setzen mit dem Kampagnendatensatz, basierend auf der Präfix Nummer im Betreff.',
 	'desc_created_Accounts' => 'Kontenbeschreibung erstellen',
-	'desc_created_Contacts' => 'Konatktbeschreibung erstellen',
+	'desc_created_Contacts' => 'Kontaktbeschreibung erstellen',
 	'desc_CreatedHelpDesk' => 'HelpDesk-Beschreibung erstellen',
 	'desc_update_HelpDesk' => 'HelpDesk-Beschreibung aktualisieren',
 	'desc_update_Accounts' => 'Kontenbeschreibung aktualisieren',
@@ -55,6 +61,11 @@ $languageStrings = [
 	'MailView config' => 'Konfiguration',
 	'General Configuration' => 'Allgemeine Konfiguration',
 	'Search email configuration' => 'E-Mail-Suche Konfiguration',
+	'LBL_TICKET_REOPEN' => 'Anlegen/Öffnen eines Tickets',
+	'LBL_OPEN_TICKET' => 'Öffnen eines Tickets und Status "Auf Antwort warten" setzen',
+	'LBL_CREATE_TICKET' => 'Neues Ticket anlegen',
+	'LBL_NO_ACTION' => 'bezieht sich auch aktuelles Ticket (wenn die Beziehungsaktion hinzugefügt wurde)',
+	'LBL_CONFTAB_CHANGE_TICKET_STATUS' => 'Was soll der Mailscanner machen, wenn eine E-Mail eingeht, die sich auf ein geschlossenes Ticket bezieht?',
 	'Alert_no_module_title' => 'Dieses Modul wurde nicht gefunden oder ist ausgeschaltet.',
 	'Alert_no_module_desc' => 'Scanner-Modul erfordert, dass das OSSMail-Modul installiert und aktiviert ist. Prüfen Sie, ob dieses Modul installiert ist, wenn nicht müssen Sie es installieren.',
 	'Alert_no_accounts_title' => 'E-Mail-Konten nicht gefunden',
@@ -109,7 +120,7 @@ $languageStrings = [
 	'stop_user' => 'Scanning gestoppt von',
 	'Email_Subject' => 'Benachrichtigung: CRON läuft zu lange',
 	'Email_Body' => 'Hallo<br /><br />CRON läuft zu lange. Bitte prüfen, ob das E-Mail-System korrekt funktioniert.<br /> <br /> Viele Grüße Admin',
-	'Email_FromName' => 'YetiForce CRON',
+	'Email_FromName' => 'Mail Scanner',
 	'JS_info_restart_ok' => 'CRON freigeschaltet',
 	'permissions_all' => 'Sichtbar für alle',
 	'permissions_vtiger' => 'Basierend auf CRM Berechtigungen',
@@ -125,7 +136,7 @@ $languageStrings = [
 	'ERROR_ACTIVE_CRON' => 'Kann nicht zum Scannen wechseln, weil CRON derzeit aktiv ist.',
 	'Change ticket status' => 'Ticket Status Änderung',
 	'Change_ticket_status' => 'Ticket Status aktualisieren',
-	'Alert_info_conftab_change_ticket_status' => 'Diese Option erlaubt die Änderung des Ticketstatus auf "Beantwortet", wenn der Mail-Scanner eine E-Mail von einem Kunden findet, der dieses Ticket geöffnet hat.',
+	'Alert_info_conftab_change_ticket_status' => 'Diese Option erlaubt die Änderung des Ticketstatus auf "Beantwortet", wenn der E-Mail-Scanner eine E-Mail von einem Kunden findet, der dieses Ticket geöffnet hat.',
 	'Action_DisabledModule' => 'Modul deaktivieren',
 	'Action_EnabledModule' => 'Modul aktivieren',
 	'Action_UpdateModule' => 'Modul aktualsieren',

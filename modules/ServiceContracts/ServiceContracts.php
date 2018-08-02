@@ -1,9 +1,10 @@
 <?php
 
 /**
- * 
- * @package YetiForce.ServiceContracts
- * @license licenses/License.html
+ * ServiceContracts CRMEntity class
+ * @package YetiForce.CRMEntity
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class ServiceContracts extends CRMEntity
@@ -11,7 +12,7 @@ class ServiceContracts extends CRMEntity
 
 	public $table_name = 'vtiger_servicecontracts';
 	public $table_index = 'servicecontractsid';
-	public $column_fields = Array();
+	public $column_fields = [];
 
 	/** Indicator if this is a custom module or standard module */
 	public $IsCustomModule = true;
@@ -19,101 +20,96 @@ class ServiceContracts extends CRMEntity
 	/**
 	 * Mandatory table for supporting custom fields.
 	 */
-	public $customFieldTable = Array('vtiger_servicecontractscf', 'servicecontractsid');
+	public $customFieldTable = ['vtiger_servicecontractscf', 'servicecontractsid'];
 
 	/**
 	 * Mandatory for Saving, Include tables related to this module.
 	 */
-	public $tab_name = Array('vtiger_crmentity', 'vtiger_servicecontracts', 'vtiger_servicecontractscf', 'vtiger_entity_stats');
+	public $tab_name = ['vtiger_crmentity', 'vtiger_servicecontracts', 'vtiger_servicecontractscf', 'vtiger_entity_stats'];
 
 	/**
 	 * Mandatory for Saving, Include tablename and tablekey columnname here.
 	 */
-	public $tab_name_index = Array(
+	public $tab_name_index = [
 		'vtiger_crmentity' => 'crmid',
 		'vtiger_servicecontracts' => 'servicecontractsid',
 		'vtiger_servicecontractscf' => 'servicecontractsid',
-		'vtiger_entity_stats' => 'crmid');
+		'vtiger_entity_stats' => 'crmid'];
 
 	/**
 	 * Mandatory for Listing (Related listview)
 	 */
-	public $list_fields = Array(
+	public $list_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'Subject' => Array('servicecontracts', 'subject'),
-		'Assigned To' => Array('crmentity', 'smownerid'),
-		'Contract No' => Array('servicecontracts', 'contract_no'),
-		'Used Units' => Array('servicecontracts', 'used_units'),
-		'Total Units' => Array('servicecontracts', 'total_units')
-	);
-	public $list_fields_name = Array(
+		'Subject' => ['servicecontracts', 'subject'],
+		'Assigned To' => ['crmentity', 'smownerid'],
+		'Related to' => ['servicecontracts', 'sc_related_to'],
+		'Status' => ['servicecontracts', 'contract_status'],
+		'Used Units' => ['servicecontracts', 'used_units'],
+		'Total Units' => ['servicecontracts', 'total_units'],
+		'Contract No' => ['servicecontracts', 'contract_no'],
+	];
+	public $list_fields_name = [
 		/* Format: Field Label => fieldname */
 		'Subject' => 'subject',
 		'Assigned To' => 'assigned_user_id',
-		'Contract No' => 'contract_no',
+		'Related To' => 'sc_related_to',
+		'Status' => 'contract_status',
 		'Used Units' => 'used_units',
-		'Total Units' => 'total_units'
-	);
+		'Total Units' => 'total_units',
+		'Contract No' => 'contract_no',
+	];
+
+	/**
+	 * @var string[] List of fields in the RelationListView
+	 */
+	public $relationFields = ['subject', 'assigned_user_id', 'contract_no', 'used_units', 'total_units'];
 	// Make the field link to detail view
 	public $list_link_field = 'subject';
 	// For Popup listview and UI type support
-	public $search_fields = Array(
+	public $search_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'Subject' => Array('servicecontracts', 'subject'),
-		'Contract No' => Array('servicecontracts', 'contract_no'),
-		'Assigned To' => Array('vtiger_crmentity', 'assigned_user_id'),
-		'Used Units' => Array('servicecontracts', 'used_units'),
-		'Total Units' => Array('servicecontracts', 'total_units')
-	);
-	public $search_fields_name = Array(
+		'Subject' => ['servicecontracts', 'subject'],
+		'Status' => ['servicecontracts', 'contract_status'],
+		'Due Date' => ['servicecontracts', 'due_date'],
+		'Start Date' => ['servicecontracts', 'start_date'],
+		'Type' => ['servicecontracts', 'contract_type'],
+		'Related to' => ['servicecontracts', 'sc_related_to'],
+		'Used Units' => ['servicecontracts', 'used_units'],
+		'Total Units' => ['servicecontracts', 'total_units'],
+		'Assigned To' => ['crmentity', 'smownerid'],
+		'Contract No' => ['servicecontracts', 'contract_no'],
+	];
+	public $search_fields_name = [
 		/* Format: Field Label => fieldname */
 		'Subject' => 'subject',
-		'Contract No' => 'contract_no',
-		'Assigned To' => 'assigned_user_id',
+		'Status' => 'contract_status',
+		'Due Date' => 'due_date',
+		'Start Date' => 'start_date',
+		'Type' => 'contract_type',
+		'Related To' => 'sc_related_to',
 		'Used Units' => 'used_units',
-		'Total Units' => 'total_units'
-	);
+		'Total Units' => 'total_units',
+		'Assigned To' => 'assigned_user_id',
+		'Contract No' => 'contract_no',
+	];
 	// For Popup window record selection
-	public $popup_fields = Array('subject');
-	// Placeholder for sort fields - All the fields will be initialized for Sorting through initSortFields
-	public $sortby_fields = Array();
+	public $popup_fields = ['subject'];
 	// For Alphabetical search
 	public $def_basicsearch_col = 'subject';
 	// Column value to use on detail view record text display
 	public $def_detailview_recname = 'subject';
 	// Required Information for enabling Import feature
-	public $required_fields = Array('assigned_user_id' => 1);
+	public $required_fields = ['assigned_user_id' => 1];
 	// Used when enabling/disabling the mandatory fields for the module.
 	// Refers to vtiger_field.fieldname values.
-	public $mandatory_fields = Array('subject', 'assigned_user_id');
+	public $mandatory_fields = ['subject', 'assigned_user_id'];
 	// Callback function list during Importing
-	public $special_functions = Array('set_import_assigned_user');
+	public $special_functions = ['set_import_assigned_user'];
 	public $default_order_by = '';
 	public $default_sort_order = 'ASC';
-
-	public function save_module($module)
-	{
-		$return_action = AppRequest::get('return_action');
-		$for_module = AppRequest::get('return_module');
-		$for_crmid = AppRequest::get('return_id');
-		if ($return_action && $for_module && $for_crmid) {
-			if ($for_module == 'HelpDesk') {
-				$on_focus = CRMEntity::getInstance($for_module);
-				$on_focus->save_related_module($for_module, $for_crmid, $module, $this->id);
-			}
-		}
-	}
-
-	/**
-	 * Return query to use based on given modulename, fieldname
-	 * Useful to handle specific case handling for Popup
-	 */
-	public function getQueryByModuleField($module, $fieldname, $srcrecord)
-	{
-		// $srcrecord could be empty
-	}
 
 	/**
 	 * Get list view query.
@@ -140,13 +136,12 @@ class ServiceContracts extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($module));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$module]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -171,7 +166,7 @@ class ServiceContracts extends CRMEntity
 		require('user_privileges/sharing_privileges_' . $current_user->id . '.php');
 
 		$sec_query = '';
-		$tabid = \includes\Modules::getModuleId($module);
+		$tabid = \App\Module::getModuleId($module);
 
 		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[$tabid] == 3) {
 
@@ -205,48 +200,49 @@ class ServiceContracts extends CRMEntity
 		}
 		return $sec_query;
 	}
-	/*
-	 * Function to get the secondary query part of a report
-	 * @param - $module primary module name
-	 * @param - $secmodule secondary module name
-	 * returns the query string formed on fetching the related data for report for secondary module
-	 */
 
-	public function generateReportsSecQuery($module, $secmodule, $queryplanner)
+	/**
+	 * Function to get the secondary query part of a report
+	 * @param string $module
+	 * @param string $secmodule
+	 * @param ReportRunQueryPlanner $queryPlanner
+	 * @return string
+	 */
+	public function generateReportsSecQuery($module, $secmodule, ReportRunQueryPlanner $queryplanner)
 	{
 
 		$matrix = $queryplanner->newDependencyMatrix();
-		$matrix->setDependency('vtiger_crmentityServiceContracts', array('vtiger_groupsServiceContracts', 'vtiger_usersServiceContracts'));
-		$matrix->setDependency('vtiger_servicecontracts', array('vtiger_servicecontractscf', 'vtiger_crmentityServiceContracts'));
+		$matrix->setDependency('vtiger_crmentityServiceContracts', ['vtiger_groupsServiceContracts', 'vtiger_usersServiceContracts']);
+		$matrix->setDependency('vtiger_servicecontracts', ['vtiger_servicecontractscf', 'vtiger_crmentityServiceContracts']);
 		if (!$queryplanner->requireTable('vtiger_servicecontracts', $matrix)) {
 			return '';
 		}
 
-		$query = $this->getRelationQuery($module, $secmodule, "vtiger_servicecontracts", "servicecontractsid", $queryplanner);
+		$query = $this->getRelationQuery($module, $secmodule, 'vtiger_servicecontracts', 'servicecontractsid', $queryplanner);
 
-		if ($queryplanner->requireTable("vtiger_crmentityServiceContracts", $matrix)) {
-			$query .= " left join vtiger_crmentity as vtiger_crmentityServiceContracts on vtiger_crmentityServiceContracts.crmid = vtiger_servicecontracts.servicecontractsid  and vtiger_crmentityServiceContracts.deleted=0";
+		if ($queryplanner->requireTable('vtiger_crmentityServiceContracts', $matrix)) {
+			$query .= ' left join vtiger_crmentity as vtiger_crmentityServiceContracts on vtiger_crmentityServiceContracts.crmid = vtiger_servicecontracts.servicecontractsid  and vtiger_crmentityServiceContracts.deleted=0';
 		}
-		if ($queryplanner->requireTable("vtiger_servicecontractscf")) {
-			$query .= " left join vtiger_servicecontractscf on vtiger_servicecontractscf.servicecontractsid = vtiger_servicecontracts.servicecontractsid";
+		if ($queryplanner->requireTable('vtiger_servicecontractscf')) {
+			$query .= ' left join vtiger_servicecontractscf on vtiger_servicecontractscf.servicecontractsid = vtiger_servicecontracts.servicecontractsid';
 		}
-		if ($queryplanner->requireTable("vtiger_groupsServiceContracts")) {
-			$query .= " left join vtiger_groups as vtiger_groupsServiceContracts on vtiger_groupsServiceContracts.groupid = vtiger_crmentityServiceContracts.smownerid";
+		if ($queryplanner->requireTable('vtiger_groupsServiceContracts')) {
+			$query .= ' left join vtiger_groups as vtiger_groupsServiceContracts on vtiger_groupsServiceContracts.groupid = vtiger_crmentityServiceContracts.smownerid';
 		}
-		if ($queryplanner->requireTable("vtiger_usersServiceContracts")) {
-			$query .= " left join vtiger_users as vtiger_usersServiceContracts on vtiger_usersServiceContracts.id = vtiger_crmentityServiceContracts.smownerid";
+		if ($queryplanner->requireTable('vtiger_usersServiceContracts')) {
+			$query .= ' left join vtiger_users as vtiger_usersServiceContracts on vtiger_usersServiceContracts.id = vtiger_crmentityServiceContracts.smownerid';
 		}
-		if ($queryplanner->requireTable("vtiger_contactdetailsRelServiceContracts")) {
-			$query .= " left join vtiger_contactdetails as vtiger_contactdetailsRelServiceContracts on vtiger_contactdetailsRelServiceContracts.contactid = vtiger_servicecontracts.sc_related_to";
+		if ($queryplanner->requireTable('vtiger_contactdetailsRelServiceContracts')) {
+			$query .= ' left join vtiger_contactdetails as vtiger_contactdetailsRelServiceContracts on vtiger_contactdetailsRelServiceContracts.contactid = vtiger_servicecontracts.sc_related_to';
 		}
-		if ($queryplanner->requireTable("vtiger_accountRelServiceContracts")) {
-			$query .= " left join vtiger_account as vtiger_accountRelServiceContracts on vtiger_accountRelServiceContracts.accountid = vtiger_servicecontracts.sc_related_to";
+		if ($queryplanner->requireTable('vtiger_accountRelServiceContracts')) {
+			$query .= ' left join vtiger_account as vtiger_accountRelServiceContracts on vtiger_accountRelServiceContracts.accountid = vtiger_servicecontracts.sc_related_to';
 		}
-		if ($queryplanner->requireTable("vtiger_lastModifiedByServiceContracts")) {
-			$query .= " left join vtiger_users as vtiger_lastModifiedByServiceContracts on vtiger_lastModifiedByServiceContracts.id = vtiger_crmentityServiceContracts.modifiedby ";
+		if ($queryplanner->requireTable('vtiger_lastModifiedByServiceContracts')) {
+			$query .= ' left join vtiger_users as vtiger_lastModifiedByServiceContracts on vtiger_lastModifiedByServiceContracts.id = vtiger_crmentityServiceContracts.modifiedby ';
 		}
-		if ($queryplanner->requireTable("vtiger_createdbyServiceContracts")) {
-			$query .= " left join vtiger_users as vtiger_createdbyServiceContracts on vtiger_createdbyServiceContracts.id = vtiger_crmentityServiceContracts.smcreatorid ";
+		if ($queryplanner->requireTable('vtiger_createdbyServiceContracts')) {
+			$query .= ' left join vtiger_users as vtiger_createdbyServiceContracts on vtiger_createdbyServiceContracts.id = vtiger_crmentityServiceContracts.smcreatorid ';
 		}
 		return $query;
 	}
@@ -254,7 +250,7 @@ class ServiceContracts extends CRMEntity
 	/**
 	 * Create query to export the records.
 	 */
-	public function create_export_query($where)
+	public function createExportQuery($where)
 	{
 		$current_user = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 
@@ -279,13 +275,12 @@ class ServiceContracts extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($thismodule));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$thismodule]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -345,7 +340,7 @@ class ServiceContracts extends CRMEntity
 
 		$query = $select_clause . $from_clause .
 			" LEFT JOIN vtiger_users_last_import ON vtiger_users_last_import.bean_id=" . $this->table_name . "." . $this->table_index .
-			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values, $ui_type_arr, $module) .
+			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values) .
 			$where_clause .
 			" ORDER BY $table_cols," . $this->table_name . "." . $this->table_index . " ASC";
 
@@ -357,43 +352,35 @@ class ServiceContracts extends CRMEntity
 	 * @param String Module name
 	 * @param String Event Type
 	 */
-	public function vtlib_handler($moduleName, $eventType)
+	public function moduleHandler($moduleName, $eventType)
 	{
 
 		require_once('include/utils/utils.php');
 		$adb = PearDatabase::getInstance();
 
-		if ($eventType == 'module.postinstall') {
+		if ($eventType === 'module.postinstall') {
 			$moduleInstance = vtlib\Module::getInstance($moduleName);
 
 			$accModuleInstance = vtlib\Module::getInstance('Accounts');
-			$accModuleInstance->setRelatedList($moduleInstance, 'Service Contracts', array('add'), 'get_dependents_list');
+			$accModuleInstance->setRelatedList($moduleInstance, 'Service Contracts', ['add'], 'getDependentsList');
 
 			$conModuleInstance = vtlib\Module::getInstance('Contacts');
-			$conModuleInstance->setRelatedList($moduleInstance, 'Service Contracts', array('add'), 'get_dependents_list');
+			$conModuleInstance->setRelatedList($moduleInstance, 'Service Contracts', ['add'], 'getDependentsList');
 
 			$helpDeskInstance = vtlib\Module::getInstance("HelpDesk");
-			$helpDeskInstance->setRelatedList($moduleInstance, "Service Contracts", Array('ADD', 'SELECT'));
+			$helpDeskInstance->setRelatedList($moduleInstance, "Service Contracts", ['ADD', 'SELECT']);
 
 			// Initialize module sequence for the module
-			\includes\fields\RecordNumber::setNumber($moduleName, 'SERCON', 1);
+			\App\Fields\RecordNumber::setNumber($moduleName, 'SERCON', 1);
 			// Make the picklist value 'Complete' for status as non-editable
 			$adb->query("UPDATE vtiger_contract_status SET presence=0 WHERE contract_status='Complete'");
 
 			// Mark the module as Standard module
-			$adb->pquery('UPDATE vtiger_tab SET customized=0 WHERE name=?', array($moduleName));
-		} else if ($eventType == 'module.disabled') {
-			$em = new VTEventsManager($adb);
-			$em->setHandlerInActive('ServiceContractsHandler');
-		} else if ($eventType == 'module.enabled') {
-			$em = new VTEventsManager($adb);
-			$em->setHandlerActive('ServiceContractsHandler');
-		} else if ($eventType == 'module.preuninstall') {
-			
-		} else if ($eventType == 'module.preupdate') {
-			
-		} else if ($eventType == 'module.postupdate') {
-			
+			$adb->pquery('UPDATE vtiger_tab SET customized=0 WHERE name=?', [$moduleName]);
+		} else if ($eventType === 'module.disabled') {
+			App\EventHandler::setInActive('ServiceContracts_ServiceContractsHandler_Handler');
+		} else if ($eventType === 'module.enabled') {
+			App\EventHandler::setActive('ServiceContracts_ServiceContractsHandler_Handler');
 		}
 	}
 
@@ -402,17 +389,17 @@ class ServiceContracts extends CRMEntity
 	 * NOTE: This function has been added to CRMEntity (base class).
 	 * You can override the behavior by re-defining it here.
 	 */
-	public function save_related_module($module, $crmid, $with_module, $with_crmids, $relatedName = false)
+	public function saveRelatedModule($module, $crmid, $with_module, $with_crmids, $relatedName = false)
 	{
 		if (!is_array($with_crmids))
-			$with_crmids = Array($with_crmids);
+			$with_crmids = [$with_crmids];
 		foreach ($with_crmids as $with_crmid) {
 			if ($with_module == 'HelpDesk') {
-				parent::save_related_module($module, $crmid, $with_module, $with_crmid);
+				parent::saveRelatedModule($module, $crmid, $with_module, $with_crmid);
 				$this->updateHelpDeskRelatedTo($crmid, $with_crmid);
 				$this->updateServiceContractState($crmid);
 			} else {
-				parent::save_related_module($module, $crmid, $with_module, $with_crmid, $relatedName);
+				parent::saveRelatedModule($module, $crmid, $with_module, $with_crmid, $relatedName);
 			}
 		}
 	}
@@ -422,27 +409,27 @@ class ServiceContracts extends CRMEntity
 	{
 
 		if (!is_array($entityIds))
-			$entityIds = array($entityIds);
+			$entityIds = [$entityIds];
 		$selectTicketsQuery = sprintf('SELECT ticketid FROM vtiger_troubletickets
 								WHERE (parent_id IS NULL || parent_id = 0)
 									AND ticketid IN (%s)', generateQuestionMarks($entityIds));
 		$selectTicketsResult = $this->db->pquery($selectTicketsQuery, [$entityIds]);
-		$noOfTickets = $this->db->num_rows($selectTicketsResult);
+		$noOfTickets = $this->db->numRows($selectTicketsResult);
 		for ($i = 0; $i < $noOfTickets; ++$i) {
-			$ticketId = $this->db->query_result($selectTicketsResult, $i, 'ticketid');
+			$ticketId = $this->db->queryResult($selectTicketsResult, $i, 'ticketid');
 			$serviceContractsRelateToTypeResult = $this->db->pquery('SELECT setype FROM vtiger_crmentity WHERE crmid =
-				(SELECT sc_related_to FROM vtiger_servicecontracts WHERE servicecontractsid = ?)', array($focusId));
-			$serviceContractsRelateToType = $this->db->query_result($serviceContractsRelateToTypeResult, 0, 'setype');
+				(SELECT sc_related_to FROM vtiger_servicecontracts WHERE servicecontractsid = ?)', [$focusId]);
+			$serviceContractsRelateToType = $this->db->queryResult($serviceContractsRelateToTypeResult, 0, 'setype');
 			if ($serviceContractsRelateToType == 'Accounts') {
 				$updateQuery = "UPDATE vtiger_troubletickets, vtiger_servicecontracts SET parent_id=vtiger_servicecontracts.sc_related_to" .
 					" WHERE vtiger_servicecontracts.sc_related_to IS NOT NULL && vtiger_servicecontracts.sc_related_to != 0" .
 					" && vtiger_servicecontracts.servicecontractsid = ? && vtiger_troubletickets.ticketid = ?";
-				$this->db->pquery($updateQuery, array($focusId, $ticketId));
+				$this->db->pquery($updateQuery, [$focusId, $ticketId]);
 			} elseif ($serviceContractsRelateToType == 'Contacts') {
 				$updateQuery = "UPDATE vtiger_troubletickets, vtiger_servicecontracts SET contact_id=vtiger_servicecontracts.sc_related_to" .
 					" WHERE vtiger_servicecontracts.sc_related_to IS NOT NULL && vtiger_servicecontracts.sc_related_to != 0" .
 					" && vtiger_servicecontracts.servicecontractsid = ? && vtiger_troubletickets.ticketid = ?";
-				$this->db->pquery($updateQuery, array($focusId, $ticketId));
+				$this->db->pquery($updateQuery, [$focusId, $ticketId]);
 			}
 		}
 	}
@@ -451,24 +438,24 @@ class ServiceContracts extends CRMEntity
 	public function updateServiceContractState($focusId)
 	{
 		$this->id = $focusId;
-		$this->retrieve_entity_info($focusId, 'ServiceContracts');
+		$this->retrieveEntityInfo($focusId, 'ServiceContracts');
 
 		$contractTicketsResult = $this->db->pquery("SELECT relcrmid FROM vtiger_crmentityrel
 														WHERE module = 'ServiceContracts'
-														AND relmodule = 'HelpDesk' && crmid = ?
+														AND relmodule = 'HelpDesk' AND crmid = ?
 													UNION
 														SELECT crmid FROM vtiger_crmentityrel
 														WHERE relmodule = 'ServiceContracts'
-														AND module = 'HelpDesk' && relcrmid = ?", array($focusId, $focusId));
+														AND module = 'HelpDesk' AND relcrmid = ?", [$focusId, $focusId]);
 
-		$noOfTickets = $this->db->num_rows($contractTicketsResult);
+		$noOfTickets = $this->db->numRows($contractTicketsResult);
 		$ticketFocus = CRMEntity::getInstance('HelpDesk');
 		$totalUsedUnits = 0;
 		for ($i = 0; $i < $noOfTickets; ++$i) {
-			$ticketId = $this->db->query_result($contractTicketsResult, $i, 'relcrmid');
+			$ticketId = $this->db->queryResult($contractTicketsResult, $i, 'relcrmid');
 			$ticketFocus->id = $ticketId;
-			if (isRecordExists($ticketId)) {
-				$ticketFocus->retrieve_entity_info($ticketId, 'HelpDesk');
+			if (\App\Record::isExists($ticketId)) {
+				$ticketFocus->retrieveEntityInfo($ticketId, 'HelpDesk');
 				if (strtolower($ticketFocus->column_fields['ticketstatus']) == 'closed') {
 					$totalUsedUnits += $this->computeUsedUnits($ticketFocus->column_fields);
 				}
@@ -504,19 +491,23 @@ class ServiceContracts extends CRMEntity
 		return $usedUnits;
 	}
 
-	// Function to Upate the Used Units of the Service Contract.
+	/**
+	 * Function to Upate the Used Units of the Service Contract.
+	 * @param float $usedUnits
+	 */
 	public function updateUsedUnits($usedUnits)
 	{
 		$this->column_fields['used_units'] = $usedUnits;
-		$updateQuery = "UPDATE vtiger_servicecontracts SET used_units = $usedUnits WHERE servicecontractsid = ?";
-		$this->db->pquery($updateQuery, array($this->id));
+		\App\Db::getInstance()->createCommand()->update($this->table_name, ['used_units' => $usedUnits], ['servicecontractsid' => $this->id])->execute();
 	}
 
-	// Function to Calculate the End Date, Planned Duration, Actual Duration and Progress of a Service Contract
+	/**
+	 * Function to Calculate the End Date, Planned Duration, Actual Duration and Progress of a Service Contract
+	 */
 	public function calculateProgress()
 	{
-		$updateCols = array();
-		$updateParams = array();
+		$db = \App\Db::getInstance();
+		$params = [];
 
 		$startDate = $this->column_fields['start_date'];
 		$dueDate = $this->column_fields['due_date'];
@@ -529,48 +520,36 @@ class ServiceContracts extends CRMEntity
 
 		// Update the End date if the status is Complete or if the Used Units reaches/exceeds Total Units
 		// We need to do this first to make sure Actual duration is computed properly
-		if ($contractStatus == 'Complete' || (!empty($usedUnits) && !empty($totalUnits) && $usedUnits >= $totalUnits)) {
+		if ($contractStatus === 'Complete' || (!empty($usedUnits) && !empty($totalUnits) && $usedUnits >= $totalUnits)) {
 			if (empty($endDate)) {
 				$endDate = date('Y-m-d');
-				$this->db->pquery('UPDATE vtiger_servicecontracts SET end_date=? WHERE servicecontractsid = ?', array(date('Y-m-d'), $this->id));
+				$db->createCommand()->update($this->table_name, ['end_date' => $endDate], ['servicecontractsid' => $this->id])->execute();
 			}
 		} else {
 			$endDate = null;
-			$this->db->pquery('UPDATE vtiger_servicecontracts SET end_date=? WHERE servicecontractsid = ?', array(null, $this->id));
+			$db->createCommand()->update($this->table_name, ['end_date' => $endDate], ['servicecontractsid' => $this->id])->execute();
 		}
 
 		// Calculate the Planned Duration based on Due date and Start date. (in days)
 		if (!empty($dueDate) && !empty($startDate)) {
-			$plannedDurationUpdate = " planned_duration = (TO_DAYS(due_date)-TO_DAYS(start_date)+1)";
+			$params['planned_duration'] = \App\Fields\Date::getDiff($startDate, $dueDate, 'days');
 		} else {
-			$plannedDurationUpdate = " planned_duration = ''";
+			$params['planned_duration'] = '';
 		}
-		array_push($updateCols, $plannedDurationUpdate);
 
 		// Calculate the Actual Duration based on End date and Start date. (in days)
 		if (!empty($endDate) && !empty($startDate)) {
-			$actualDurationUpdate = "actual_duration = (TO_DAYS(end_date)-TO_DAYS(start_date)+1)";
+			$params['actual_duration'] = \App\Fields\Date::getDiff($startDate, $endDate, 'days');
 		} else {
-			$actualDurationUpdate = "actual_duration = ''";
+			$params['actual_duration'] = '';
 		}
-		array_push($updateCols, $actualDurationUpdate);
-
 		// Update the Progress based on Used Units and Total Units (in percentage)
 		if (!empty($usedUnits) && !empty($totalUnits)) {
-			$progressUpdate = 'progress = ?';
-			$progressUpdateParams = floatval(($usedUnits * 100) / $totalUnits);
+			$params['progress'] = floatval(($usedUnits * 100) / $totalUnits);
 		} else {
-			$progressUpdate = 'progress = ?';
-			$progressUpdateParams = null;
+			$params['progress'] = null;
 		}
-		array_push($updateCols, $progressUpdate);
-		array_push($updateParams, $progressUpdateParams);
-
-		if (count($updateCols) > 0) {
-			$updateQuery = sprintf('UPDATE vtiger_servicecontracts SET %s WHERE servicecontractsid = ?', implode(",", $updateCols));
-			array_push($updateParams, $this->id);
-			$this->db->pquery($updateQuery, $updateParams);
-		}
+		$db->createCommand()->update($this->table_name, $params, ['servicecontractsid' => $this->id])->execute();
 	}
 
 	/**
@@ -578,55 +557,35 @@ class ServiceContracts extends CRMEntity
 	 * NOTE: This function has been added to CRMEntity (base class).
 	 * You can override the behavior by re-defining it here.
 	 */
-	public function delete_related_module($module, $crmid, $with_module, $with_crmid)
+	public function deleteRelatedModule($module, $crmid, $with_module, $with_crmid)
 	{
-		parent::delete_related_module($module, $crmid, $with_module, $with_crmid);
+		parent::deleteRelatedModule($module, $crmid, $with_module, $with_crmid);
 		if ($with_module == 'HelpDesk') {
 			$this->updateServiceContractState($crmid);
 		}
 	}
+
 	/**
-	 * Handle getting related list information.
-	 * NOTE: This function has been added to CRMEntity (base class).
-	 * You can override the behavior by re-defining it here.
+	 * Function to unlink an entity with given Id from another entity
+	 * @param int $id
+	 * @param string $returnModule
+	 * @param int $returnId
+	 * @param boolean $relatedName
 	 */
-	//function get_related_list($id, $cur_tab_id, $rel_tab_id, $actions=false) { }
-
-	/** Function to unlink an entity with given Id from another entity */
-	public function unlinkRelationship($id, $return_module, $return_id, $relatedName = false)
+	public function unlinkRelationship($id, $returnModule, $returnId, $relatedName = false)
 	{
-		global $currentModule;
-
-		if ($return_module == 'Accounts') {
-			$focus = CRMEntity::getInstance($return_module);
-			$entityIds = $focus->getRelatedContactsIds($return_id);
-			array_push($entityIds, $return_id);
-			$entityIds = implode(',', $entityIds);
-			$return_modules = "'Accounts','Contacts'";
+		if ($relatedName === 'getManyToMany') {
+			parent::unlinkRelationship($id, $returnModule, $returnId, $relatedName);
 		} else {
-			$entityIds = $return_id;
-			$return_modules = "'" . $return_module . "'";
-		}
-		if ($relatedName == 'get_many_to_many') {
-			parent::unlinkRelationship($id, $return_module, $return_id, $relatedName);
-		} else {
-			$where = '(relcrmid= ? && module IN (?) && crmid IN (?)) || (crmid= ? && relmodule IN (?) && relcrmid IN (?))';
-			$params = [$id, $return_modules, $entityIds, $id, $return_modules, $entityIds];
-			$this->db->delete('vtiger_crmentityrel', $where, $params);
-
-			$sql = sprintf('SELECT tabid, tablename, columnname FROM vtiger_field WHERE fieldid IN (SELECT fieldid FROM vtiger_fieldmodulerel WHERE module=? && relmodule IN (%s))', $return_modules);
-			$fieldRes = $this->db->pquery($sql, [$currentModule]);
-			$numOfFields = $this->db->num_rows($fieldRes);
-			for ($i = 0; $i < $numOfFields; $i++) {
-				$tabId = $this->db->query_result($fieldRes, $i, 'tabid');
-				$tableName = $this->db->query_result($fieldRes, $i, 'tablename');
-				$columnName = $this->db->query_result($fieldRes, $i, 'columnname');
-				$relatedModule = vtlib\Functions::getModuleName($tabId);
-				$focusObj = CRMEntity::getInstance($relatedModule);
-
-				$updateQuery = "UPDATE $tableName SET $columnName=? WHERE $columnName IN ($entityIds) && $focusObj->table_index=?";
-				$updateParams = array(null, $id);
-				$this->db->pquery($updateQuery, $updateParams);
+			parent::deleteRelatedFromDB($id, $returnModule, $returnId);
+			$dataReader = (new \App\Db\Query())->select(['tabid', 'tablename', 'columnname'])
+					->from('vtiger_field')
+					->where(['fieldid' => (new \App\Db\Query())->select(['fieldid'])->from('vtiger_fieldmodulerel')->where(['module' => vglobal('currentModule'), 'relmodule' => $returnModule])])
+					->createCommand()->query();
+			while ($row = $dataReader->read()) {
+				App\Db::getInstance()->createCommand()
+					->update($row['tablename'], [$row['columnname'] => null], [$row['columnname'] => $returnId, CRMEntity::getInstance(App\Module::getModuleName($row['tabid']))->table_index => $id])
+					->execute();
 			}
 		}
 	}
@@ -643,11 +602,11 @@ class ServiceContracts extends CRMEntity
 
 		\App\Log::trace("Entering function transferRelatedRecords ($module, $transferEntityIds, $entityId)");
 
-		$rel_table_arr = Array("Documents" => "vtiger_senotesrel", "Attachments" => "vtiger_seattachmentsrel");
+		$rel_table_arr = ["Documents" => "vtiger_senotesrel", "Attachments" => "vtiger_seattachmentsrel"];
 
-		$tbl_field_arr = Array("vtiger_senotesrel" => "notesid", "vtiger_seattachmentsrel" => "attachmentsid");
+		$tbl_field_arr = ["vtiger_senotesrel" => "notesid", "vtiger_seattachmentsrel" => "attachmentsid"];
 
-		$entity_tbl_field_arr = Array("vtiger_senotesrel" => "crmid", "vtiger_seattachmentsrel" => "crmid");
+		$entity_tbl_field_arr = ["vtiger_senotesrel" => "crmid", "vtiger_seattachmentsrel" => "crmid"];
 
 		foreach ($transferEntityIds as $transferId) {
 			foreach ($rel_table_arr as $rel_module => $rel_table) {
@@ -655,12 +614,12 @@ class ServiceContracts extends CRMEntity
 				$entity_id_field = $entity_tbl_field_arr[$rel_table];
 				// IN clause to avoid duplicate entries
 				$sel_result = $adb->pquery("select $id_field from $rel_table where $entity_id_field=? " .
-					" and $id_field not in (select $id_field from $rel_table where $entity_id_field=?)", array($transferId, $entityId));
-				$res_cnt = $adb->num_rows($sel_result);
+					" and $id_field not in (select $id_field from $rel_table where $entity_id_field=?)", [$transferId, $entityId]);
+				$res_cnt = $adb->numRows($sel_result);
 				if ($res_cnt > 0) {
 					for ($i = 0; $i < $res_cnt; $i++) {
-						$id_field_value = $adb->query_result($sel_result, $i, $id_field);
-						$adb->pquery("update $rel_table set $entity_id_field=? where $entity_id_field=? and $id_field=?", array($entityId, $transferId, $id_field_value));
+						$id_field_value = $adb->queryResult($sel_result, $i, $id_field);
+						$adb->pquery("update $rel_table set $entity_id_field=? where $entity_id_field=? and $id_field=?", [$entityId, $transferId, $id_field_value]);
 					}
 				}
 			}

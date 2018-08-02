@@ -1,9 +1,11 @@
-<?php namespace App;
+<?php
+namespace App;
 
 /**
  * Version class
  * @package YetiForce.App
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Version
@@ -19,7 +21,7 @@ class Version
 	public static function get($type = 'appVersion')
 	{
 		static::init();
-		return self::$versions[$type];
+		return static::$versions[$type];
 	}
 
 	/**
@@ -27,8 +29,8 @@ class Version
 	 */
 	private static function init()
 	{
-		if (self::$versions === false) {
-			self::$versions = require 'config/version.php';
+		if (static::$versions === false) {
+			static::$versions = require 'config/version.php';
 		}
 	}
 
@@ -42,6 +44,6 @@ class Version
 	public static function check($version, $type = 'appVersion', $condition = '>=')
 	{
 		static::init();
-		return version_compare($version, self::$versions[$type], $condition);
+		return version_compare($version, static::$versions[$type], $condition);
 	}
 }

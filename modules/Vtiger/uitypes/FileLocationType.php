@@ -6,32 +6,54 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Vtiger_FileLocationType_UIType extends Vtiger_Base_UIType
+class Vtiger_FileLocationType_UIType extends Vtiger_Picklist_UIType
 {
 
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritDoc}
 	 */
-	public function getTemplateName()
+	public function validate($value, $isUserFormat = false)
 	{
-		return 'uitypes/FileLocationType.tpl';
+		if ($this->validate || empty($value)) {
+			return;
+		}
+		parent::validate($value, $isUserFormat);
+		$this->validate = false;
+		$allowedPicklist = $this->getPicklistValues();
+		if (!isset($allowedPicklist[$value])) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate = true;
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <String> value of field
-	 * @return <String> Converted value
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		if ($value === 'I') {
-			$value = 'LBL_INTERNAL';
-		} else {
-			$value = 'LBL_EXTERNAL';
-		}
-		return vtranslate($value, 'Documents');
+		$values = $this->getPicklistValues();
+		return \App\Purifier::encodeHtml(isset($values[$value]) ? $values[$value] : $value);
+	}
+
+	/**
+	 * Function to get all the available picklist values for the current field
+	 * @return array List of picklist values if the field
+	 */
+	public function getPicklistValues()
+	{
+		$moduleName = $this->getFieldModel()->getModuleName();
+		return ['I' => \App\Language::translate('LBL_INTERNAL', $moduleName), 'E' => \App\Language::translate('LBL_EXTERNAL', $moduleName)];
+	}
+
+	/**
+	 * Function defines empty picklist element availability
+	 * @return boolean
+	 */
+	public function isEmptyPicklistOptionAllowed()
+	{
+		return false;
 	}
 }

@@ -1,15 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * Contributor(s): 
- * VERSION YetiForceCRM: 1.1.0 RC
- * *********************************************************************************************************************************** */
+/**
+ * Password russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Password' => 'Настройки пароля',
 	'LBL_PASSWORD_DESCRIPTION' => 'Настройка сложности пароля',
@@ -23,4 +18,8 @@ $languageStrings = [
 	'LBL_ERROR' => 'Ошибка сохранения изменений',
 	'LBL_SAVE_OK' => 'Изменения успешно сохранены',
 	'characters' => 'Символы',
+	'LBL_PASSWORD_CHANGE_TIME' => 'Принудительная смена пароля каждые...',
+	'LBL_PASSWORD_CHANGE_TIME_DESC' => '0 - нет ограничений, 356 - год, 30 - месяц. Через этот промежуток времени всякий раз, когда пользователь заходит в систему, система будет требовать сменить пароль.',
+	'LBL_TIME_TO_CHANGE_PASSWORD' => 'Максимальный срок для изменения пароля (в днях)',
+	'LBL_TIME_TO_CHANGE_PASSWORD_DESC' => 'Спустя этот срок пользователь, не сменивший пароль, будет заблокирован и не сможет войти в систему.',
 ];

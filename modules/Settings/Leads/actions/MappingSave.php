@@ -12,9 +12,8 @@
 class Settings_Leads_MappingSave_Action extends Settings_Vtiger_Index_Action
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$qualifiedModuleName = $request->getModule(false);
 		$mapping = $request->get('mapping');
 		$csrfKey = $GLOBALS['csrf']['input-name'];
 		if (array_key_exists($csrfKey, $mapping)) {
@@ -25,7 +24,7 @@ class Settings_Leads_MappingSave_Action extends Settings_Vtiger_Index_Action
 		$response = new Vtiger_Response();
 		if ($mapping) {
 			$mappingModel->save($mapping);
-			$result = array('status' => true);
+			$result = ['status' => true];
 		} else {
 			$result['status'] = false;
 		}
@@ -33,7 +32,7 @@ class Settings_Leads_MappingSave_Action extends Settings_Vtiger_Index_Action
 		return $response->emit();
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

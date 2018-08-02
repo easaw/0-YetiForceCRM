@@ -11,13 +11,9 @@
 class Settings_Groups_Save_Action extends Settings_Vtiger_Save_Action
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$qualifiedModuleName = $request->getModule(false);
 		$recordId = $request->get('record');
-
-		$moduleModel = Settings_Vtiger_Module_Model::getInstance($qualifiedModuleName);
 		$prevValues = [];
 		if (!empty($recordId)) {
 			$recordModel = Settings_Groups_Record_Model::getInstance($recordId);
@@ -35,7 +31,7 @@ class Settings_Groups_Save_Action extends Settings_Vtiger_Save_Action
 			$recordModel = new Settings_Groups_Record_Model();
 		}
 		if ($recordModel) {
-			$recordModel->set('groupname', decode_html($request->get('groupname')));
+			$recordModel->set('groupname', $request->get('groupname'));
 			$recordModel->set('description', $request->get('description'));
 			$recordModel->set('group_members', $request->get('members'));
 			$recordModel->set('modules', $request->get('modules'));
@@ -48,7 +44,7 @@ class Settings_Groups_Save_Action extends Settings_Vtiger_Save_Action
 		header("Location: $redirectUrl");
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

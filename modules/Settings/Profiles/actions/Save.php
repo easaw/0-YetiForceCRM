@@ -8,18 +8,10 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class Settings_Profiles_Save_Action extends Vtiger_Action_Controller
+class Settings_Profiles_Save_Action extends Settings_Vtiger_Basic_Action
 {
 
-	public function checkPermission(Vtiger_Request $request)
-	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUser->isAdminUser()) {
-			throw new \Exception\AppException('LBL_PERMISSION_DENIED');
-		}
-	}
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$recordId = $request->get('record');
 
@@ -41,7 +33,7 @@ class Settings_Profiles_Save_Action extends Vtiger_Action_Controller
 		header("Location: $redirectUrl");
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

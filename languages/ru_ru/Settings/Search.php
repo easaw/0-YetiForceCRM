@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * VERSION YetiForceCRM: 1.1.0 RC
- * *********************************************************************************************************************************** */
+/**
+ * Search russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Search Setup' => 'Поиск - Настройка',
 	'Search Configuration' => 'Редактор конфигурации поиска',
@@ -22,7 +18,7 @@ $languageStrings = [
 	'Update labels' => 'Обновить',
 	'LBL_SAVE_CHANGES_SEARCHING' => 'Изменения сохранены',
 	'LBL_SAVE_CHANGES_LABLE' => 'Изменения в конфигурации поиска сохранены, вы должны обновить этот модуль, чтобы увидеть изменения в системе.',
-	'Update has been completed' => 'Обновление конфигурации поиска для этого модуля были успешно завершены. Изменения будут видны в системе.',
+	'Update has been completed' => 'Выбранный модуль был успешно обновлен. Изменения будут реализованы с помощью CRON. Скорость обновления меток зависит от объёма данных.',
 	'LBL_SAVE_MODULE_SEQUENCE' => 'Сохранить последовательность модулей',
 	'LBL_TURN_ON' => 'Включить',
 	'LBL_TURN_OFF' => 'Отключить',

@@ -8,14 +8,18 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 chdir(dirname(__FILE__) . '/../../../');
-include_once 'include/Webservices/Relation.php';
 include_once 'include/main/WebUI.php';
-vimport('include.http.Request');
 
 class PBXManager_PBXManager_Callbacks
 {
 
-	public function validateRequest($vtigersecretkey, $request)
+	/**
+	 * Validate request
+	 * @param string $vtigersecretkey
+	 * @param \App\Request $request
+	 * @return boolean
+	 */
+	public function validateRequest($vtigersecretkey, \App\Request $request)
 	{
 		if ($vtigersecretkey == $request->get('vtigersignature')) {
 			return true;
@@ -37,4 +41,4 @@ class PBXManager_PBXManager_Callbacks
 }
 
 $pbxmanager = new PBXManager_PBXManager_Callbacks();
-$pbxmanager->process(AppRequest::init());
+$pbxmanager->process(App\Request::init());

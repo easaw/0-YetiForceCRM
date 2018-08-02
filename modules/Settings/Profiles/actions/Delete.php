@@ -11,14 +11,11 @@
 class Settings_Profiles_Delete_Action extends Settings_Vtiger_Basic_Action
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$qualifiedModuleName = $request->getModule(false);
 		$recordId = $request->get('record');
 		$transferRecordId = $request->get('transfer_record');
 
-		$moduleModel = Settings_Vtiger_Module_Model::getInstance($qualifiedModuleName);
 		$recordModel = Settings_Profiles_Record_Model::getInstanceById($recordId);
 		$transferToProfile = Settings_Profiles_Record_Model::getInstanceById($transferRecordId);
 		if ($recordModel && $transferToProfile) {
@@ -26,13 +23,13 @@ class Settings_Profiles_Delete_Action extends Settings_Vtiger_Basic_Action
 		}
 
 		$response = new Vtiger_Response();
-		$result = array('success' => true);
+		$result = ['success' => true];
 
 		$response->setResult($result);
 		$response->emit();
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

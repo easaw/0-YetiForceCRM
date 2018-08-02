@@ -12,18 +12,13 @@
 class PriceBooks_ProductPriceBookPopup_View extends Vtiger_Popup_View
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$companyDetails = Vtiger_CompanyDetails_Model::getInstanceById();
-		$companyLogo = $companyDetails->getLogo();
-
 		$this->initializeListViewContents($request, $viewer);
-
 		$viewer->assign('MODULE_NAME', $moduleName);
-		$viewer->assign('COMPANY_LOGO', $companyLogo);
-		$viewer->assign('TRIGGER_EVENT_NAME', $request->get('triggerEventName'));
+		$viewer->assign('TRIGGER_EVENT_NAME', $request->getByType('triggerEventName', 2));
 		$viewer->assign('USER_MODEL', Users_Record_Model::getCurrentUserModel());
 
 		$viewer->view('ProductPriceBookPopup.tpl', 'PriceBooks');
@@ -31,47 +26,43 @@ class PriceBooks_ProductPriceBookPopup_View extends Vtiger_Popup_View
 
 	/**
 	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
-		$moduleName = $request->get('src_module');
-		$jsFileNames = array(
-			"modules.Products.resources.ProductsPopup",
-			'modules.Vtiger.resources.validator.BaseValidator',
-			'modules.Vtiger.resources.validator.FieldValidator',
+		$moduleName = $request->getByType('src_module', 2);
+		$jsFileNames = [
+			"modules.PriceBooks.resources.PriceBooksPopup",
+			'~layouts/resources/validator/BaseValidator.js',
+			'~layouts/resources/validator/FieldValidator.js',
 			"modules.$moduleName.resources.validator.FieldValidator"
-		);
-
-		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
-		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
-
-		return $headerScriptInstances;
+		];
+		return array_merge($headerScriptInstances, $this->checkAndConvertJsScripts($jsFileNames));
 	}
 	/*
 	 * Function to initialize the required data in smarty to display the List View Contents
 	 */
 
-	public function initializeListViewContents(Vtiger_Request $request, Vtiger_Viewer $viewer)
+	public function initializeListViewContents(\App\Request $request, Vtiger_Viewer $viewer)
 	{
 		$moduleName = $request->getModule();
-		$cvId = $request->get('cvid');
-		$pageNumber = $request->get('page');
-		$orderBy = $request->get('orderby');
-		$sortOrder = $request->get('sortorder');
-		$sourceModule = $request->get('src_module');
-		$sourceField = $request->get('src_field');
-		$sourceRecord = $request->get('src_record');
+		$cvId = $request->getByType('cvid', 2);
+		$pageNumber = $request->getInteger('page');
+		$orderBy = $request->getForSql('orderby');
+		$sortOrder = $request->getForSql('sortorder');
+		$sourceModule = $request->getByType('src_module', 2);
+		$sourceField = $request->getByType('src_field', 2);
+		$sourceRecord = $request->getInteger('src_record');
 		$searchKey = $request->get('search_key');
 		$searchValue = $request->get('search_value');
 
 		if (empty($cvId)) {
-			$cvId = '0';
+			$cvId = 0;
 		}
 		if (empty($pageNumber)) {
-			$pageNumber = '1';
+			$pageNumber = 1;
 		}
 
 		$pagingModel = new Vtiger_Paging_Model();
@@ -93,7 +84,7 @@ class PriceBooks_ProductPriceBookPopup_View extends Vtiger_Popup_View
 
 		if (!empty($sourceModule)) {
 			$listViewModel->set('src_module', $sourceModule);
-			$listViewModel->set('src_field', $sourceField);
+			$listViewModel->set('src_field', $request->get('src_field'));
 			$listViewModel->set('src_record', $sourceRecord);
 			$sourceRecordModel = Vtiger_Record_Model::getInstanceById($sourceRecord, $sourceModule);
 		}
@@ -113,7 +104,7 @@ class PriceBooks_ProductPriceBookPopup_View extends Vtiger_Popup_View
 		$productUnitPrice = vtlib\Functions::getUnitPrice($sourceRecord, $sourceModule);
 		$productPriceDetails = getPriceDetailsForProduct($sourceRecord, $productUnitPrice, 'available', $sourceModule);
 
-		$productCurrencyPrice = array();
+		$productCurrencyPrice = [];
 		foreach ($productPriceDetails as $priceDetails) {
 			$productCurrencyPrice[$priceDetails['curid']] = $priceDetails['curvalue'];
 		}

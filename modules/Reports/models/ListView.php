@@ -22,36 +22,36 @@ class Reports_ListView_Model extends Vtiger_ListView_Model
 	{
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$privileges = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		$basicLinks = array();
+		$basicLinks = [];
 		if ($currentUserModel->isAdminUser() || $privileges->hasModulePermission($this->getModule()->getId())) {
-			$basicLinks = array(
-				array(
+			$basicLinks = [
+				[
 					'linktype' => 'LISTVIEWBASIC',
 					'linklabel' => 'LBL_ADD_RECORD',
 					'linkurl' => $this->getCreateRecordUrl(),
 					'linkicon' => '',
-					'childlinks' => array(
-						array(
+					'childlinks' => [
+						[
 							'linktype' => 'LISTVIEWBASIC',
 							'linklabel' => 'LBL_DETAIL_REPORT',
 							'linkurl' => $this->getCreateRecordUrl(),
 							'linkicon' => '',
-						),
-						array(
+						],
+						[
 							'linktype' => 'LISTVIEWBASIC',
 							'linklabel' => 'LBL_CHARTS',
 							'linkurl' => 'javascript:Reports_List_Js.addReport("index.php?module=' . $this->getModule()->get('name') . '&view=ChartEdit")',
 							'linkicon' => '',
-						)
-					)
-				),
-				array(
+						]
+					]
+				],
+				[
 					'linktype' => 'LISTVIEWBASIC',
 					'linklabel' => 'LBL_ADD_FOLDER',
 					'linkurl' => 'javascript:Reports_List_Js.triggerAddFolder("' . $this->getModule()->getAddFolderUrl() . '")',
 					'linkicon' => ''
-				)
-			);
+				]
+			];
 		}
 
 		foreach ($basicLinks as $basicLink) {
@@ -77,21 +77,21 @@ class Reports_ListView_Model extends Vtiger_ListView_Model
 	{
 		$currentUserModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 
-		$massActionLinks = array();
+		$massActionLinks = [];
 		if ($currentUserModel->hasModulePermission($this->getModule()->getId())) {
-			$massActionLinks[] = array(
+			$massActionLinks[] = [
 				'linktype' => 'LISTVIEWMASSACTION',
 				'linklabel' => 'LBL_DELETE',
 				'linkurl' => 'javascript:Reports_List_Js.massDelete("index.php?module=' . $this->getModule()->get('name') . '&action=MassDelete");',
-				'linkicon' => ''
-			);
+				'linkicon' => 'glyphicon glyphicon-envelope'
+			];
 
-			$massActionLinks[] = array(
+			$massActionLinks[] = [
 				'linktype' => 'LISTVIEWMASSACTION',
 				'linklabel' => 'LBL_MOVE_REPORT',
 				'linkurl' => 'javascript:Reports_List_Js.massMove("index.php?module=' . $this->getModule()->get('name') . '&view=MoveReports");',
 				'linkicon' => ''
-			);
+			];
 		}
 
 		foreach ($massActionLinks as $massActionLink) {
@@ -107,18 +107,18 @@ class Reports_ListView_Model extends Vtiger_ListView_Model
 	 */
 	public function getListViewHeaders()
 	{
-		return array(
+		return [
 			'reportname' => 'Report Name',
 			'description' => 'Description'
-		);
+		];
 	}
 
 	/**
 	 * Function to get the list view entries
 	 * @param Vtiger_Paging_Model $pagingModel
-	 * @return <Array> - Associative array of record id mapped to Vtiger_Record_Model instance.
+	 * @return array - Associative array of record id mapped to Vtiger_Record_Model instance.
 	 */
-	public function getListViewEntries($pagingModel, $searchResult = false)
+	public function getListViewEntries(Vtiger_Paging_Model $pagingModel, $searchResult = false)
 	{
 		$reportFolderModel = Reports_Folder_Model::getInstance();
 		$reportFolderModel->set('folderid', $this->get('folderid'));
@@ -136,7 +136,7 @@ class Reports_ListView_Model extends Vtiger_ListView_Model
 		}
 
 		$reportRecordModels = $reportFolderModel->getReports($pagingModel);
-		$pagingModel->calculatePageRange($reportRecordModels);
+		$pagingModel->calculatePageRange(count($reportRecordModels));
 		return $reportRecordModels;
 	}
 

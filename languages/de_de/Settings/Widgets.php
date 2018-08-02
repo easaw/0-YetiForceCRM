@@ -1,16 +1,14 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Widgets german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author skavenkf (K.Fink) 
+ */
 $languageStrings = [
-	'Widgets' => 'Module – Widgets',
-	'LBL_MODULE_DESC' => 'Widget Modulverwaltung',
+	'Widgets' => 'Übersichtsseite Zusammenfassung',
+	'LBL_MODULE_DESC' => 'Gestalten der Übersichtsseite Zusammenfassung',
 	'Add widget' => 'Widget hinzufügen',
 	'Type widget' => 'Typ',
 	'LBL_WIDGET_TYPE' => 'Widget Typ',
@@ -56,11 +54,17 @@ $languageStrings = [
 	'Add button info' => 'Knopf hinzufügen, um einen Datensatz in der Widget Datensatzansicht hinzu zufügen',
 	'No left margin info' => 'Deaktiviere linken Rand im Widget.',
 	'ProductsServices' => 'Produkte Dienstleistungen',
+	'LBL_SELECTING_FIELDS' => 'Felder auswählen',
+	'LBL_SELECTING_FIELDS_INFO' => 'Feldnamen eines gewählten Moduls welche in der Sicht angezeigt werden sollen.',
+	'LBL_VIEW_TYPE' => 'Sicht',
+	'LBL_VIEW_TYPE_INFO' => 'Widget Anzeigeart.',
+	'LBL_LIST' => 'Liste',
+	'LBL_SUMMARY' => 'Zusammenfassung',
 	'LBL_SELECT_BUTTON_INFO' => 'Aktivieren Sichtbarkeit Wählen Button',
 	'LBL_CONDITION' => 'Bedingung',
 	'LBL_CONDITION_INFO' => 'Bedingung wählen um Datensätze anzuzeigen',
 	'LBL_SHOW_ALL_RECORDS' => 'Alle Datensätze anzeigen',
-	'LBL_SHOW_ALL_RECORDS_INFO' => 'Nein - Berechtigungen beziehen sich auf den Benutzer <br> Ja - Suche nach Datensätze berücksichtigen keine Berechtigungen',
+	'LBL_SHOW_ALL_RECORDS_INFO' => 'Nein - Berechtigungen beziehen sich auf den Benutzer <br /> Ja - Suche nach Datensätze berücksichtigen keine Berechtigungen',
 	'LBL_SHITCH_HEADER' => 'Schalter im Header',
 	'LBL_SHITCH_HEADER_INFO' => 'Schalter befindet sich im Widget\'s Header.',
 	'HistoryRelation' => 'Zeitlinie',

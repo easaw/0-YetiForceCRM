@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * VERSION YetiForceCRM: 1.1.0 RC
- * *********************************************************************************************************************************** */
+/**
+ * Calendar russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'PLL_HOLIDAY_TIME' => 'Отпуск',
 	'PLL_BREAK_TIME' => 'Обед',
@@ -30,8 +26,6 @@ $languageStrings = [
 	'LBL_CALENDAR_CONFIG' => 'Календарь - Настройка',
 	'LBL_CALENDAR_CONFIG_DESCRIPTION' => 'Менеджер Календаря, позволяет настраивать календарь по своему вкусу',
 	'LBL_USER_COLORS' => 'Цвет Пользователя',
-	'LBL_CALENDAR_COLORS' => 'Цвета Календаря',
-	'LBL_CALENDAR_TYPE' => 'Тип Календаря',
 	'LBL_BREAK_TIME' => 'Обед',
 	'LBL_HOLIDAY' => 'Праздник',
 	'LBL_SAVE_CHANGES' => 'Изменения сохранены',

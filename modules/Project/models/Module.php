@@ -14,15 +14,14 @@ class Project_Module_Model extends Vtiger_Module_Model
 
 	public function getGanttProject($id)
 	{
-		$adb = PearDatabase::getInstance();
 		$branches = $this->getGanttMileston($id);
 		$response = ['data' => [], 'links' => []];
 		if ($branches) {
 			$recordModel = Vtiger_Record_Model::getInstanceById($id, $this->getName());
 			$project['id'] = $id;
-			$project['text'] = $recordModel->get('projectname');
+			$project['text'] = \App\Purifier::encodeHtml($recordModel->get('projectname'));
 			$project['priority'] = $recordModel->get('projectpriority');
-			$project['priority_label'] = vtranslate($recordModel->get('projectpriority'), $this->getName());
+			$project['priority_label'] = \App\Language::translate($recordModel->get('projectpriority'), $this->getName());
 			$project['type'] = 'project';
 			$project['module'] = $this->getName();
 			$project['open'] = true;
@@ -36,24 +35,27 @@ class Project_Module_Model extends Vtiger_Module_Model
 
 	public function getGanttMileston($id)
 	{
-		$adb = PearDatabase::getInstance();
 		$response = ['data' => [], 'links' => []];
-		$focus = CRMEntity::getInstance($this->getName());
-		$relatedListMileston = $focus->get_dependents_list($id, $this->getId(), \includes\Modules::getModuleId('ProjectMilestone'));
-		$resultMileston = $adb->query($relatedListMileston['query']);
-		$num = $adb->num_rows($resultMileston);
+		$relatedListView = Vtiger_RelationListView_Model::getInstance(Vtiger_Record_Model::getInstanceById($id), 'ProjectMilestone');
+		$relatedListView->getRelationModel()->set('QueryFields', [
+			'projectmilestoneid' => 'projectmilestoneid',
+			'projectid' => 'projectid',
+			'projectmilestonename' => 'projectmilestonename',
+			'projectmilestonedate' => 'projectmilestonedate',
+			'projectmilestone_progress' => 'projectmilestone_progress'
+		]);
+		$dataReader = $relatedListView->getRelationQuery()->createCommand()->query();
 		$milestoneTime = 0;
 		$progressInHours = 0;
-		for ($i = 0; $i < $num; $i++) {
+		while ($row = $dataReader->read()) {
 			$projectmilestone = [];
 			$link = [];
-			$row = $adb->query_result_rowdata($resultMileston, $i);
-			$link['id'] = $row['projectmilestoneid'];
-			$link['target'] = $row['projectmilestoneid'];
+			$link['id'] = $row['id'];
+			$link['target'] = $row['id'];
 			$link['type'] = 1;
 			$link['source'] = $row['projectid'];
-			$projectmilestone['id'] = $row['projectmilestoneid'];
-			$projectmilestone['text'] = $row['projectmilestonename'];
+			$projectmilestone['id'] = $row['id'];
+			$projectmilestone['text'] = \App\Purifier::encodeHtml($row['projectmilestonename']);
 			$projectmilestone['parent'] = $row['projectid'];
 			$projectmilestone['module'] = 'ProjectMilestone';
 			if ($row['projectmilestonedate']) {
@@ -62,10 +64,10 @@ class Project_Module_Model extends Vtiger_Module_Model
 			}
 			$projectmilestone['progress'] = (int) $row['projectmilestone_progress'] / 100;
 			$projectmilestone['priority'] = $row['projectmilestone_priority'];
-			$projectmilestone['priority_label'] = vtranslate($row['projectmilestone_priority'], 'ProjectMilestone');
+			$projectmilestone['priority_label'] = \App\Language::translate($row['projectmilestone_priority'], 'ProjectMilestone');
 			$projectmilestone['open'] = true;
 			$projectmilestone['type'] = 'milestone';
-			$projecttask = $this->getGanttTask($row['projectmilestoneid']);
+			$projecttask = $this->getGanttTask($row['id']);
 			$response['data'][] = $projectmilestone;
 			$response['links'][] = $link;
 			$response['data'] = array_merge($response['data'], $projecttask['data']);
@@ -81,21 +83,28 @@ class Project_Module_Model extends Vtiger_Module_Model
 
 	public function getGanttTask($id)
 	{
-		$adb = PearDatabase::getInstance();
+		$relatedListView = Vtiger_RelationListView_Model::getInstance(Vtiger_Record_Model::getInstanceById($id), 'ProjectTask');
+		$relatedListView->getRelationModel()->set('QueryFields', [
+			'id' => 'id',
+			'projectid' => 'projectid',
+			'projecttaskname' => 'projecttaskname',
+			'parentid' => 'parentid',
+			'projectmilestoneid' => 'projectmilestoneid',
+			'projecttaskprogress' => 'projecttaskprogress',
+			'projecttaskpriority' => 'projecttaskpriority',
+			'startdate' => 'startdate',
+			'targetenddate' => 'targetenddate'
+		]);
+		$dataReader = $relatedListView->getRelationQuery()->createCommand()->query();
 		$response = ['data' => [], 'links' => []];
-		$focus = CRMEntity::getInstance('ProjectMilestone');
-		$relatedListMileston = $focus->get_dependents_list($id, \includes\Modules::getModuleId('ProjectMilestone'), \includes\Modules::getModuleId('ProjectTask'));
-		$resultMileston = $adb->query($relatedListMileston['query']);
-		$num = $adb->num_rows($resultMileston);
 		$taskTime = 0;
-		for ($i = 0; $i < $num; $i++) {
+		while ($row = $dataReader->read()) {
 			$projecttask = [];
 			$link = [];
-			$row = $adb->query_result_rowdata($resultMileston, $i);
-			$link['id'] = $row['projecttaskid'];
-			$link['target'] = $row['projecttaskid'];
-			$projecttask['id'] = $row['projecttaskid'];
-			$projecttask['text'] = $row['projecttaskname'];
+			$link['id'] = $row['id'];
+			$link['target'] = $row['id'];
+			$projecttask['id'] = $row['id'];
+			$projecttask['text'] = \App\Purifier::encodeHtml($row['projecttaskname']);
 			if ($row['parentid']) {
 				$link['type'] = 0;
 				$link['source'] = $row['parentid'];
@@ -108,7 +117,7 @@ class Project_Module_Model extends Vtiger_Module_Model
 			settype($row['projecttaskprogress'], "integer");
 			$projecttask['progress'] = $row['projecttaskprogress'] / 100;
 			$projecttask['priority'] = $row['projecttaskpriority'];
-			$projecttask['priority_label'] = vtranslate($row['projecttaskpriority'], 'ProjectTask');
+			$projecttask['priority_label'] = \App\Language::translate($row['projecttaskpriority'], 'ProjectTask');
 			$projecttask['start_date'] = date('d-m-Y', strtotime($row['startdate']));
 			$endDate = strtotime(date('Y-m-d', strtotime($row['targetenddate'])) . ' +1 days');
 			$projecttask['end_date'] = date('d-m-Y', $endDate);

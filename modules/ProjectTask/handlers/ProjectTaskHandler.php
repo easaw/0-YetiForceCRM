@@ -1,47 +1,54 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
-class ProjectTaskHandler extends VTEventHandler
+/**
+ * ProjectTask ProjectTaskHandler handler class
+ * @package YetiForce.Handler
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+class ProjectTask_ProjectTaskHandler_Handler
 {
 
-	public function handleEvent($eventName, $data)
+	/**
+	 * EntityAfterSave handler function
+	 * @param App\EventHandler $eventHandler
+	 */
+	public function entityAfterSave(App\EventHandler $eventHandler)
 	{
-		$moduleName = $data->getModuleName();
-		if ($eventName == 'vtiger.entity.aftersave.final' && $moduleName == 'ProjectTask') {
-			$recordId = $data->getId();
-			if ($data->isNew()) {
-				$recordModel = Vtiger_Module_Model::getInstance('ProjectMilestone');
-				$recordModel->updateProgressMilestone($data->get('projectmilestoneid'));
-			} else {
-				vimport('include.events.VTEntityDelta');
-				$vtEntityDelta = new VTEntityDelta();
-				$delta = $vtEntityDelta->getEntityDelta($moduleName, $recordId, true);
-				foreach ($delta as $name => $value) {
-					if ($name == 'projectmilestoneid' || $name == 'estimated_work_time' || $name == 'projecttaskprogress') {
-						$recordModel = Vtiger_Module_Model::getInstance('ProjectMilestone');
-						if ($name == 'projectmilestoneid') {
-							$recordModel->updateProgressMilestone($value['currentValue']);
-							$recordModel->updateProgressMilestone($value['oldValue']);
-						} else {
-							$recordModel->updateProgressMilestone($data->get('projectmilestoneid'));
-						}
+		$recordModel = $eventHandler->getRecordModel();
+		if ($recordModel->isNew()) {
+			Vtiger_Module_Model::getInstance('ProjectMilestone')->updateProgressMilestone($recordModel->get('projectmilestoneid'));
+		} else {
+			$delta = $recordModel->getPreviousValue();
+			foreach ($delta as $name => &$value) {
+				if ($name === 'projectmilestoneid' || $name === 'estimated_work_time' || $name === 'projecttaskprogress') {
+					$moduledModel = Vtiger_Module_Model::getInstance('ProjectMilestone');
+					if ($name === 'projectmilestoneid') {
+						$moduledModel->updateProgressMilestone($recordModel->get($name));
+						$moduledModel->updateProgressMilestone($value);
+					} else {
+						$moduledModel->updateProgressMilestone($recordModel->get('projectmilestoneid'));
 					}
 				}
 			}
-		} elseif ($eventName == 'vtiger.entity.afterdelete' && $moduleName == 'ProjectTask') {
-			$recordModel = Vtiger_Module_Model::getInstance('ProjectMilestone');
-			$recordModel->updateProgressMilestone($data->get('projectmilestoneid'));
-		} elseif ($eventName == 'vtiger.entity.afterrestore' && $moduleName == 'ProjectTask') {
-			$recordModel = Vtiger_Module_Model::getInstance('ProjectMilestone');
-			$recordModel->updateProgressMilestone($data->get('projectmilestoneid'));
 		}
+	}
+
+	/**
+	 * EntityAfterDelete handler function
+	 * @param App\EventHandler $eventHandler
+	 */
+	public function entityAfterDelete(App\EventHandler $eventHandler)
+	{
+		Vtiger_Module_Model::getInstance('ProjectMilestone')->updateProgressMilestone($eventHandler->getRecordModel()->get('projectmilestoneid'));
+	}
+
+	/**
+	 * EntityChangeState handler function
+	 * @param App\EventHandler $eventHandler
+	 */
+	public function entityChangeState(App\EventHandler $eventHandler)
+	{
+		Vtiger_Module_Model::getInstance('ProjectMilestone')->updateProgressMilestone($eventHandler->getRecordModel()->get('projectmilestoneid'));
 	}
 }

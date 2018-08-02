@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Reservations polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'SINGLE_Reservations' => 'Rezerwacja',
 	'Reservations' => 'Rezerwacje',
@@ -33,6 +30,8 @@ $languageStrings = [
 	'LBL_MEETING_ROOMS' => 'Sale konferencyjne',
 	'LBL_EQUIPMENT' => 'Urządzenia',
 	'LBL_CARS' => 'Samochody',
+	'PLL_DRAFT' => 'Wersja robocza',
+	'PLL_CANCELLED' => 'Anulowano',
 ];
 $jsLanguageStrings = [
 	'MSG_ERROR_NUMBER' => 'Dopuszczalne znaki: [0-9]',
@@ -40,4 +39,14 @@ $jsLanguageStrings = [
 	'JS_HOURS_SHOULD_BE_SMALLER_THAN' => 'Czas pracy nie może przekraczać 24 godzin',
 	'JS_START_DATE' => 'Czas rozpoczęcia',
 	'JS_END_DATE' => 'Czas zakończenia',
+	'JS_COMPANY' => 'Firma',
+	'JS_TOTAL_TIME' => 'Łączny czas',
+	'PLL_ACCEPTED' => 'Do akceptacji',
+	'PLL_TO_APPROVAL' => 'Zaakceptowano',
+	'PLL_DRAFT' => 'Wersja robocza',
+	'PLL_CANCELLED' => 'Anulowano',
+	'JS_ASSIGNED_TO' => 'Właściciel rekordu',
+	'JS_TYPE' => 'Typ',
+	'JS_YES' => 'Tak',
+	'JS_NO' => 'Nie',
 ];

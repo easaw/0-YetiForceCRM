@@ -6,19 +6,22 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Contacts_Save_Action extends Vtiger_Save_Action
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$result = Vtiger_Util_Helper::transformUploadedFiles($_FILES, true);
 		$_FILES = $result['imagename'];
-
 		//To stop saveing the value of salutation as '--None--'
-		$salutationType = $request->get('salutationtype');
-		if ($salutationType === '--None--') {
+		if ($request->get('salutationtype') === '--None--') {
 			$request->set('salutationtype', '');
 		}
 		parent::process($request);

@@ -1,14 +1,11 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings QuickCreateEditor index view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_QuickCreateEditor_Index_View extends Settings_Vtiger_Index_View
 {
 
@@ -17,41 +14,45 @@ class Settings_QuickCreateEditor_Index_View extends Settings_Vtiger_Index_View
 		$this->exposeMethod('showFieldLayout');
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if ($this->isMethodExposed($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 		} else {
-			//by default show field layout
 			$this->showFieldLayout($request);
 		}
 	}
 
-	public function showFieldLayout(Vtiger_Request $request)
+	/**
+	 * View
+	 * @param \App\Request $request
+	 */
+	public function showFieldLayout(\App\Request $request)
 	{
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 		$menuModelsList = Vtiger_Module_Model::getQuickCreateModules();
 
 		if (empty($sourceModule)) {
-			//To get the first element
 			$firstElement = reset($menuModelsList);
-			$sourceModule = array($firstElement->get('name'));
-		} else
-			$sourceModule = array($sourceModule);
+			$sourceModule = [$firstElement->get('name')];
+		} else {
+			$sourceModule = [$sourceModule];
+		}
 
-		$quickCreateContents = array();
-
+		$quickCreateContents = [];
 		if (in_array('Calendar', $sourceModule))
-			$sourceModule = array('Calendar', 'Events');
+			$sourceModule = ['Calendar', 'Events'];
 
 		foreach ($sourceModule as $module) {
 			$recordModel = Vtiger_Record_Model::getCleanInstance($module);
-
 			$recordStructureInstance = Vtiger_RecordStructure_Model::getInstanceFromRecordModel($recordModel, Vtiger_RecordStructure_Model::RECORD_STRUCTURE_MODE_QUICKCREATE);
 			$quickCreateContents[$module] = $recordStructureInstance->getStructure();
 		}
-
 		$qualifiedModule = $request->getModule(false);
 
 		$viewer = $this->getViewer($request);

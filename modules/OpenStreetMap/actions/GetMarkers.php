@@ -3,64 +3,68 @@
 /**
  * Action to get markers
  * @package YetiForce.Action
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class OpenStreetMap_GetMarkers_Action extends Vtiger_BasicAjax_Action
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
+	{
+		$currentUserPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserPrivilegesModel->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+		if (!$request->isEmpty('srcModule') && !$currentUserPrivilegesModel->hasModulePermission($request->getByType('srcModule'))) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+	}
+
+	public function process(\App\Request $request)
 	{
 		$data = [];
-		$sourceModule = $request->get('srcModule');
+		$sourceModule = $request->getByType('srcModule');
 		$srcModuleModel = Vtiger_Module_Model::getInstance($sourceModule);
+		$coordinatesModel = OpenStreetMap_Coordinate_Model::getInstance();
+		$coordinatesModel->set('srcModuleModel', $srcModuleModel);
+		$coordinatesModel->set('radius', $request->getInteger('radius', 0));
+		$coordinatesModel->set('selectedIds', $request->getArray('selected_ids'));
+		$coordinatesModel->set('viewname', $request->getByType('viewname', 2));
+		$coordinatesModel->set('excludedIds', $request->getArray('excluded_ids'));
+		$coordinatesModel->set('searchKey', $request->get('search_key'));
+		$coordinatesModel->set('operator', $request->getByType('operator', 1));
+		$coordinatesModel->set('groupBy', $request->getByType('groupBy', 1));
+		$coordinatesModel->set('searchValue', $request->get('searchValue'));
+		$coordinatesModel->set('search_value', $request->get('search_value'));
+		$coordinatesModel->set('lon', $request->get('lon'));
+		$coordinatesModel->set('lat', $request->get('lat'));
+		$coordinatesModel->set('cache', $request->get('cache'));
+		$coordinatesModel->set('search_params', $request->get('search_params'));
+		$coordinatesModel->set('request', $request);
+
 		$moduleModel = Vtiger_Module_Model::getInstance($request->getModule());
-		$coordinatesCenter = [];
-		$radius = (int) $request->get('radius');
-		$searchValue = $request->get('searchValue');
-		if (!empty($searchValue)) {
-			$coordinatesCenter = OpenStreetMap_Module_Model::getCoordinatesBySearching($searchValue);
+		$coordinatesCenter = $coordinatesModel->getCoordinatesCenter();
+		if ($moduleModel->isAllowModules($sourceModule) && !$request->isEmpty('viewname')) {
+			$data ['coordinates'] = $coordinatesModel->getCoordinatesCustomView();
 		}
-		if ($request->has('lat') && $request->has('lon')) {
-			$coordinatesCenter = [
-				'lat' => $request->get('lat'),
-				'lon' => $request->get('lon')
-			];
-		}
-		if (!$moduleModel->isAllowModules($sourceModule)) {
-			$records = $this->getRecordIds($request);
-			$coordinates = [];
-			$parentRecords = [];
-			foreach ($records as $record) {
-				$parentRecords [] = Vtiger_ModulesHierarchy_Model::getParentRecord($record, $sourceModule, 2);
-			}
-			$parentRecords = array_unique($parentRecords);
-			foreach ($parentRecords as $parentRecord) {
-				if (!empty($parentRecord))
-					$coordinates = array_merge($coordinates, OpenStreetMap_Module_Model::readCoordinates($parentRecord));
-			}
-			$data ['coordinates'] = $coordinates;
-		} else {
-			$selectedIds = $request->get('selected_ids');
-			if ($selectedIds == 'all') {
-				$data ['coordinates'] = OpenStreetMap_Module_Model::readAllCoordinatesFromCustomeView($request, $srcModuleModel, $coordinatesCenter, $radius);
-			} else if(!empty($selectedIds)) {
-				$records = $this->getRecordIds($request);
-				$data ['coordinates'] = OpenStreetMap_Module_Model::readAllCoordinates($records, $srcModuleModel, $request->get('groupBy'), $coordinatesCenter, $radius);
-			}
+		if (!$request->isEmpty('cache')) {
+			$data['cache'] = $coordinatesModel->readCoordinatesCache();
 		}
 		if ($request->has('groupBy')) {
 			$legend = [];
-			foreach (OpenStreetMap_Module_Model::$colors as $key => $value) {
+			foreach (OpenStreetMap_Coordinate_Model::$colors as $key => $value) {
 				$legend [] = [
-					'value' => vtranslate($key, $sourceModule),
+					'value' => \App\Language::translate($key, $sourceModule),
 					'color' => $value
 				];
 			}
 			$data ['legend'] = $legend;
-		}
-		if(!$request->isEmpty('cache')){
-			$data['cache'] = OpenStreetMap_Module_Model::readCoordinatesCache($request->get('cache'), $request->get('groupBy'), $coordinatesCenter, $radius);
 		}
 		if (!empty($coordinatesCenter)) {
 			$data['coordinatesCeneter'] = $coordinatesCenter;
@@ -68,59 +72,5 @@ class OpenStreetMap_GetMarkers_Action extends Vtiger_BasicAjax_Action
 		$response = new Vtiger_Response();
 		$response->setResult($data);
 		$response->emit();
-	}
-
-	private function getRecordsForParentModule($srcModuleModel, $moduleModel, $records, $fieldMap)
-	{
-		$currentUserModel = Users_Privileges_Model::getCurrentUserModel();
-		$recordsToReturn = [];
-		foreach ($fieldMap as $referenceModule => $fieldName) {
-			if ($moduleModel->isAllowModules($referenceModule)) {
-				$queryGenerator = new QueryGenerator($srcModuleModel->getName(), $currentUserModel);
-				$queryGenerator->setFields([$fieldName]);
-				$queryGenerator->setCustomCondition([
-					'tablename' => 'vtiger_crmentity',
-					'column' => 'crmid',
-					'operator' => 'IN',
-					'value' => '(' . implode(',', $records) . ')',
-					'glue' => 'AND'
-				]);
-				$query = $queryGenerator->getQuery();
-				$db = PearDatabase::getInstance();
-				$result = $db->query($query);
-				while ($row = $db->getRow($result)) {
-					if (!empty($row[$fieldName]))
-						$recordsToReturn [$row[$fieldName]] = $row[$fieldName];
-				}
-			}
-		}
-		return $recordsToReturn;
-	}
-
-	private function getRecordIds(Vtiger_Request $request)
-	{
-		$cvId = $request->get('viewname');
-		$module = $request->get('srcModule');
-		$selectedIds = $request->get('selected_ids');
-		$excludedIds = $request->get('excluded_ids');
-		if (!empty($selectedIds) && $selectedIds != 'all') {
-			return $selectedIds;
-		}
-		if ($selectedIds == 'all') {
-			$customViewModel = CustomView_Record_Model::getInstanceById($cvId);
-			if ($customViewModel) {
-				$searchKey = $request->get('search_key');
-				$searchValue = $request->get('search_value');
-				$operator = $request->get('operator');
-				if (!empty($operator)) {
-					$customViewModel->set('operator', $operator);
-					$customViewModel->set('search_key', $searchKey);
-					$customViewModel->set('search_value', $searchValue);
-				}
-				$customViewModel->set('search_params', $request->get('search_params'));
-				return $customViewModel->getRecordIds($excludedIds, $module, false);
-			}
-		}
-		return [];
 	}
 }

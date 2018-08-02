@@ -10,118 +10,108 @@
 ********************************************************************************/
 -->*}
 {strip}
-	{assign var="CompanyDetails" value=getCompanyDetails()}
 	{assign var="MODULE" value='Users'}
 	<div class="container">
 		<div id="login-area" class="login-area">
 			<div class="login-space"></div>
 			<div class="logo">
-				<img title="{$CompanyDetails['companyname']}" height='{$CompanyDetails['height_panellogo']}' class="logo" src="storage/Logo/{$CompanyDetails['panellogoname']}" alt="{$CompanyDetails['companyname']}">
+				<img title="{$COMPANY_DETAILS->get('name')}" height="{$COMPANY_DETAILS->get('logo_login_height')}px" class="logo" src="{$COMPANY_DETAILS->getLogo('logo_login')->get('imageUrl')}" alt="{$COMPANY_DETAILS->get('name')}">
 			</div>
 			<div class="" id="loginDiv">
-				<div class='fieldContainer marginLeft0 marginRight0 row col-md-12'>
-					<form class="login-form" action="index.php?module=Users&action=Login" method="POST">
-						<div class='marginLeft0  marginRight0 row col-xs-10'>
-							<div class="form-group first-group has-feedback">
-								<label for="username" class="sr-only">{vtranslate('LBL_USER',$MODULE)}</label>
-								<input name="username" type="text" id="username" class="form-control input-lg" {if vglobal('systemMode') == 'demo'}value="demo"{/if} placeholder="{vtranslate('LBL_USER',$MODULE)}" required="" autofocus="">
-								<span class="adminIcon-user form-control-feedback" aria-hidden="true"></span>
-							</div>
-							<div class="form-group {if $LANGUAGE_SELECTION || $LAYOUT_SELECTION}first-group {/if} has-feedback">
-								<label for="password" class="sr-only">{vtranslate('Password',$MODULE)}</label>
-								<input name="password" type="password" class="form-control input-lg" title="{vtranslate('Password',$MODULE)}" id="password" name="password" {if vglobal('systemMode') == 'demo'}value="demo"{/if} placeholder="{vtranslate('Password',$MODULE)}">
-								<span class="userIcon-OSSPasswords form-control-feedback" aria-hidden="true"></span>
-							</div>
-							{assign var=COUNTERFIELDS value=2}
-							{if $LANGUAGE_SELECTION}
-								{assign var=COUNTERFIELDS value=$COUNTERFIELDS+1}
-								<div class="form-group {if $LAYOUT_SELECTION}first-group {/if}">
-									<select class="input-lg form-control" title="{vtranslate('LBL_CHOOSE_LANGUAGE',$MODULE)}" name="language">
-										{foreach item=VALUE key=KEY from=Vtiger_Language_Handler::getAllLanguages()}
-											<option value="{Vtiger_Util_Helper::toSafeHTML($KEY)}">{$VALUE}</option>
-										{/foreach}
-									</select>	
+				{if !$IS_BLOCKED_IP}
+					<div class='fieldContainer marginLeft0 marginRight0 row col-md-12'>
+						<form class="login-form" action="index.php?module=Users&action=Login" method="POST" {if !AppConfig::security('LOGIN_PAGE_REMEMBER_CREDENTIALS')}autocomplete="off"{/if}>
+							<div class='marginLeft0  marginRight0 row col-xs-10'>
+								<div class="form-group first-group has-feedback">
+									<label for="username" class="sr-only">{\App\Language::translate('LBL_USER',$MODULE)}</label>
+									<input name="username" type="text" id="username" class="form-control input-lg" {if vglobal('systemMode') == 'demo'}value="demo"{/if} placeholder="{\App\Language::translate('LBL_USER',$MODULE)}" required="" {if !AppConfig::security('LOGIN_PAGE_REMEMBER_CREDENTIALS')}autocomplete="off"{/if} autofocus="">
+									<span class="adminIcon-user form-control-feedback" aria-hidden="true"></span>
 								</div>
-							{/if}
-							{if $LAYOUT_SELECTION}
-								{assign var=COUNTERFIELDS value=$COUNTERFIELDS+1}
-								<div class="form-group">
-									<select class="input-lg form-control" title="{vtranslate('LBL_SELECT_LAYOUT',$MODULE)}" name="layout">
-										{foreach item=VALUE key=KEY from=Yeti_Layout::getAllLayouts()}
-											<option value="{Vtiger_Util_Helper::toSafeHTML($KEY)}">{$VALUE}</option>
-										{/foreach}
-									</select>	
+								<div class="form-group {if $LANGUAGE_SELECTION || $LAYOUT_SELECTION}first-group {/if} has-feedback">
+									<label for="password" class="sr-only">{\App\Language::translate('Password',$MODULE)}</label>
+									<input name="password" type="password" class="form-control input-lg" title="{\App\Language::translate('Password',$MODULE)}" id="password" name="password" {if vglobal('systemMode') == 'demo'}value="demo"{/if} {if !AppConfig::security('LOGIN_PAGE_REMEMBER_CREDENTIALS')}autocomplete="off"{/if} placeholder="{\App\Language::translate('Password',$MODULE)}">
+									<span class="userIcon-OSSPasswords form-control-feedback" aria-hidden="true"></span>
 								</div>
-							{/if}
-						</div>
-						<div class='col-xs-2 marginRight0' >
-							<button class="btn btn-lg btn-primary btn-block heightDiv_{$COUNTERFIELDS}" type="submit" title="{vtranslate('LBL_SIGN_IN', $MODULE_NAME)}">
-								<strong>></strong>
-							</button>
-						</div>
-					</form>
-				</div>
-				{if AppConfig::security('RESET_LOGIN_PASSWORD')}
-					<div class="form-group">
-						<div class="">
-							<a href="#" id="forgotpass" >{vtranslate('ForgotPassword',$MODULE)}?</a>
-						</div>
+								{assign var=COUNTERFIELDS value=2}
+								{if $LANGUAGE_SELECTION}
+									{assign var=COUNTERFIELDS value=$COUNTERFIELDS+1}
+									{assign var=DEFAULT_LANGUAGE value=AppConfig::main('default_language')}
+									<div class="form-group {if $LAYOUT_SELECTION}first-group {/if}">
+										<select class="input-lg form-control" title="{\App\Language::translate('LBL_CHOOSE_LANGUAGE',$MODULE)}" name="loginLanguage">
+											{foreach item=VALUE key=KEY from=\App\Language::getAll()}
+												<option {if $KEY eq $DEFAULT_LANGUAGE} selected {/if}  value="{\App\Purifier::encodeHtml($KEY)}">{$VALUE}</option>
+											{/foreach}
+										</select>	
+									</div>
+								{/if}
+								{if $LAYOUT_SELECTION}
+									{assign var=COUNTERFIELDS value=$COUNTERFIELDS+1}
+									<div class="form-group">
+										<select class="input-lg form-control" title="{\App\Language::translate('LBL_SELECT_LAYOUT',$MODULE)}" name="layout">
+											{foreach item=VALUE key=KEY from=\App\Layout::getAllLayouts()}
+												<option value="{\App\Purifier::encodeHtml($KEY)}">{$VALUE}</option>
+											{/foreach}
+										</select>	
+									</div>
+								{/if}
+							</div>
+							<div class='col-xs-2 marginRight0' >
+								<button class="btn btn-lg btn-primary btn-block heightDiv_{$COUNTERFIELDS}" type="submit" title="{\App\Language::translate('LBL_SIGN_IN', $MODULE_NAME)}">
+									<strong>></strong>
+								</button>
+							</div>
+						</form>
 					</div>
+					{if AppConfig::security('RESET_LOGIN_PASSWORD') && App\Mail::getDefaultSmtp()}
+						<div class="form-group">
+							<div class="">
+								<a href="#" id="forgotpass" >{\App\Language::translate('ForgotPassword',$MODULE)}?</a>
+							</div>
+						</div>
+					{/if}
 				{/if}
 				<div class="form-group col-xs-12 noPadding">
-					{if $ERROR eq 1}
-						<div class="alert alert-warning">
-							<p>{vtranslate('Invalid username or password.',$MODULE)}</p>
+					{if $MESSAGE}
+						<div class="alert {if $MESSAGE_TYPE === 'success'}alert-success{elseif $MESSAGE_TYPE === 'error'}alert-danger{else}alert-warning{/if}">
+							<p>{$MESSAGE}</p>
 						</div>
 					{/if}
-					{if $ERROR eq 2}
-						<div class="alert alert-warning">
-							<p>{vtranslate('Too many failed login attempts.',$MODULE)}</p>
-						</div>
-					{/if}
-					{if $FPERROR}
-						<div class="alert alert-warning">
-							<p>{vtranslate('Invalid Username or Email address.',$MODULE)}</p>
-						</div>
-					{/if}
-					{if $STATUS}
-						<div class="alert alert-success">
-							<p>{vtranslate('Mail has been sent to your inbox, please check your e-mail.',$MODULE)}</p>
-						</div>
-					{/if}
-					{if $STATUS_ERROR}
-						<div class="alert alert-warning">
-							<p>{vtranslate('Outgoing mail server was not configured.',$MODULE)}</p>
+					{if $IS_BLOCKED_IP}
+						<div class="alert alert-danger">
+							<div class="row">
+								<div class="col-md-2"><span style="font-size: 60px;" class="glyphicon glyphicon-minus-sign" aria-hidden="true"></span></div>
+								<div class="col-md-10"><p>{\App\Language::translate('LBL_IP_IS_BLOCKED',$MODULE_NAME)}</p></div>
+							</div>
 						</div>
 					{/if}
 				</div>
 			</div>	
-			{if AppConfig::security('RESET_LOGIN_PASSWORD')}
+			{if AppConfig::security('RESET_LOGIN_PASSWORD') && App\Mail::getDefaultSmtp()}
 				<div class="hide" id="forgotPasswordDiv">
 					<div class='fieldContainer marginLeft0 marginRight0 row col-md-12'>
-						<form class="login-form" action="modules/Users/actions/ForgotPassword.php" method="POST">
+						<form class="forgot-form" action="index.php?module=Users&action=ForgotPassword" method="POST">
 							<div class='marginLeft0  marginRight0 row col-xs-10'>	
 								<div class="form-group first-group has-feedback">
-									<label for="username" class="sr-only">{vtranslate('LBL_USER',$MODULE)}</label>
-									<input type="text" class="form-control input-lg" title="{vtranslate('LBL_USER',$MODULE)}" id="username" name="user_name" placeholder="{vtranslate('LBL_USER',$MODULE)}">
+									<label for="usernameFp" class="sr-only">{\App\Language::translate('LBL_USER',$MODULE)}</label>
+									<input type="text" class="form-control input-lg" title="{\App\Language::translate('LBL_USER',$MODULE)}" id="usernameFp" name="user_name" placeholder="{\App\Language::translate('LBL_USER',$MODULE)}">
 									<span class="adminIcon-user form-control-feedback" aria-hidden="true"></span>
 								</div>
 								<div class="form-group has-feedback">
-									<label for="emailId" class="sr-only">{vtranslate('LBL_EMAIL',$MODULE)}</label>
-									<input type="text" class="form-control input-lg" autocomplete="off" title="{vtranslate('LBL_EMAIL',$MODULE)}" id="emailId" name="emailId" placeholder="Email">
+									<label for="emailId" class="sr-only">{\App\Language::translate('LBL_EMAIL',$MODULE)}</label>
+									<input type="text" class="form-control input-lg" autocomplete="off" title="{\App\Language::translate('LBL_EMAIL',$MODULE)}" id="emailId" name="emailId" placeholder="Email">
 									<span class="glyphicon glyphicon-envelope form-control-feedback" aria-hidden="true"></span>
 								</div>
 							</div>
 							<div class='col-xs-2 marginRight0' >
 								<button type="submit" style='height:102px' id="retrievePassword" class="btn btn-lg btn-primary btn-block sbutton" title="Retrieve Password">
-									{*vtranslate('LBL_SEND',$MODULE)*}
+									{*\App\Language::translate('LBL_SEND',$MODULE)*}
 									<strong>></strong>
 								</button>
 							</div>
 						</form>
 					</div>
 					<div class="login-text form-group">
-						<a href="#" id="backButton" >{vtranslate('LBL_TO_CRM',$MODULE)}</a>
+						<a href="#" id="backButton" >{\App\Language::translate('LBL_TO_CRM',$MODULE)}</a>
 					</div>
 				</div>
 			{/if}
@@ -137,31 +127,14 @@
 				jQuery("#forgotPasswordDiv").removeClass('hide');
 				jQuery("#forgotPasswordDiv").show();
 			});
-
 			jQuery("a#backButton").click(function () {
 				jQuery("#loginDiv").removeClass('hide');
 				jQuery("#loginDiv").show();
 				jQuery("#forgotPasswordDiv").hide();
 			});
-
-			jQuery("input[name='retrievePassword']").click(function () {
-				var username = jQuery('#user_name').val();
-				var email = jQuery('#emailId').val();
-				var email1 = email.replace(/^\s+/, '').replace(/\s+$/, '');
-				var emailFilter = /^[^@]+@[^@.]+\.[^@]*\w\w$/;
-				var illegalChars = /[\(\)\<\>\,\;\:\\\"\[\]]/;
-
-				if (username == '') {
-					alert('Please enter valid username');
-					return false;
-				} else if (!emailFilter.test(email1) || email == '') {
-					alert('Please enater valid email address');
-					return false;
-				} else if (email.match(illegalChars)) {
-					alert("The email address contains illegal characters.");
-					return false;
-				} else {
-					return true;
+			jQuery("form.forgot-form").submit(function (event) {
+				if ($("#usernameFp").val() === "" || $("#emailId").val() === "") {
+					event.preventDefault();
 				}
 			});
 		});

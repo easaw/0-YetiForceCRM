@@ -7,13 +7,16 @@ class CalculationsAll
 	public $sequence = 0;
 	public $reference = 'SCalculations';
 
-	public function process($instance)
+	/**
+	 * Process function
+	 * @param Vtiger_Record_Model $recordModel
+	 * @return int
+	 */
+	public function process(Vtiger_Record_Model $recordModel)
 	{
-		$db = PearDatabase::getInstance();
-		$calculations = 'SELECT COUNT(1) FROM u_yf_scalculations
-				INNER JOIN vtiger_crmentity ON vtiger_crmentity.crmid=u_yf_scalculations.scalculationsid
-				WHERE vtiger_crmentity.deleted=0 && u_yf_scalculations.accountid = ?';
-		$resultCalculations = $db->pquery($calculations, [$instance->getId()]);
-		return (int) $db->getSingleValue($resultCalculations);
+		$count = (new \App\Db\Query())->from('u_#__scalculations')
+				->innerJoin('vtiger_crmentity', 'u_#__scalculations.scalculationsid = vtiger_crmentity.crmid')
+				->where(['deleted' => 0, 'u_#__scalculations.accountid' => $recordModel->getId()])->count(1);
+		return (int) $count;
 	}
 }

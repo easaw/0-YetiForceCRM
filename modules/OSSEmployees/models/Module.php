@@ -1,28 +1,24 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * OSSEmployees module model class
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class OSSEmployees_Module_Model extends Vtiger_Module_Model
 {
 
 	/**
 	 * Function to get list view query for popup window
-	 * @param <String> $sourceModule Parent module
-	 * @param <String> $field parent fieldname
-	 * @param <Integer> $record parent id
-	 * @param <String> $listQuery
-	 * @return <String> Listview Query
+	 * @param string $sourceModule Parent module
+	 * @param string $field parent fieldname
+	 * @param string $record parent id
+	 * @param \App\QueryGenerator $queryGenerator
 	 */
-	public function getQueryByModuleField($sourceModule, $field, $record, $listQuery)
+	public function getQueryByModuleField($sourceModule, $field, $record, \App\QueryGenerator $queryGenerator)
 	{
-		return $listQuery . " && vtiger_ossemployees.employee_status = 'Employee'";
+		$queryGenerator->addNativeCondition(['vtiger_ossemployees.employee_status' => 'Employee']);
 	}
 
 	public function getWorkingDays($startDate, $endDate)
@@ -49,9 +45,8 @@ class OSSEmployees_Module_Model extends Vtiger_Module_Model
 
 	public function getBarChartColors($chartData)
 	{
-		$numSelectedTimeTypes = count($chartData);
 		$i = 0;
-		$colors = array('#4bb2c5', '#EAA228', '#c5b47f');
+		$colors = ['#4bb2c5', '#EAA228', '#c5b47f'];
 		foreach ($chartData as $key => $value) {
 			$result[$key] = $colors[$i];
 			$i++;

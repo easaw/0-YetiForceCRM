@@ -22,26 +22,23 @@ class Vendors_ListView_Model extends Vtiger_ListView_Model
 		$links = parent::getListViewMassActions($linkParams);
 		$moduleModel = $this->getModule();
 		$currentUserModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-
 		$massActionLinks = [];
-		if ($currentUserModel->hasModulePermission('Emails') && $currentUserModel->hasModulePermission('OSSMail') && $currentUserModel->hasModuleActionPermission($moduleModel->getId(), 'MassComposeEmail') && AppConfig::main('isActiveSendingMails') && Users_Privileges_Model::isPermitted('OSSMail') && !Settings_ModuleManager_Library_Model::checkLibrary('roundcube')) {
+		if ($moduleModel->isPermitted('MassComposeEmail') && AppConfig::main('isActiveSendingMails') && App\Mail::getDefaultSmtp()) {
 			$massActionLinks[] = [
 				'linktype' => 'LISTVIEWMASSACTION',
 				'linklabel' => 'LBL_MASS_SEND_EMAIL',
-				'linkurl' => 'javascript:Vtiger_List_Js.triggerSendEmail();',
-				'linkicon' => ''
+				'linkurl' => 'javascript:Vtiger_List_Js.triggerSendEmail()',
+				'linkicon' => 'glyphicon glyphicon-envelope'
 			];
 		}
-
-		if ($currentUserModel->hasModulePermission('SMSNotifier') && $currentUserModel->hasModuleActionPermission($moduleModel->getId(), 'MassSendSMS')) {
+		if ($currentUserModel->hasModulePermission('SMSNotifier') && $currentUserModel->hasModuleActionPermission($moduleModel->getId(), 'MassSendSMS') && SMSNotifier_Module_Model::checkServer()) {
 			$massActionLinks[] = [
 				'linktype' => 'LISTVIEWMASSACTION',
 				'linklabel' => 'LBL_MASS_SEND_SMS',
 				'linkurl' => 'javascript:Vtiger_List_Js.triggerSendSms("index.php?module=' . $moduleModel->getName() . '&view=MassActionAjax&mode=showSendSMSForm","SMSNotifier");',
-				'linkicon' => ''
+				'linkicon' => 'glyphicon glyphicon-envelope'
 			];
 		}
-
 		foreach ($massActionLinks as $massActionLink) {
 			$links['LISTVIEWMASSACTION'][] = Vtiger_Link_Model::getInstanceFromValues($massActionLink);
 		}

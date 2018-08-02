@@ -1,15 +1,13 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
-class Calendar_Calendar_Model extends Vtiger_Base_Model
+/**
+ * Calendar Model Class
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author YetiForce.com
+ */
+class Calendar_Calendar_Model extends App\Base
 {
 
 	public $moduleName = 'Calendar';
@@ -25,19 +23,31 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 		return $this->moduleName;
 	}
 
+	private function getLabel($labels, $key)
+	{
+		if (isset($labels[$key])) {
+			return $labels[$key];
+		}
+		return '';
+	}
+
+	/**
+	 * Get query
+	 * @return \App\Db\Query
+	 */
 	public function getQuery()
 	{
-		$query = 'SELECT vtiger_activity.*, relcrm.setype AS linkmod, procrm.setype AS processmod, subprocrm.setype AS subprocessmod
-		FROM vtiger_activity
-		LEFT JOIN vtiger_activitycf ON vtiger_activitycf.activityid = vtiger_activity.activityid
-		LEFT JOIN vtiger_crmentity ON vtiger_crmentity.crmid = vtiger_activity.activityid
-		LEFT JOIN vtiger_crmentity relcrm ON relcrm.crmid = vtiger_activity.link
-		LEFT JOIN vtiger_crmentity procrm ON procrm.crmid = vtiger_activity.process
-		LEFT JOIN vtiger_crmentity subprocrm ON subprocrm.crmid = vtiger_activity.subprocess
-		WHERE vtiger_activity.deleted = 0 ';
-		$query .= \App\PrivilegeQuery::getAccessConditions($this->getModuleName());
-
-		$params = [];
+		$queryGenerator = new App\QueryGenerator($this->getModuleName());
+		if ($this->has('customFilter')) {
+			$queryGenerator->initForCustomViewById($this->get('customFilter'));
+		}
+		$query = $queryGenerator->createQuery();
+		$query->select(['vtiger_activity.*', 'linkmod' => 'relcrm.setype', 'processmod' => 'procrm.setype', 'subprocessmod' => 'subprocrm.setype', 'linkecrmmod' => 'linkecrm.setype'])
+			->innerJoin('vtiger_activitycf', 'vtiger_activity.activityid = vtiger_activitycf.activityid')
+			->leftJoin('vtiger_crmentity relcrm', 'vtiger_activity.link = relcrm.crmid')
+			->leftJoin('vtiger_crmentity linkecrm', 'vtiger_activity.linkextend = linkecrm.crmid')
+			->leftJoin('vtiger_crmentity procrm', 'vtiger_activity.process = procrm.crmid')
+			->leftJoin('vtiger_crmentity subprocrm', 'vtiger_activity.subprocess = subprocrm.crmid');
 		if ($this->get('start') && $this->get('end')) {
 			$dbStartDateOject = DateTimeField::convertToDBTimeZone($this->get('start'));
 			$dbStartDateTime = $dbStartDateOject->format('Y-m-d H:i:s');
@@ -45,68 +55,75 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 			$dbEndDateObject = DateTimeField::convertToDBTimeZone($this->get('end'));
 			$dbEndDateTime = $dbEndDateObject->format('Y-m-d H:i:s');
 			$dbEndDate = $dbEndDateObject->format('Y-m-d');
-			$query .= " && ( (concat(date_start, ' ', time_start)  >= ? && concat(date_start, ' ', time_start) <= ?) || (concat(due_date, ' ', time_end)  >= ? && concat(due_date, ' ', time_end) <= ?) || (date_start < ? && due_date > ?) ) ";
-			$params[] = $dbStartDateTime;
-			$params[] = $dbEndDateTime;
-			$params[] = $dbStartDateTime;
-			$params[] = $dbEndDateTime;
-			$params[] = $dbStartDate;
-			$params[] = $dbEndDate;
+			$query->andWhere([
+				'or',
+				[
+					'and',
+					['>=', new \yii\db\Expression("CONCAT(date_start, ' ', time_start)"), $dbStartDateTime],
+					['<=', new \yii\db\Expression("CONCAT(date_start, ' ', time_start)"), $dbEndDateTime]
+				],
+				[
+					'and',
+					['>=', new \yii\db\Expression("CONCAT(due_date, ' ', time_end)"), $dbStartDateTime],
+					['<=', new \yii\db\Expression("CONCAT(due_date, ' ', time_end)"), $dbEndDateTime]
+				],
+				[
+					'and',
+					['<', 'date_start', $dbStartDate],
+					['>', 'due_date', $dbEndDate]
+				]
+			]);
 		}
-		$db = \PearDatabase::getInstance();
 		$types = $this->get('types');
 		if (!empty($types)) {
-			$query .= ' && vtiger_activity.activitytype IN (' . $db->generateQuestionMarks($this->get('types')) . ')';
-			$params[] = $types;
+			$query->andWhere(['vtiger_activity.activitytype' => $this->get('types')]);
 		}
-		if ($this->get('time') == 'current') {
-			$stateActivityLabels = Calendar_Module_Model::getComponentActivityStateLabel('current');
-			$query .= ' && vtiger_activity.status IN (' . $db->generateQuestionMarks($stateActivityLabels) . ')';
-			$params[] = $stateActivityLabels;
-		}
-		if ($this->get('time') == 'history') {
-			$stateActivityLabels = Calendar_Module_Model::getComponentActivityStateLabel('history');
-			$query .= ' && vtiger_activity.status IN (' . $db->generateQuestionMarks($stateActivityLabels) . ')';
-			$params[] = $stateActivityLabels;
+		switch ($this->get('time')) {
+			case 'current':
+				$query->andWhere(['vtiger_activity.status' => Calendar_Module_Model::getComponentActivityStateLabel('current')]);
+				break;
+			case 'history':
+				$query->andWhere(['vtiger_activity.status' => Calendar_Module_Model::getComponentActivityStateLabel('history')]);
+				break;
 		}
 		$activityStatus = $this->get('activitystatus');
 		if (!empty($activityStatus)) {
-			$query .= ' && vtiger_activity.status IN (' . $db->generateQuestionMarks($activityStatus) . ')';
-			$params[] = $activityStatus;
-		}
-		$restrict = $this->get('restrict');
-		if (!empty($restrict)) {
-			$query .= ' && vtiger_activity.activityid IN (' . $db->generateQuestionMarks($restrict) . ')';
-			$params[] = $restrict;
+			$query->andWhere(['vtiger_activity.status' => $activityStatus]);
 		}
 		if ($this->has('filters')) {
 			foreach ($this->get('filters') as $filter) {
-				$filterClassName = Vtiger_Loader::getComponentClassName('CalendarFilter', $filter['name'], 'Calendar') . ')';
+				$filterClassName = Vtiger_Loader::getComponentClassName('CalendarFilter', $filter['name'], 'Calendar');
 				$filterInstance = new $filterClassName();
-				$condition = $filterInstance->getCondition($filter['value']);
-				if (!empty($condition)) {
-					$query .= ' ' . $condition;
+				if ($filterInstance->checkPermissions() && $conditions = $filterInstance->getCondition($filter['value'])) {
+					$query->andWhere($conditions);
 				}
 			}
 		}
+		$conditions = [];
+		$currentUser = Users_Privileges_Model::getCurrentUserModel();
+		$roleInstance = Settings_Roles_Record_Model::getInstanceById($currentUser->get('roleid'));
+		$calendarAlloRecords = $roleInstance->get('clendarallorecords');
+		if ($calendarAlloRecords === 1) {
+			$subQuery = (new \App\Db\Query())->select('crmid')->from('u_#__crmentity_showners')->where(['userid' => $currentUser->getId()]);
+			$conditions[] = ['vtiger_crmentity.crmid' => $subQuery];
+		}
 		$users = $this->get('user');
 		if (!empty($users)) {
-			$query .= ' && vtiger_activity.smownerid IN (' . $db->generateQuestionMarks($users) . ')';
-			$params[] = $users;
+			$conditions[] = ['vtiger_crmentity.smownerid' => $users];
 		}
-		$query .= ' ORDER BY date_start,time_start ASC';
-		return ['query' => $query, 'params' => $params];
+		if ($conditions) {
+			$query->andWhere(array_merge(['or'], $conditions));
+		}
+		$query->orderBy('vtiger_activity.date_start,vtiger_activity.time_start');
+		return $query;
 	}
 
 	public function getEntity()
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$db = PearDatabase::getInstance();
-		$data = $this->getQuery();
-		$result = $db->pquery($data['query'], $data['params']);
+		$dataReader = $this->getQuery()->createCommand()->query();
 		$return = $records = $ids = [];
-
-		while ($record = $db->getRow($result)) {
+		while ($record = $dataReader->read()) {
 			$records[] = $record;
 			if (!empty($record['link'])) {
 				$ids[] = $record['link'];
@@ -117,8 +134,11 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 			if (!empty($record['subprocess'])) {
 				$ids[] = $record['subprocess'];
 			}
+			if (!empty($record['linkextend'])) {
+				$ids[] = $record['linkextend'];
+			}
 		}
-		$labels = \includes\Record::getLabel($ids);
+		$labels = \App\Record::getLabel($ids);
 
 		foreach ($records as &$record) {
 			$item = [];
@@ -126,34 +146,39 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 			$activitytype = $record['activitytype'];
 			$item['id'] = $crmid;
 			$item['module'] = $this->getModuleName();
-			$item['title'] = $record['subject'];
+			$item['title'] = \App\Purifier::encodeHtml($record['subject']);
 			$item['url'] = 'index.php?module=' . $this->getModuleName() . '&view=Detail&record=' . $crmid;
 			$item['set'] = $record['activitytype'] == 'Task' ? 'Task' : 'Event';
-			$item['lok'] = $record['location'];
-			$item['pri'] = $record['priority'];
-			$item['sta'] = $record['status'];
-			$item['vis'] = $record['visibility'];
-			$item['state'] = $record['state'];
-			$item['smownerid'] = vtlib\Functions::getOwnerRecordLabel($record['smownerid']);
+			$item['lok'] = \App\Purifier::encodeHtml($record['location']);
+			$item['pri'] = \App\Purifier::encodeHtml($record['priority']);
+			$item['sta'] = \App\Purifier::encodeHtml($record['status']);
+			$item['vis'] = \App\Purifier::encodeHtml($record['visibility']);
+			$item['state'] = \App\Purifier::encodeHtml($record['state']);
+			$item['smownerid'] = \App\Fields\Owner::getLabel($record['smownerid']);
 
 			//translate
-			$item['labels']['sta'] = vtranslate($record['status'], $this->getModuleName());
-			$item['labels']['pri'] = vtranslate($record['priority'], $this->getModuleName());
-			$item['labels']['state'] = vtranslate($record['state'], $this->getModuleName());
+			$item['labels']['sta'] = \App\Language::translate($record['status'], $this->getModuleName());
+			$item['labels']['pri'] = \App\Language::translate($record['priority'], $this->getModuleName());
+			$item['labels']['state'] = \App\Language::translate($record['state'], $this->getModuleName());
 
 			//Relation
 			$item['link'] = $record['link'];
-			$item['linkl'] = $labels[$record['link']];
+			$item['linkl'] = $this->getLabel($labels, $record['link']);
+			// / migoi
 			$item['linkm'] = $record['linkmod'];
 			//Process
 			$item['process'] = $record['process'];
-			$item['procl'] = vtlib\Functions::textLength($labels[$record['process']]);
+			$item['procl'] = vtlib\Functions::textLength($this->getLabel($labels, $record['process']));
+			// / migoi
 			$item['procm'] = $record['processmod'];
 			//Subprocess
 			$item['subprocess'] = $record['subprocess'];
-			$item['subprocl'] = vtlib\Functions::textLength($labels[$record['subprocess']]);
+			$item['subprocl'] = vtlib\Functions::textLength($this->getLabel($labels, $record['subprocess']));
 			$item['subprocm'] = $record['subprocessmod'];
 
+			$item['linkextend'] = $record['linkextend'];
+			$item['linkexl'] = vtlib\Functions::textLength($this->getLabel($labels, $record['linkextend']));
+			$item['linkexm'] = $record['linkecrmmod'];
 			if ($record['linkmod'] != 'Accounts' && (!empty($record['link']) || !empty($record['process']))) {
 				$findId = 0;
 				$findMod = '';
@@ -167,12 +192,16 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 				}
 				$tabInfo = $this->relationAcounts[$findMod];
 				if ($tabInfo) {
-					$findResult = $db->pquery('SELECT vtiger_account.accountid, vtiger_account.accountname FROM vtiger_account '
-						. 'INNER JOIN ' . $tabInfo[0] . ' ON vtiger_account.accountid = ' . $tabInfo[0] . '.' . $tabInfo[2]
-						. ' WHERE ' . $tabInfo[1] . ' = ?;', [$findId]);
-					if ($db->num_rows($findResult) > 0) {
-						$item['accid'] = $db->query_result_raw($findResult, 0, 'accountid');
-						$item['accname'] = $db->query_result_raw($findResult, 0, 'accountname');
+					$query = (new \App\Db\Query())
+						->select('vtiger_account.accountid, vtiger_account.accountname')
+						->from('vtiger_account')
+						->innerJoin($tabInfo[0], "vtiger_account.accountid = {$tabInfo[0]}.{$tabInfo[2]}")
+						->where([$tabInfo[1] => $findId]);
+					$dataReader = $query->createCommand()->query();
+					if ($dataReader->count()) {
+						$row = $dataReader->read();
+						$item['accid'] = $row['accountid'];
+						$item['accname'] = \App\Purifier::encodeHtml($row['accountname']);
 					}
 				}
 			}
@@ -196,6 +225,7 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 			//Conveting the date format in to Y-m-d . since full calendar expects in the same format
 			$endDateFormated = DateTimeField::__convertToDBFormat($dateComponent, $currentUser->get('date_format'));
 
+			$item['start_date'] = $record['date_start'];
 			$item['start'] = $startDateFormated . ' ' . $startTimeFormated;
 			$item['end'] = $endDateFormated . ' ' . $endTimeFormated;
 
@@ -203,10 +233,10 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 			$item['start_display'] = $startDateTimeDisplay;
 			$item['end_display'] = $endDateTimeDisplay;
 			$item['hour_start'] = $startTimeDisplay;
-			$hours = vtlib\Functions::getDateTimeHoursDiff($item['start'], $item['end']);
+			$hours = \App\Fields\Date::getDiff($item['start'], $item['end'], 'hours');
 			$item['hours'] = vtlib\Functions::decimalTimeFormat($hours)['short'];
 			$item['allDay'] = $record['allday'] == 1 ? true : false;
-			$item['className'] = ' userCol_' . $record['smownerid'] . ' calCol_' . $activitytype;
+			$item['className'] = ' ownerCBg_' . $record['smownerid'] . ' picklistCBr_Calendar_activitytype_' . $activitytype;
 			$return[] = $item;
 		}
 		return $return;
@@ -215,20 +245,13 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 	public function getEntityCount()
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$db = PearDatabase::getInstance();
 		$startDate = DateTimeField::convertToDBTimeZone($this->get('start'));
 		$startDate = strtotime($startDate->format('Y-m-d H:i:s'));
 		$endDate = DateTimeField::convertToDBTimeZone($this->get('end'));
 		$endDate = strtotime($endDate->format('Y-m-d H:i:s'));
-
-		if ($this->get('customFilter')) {
-			$this->set('restrict', CustomView_Record_Model::getInstanceById($this->get('customFilter'))->getRecordIds());
-		}
-		$data = $this->getQuery();
-		$result = $db->pquery($data['query'], $data['params']);
+		$dataReader = $this->getQuery()->createCommand()->query();
 		$return = [];
-		while ($record = $db->fetch_array($result)) {
-			$crmid = $record['activityid'];
+		while ($record = $dataReader->read()) {
 			$activitytype = $record['activitytype'];
 
 			$dateTimeFieldInstance = new DateTimeField($record['date_start'] . ' ' . $record['time_start']);
@@ -255,8 +278,8 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 					$return[$date]['start'] = $date;
 					$return[$date]['date'] = $date;
 					$return[$date]['event'][$activitytype]['count'] += 1;
-					$return[$date]['event'][$activitytype]['className'] = '  fc-draggable calCol_' . $activitytype;
-					$return[$date]['event'][$activitytype]['label'] = vtranslate($activitytype, $this->getModuleName());
+					$return[$date]['event'][$activitytype]['className'] = '  fc-draggable picklistCBg_Calendar_activitytype_' . $activitytype;
+					$return[$date]['event'][$activitytype]['label'] = \App\Language::translate($activitytype, $this->getModuleName());
 					$return[$date]['type'] = 'widget';
 				}
 			}
@@ -282,11 +305,11 @@ class Calendar_Calendar_Model extends Vtiger_Base_Model
 
 	public static function getCalendarTypes()
 	{
-		$calendarConfig = Array(
+		$calendarConfig = [
 			'PLL_WORKING_TIME',
 			'PLL_BREAK_TIME',
 			'PLL_HOLIDAY'
-		);
+		];
 		return $calendarConfig;
 	}
 }

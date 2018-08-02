@@ -1,13 +1,17 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
-
+/**
+ * MappedFields russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_ADD_TEMPLATE' => 'Сопоставление',
 	'LBL_IMPORT_TEMPLATE' => 'Загрузить шаблон',
 	'LBL_MAPPEDFIELDS' => 'Сопоставления',
 	'LBL_MAPPEDFIELDS_DESCRIPTION' => ' Сопоставление полей разных модулей',
 	'LBL_EXPORT_RECORD' => 'Экспорт',
-	'LBL_MODULE' => 'Моудль',
+	'LBL_MODULE' => 'Модуль',
 	'LBL_REL_MODULE' => 'Связанный модуль',
 	'LBL_STATUS' => 'Статус',
 	'active' => 'Активный',
@@ -27,7 +31,7 @@ $languageStrings = [
 	'LBL_DEFAULT_VALUE' => 'Значение по умолчанию',
 	'LBL_ACTIONS' => 'Действия',
 	'LBL_ADD_CONDITION' => 'Сопоставление',
-	'LBL_PERMISSIONS_DETAILS' => 'Permissions',
+	'LBL_PERMISSIONS_DETAILS' => 'Разрешения',
 	'LBL_FINISH' => 'Сохранить',
 	'LBL_EDITING_MF' => 'Изменить',
 	'LBL_CREATING_MF' => 'Создать',

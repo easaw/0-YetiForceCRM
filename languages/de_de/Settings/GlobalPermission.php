@@ -1,6 +1,11 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
-
+/**
+ * Global permission german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author skavenkf (K.Fink) 
+ */
 $languageStrings = [
 	'Access to record' => 'Zugang zu den Daten',
 	'GlobalPermission' => 'Spezieller Zugriff',

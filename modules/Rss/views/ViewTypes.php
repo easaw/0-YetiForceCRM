@@ -19,9 +19,9 @@ class Rss_ViewTypes_View extends Vtiger_BasicModal_View
 		$this->exposeMethod('getRssAddForm');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 			return;
@@ -30,11 +30,11 @@ class Rss_ViewTypes_View extends Vtiger_BasicModal_View
 
 	/**
 	 * Function to display rss sidebar widget
-	 * @param <Vtiger_Request> $request 
+	 * @param \App\Request $request 
 	 */
-	public function getRssWidget(Vtiger_Request $request)
+	public function getRssWidget(\App\Request $request)
 	{
-		$module = $request->get('module');
+		$module = $request->getModule();
 		$moduleModel = Vtiger_Module_Model::getInstance($module);
 		$rssSources = $moduleModel->getRssSources();
 		$viewer = $this->getViewer($request);
@@ -47,12 +47,11 @@ class Rss_ViewTypes_View extends Vtiger_BasicModal_View
 
 	/**
 	 * Function to get the rss add form 
-	 * @param <Vtiger_Request> $request
+	 * @param \App\Request $request
 	 */
-	public function getRssAddForm(Vtiger_Request $request)
+	public function getRssAddForm(\App\Request $request)
 	{
 		$module = $request->getModule();
-		$moduleModel = Vtiger_Module_Model::getInstance($module);
 		$viewer = $this->getViewer($request);
 		$viewer->assign('MODULE', $module);
 		$this->preProcess($request);

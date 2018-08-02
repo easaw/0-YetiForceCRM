@@ -24,13 +24,13 @@ class HelpDesk_DetailView_Model extends Vtiger_DetailView_Model
 
 		$quotesModuleModel = Vtiger_Module_Model::getInstance('Faq');
 		if ($quotesModuleModel->isPermitted('DetailView')) {
-			$basicActionLink = array(
-				'linktype' => 'DETAILVIEW',
+			$basicActionLink = [
+				'linktype' => 'DETAIL_VIEW_BASIC',
 				'linklabel' => 'LBL_CONVERT_FAQ',
 				'linkurl' => $recordModel->getConvertFAQUrl(),
 				'showLabel' => 1,
-			);
-			$linkModelList['DETAILVIEW'][] = Vtiger_Link_Model::getInstanceFromValues($basicActionLink);
+			];
+			$linkModelList['DETAIL_VIEW_BASIC'][] = Vtiger_Link_Model::getInstanceFromValues($basicActionLink);
 		}
 
 		return $linkModelList;
@@ -53,7 +53,7 @@ class HelpDesk_DetailView_Model extends Vtiger_DetailView_Model
 				'related' => 'Charts'
 			];
 		}
-		$showPSTab = \includes\Modules::isModuleActive('Products') || \includes\Modules::isModuleActive('Services') || \includes\Modules::isModuleActive('Assets') || \includes\Modules::isModuleActive('OSSSoldServices');
+		$showPSTab = (!AppConfig::module($moduleName, 'HIDE_SUMMARY_PRODUCTS_SERVICES')) && (\App\Module::isModuleActive('Products') || \App\Module::isModuleActive('Services') || \App\Module::isModuleActive('Assets') || \App\Module::isModuleActive('OSSSoldServices'));
 		if ($showPSTab) {
 			$relatedLinks[] = [
 				'linktype' => 'DETAILVIEWTAB',

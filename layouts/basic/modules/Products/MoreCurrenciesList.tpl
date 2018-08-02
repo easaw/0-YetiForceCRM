@@ -14,19 +14,19 @@
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header">
-					<button data-dismiss="modal" class="floatRight close" type="button" title="{vtranslate('LBL_CLOSE')}">x</button>
-					<h3 id="massEditHeader" class="modal-title">{vtranslate('LBL_PRICES',$MODULE)}</h3>
+					<button data-dismiss="modal" class="floatRight close" type="button" title="{\App\Language::translate('LBL_CLOSE')}">x</button>
+					<h3 id="massEditHeader" class="modal-title">{\App\Language::translate('LBL_PRICES',$MODULE)}</h3>
 				</div>
 				<div class="multiCurrencyContainer">
 					<div class="currencyContent">
 						<div class="modal-body">
 							<table width="100%" border="0" cellpadding="5" cellspacing="0" class="table table-bordered">
 								<tr class="detailedViewHeader">
-									<td><strong>{vtranslate('LBL_CURRENCY',$MODULE)}</strong></td>
-									<td><strong>{vtranslate('LBL_PRICE',$MODULE)}</strong></td>
-									<td><strong>{vtranslate('LBL_CONVERSION_RATE',$MODULE)}</strong></td>
-									<td><strong>{vtranslate('LBL_RESET_PRICE',$MODULE)}</strong></td>
-									<td><strong>{vtranslate('LBL_BASE_CURRENCY',$MODULE)}</strong></td>
+									<td><strong>{\App\Language::translate('LBL_CURRENCY',$MODULE)}</strong></td>
+									<td><strong>{\App\Language::translate('LBL_PRICE',$MODULE)}</strong></td>
+									<td><strong>{\App\Language::translate('LBL_CONVERSION_RATE',$MODULE)}</strong></td>
+									<td><strong>{\App\Language::translate('LBL_RESET_PRICE',$MODULE)}</strong></td>
+									<td><strong>{\App\Language::translate('LBL_BASE_CURRENCY',$MODULE)}</strong></td>
 								</tr>
 								{foreach item=price key=count from=$PRICE_DETAILS}
 									<tr data-currency-id={$price.curname}>
@@ -46,16 +46,16 @@
 										<td>
 											<span>
 												<span class="col-md-8 alignBottom">
-													<span class="pull-left">{\includes\Language::translate($price.currencylabel, 'Currency')} ({$price.currencysymbol})</span>
+													<span class="pull-left currencyName">{\App\Language::translate($price.currencylabel, 'Currency')} ({$price.currencysymbol})</span>
 												</span>
 												<span class="col-md-2">
-													<input type="checkbox" name="cur_{$price.curid}_check" id="cur_{$price.curid}_check" class="small pull-right enableCurrency" {if $check_value} title="{vtranslate('LBL_ENABLE_CURRENCY')}" {else} title="{vtranslate('LBL_DISABLE_CURRENCY')}" {/if} {$check_value}>
+													<input type="checkbox" name="cur_{$price.curid}_check" id="cur_{$price.curid}_check" class="small pull-right enableCurrency" {if $check_value} title="{\App\Language::translate('LBL_ENABLE_CURRENCY')}" {else} title="{\App\Language::translate('LBL_DISABLE_CURRENCY')}" {/if} {$check_value}>
 												</span>
 											</span>
 										</td>
 										<td>
 											<div>
-												<input {$disable_value} type="text" size="10" class="col-md-9 convertedPrice form-control" name="{$price.curname}" id="{$price.curname}" value="{$price.curvalue}" title="{$price.curvalue}" data-validation-engine="validate[funcCall[Vtiger_Currency_Validator_Js.invokeValidation]]" data-decimal-seperator='{$USER_MODEL->get('currency_decimal_separator')}' data-group-seperator='{$USER_MODEL->get('currency_grouping_separator')}' />
+												<input {$disable_value} type="text" size="10" class="col-md-9 convertedPrice form-control" name="{$price.curname}" id="{$price.curname}" value="{$price.curvalue}" title="{$price.curvalue}" data-validation-engine="validate[funcCall[Vtiger_Currency_Validator_Js.invokeValidation]]" data-decimal-separator='{$USER_MODEL->get('currency_decimal_separator')}' data-group-separator='{$USER_MODEL->get('currency_grouping_separator')}' />
 											</div>
 										</td>
 										<td>
@@ -65,12 +65,12 @@
 										</td>
 										<td>
 											<div>
-												<button {$disable_value} type="button" class="btn btn-default currencyReset resetButton" id="cur_reset{$price.curid}" value="{vtranslate('LBL_RESET',$MODULE)}">{vtranslate('LBL_RESET',$MODULE)}</button>
+												<button {$disable_value} type="button" class="btn btn-default currencyReset resetButton" id="cur_reset{$price.curid}" value="{\App\Language::translate('LBL_RESET',$MODULE)}">{\App\Language::translate('LBL_RESET',$MODULE)}</button>
 											</div>
 										</td>
 										<td>
 											<div class=" textAlignCenter">
-												<input {$disable_value} type="radio" class="baseCurrency" id="base_currency{$price.curid}" name="base_currency_input" title="{vtranslate('LBL_BASE_CURRENCY')}" value="{$price.curname}" {$base_cur_check} />
+												<input {$disable_value} type="radio" class="baseCurrency" id="base_currency{$price.curid}" name="base_currency_input" title="{\App\Language::translate('LBL_BASE_CURRENCY')}" value="{$price.curname}" {$base_cur_check} />
 											</div>
 										</td>
 									</tr>
@@ -78,7 +78,7 @@
 							</table>
 						</div>
 					</div>
-					{include file='ModalFooter.tpl'|@vtemplate_path:$MODULE}
+					{include file=\App\Layout::getTemplatePath('ModalFooter.tpl', $MODULE)}
 				</div>
 			</div>
 		</div>

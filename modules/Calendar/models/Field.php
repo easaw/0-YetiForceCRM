@@ -21,12 +21,12 @@ class Calendar_Field_Model extends Vtiger_Field_Model
 	 */
 	public function getValidator()
 	{
-		$validator = array();
+		$validator = [];
 		$fieldName = $this->getName();
 
 		switch ($fieldName) {
-			case 'due_date': $funcName = array('name' => 'greaterThanDependentField',
-					'params' => array('date_start'));
+			case 'due_date': $funcName = ['name' => 'greaterThanDependentField',
+					'params' => ['date_start']];
 				array_push($validator, $funcName);
 				break;
 			// NOTE: Letting user to add pre or post dated Event.
@@ -41,7 +41,7 @@ class Calendar_Field_Model extends Vtiger_Field_Model
 
 	/**
 	 * Function to get the Webservice Field data type
-	 * @return <String> Data type of the field
+	 * @return string Data type of the field
 	 */
 	public function getFieldDataType()
 	{
@@ -49,39 +49,37 @@ class Calendar_Field_Model extends Vtiger_Field_Model
 			return 'datetime';
 		} else if ($this->get('uitype') == '30') {
 			return 'reminder';
-		} else if ($this->getName() == 'recurringtype') {
-			return 'recurrence';
 		}
 		return parent::getFieldDataType();
 	}
 
 	/**
-	 * Customize the display value for detail view.
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		if ($recordInstance) {
-			if ($this->getName() == 'date_start') {
-				$dateTimeValue = $value . ' ' . $recordInstance->get('time_start');
+		if ($recordModel) {
+			if ($this->getName() === 'date_start') {
+				$dateTimeValue = $value . ' ' . $recordModel->get('time_start');
 				$value = $this->getUITypeModel()->getDisplayValue($dateTimeValue);
 				list($startDate, $startTime, $meridiem) = explode(' ', $value);
 				return $startDate . ' ' . $startTime . ' ' . $meridiem;
-			} else if ($this->getName() == 'due_date') {
-				$dateTimeValue = $value . ' ' . $recordInstance->get('time_end');
+			} else if ($this->getName() === 'due_date') {
+				$dateTimeValue = $value . ' ' . $recordModel->get('time_end');
 				$value = $this->getUITypeModel()->getDisplayValue($dateTimeValue);
 				list($startDate, $startTime, $meridiem) = explode(' ', $value);
 				return $startDate . ' ' . $startTime . ' ' . $meridiem;
 			}
 		}
-		return parent::getDisplayValue($value, $record, $recordInstance, $rawText);
+		return parent::getDisplayValue($value, $record, $recordModel, $rawText, $length);
 	}
 
 	/**
 	 * Function to get Edit view display value
-	 * @param <String> Data base value
-	 * @return <String> value
+	 * @param string Data base value
+	 * @return string value
 	 */
-	public function getEditViewDisplayValue($value, $record = false)
+	public function getEditViewDisplayValue($value, $recordModel = false)
 	{
 		$fieldName = $this->getName();
 
@@ -99,28 +97,7 @@ class Calendar_Field_Model extends Vtiger_Field_Model
 				return DateTimeField::convertToUserFormat(date('Y-m-d', strtotime("+$minutes minutes")));
 			}
 		}
-		return parent::getEditViewDisplayValue($value, $record);
-	}
-
-	/**
-	 * Function which will give the picklist values for a recurrence field
-	 * @param type $fieldName -- string
-	 * @return type -- array of values
-	 */
-	public static function getReccurencePicklistValues()
-	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$fieldModel = Vtiger_Field_Model::getInstance('recurringtype', Vtiger_Module_Model::getInstance('Events'));
-		if ($fieldModel->isRoleBased() && !$currentUser->isAdminUser()) {
-			$userModel = Users_Record_Model::getCurrentUserModel();
-			$picklistValues = \includes\fields\Picklist::getRoleBasedPicklistValues('recurringtype', $userModel->get('roleid'));
-		} else {
-			$picklistValues = Vtiger_Util_Helper::getPickListValues('recurringtype');
-		}
-		foreach ($picklistValues as $value) {
-			$fieldPickListValues[$value] = vtranslate($value, 'Events');
-		}
-		return $fieldPickListValues;
+		return parent::getEditViewDisplayValue($value, $recordModel);
 	}
 
 	/**
@@ -131,7 +108,7 @@ class Calendar_Field_Model extends Vtiger_Field_Model
 	{
 
 		$filterOpsByFieldType = parent::getAdvancedFilterOpsByFieldType();
-		$filterOpsByFieldType['O'] = array('e', 'n');
+		$filterOpsByFieldType['O'] = ['e', 'n'];
 
 		return $filterOpsByFieldType;
 	}
@@ -149,30 +126,14 @@ class Calendar_Field_Model extends Vtiger_Field_Model
 
 	/**
 	 * Function to get visibilty permissions of a Field
-	 * @param <String> $accessmode
-	 * @return <Boolean>
+	 * @param boolean $readOnly
+	 * @return boolean
 	 */
-	public function getPermissions($accessmode = 'readonly')
+	public function getPermissions($readOnly = true)
 	{
-		$user = Users_Record_Model::getCurrentUserModel();
-		$privileges = $user->getPrivileges();
-		if ($privileges->hasGlobalReadPermission()) {
-			return true;
-		} else {
-			$modulePermission = Vtiger_Cache::get('modulePermission-' . $accessmode, $this->getModuleId());
-			if (!$modulePermission) {
-				$modulePermissionCalendar = self::preFetchModuleFieldPermission(vtlib\Functions::getModuleId('Calendar'), $accessmode);
-				$modulePermissionEvents = self::preFetchModuleFieldPermission(vtlib\Functions::getModuleId('Events'), $accessmode);
-				$modulePermission = $modulePermissionCalendar + $modulePermissionEvents;
-				Vtiger_Cache::set('modulePermission-' . $accessmode, $this->getModuleId(), $modulePermission);
-			}
-
-			if (array_key_exists($this->getId(), $modulePermission)) {
-				return true;
-			} else {
-				return false;
-			}
-		}
+		$calendar = \App\Field::getFieldPermission('Calendar', $this->getName(), $readOnly);
+		$events = \App\Field::getFieldPermission('Events', $this->getName(), $readOnly);
+		return ($calendar || $events);
 	}
 
 	/**
@@ -184,7 +145,7 @@ class Calendar_Field_Model extends Vtiger_Field_Model
 		parent::getFieldInfo();
 		//Change the default search operator
 		if ($this->get('name') == 'date_start') {
-			$searchParams = AppRequest::get('search_params');
+			$searchParams = \App\Request::_get('search_params');
 			if (!empty($searchParams)) {
 				foreach ($searchParams[0] as $value) {
 					if ($value[0] == 'date_start') {

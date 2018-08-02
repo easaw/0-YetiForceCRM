@@ -1,11 +1,16 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Notification polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
-	'Notification' => 'Notification',
-	'SINGLE_Notification' => 'Notification',
+	'Notification' => 'Powiadomienia',
+	'SINGLE_Notification' => 'Powiadomienie',
 	'Notification ID' => 'Notification ID',
-	'LBL_CUSTOM_INFORMATION' => 'Custom Information',
-	'FL_TITLE' => 'Tytuł',
+	'LBL_NOTIFICATION_CONTENTS' => 'Treść powiadomienia',
+	'FL_TITLE' => 'Temat',
 	'LBL_NOTIFICATION_INFORMATION' => 'Informacje podstawowe',
 	'FL_RELATED_MODULE' => 'Moduł powiazany',
 	'FL_MESSAGE' => 'Treść powiadomienia',
@@ -32,6 +37,13 @@ $languageStrings = [
 	'FL_USER' => 'Użytkownik',
 	'FL_TYPE' => 'Rodzaj',
 	'LBL_MARK_AS_READ' => 'Oznacz jako przeczytane',
+	'LBL_NO_NOTIFICATIONS' => 'Brak powiadomień',
+	'LBL_CRON_LAUNCHING_FREQUENCY' => 'Częstotliwość uruchamiania crona',
+	'LBL_MODULES' => 'Moduły',
+	'LBL_SENT_NOTIFICATIONS' => 'Wysyłaj powiadomienia',
+	'LBL_NOTIFICATION_SETTINGS' => 'Konfiguracja powiadomień',
+	'LBL_UNREAD' => 'Nieprzeczytane',
+	'LBL_NO_UNREAD_NOTIFICATIONS' => 'Brak nowych powiadomień',
 ];
 $jsLanguageStrings = [
 	'JS_MARKED_AS_READ' => 'Oznacz jako przeczytane',

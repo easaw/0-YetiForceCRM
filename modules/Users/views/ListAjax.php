@@ -11,6 +11,9 @@
 class Users_ListAjax_View extends Users_List_View
 {
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public function __construct()
 	{
 		parent::__construct();
@@ -19,19 +22,28 @@ class Users_ListAjax_View extends Users_List_View
 		$this->exposeMethod('getPageCount');
 	}
 
-	public function preProcess(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		return true;
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function postProcess(\App\Request $request)
 	{
 		return true;
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function process(\App\Request $request)
 	{
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 			return;

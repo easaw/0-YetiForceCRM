@@ -17,12 +17,12 @@ class Settings_Roles_Module_Model extends Settings_Vtiger_Module_Model
 
 	public $baseTable = 'vtiger_role';
 	public $baseIndex = 'roleid';
-	public $listFields = array('roleid' => 'Role Id', 'rolename' => 'Name');
+	public $listFields = ['roleid' => 'Role Id', 'rolename' => 'Name'];
 	public $name = 'Roles';
 
 	/**
 	 * Function to get the url for default view of the module
-	 * @return <string> - url
+	 * @return string - url
 	 */
 	public function getDefaultUrl()
 	{
@@ -31,7 +31,7 @@ class Settings_Roles_Module_Model extends Settings_Vtiger_Module_Model
 
 	/**
 	 * Function to get the url for Create view of the module
-	 * @return <string> - url
+	 * @return string - url
 	 */
 	public function getCreateRecordUrl()
 	{

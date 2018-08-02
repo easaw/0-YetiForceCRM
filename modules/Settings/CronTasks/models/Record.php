@@ -11,10 +11,10 @@
 class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 {
 
-	static $STATUS_DISABLED = 0;
-	static $STATUS_ENABLED = 1;
-	static $STATUS_RUNNING = 2;
-	static $STATUS_COMPLETED = 3;
+	public static $STATUS_DISABLED = 0;
+	public static $STATUS_ENABLED = 1;
+	public static $STATUS_RUNNING = 2;
+	public static $STATUS_COMPLETED = 3;
 
 	/**
 	 * Function to get Id of this record instance
@@ -27,7 +27,7 @@ class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 
 	/**
 	 * Function to get Name of this record
-	 * @return <String>
+	 * @return string
 	 */
 	public function getName()
 	{
@@ -101,7 +101,7 @@ class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 	public function getLastEndDateTime()
 	{
 		if ($this->get('lastend') != NULL) {
-			$lastScannedTime = Vtiger_Datetime_UIType::getDisplayDateTimeValue(date('Y-m-d H:i:s', $this->get('lastend')));
+			$lastScannedTime = App\Fields\DateTime::formatToDisplay(date('Y-m-d H:i:s', $this->get('lastend')));
 			$userModel = Users_Record_Model::getCurrentUserModel();
 			$hourFormat = $userModel->get('hour_format');
 			if ($hourFormat == '24') {
@@ -128,19 +128,21 @@ class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 
 	/**
 	 * Function to get display value of every field from this record
-	 * @param <String> $fieldName
-	 * @return <String>
+	 * @param string $fieldName
+	 * @return string
 	 */
 	public function getDisplayValue($fieldName)
 	{
 		$fieldValue = $this->get($fieldName);
 		switch ($fieldName) {
-			case 'frequency' : $fieldValue = intval($fieldValue);
+			case 'frequency' :
+				$fieldValue = intval($fieldValue);
 				$hours = str_pad((int) (($fieldValue / (60 * 60))), 2, 0, STR_PAD_LEFT);
 				$minutes = str_pad((int) (($fieldValue % (60 * 60)) / 60), 2, 0, STR_PAD_LEFT);
 				$fieldValue = $hours . ':' . $minutes;
 				break;
-			case 'status' : $fieldValue = intval($fieldValue);
+			case 'status' :
+				$fieldValue = intval($fieldValue);
 				$moduleModel = $this->getModule();
 				if ($fieldValue === Settings_CronTasks_Record_Model::$STATUS_COMPLETED) {
 					$fieldLabel = 'LBL_COMPLETED';
@@ -151,12 +153,13 @@ class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 				} else {
 					$fieldLabel = 'LBL_INACTIVE';
 				}
-				$fieldValue = vtranslate($fieldLabel, $moduleModel->getParentName() . ':' . $moduleModel->getName());
+				$fieldValue = \App\Language::translate($fieldLabel, $moduleModel->getParentName() . ':' . $moduleModel->getName());
 				break;
 			case 'laststart' :
-			case 'lastend' : $fieldValue = intval($fieldValue);
+			case 'lastend' :
+				$fieldValue = intval($fieldValue);
 				if ($fieldValue) {
-					$fieldValue = dateDiffAsString($fieldValue, time());
+					$fieldValue = \App\Fields\DateTime::formatToViewDate(date('Y-m-d H:i:s', $fieldValue));
 				} else {
 					$fieldValue = '';
 				}
@@ -165,7 +168,7 @@ class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 		return $fieldValue;
 	}
 	/*
-	 * Function to get Edit view url 
+	 * Function to get Edit view url
 	 */
 
 	public function getEditViewUrl()
@@ -178,45 +181,45 @@ class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 	 */
 	public function save()
 	{
-		$db = PearDatabase::getInstance();
-
-		$updateQuery = "UPDATE vtiger_cron_task SET frequency = ?, status = ? WHERE id = ?";
-		$params = array($this->get('frequency'), $this->get('status'), $this->getId());
-		$db->pquery($updateQuery, $params);
+		\App\Db::getInstance()->createCommand()->update('vtiger_cron_task', ['frequency' => $this->get('frequency'), 'status' => $this->get('status')], ['id' => $this->getId()])
+			->execute();
 	}
 
 	/**
 	 * Function to get record instance by using id and moduleName
 	 * @param <Integer> $recordId
-	 * @param <String> $qualifiedModuleName
+	 * @param string $qualifiedModuleName
 	 * @return <Settings_CronTasks_Record_Model> RecordModel
 	 */
 	static public function getInstanceById($recordId, $qualifiedModuleName)
 	{
-		$db = PearDatabase::getInstance();
-
-		$result = $db->pquery("SELECT * FROM vtiger_cron_task WHERE id = ?", array($recordId));
-		if ($db->num_rows($result)) {
+		if (empty($recordId))
+			return false;
+		$row = (new \App\Db\Query())
+			->from('vtiger_cron_task')
+			->where(['id' => $recordId])
+			->one();
+		if ($row) {
 			$recordModelClass = Vtiger_Loader::getComponentClassName('Model', 'Record', $qualifiedModuleName);
 			$moduleModel = Settings_Vtiger_Module_Model::getInstance($qualifiedModuleName);
-			$rowData = $db->query_result_rowdata($result, 0);
 			$recordModel = new $recordModelClass();
-			$recordModel->setData($rowData)->setModule($moduleModel);
+			$recordModel->setData($row)->setModule($moduleModel);
 			return $recordModel;
 		}
+
 		return false;
 	}
 
 	public static function getInstanceByName($name)
 	{
-		$db = PearDatabase::getInstance();
-
-		$result = $db->pquery("SELECT * FROM vtiger_cron_task WHERE name = ?", array($name));
-		if ($db->num_rows($result)) {
+		$query = (new \App\Db\Query())
+			->from('vtiger_cron_task')
+			->where(['name' => $name]);
+		$row = $query->createCommand()->queryOne();
+		if ($row) {
 			$moduleModel = new Settings_CronTasks_Module_Model();
-			$rowData = $db->query_result_rowdata($result, 0);
 			$recordModel = new self();
-			$recordModel->setData($rowData)->setModule($moduleModel);
+			$recordModel->setData($row)->setModule($moduleModel);
 			return $recordModel;
 		}
 		return false;
@@ -229,16 +232,16 @@ class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 	public function getRecordLinks()
 	{
 
-		$links = array();
+		$links = [];
 
-		$recordLinks = array(
-			array(
+		$recordLinks = [
+			[
 				'linktype' => 'LISTVIEWRECORD',
 				'linklabel' => 'LBL_EDIT_RECORD',
 				'linkurl' => "javascript:Settings_CronTasks_List_Js.triggerEditEvent('" . $this->getEditViewUrl() . "')",
 				'linkicon' => 'glyphicon glyphicon-pencil'
-			)
-		);
+			]
+		];
 		foreach ($recordLinks as $recordLink) {
 			$links[] = Vtiger_Link_Model::getInstanceFromValues($recordLink);
 		}
@@ -248,6 +251,10 @@ class Settings_CronTasks_Record_Model extends Settings_Vtiger_Record_Model
 
 	public function getMinimumFrequency()
 	{
-		return getMinimumCronFrequency() * 60;
+		$frequency = AppConfig::main('MINIMUM_CRON_FREQUENCY');
+		if (!empty($frequency)) {
+			return $frequency * 60;
+		}
+		return 60;
 	}
 }

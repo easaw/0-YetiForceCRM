@@ -3,20 +3,61 @@
 /**
  * UIType Tree Field Class
  * @package YetiForce.Fields
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Vtiger_Tree_UIType extends Vtiger_Base_UIType
 {
 
-	public function isAjaxEditable()
+	/**
+	 * {@inheritDoc}
+	 */
+	public function validate($value, $isUserFormat = false)
 	{
-		return false;
+		if ($this->validate || empty($value)) {
+			return;
+		}
+		if (substr($value, 0, 1) !== 'T' || !is_numeric(substr($value, 1))) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate = true;
 	}
 
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritDoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		$fieldModel = $this->getFieldModel();
+		if ($rawText) {
+			$text = \App\Fields\Tree::getPicklistValue($fieldModel->getFieldParams(), $fieldModel->getModuleName())[$value];
+			if (is_int($length)) {
+				$text = \vtlib\Functions::textLength($text, $length);
+			}
+			return \App\Purifier::encodeHtml($text);
+		}
+		$value = \App\Fields\Tree::getPicklistValueImage($fieldModel->getFieldParams(), $fieldModel->getModuleName(), $value);
+		$text = $value['name'];
+		if (is_int($length)) {
+			$text = \vtlib\Functions::textLength($text, $length);
+		}
+		if (isset($value['icon'])) {
+			return $value['icon'] . '' . \App\Purifier::encodeHtml($text);
+		}
+		return \App\Purifier::encodeHtml($text);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getListSearchTemplateName()
+	{
+		return 'uitypes/TreeFieldSearchView.tpl';
+	}
+
+	/**
+	 * {@inheritDoc}
 	 */
 	public function getTemplateName()
 	{
@@ -24,99 +65,10 @@ class Vtiger_Tree_UIType extends Vtiger_Base_UIType
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($tree, $record = false, $recordInstance = false, $rawText = false)
+	public function isAjaxEditable()
 	{
-		$template = $this->get('field')->getFieldParams();
-		$name = Vtiger_Cache::get('TreeData' . $template, $tree);
-		if ($name) {
-			return $name;
-		}
-
-		$adb = PearDatabase::getInstance();
-		$result = $adb->pquery('SELECT * FROM vtiger_trees_templates_data WHERE templateid = ? && tree = ?', [$template, $tree]);
-		$parentName = '';
-		$module = $this->get('field')->getModuleName();
-		$name = false;
-		if ($adb->getRowCount($result)) {
-			$row = $adb->getRow($result);
-			if ($row['depth'] > 0) {
-				$parenttrre = $row['parenttrre'];
-				$pieces = explode('::', $parenttrre);
-				end($pieces);
-				$parent = prev($pieces);
-
-				$result2 = $adb->pquery('SELECT name FROM vtiger_trees_templates_data WHERE templateid = ? && tree = ?', [$template, $parent]);
-				$parentName = $adb->getSingleValue($result2);
-
-				$parentName = '(' . vtranslate($parentName, $module) . ') ';
-			}
-			$name = $parentName . vtranslate($row['name'], $module);
-		}
-		Vtiger_Cache::set('TreeData' . $template, $tree, $name);
-		return $name;
-	}
-
-	/**
-	 * Function to get the display value in edit view
-	 * @param reference record id
-	 * @return link
-	 */
-	public function getEditViewDisplayValue($value, $record = false)
-	{
-		return $this->getDisplayValue($value, $record);
-	}
-
-	public function getListSearchTemplateName()
-	{
-		return 'uitypes/TreeFieldSearchView.tpl';
-	}
-
-	/**
-	 * Function to get the all Values
-	 * @param <Object> $value
-	 * @return <Object>
-	 */
-	public function getAllValue()
-	{
-		$template = $this->get('field')->getFieldParams();
-		$adb = PearDatabase::getInstance();
-		$values = [];
-		$result = $adb->pquery('SELECT * FROM vtiger_trees_templates_data WHERE templateid = ?', array($template));
-		while ($row = $adb->getRow($result)) {
-			$tree = $row['tree'];
-			$parent = '';
-			$parentName = '';
-			if ($row['depth'] > 0) {
-				$parenttrre = $row['parenttrre'];
-				$cut = strlen('::' . $tree);
-				$parenttrre = substr($parenttrre, 0, - $cut);
-				$pieces = explode('::', $parenttrre);
-				$parent = end($pieces);
-				$result3 = $adb->pquery("SELECT name FROM vtiger_trees_templates_data WHERE templateid = ? && tree = ?", array($template, $parent));
-				$parentName = $adb->getSingleValue($result3);
-				$parentName = '(' . vtranslate($parentName, $module) . ') ';
-			}
-			$values[$row['tree']] = array($parentName . vtranslate($row['name'], $this->get('field')->getModuleName()), $parent);
-		}
-		return $values;
-	}
-
-	public function getDisplayValueByField($tree, $field, $module)
-	{
-		$adb = PearDatabase::getInstance();
-		$result = $adb->pquery('SELECT fieldparams FROM vtiger_field WHERE tabid = ? && fieldname = ?', array(vtlib\Functions::getModuleId($module), $field));
-		if ($adb->num_rows($result) == 0) {
-			return false;
-		}
-		$template = $adb->query_result_raw($result, 0, 'fieldparams');
-		$result = $adb->pquery('SELECT * FROM vtiger_trees_templates_data WHERE templateid = ? && tree = ?', array($template, $tree));
-		if ($adb->num_rows($result)) {
-			return vtranslate($adb->query_result_raw($result, 0, 'name'), $module);
-		}
 		return false;
 	}
 }

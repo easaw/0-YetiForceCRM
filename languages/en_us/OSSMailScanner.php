@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * OSSMailScanner english translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'OSSMailScanner' => 'Mail Scanner',
 	'OSSMailScanner_manual' => 'Mail Scanner',
@@ -55,6 +60,11 @@ $languageStrings = [
 	'MailView config' => 'configuration',
 	'General Configuration' => 'General configuration',
 	'Search email configuration' => 'Search email configuration',
+	'LBL_TICKET_REOPEN' => 'Create/Open ticket',
+	'LBL_OPEN_TICKET' => 'Open ticket and set "Wait for response" status',
+	'LBL_CREATE_TICKET' => 'Create new ticket',
+	'LBL_NO_ACTION' => 'Relate to current ticket (if relating action is added)',
+	'LBL_CONFTAB_CHANGE_TICKET_STATUS' => 'What should the scanner do when we receive a mail regarding a ticket that has been closed?',
 	'Alert_no_module_title' => 'This module was not found or is turned off.',
 	'Alert_no_module_desc' => 'Scanner module requires that you install and activate OSSMail module. Check if this module is installed, if not you need to install it.',
 	'Alert_no_accounts_title' => 'Email accounts not found',
@@ -84,7 +94,6 @@ $languageStrings = [
 	'Roundcube config' => 'Roundcube configuration',
 	'LBL_SAVE' => 'Save configuration',
 	'Spam' => 'Spam',
-	'Spam' => 'Spam',
 	'JS_save_info' => 'Saved list of actions',
 	'JS_saveuser_info' => 'User is saved',
 	'LBL_SAVE_FOLDER_INFO' => 'Saved list of folders',
@@ -110,7 +119,7 @@ $languageStrings = [
 	'stop_user' => 'Scanning stopped by',
 	'Email_Subject' => 'Notification: CRON runs too long',
 	'Email_Body' => 'Hello<br /><br />CRON is running too long, check if mail system works correctly.<br /><br />Greets Admin',
-	'Email_FromName' => 'YetiForce CRON',
+	'Email_FromName' => 'Mail Scanner',
 	'JS_info_restart_ok' => 'Cron unlocked',
 	'permissions_all' => 'Visible to all',
 	'permissions_vtiger' => 'Based on vtiger permissions',

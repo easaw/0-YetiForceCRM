@@ -1,12 +1,17 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * SQuoteEnquiries german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
-	'SQuoteEnquiries' => 'Angebotsanalyse',
-	'SINGLE_SQuoteEnquiries' => 'Angebotsanalyse',
+	'SQuoteEnquiries' => 'Angebotsanfrage',
+	'SINGLE_SQuoteEnquiries' => 'Angebotsanfrage',
 	//BLOCKS
 	'LBL_QUOTESENQUIRES_INFORMATION' => 'Informationen',
 	'LBL_CUSTOM_INFORMATION' => 'System Information',
-	'LBL_DESCRIPTION_INFORMATION' => 'Beschreibung Details',
+	'LBL_DESCRIPTION_INFORMATION' => 'Details',
 	'LBL_STATISTICS' => 'Statistik',
 	//FIELDS
 	'LBL_SUBJECT' => 'Bezeichnung',

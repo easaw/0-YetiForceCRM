@@ -14,10 +14,7 @@
 	<div class="popupContainer padding1per">
 		<div class="row">
 			<div class="col-md-6">
-				<span><h3>{vtranslate('LBL_ASSIGN_ROLE',"Settings:Roles")}</h3></span>
-			</div>
-			<div class="col-md-6 pull-right">
-				<span class="logo pull-right" style="float: none"><img src="{$COMPANY_LOGO->get('imagepath')}" title="{$COMPANY_LOGO->get('title')}" alt="{$COMPANY_LOGO->get('alt')}"/>
+				<span><h3>{\App\Language::translate('LBL_ASSIGN_ROLE',"Settings:Roles")}</h3></span>
 			</div>
 		</div>
 		<hr>
@@ -32,7 +29,7 @@
 						</div>
 					</div>
 					{assign var="ROLE" value=$ROOT_ROLE}
-					{include file=vtemplate_path("RoleTree.tpl", "Settings:Roles")}
+					{include file=\App\Layout::getTemplatePath('RoleTree.tpl', 'Settings:Roles')}
 				</li>
 			</ul>
 		</div>

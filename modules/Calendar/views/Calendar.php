@@ -12,18 +12,21 @@
 class Calendar_Calendar_View extends Vtiger_Index_View
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$userPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		$permission = $userPrivilegesModel->hasModulePermission($moduleName);
-
-		if (!$permission) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if (!$userPrivilegesModel->hasModulePermission($moduleName)) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		$viewer = $this->getViewer($request);
 		$viewer->assign('MODULE_NAME', $request->getModule());
@@ -34,57 +37,55 @@ class Calendar_Calendar_View extends Vtiger_Index_View
 		}
 	}
 
-	protected function preProcessTplName(Vtiger_Request $request)
+	protected function preProcessTplName(\App\Request $request)
 	{
 		return 'CalendarViewPreProcess.tpl';
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
-		$jsFileNames = array(
-			'~libraries/fullcalendar/moment.min.js',
+		$jsFileNames = [
 			'~libraries/fullcalendar/fullcalendar.js',
 			'modules.Calendar.resources.CalendarView',
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
 		return $headerScriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
 
 
-		$cssFileNames = array(
+		$cssFileNames = [
 			'~libraries/fullcalendar/fullcalendar.min.css',
 			'~libraries/fullcalendar/fullcalendarCRM.css',
-		);
+		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
 		$headerCssInstances = array_merge($headerCssInstances, $cssInstances);
 
 		return $headerCssInstances;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->getMode();
 		$viewer = $this->getViewer($request);
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$viewer->assign('CURRENT_USER', $currentUserModel);
 		$viewer->assign('EVENT_LIMIT', AppConfig::module('Calendar', 'EVENT_LIMIT'));
 		$viewer->assign('WEEK_VIEW', AppConfig::module('Calendar', 'SHOW_TIMELINE_WEEK') ? 'agendaWeek' : 'basicWeek');
 		$viewer->assign('DAY_VIEW', AppConfig::module('Calendar', 'SHOW_TIMELINE_DAY') ? 'agendaDay' : 'basicDay');
-		$viewer->assign('ACTIVITY_STATE_LABELS', \includes\utils\Json::encode([
+		$viewer->assign('ACTIVITY_STATE_LABELS', \App\Json::encode([
 				'current' => Calendar_Module_Model::getComponentActivityStateLabel('current'),
 				'history' => Calendar_Module_Model::getComponentActivityStateLabel('history')
 		]));
 		$viewer->view('CalendarView.tpl', $request->getModule());
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	public function postProcess(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();

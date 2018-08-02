@@ -1,14 +1,4 @@
-{*<!--
-/*********************************************************************************
-** The contents of this file are subject to the vtiger CRM Public License Version 1.0
-* ("License"); You may not use this file except in compliance with the License
-* The Original Code is:  vtiger CRM Open Source
-* The Initial Developer of the Original Code is vtiger.
-* Portions created by vtiger are Copyright (C) vtiger.
-* All Rights Reserved.
-* Contributor(s): YetiForce.com
-********************************************************************************/
--->*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 	{foreach key=index item=jsModel from=$SCRIPTS}
 		<script type="{$jsModel->getType()}" src="{$jsModel->getSrc()}"></script>
@@ -20,24 +10,29 @@
 				<form class="form-horizontal recordEditView" name="QuickCreate" method="post" action="index.php">
 					<div class="modal-header">
 						<div class="pull-left">
-							<h3 class="modal-title">{vtranslate('LBL_QUICK_CREATE', $MODULE)} {vtranslate($SINGLE_MODULE, $MODULE)}</h3>
+							<h3 class="modal-title quickCreateTitle">{\App\Language::translate('LBL_QUICK_CREATE', $MODULE)}:&nbsp; <p class="textTransform"><b>{\App\Language::translate($SINGLE_MODULE, $MODULE)}<b></p></h3>
 						</div>
-						<div class="pull-right quickCreateActions">
+						<div class="pull-right quickCreateActions pullRight">
+							{foreach item=LINK from=$QUICKCREATE_LINKS['QUICKCREATE_VIEW_HEADER']}
+								{include file=\App\Layout::getTemplatePath('ButtonLink.tpl', $MODULE) BUTTON_VIEW='quickcreateViewHeader'}
+								&nbsp;&nbsp;
+							{/foreach}
 							{assign var="EDIT_VIEW_URL" value=$MODULE_MODEL->getCreateRecordUrl()}
-							<button class="btn btn-default" id="goToFullForm" data-edit-view-url="{$EDIT_VIEW_URL}" type="button"><strong>{vtranslate('LBL_GO_TO_FULL_FORM', $MODULE)}</strong></button>&nbsp;
-							<button class="btn btn-success" type="submit"><strong>{vtranslate('LBL_SAVE', $MODULE)}</strong></button>
-							<button class="cancelLink  btn btn-warning" aria-hidden="true" data-dismiss="modal" type="button" title="{vtranslate('LBL_CLOSE')}">x</button>
+							<button class="btn btn-default goToFullFormOne" id="goToFullForm" data-edit-view-url="{$EDIT_VIEW_URL}" type="button"><strong>{\App\Language::translate('LBL_GO_TO_FULL_FORM', $MODULE)}</strong></button>&nbsp;
+							<button class="btn btn-success" type="submit" title="{\App\Language::translate('LBL_SAVE', $MODULE)}"><strong><span class="glyphicon glyphicon-ok"></span></strong></button>
+							<button class="cancelLink btn btn-warning" type="reset" aria-hidden="true" data-dismiss="modal"	type="button" title="{\App\Language::translate('LBL_CLOSE')}"><span class="glyphicon glyphicon-remove"></span></button>
 						</div>
 						<div class="clearfix"></div>
 					</div>
 					{if !empty($PICKIST_DEPENDENCY_DATASOURCE)}
-						<input type="hidden" name="picklistDependency" value='{Vtiger_Util_Helper::toSafeHTML($PICKIST_DEPENDENCY_DATASOURCE)}' />
+						<input type="hidden" name="picklistDependency" value='{\App\Purifier::encodeHtml($PICKIST_DEPENDENCY_DATASOURCE)}' />
 					{/if}
 					{if !empty($MAPPING_RELATED_FIELD)}
-						<input type="hidden" name="mappingRelatedField" value='{Vtiger_Util_Helper::toSafeHTML($MAPPING_RELATED_FIELD)}' />
+						<input type="hidden" name="mappingRelatedField" value='{\App\Purifier::encodeHtml($MAPPING_RELATED_FIELD)}' />
 					{/if}
-					<input type="hidden" name="module" value="{$MODULE}">
-					<input type="hidden" name="action" value="SaveAjax">
+					<input type="hidden" id="disallowLongerThan24Hours" value="{AppConfig::module('OSSTimeControl', 'DISALLOW_LONGER_THAN_24_HOURS')}" />
+					<input type="hidden" name="module" value="{$MODULE}" />
+					<input type="hidden" name="action" value="SaveAjax" />
 					<div class="quickCreateContent">
 						<div class="modal-body row no-margin">
 							<div class="massEditTable row no-margin">
@@ -58,17 +53,17 @@
 										<div class="col-xs-12 col-md-6 fieldsLabelValue {$WIDTHTYPE} paddingLRZero">
 											<div class="fieldLabel col-xs-12 col-sm-5">
 												{assign var=HELPINFO value=explode(',',$FIELD_MODEL->get('helpinfo'))}
-												{assign var=HELPINFO_LABEL value=$MODULE|cat:'|'|cat:$FIELD_MODEL->get('label')}
+												{assign var=HELPINFO_LABEL value=$MODULE|cat:'|'|cat:$FIELD_MODEL->getFieldLabel()}
 												<label class="muted pull-left-xs pull-right-sm pull-right-lg">
 													{if $FIELD_MODEL->isMandatory() eq true} <span class="redColor">*</span>{/if}
-													{if in_array($VIEW,$HELPINFO) && vtranslate($HELPINFO_LABEL, 'HelpInfo') neq $HELPINFO_LABEL}
-														<a href="#" class="HelpInfoPopover pull-right" title="" data-placement="auto top" data-content="{htmlspecialchars(vtranslate($MODULE|cat:'|'|cat:$FIELD_MODEL->get('label'), 'HelpInfo'))}" data-original-title='{vtranslate($FIELD_MODEL->get("label"), $MODULE)}'><span class="glyphicon glyphicon-info-sign"></span></a>
+													{if in_array($VIEW,$HELPINFO) && \App\Language::translate($HELPINFO_LABEL, 'HelpInfo') neq $HELPINFO_LABEL}
+														<a href="#" class="HelpInfoPopover pull-right" title="" data-placement="auto top" data-content="{htmlspecialchars(\App\Language::translate($MODULE|cat:'|'|cat:$FIELD_MODEL->getFieldLabel(), 'HelpInfo'))}" data-original-title='{\App\Language::translate($FIELD_MODEL->getFieldLabel(), $MODULE)}'><span class="glyphicon glyphicon-info-sign"></span></a>
 													{/if}
-													{vtranslate($FIELD_MODEL->get('label'), $MODULE)}
+													{\App\Language::translate($FIELD_MODEL->getFieldLabel(), $MODULE)}
 												</label>
 											</div>
 											<div class="fieldValue col-xs-12 col-sm-7" >
-												{include file=vtemplate_path($FIELD_MODEL->getUITypeModel()->getTemplateName(),$MODULE)}
+												{include file=\App\Layout::getTemplatePath($FIELD_MODEL->getUITypeModel()->getTemplateName(), $MODULE)}
 											</div>
 										</div>
 									{/foreach}
@@ -81,7 +76,7 @@
 					</div>
 					{if !empty($SOURCE_RELATED_FIELD)}
 						{foreach key=RELATED_FIELD_NAME item=RELATED_FIELD_MODEL from=$SOURCE_RELATED_FIELD}
-							<input type="hidden" name="{$RELATED_FIELD_NAME}" value="{$RELATED_FIELD_MODEL->get('fieldvalue')}" data-fieldtype="{$RELATED_FIELD_MODEL->getFieldDataType()}" />
+							<input type="hidden" name="{$RELATED_FIELD_NAME}" value="{\App\Purifier::encodeHtml($RELATED_FIELD_MODEL->get('fieldvalue'))}" data-fieldtype="{$RELATED_FIELD_MODEL->getFieldDataType()}" />
 						{/foreach}
 					{/if}
 				</form>

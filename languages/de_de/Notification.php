@@ -1,10 +1,16 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Notification german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author skavenkf (K.Fink)
+ */
 $languageStrings = [
 	'Notification' => 'Benachrichtigungen',
 	'SINGLE_Notification' => 'Benachrichtigung',
 	'Notification ID' => 'Benachrichtigungs ID',
-	'LBL_CUSTOM_INFORMATION' => 'System Information',
+	'LBL_NOTIFICATION_CONTENTS' => 'Inhalt',
 	'FL_TITLE' => 'Titel',
 	'LBL_NOTIFICATION_INFORMATION' => 'Beschreibung',
 	'FL_RELATED_MODULE' => 'bezogenes Modul',
@@ -18,13 +24,15 @@ $languageStrings = [
 	'PLL_3_H' => '3 Stunden',
 	'PLL_12_H' => '12 Stunden',
 	'PLL_24_H' => '24 Stunden',
-	'LBL_WATCHING_MODULES' => 'Beobachte Module',
+	'LBL_WATCHING_MODULES' => 'Beobachtete Module',
 	'LBL_CREATING_NOTIFICATION' => 'Benachrichtigung senden',
 	'LBL_TITLE' => 'Titel',
 	'LBL_MESSAGE' => 'Nachricht',
+	'LBL_MODULES' => 'Module',
 	'LBL_SEND_NOTIFICATION_MESSAGE' => 'Nachricht senden',
+	'LBL_SEND_NOTIFICATIONS' => 'Nachricht senden',
 	'PLL_UNREAD' => 'Ungelesen',
-	'PLL_READ' => 'Lesen',
+	'PLL_READ' => 'Gelesen',
 	'PLL_USERS' => 'Von Benutzer',
 	'PLL_SYSTEM' => 'System',
 	'FL_RELATED_RECORD' => 'verknüpfter Datensatz',
@@ -32,6 +40,12 @@ $languageStrings = [
 	'FL_USER' => 'Benutzer',
 	'FL_TYPE' => 'Typ',
 	'LBL_MARK_AS_READ' => 'Als gelesen markieren',
+	'LBL_NO_NOTIFICATIONS' => 'Keine Benachrichtigungen',
+	'LBL_CRON_LAUNCHING_FREQUENCY' => 'Cron Startfrequenz',
+	'LBL_MODULES' => 'Modules',
+	'LBL_NOTIFICATION_SETTINGS' => 'Einstellungen',
+	'LBL_UNREAD' => 'Ungelesen',
+	'LBL_NO_UNREAD_NOTIFICATIONS' => 'Keine ungelesenen Benachrichtigungen',
 ];
 $jsLanguageStrings = [
 	'JS_MARKED_AS_READ' => 'Als gelesen markieren',

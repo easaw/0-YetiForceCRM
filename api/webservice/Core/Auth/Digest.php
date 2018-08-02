@@ -3,10 +3,11 @@
 /**
  * Digest Authorization class
  * @package YetiForce.WebserviceAuth
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-class DigestAuth extends AbstractAuth
+class DigestAuth
 {
 
 	public function authenticate()
@@ -49,6 +50,6 @@ class DigestAuth extends AbstractAuth
 	{
 		$stmt = $this->pdo->prepare(sprintf('SELECT digesta1 FROM %s WHERE username = ?', $this->tableName));
 		$stmt->execute([$username]);
-		return $stmt->fetchColumn() ? : null;
+		return $stmt->fetchColumn() ?: null;
 	}
 }

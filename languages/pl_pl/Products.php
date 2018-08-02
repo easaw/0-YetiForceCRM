@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Products polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	// Field Labels
 	'FL_RENEWABLE' => 'Odnawialny',
@@ -38,7 +35,6 @@ $languageStrings = [
 	'Hardware' => 'Sprzęt',
 	'Hours' => 'Godzin',
 	'Impressions' => 'Nakład',
-	'LBL_ADD_RECORD' => 'Dodaj rekord',
 	'LBL_ADD_TO_PRICEBOOKS' => 'Dodaj do cennika', //Duplicated key-value pairs
 	'Lb' => 'St',
 	'LBL_IMAGE_INFORMATION' => 'Szczegóły galerii produktu',
@@ -47,7 +43,6 @@ $languageStrings = [
 	'LBL_PRICES' => 'Cena produktu',
 	'LBL_PRODUCT_INFORMATION' => 'Szczegóły produktu',
 	'LBL_PRODUCTSMOD_DISABLED' => 'Włącz moduł Produkty, aby zobaczyć produkty',
-	'LBL_RECORDS_LIST' => 'Lista rekordów',
 	'LBL_RESET_PRICE' => 'Wyczyść ceny',
 	'LBL_RESET' => 'Wyczyść',
 	'LBL_STOCK_INFORMATION' => 'Szczegóły magazynowe produktu',

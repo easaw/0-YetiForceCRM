@@ -1,58 +1,62 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings LangManagement edit view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_LangManagement_Edit_View extends Settings_Vtiger_Index_View
 {
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	public function postProcess(\App\Request $request)
 	{
 		
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process function
+	 * @param App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$viewer = $this->getViewer($request);
 		$qualifiedModuleName = $request->getModule(false);
-		$lang = $request->get('lang');
-		$mod = $request->get('mod');
-		$tpl = $request->get('tpl');
-		$ShowDifferences = $request->get('sd');
+		$lang = $request->getByType('lang', 1);
+		if (empty($lang)) {
+			$lang = [];
+		}
+		$mod = $request->getByType('mod', 1);
+		$tpl = $request->getByType('tpl', 1);
+		$showDifferences = $request->getInteger('sd');
 		$moduleModel = Settings_LangManagement_Module_Model::getInstance($qualifiedModuleName);
-		if ($lang != '' && $mod != '') {
-			if ($tpl == 'editLang') {
-				$data = $moduleModel->loadLangTranslation($lang, $mod, $ShowDifferences);
+		$data = null;
+		if (!empty($lang) && !empty($mod)) {
+			if ($tpl === 'editLang') {
+				$data = $moduleModel->loadLangTranslation($lang, $mod, $showDifferences);
 			} else {
-				$data = $moduleModel->loadAllFieldsFromModule($lang, $mod, $ShowDifferences);
+				$data = $moduleModel->loadAllFieldsFromModule($lang, $mod, $showDifferences);
 			}
 		}
 		$mods = $moduleModel->getModFromLang($lang);
 		unset($mods['mods']['HelpInfo']);
-		$Langs = $moduleModel->getLang();
 		$viewer->assign('MODS', $mods);
 		$viewer->assign('MODULE_MODEL', $moduleModel);
-		$viewer->assign('REQUEST', $request);
-		$viewer->assign('LANGS', $Langs);
+		$viewer->assign('SELECTED_LANGS', $lang);
+		$viewer->assign('SELECTED_MODE', $mod);
+		$viewer->assign('LANGS', App\Language::getAll());
 		$viewer->assign('DATA', $data);
-		$viewer->assign('LANGS', $Langs);
-		$viewer->assign('SD', $ShowDifferences);
+		$viewer->assign('SD', $showDifferences);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('CURRENT_USER_MODEL', Users_Record_Model::getCurrentUserModel());
-		if ($tpl == 'editLang') {
+		if ($tpl === 'editLang') {
 			$viewer->view('Edit.tpl', $qualifiedModuleName);
 		} else {
 			$viewer->view('EditHelpIcon.tpl', $qualifiedModuleName);

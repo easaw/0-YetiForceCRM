@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * WidgetsManagement polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_CHOISE_AUTHORIZED' => 'Wybierz rolę',
 	'LBL_ADD_DASHBOARD_BLOCK' => 'Dodaj blok widoku podsumowania dla modułu',
@@ -43,6 +40,15 @@ $languageStrings = [
 	'LBL_ADD_CHANNEL' => 'Dodaj kanał',
 	'LBL_ADD_RSS' => 'RSS',
 	'LBL_ADD_CHART_FILTER' => 'Wykres z filtru',
+	'LBL_NOTIFICATION_BY_SENDER' => 'Ilość powiadomień wg nadawców',
+	'LBL_NOTIFICATION_BY_RECIPIENT' => 'Ilość powiadomien wg odbiorców',
+	'LBL_DEFAULT_DATE' => 'Domyślna data',
+	'PLL_CURRENT_DAY' => 'Bieżący dzień',
+	'PLL_CURRENT_WEEK' => 'Bieżący tydzień',
+	'PLL_CURRENT_MONTH' => 'Bieżący miesiąc',
+	'PLL_CURRENT_YEAR' => 'Bieżący rok',
+	'LBL_SAVE_DASHBOARD' => 'Zapisz pulpit',
+	'LBL_NAME_DASHBOARD' => 'Nazwa pulpitu',
 ];
 $jsLanguageStrings = [
 	'JS_BLOCK_ADDED' => 'Pomyślnie dodano blok',

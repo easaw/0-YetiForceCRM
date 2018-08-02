@@ -11,28 +11,31 @@
 class Users_Logout_Action extends Vtiger_Action_Controller
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		return true;
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function process(\App\Request $request)
 	{
-		vimport('~include/events/include.inc');
-		$db = PearDatabase::getInstance();
-		$em = new VTEventsManager($db);
-		$em->initTriggerCache();
-		$em->triggerEvent('user.logout.before', []);
-
-		Vtiger_Session::regenerateId(true); // to overcome session id reuse.
-		Vtiger_Session::destroy();
+		$eventHandler = new App\EventHandler();
+		$eventHandler->trigger('UserLogoutBefore');
+		if (AppConfig::main('session_regenerate_id')) {
+			App\Session::regenerateId(true); // to overcome session id reuse.
+		}
+		App\Session::destroy();
 
 		//Track the logout History
 		$moduleName = $request->getModule();
 		$moduleModel = Users_Module_Model::getInstance($moduleName);
 		$moduleModel->saveLogoutHistory();
 		//End
-
 		header('Location: index.php');
 	}
 }

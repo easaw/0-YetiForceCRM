@@ -1,16 +1,16 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Products SummaryWidget model class
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Products_SummaryWidget_Model
 {
+
+	const MODULES = ['Products', 'OutsourcedProducts', 'Assets', 'Services', 'OSSOutsourcedServices', 'OSSSoldServices'];
+	const CATEGORY_MODULES = ['Products', 'OutsourcedProducts', 'Services', 'OSSOutsourcedServices'];
 
 	public static function getCleanInstance()
 	{
@@ -18,50 +18,62 @@ class Products_SummaryWidget_Model
 		return $instance;
 	}
 
-	public function getProductsServices(Vtiger_Request $request)
+	public function getProductsServices(\App\Request $request, Vtiger_Viewer $viewer)
 	{
 		$fromModule = $request->get('fromModule');
-		$record = $request->get('record');
-		$mod = $request->get('mod');
-		if (!in_array($mod, ['Products', 'Services'])) {
-			throw new \Exception\AppException('Not supported Module');
+		$record = $request->getInteger('record');
+		$mod = $request->getByType('mod', 1);
+		if (!\App\Privilege::isPermitted($fromModule, 'DetailView', $record) || !\App\Privilege::isPermitted($mod)) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
-		$db = PearDatabase::getInstance();
-
+		if (!in_array($mod, self::MODULES)) {
+			throw new \App\Exceptions\AppException('Not supported Module');
+		}
 		$limit = 10;
-		$params = [];
-		if (!empty($request->get('limit'))) {
-			$limit = $request->get('limit');
+		if (!empty($request->getInteger('limit'))) {
+			$limit = $request->getInteger('limit');
 		}
-		if ($mod == 'Products') {
-			$sql = 'SELECT vtiger_products.productid AS id, vtiger_products.pscategory AS category, vtiger_products.productname AS name, vtiger_crmentity.smownerid '
-				. 'FROM vtiger_products '
-				. 'INNER JOIN vtiger_crmentity ON vtiger_products.productid = vtiger_crmentity.crmid '
-				. 'INNER JOIN vtiger_seproductsrel ON vtiger_products.productid = vtiger_seproductsrel.productid '
-				. 'LEFT JOIN vtiger_users ON vtiger_crmentity.smownerid = vtiger_users.id '
-				. 'LEFT JOIN vtiger_groups ON vtiger_crmentity.smownerid = vtiger_groups.groupid '
-				. 'WHERE vtiger_crmentity.deleted=0 && vtiger_products.productid > 0 && vtiger_seproductsrel.setype = ? && vtiger_seproductsrel.crmid = ?';
-			$params[] = $fromModule;
-			$params[] = $record;
-		} elseif ($mod == 'Services') {
-			$sql = 'SELECT vtiger_service.serviceid AS id, vtiger_service.pscategory AS category, vtiger_service.servicename AS name, vtiger_crmentity.smownerid '
-				. 'FROM vtiger_service '
-				. 'INNER JOIN vtiger_crmentity ON vtiger_service.serviceid = vtiger_crmentity.crmid '
-				. 'INNER JOIN vtiger_crmentityrel ON (vtiger_crmentityrel.relcrmid = vtiger_crmentity.crmid || vtiger_crmentityrel.crmid = vtiger_crmentity.crmid)'
-				. 'LEFT JOIN vtiger_users ON vtiger_crmentity.smownerid = vtiger_users.id '
-				. 'LEFT JOIN vtiger_groups ON vtiger_crmentity.smownerid = vtiger_groups.groupid '
-				. 'WHERE vtiger_crmentity.deleted=0 && vtiger_service.serviceid > 0 && (vtiger_crmentityrel.crmid IN (?) || vtiger_crmentityrel.relcrmid IN (?))';
-			$params[] = $record;
-			$params[] = $record;
+		$pagingModel = new Vtiger_Paging_Model();
+		$pagingModel->set('page', 0);
+		$pagingModel->set('limit', $limit);
+
+		$parentRecordModel = Vtiger_Record_Model::getInstanceById($record, $fromModule);
+		$relationListView = Vtiger_RelationListView_Model::getInstance($parentRecordModel, $mod);
+		$recordsModels = $relationListView->getEntries($pagingModel);
+		$recordsHeader = $relationListView->getHeaders();
+		array_splice($recordsHeader, 3);
+		$viewer->assign('RELATED_RECORDS', $recordsModels);
+		$viewer->assign('RELATED_HEADERS', $recordsHeader);
+		if (in_array($mod, self::CATEGORY_MODULES)) {
+			$viewer->assign('RELATED_HEADERS_TREE', $relationListView->getTreeHeaders());
+			$viewer->assign('RELATED_RECORDS_TREE', $relationListView->getTreeEntries());
 		}
-		$sql.= \App\PrivilegeQuery::getAccessConditions($mod);
-		$sql.= sprintf(' LIMIT %s', $limit);
-		$result = $db->pquery($sql, $params);
-		$returnData = [];
-		while ($row = $db->fetch_array($result)) {
-			$returnData[] = $row;
+		$viewer->assign('RECORD_PAGING_MODEL', $pagingModel);
+	}
+
+	/**
+	 * Get related modules record counts
+	 * @param Vtiger_Record_Model $parentRecordModel
+	 * @return type
+	 */
+	public static function getModulesAndCount(Vtiger_Record_Model $parentRecordModel)
+	{
+		$modules = [];
+		foreach (self::MODULES as &$moduleName) {
+			$count = 0;
+			if (!\App\Privilege::isPermitted($moduleName)) {
+				continue;
+			}
+			$relationListView = Vtiger_RelationListView_Model::getInstance($parentRecordModel, $moduleName);
+			if (!$relationListView->getRelationModel()) {
+				continue;
+			}
+			if (in_array($moduleName, self::CATEGORY_MODULES)) {
+				$count += (int) $relationListView->getRelatedTreeEntriesCount();
+			}
+			$count += (int) $relationListView->getRelatedEntriesCount();
+			$modules[$moduleName] = $count;
 		}
-		$showMore = (int) $limit == count($returnData) ? 1 : 0;
-		return ['data' => $returnData, 'showMore' => $showMore];
+		return $modules;
 	}
 }

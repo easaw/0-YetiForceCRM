@@ -9,14 +9,13 @@
  * *********************************************************************************** */
 
 require_once 'include/utils/utils.php';
-require_once 'vtlib/Vtiger/Net/Client.php';
 
 class PBXManager_PBXManager_Connector
 {
 
-	private static $SETTINGS_REQUIRED_PARAMETERS = array('webappurl' => 'text', 'outboundcontext' => 'text', 'outboundtrunk' => 'text', 'vtigersecretkey' => 'text');
-	private static $RINGING_CALL_PARAMETERS = array('From' => 'callerIdNumber', 'SourceUUID' => 'callUUID', 'Direction' => 'Direction');
-	private static $NUMBERS = array();
+	private static $SETTINGS_REQUIRED_PARAMETERS = ['webappurl' => 'text', 'outboundcontext' => 'text', 'outboundtrunk' => 'text', 'vtigersecretkey' => 'text'];
+	private static $RINGING_CALL_PARAMETERS = ['From' => 'callerIdNumber', 'SourceUUID' => 'callUUID', 'Direction' => 'Direction'];
+	private static $NUMBERS = [];
 	private $webappurl;
 	private $outboundcontext, $outboundtrunk;
 	private $vtigersecretkey;
@@ -37,7 +36,7 @@ class PBXManager_PBXManager_Connector
 
 	/**
 	 * Function to get provider name
-	 * returns <string>
+	 * returns string
 	 */
 	public function getGatewayName()
 	{
@@ -46,7 +45,7 @@ class PBXManager_PBXManager_Connector
 
 	public function getPicklistValues($field)
 	{
-		
+
 	}
 
 	public function getServer()
@@ -95,12 +94,18 @@ class PBXManager_PBXManager_Connector
 	 * Function to get Settings edit view params
 	 * returns <array>
 	 */
-	public function getSettingsParameters()
+	public static function getSettingsParameters()
 	{
 		return self::$SETTINGS_REQUIRED_PARAMETERS;
 	}
 
-	protected function prepareParameters($details, $type)
+	/**
+	 * Function prepares parameters
+	 * @param \App\Request $details
+	 * @param string $type
+	 * @return string
+	 */
+	protected function prepareParameters(\App\Request $details, $type)
 	{
 		switch ($type) {
 			case 'ringing':
@@ -115,9 +120,9 @@ class PBXManager_PBXManager_Connector
 
 	/**
 	 * Function to handle the dial call event
-	 * @param <Vtiger_Request> $details 
+	 * @param \App\Request $details
 	 */
-	public function handleDialCall($details)
+	public function handleDialCall(\App\Request $details)
 	{
 		$callid = $details->get('callUUID');
 
@@ -128,7 +133,7 @@ class PBXManager_PBXManager_Connector
 		$recordModel = PBXManager_Record_Model::getInstanceBySourceUUID($callid);
 		$direction = $recordModel->get('direction');
 		if ($direction == self::INCOMING_TYPE) {
-			// For Incoming call, we should fill the user field if he answered that call 
+			// For Incoming call, we should fill the user field if he answered that call
 			$user = PBXManager_Record_Model::getUserInfoWithNumber($answeredby);
 			$params['user'] = $user['id'];
 			$recordModel->updateAssignedUser($user['id']);
@@ -146,9 +151,9 @@ class PBXManager_PBXManager_Connector
 
 	/**
 	 * Function to handle the EndCall event
-	 * @param <Vtiger_Request> $details 
+	 * @param \App\Request $details
 	 */
-	public function handleEndCall($details)
+	public function handleEndCall(\App\Request $details)
 	{
 		$callid = $details->get('callUUID');
 		$recordModel = PBXManager_Record_Model::getInstanceBySourceUUID($callid);
@@ -163,9 +168,9 @@ class PBXManager_PBXManager_Connector
 
 	/**
 	 * Function to handle the hangup call event
-	 * @param <Vtiger_Request> $details 
+	 * @param \App\Request $details
 	 */
-	public function handleHangupCall($details)
+	public function handleHangupCall(\App\Request $details)
 	{
 		$callid = $details->get('callUUID');
 		$recordModel = PBXManager_Record_Model::getInstanceBySourceUUID($callid);
@@ -200,9 +205,9 @@ class PBXManager_PBXManager_Connector
 
 	/**
 	 * Function to handle record event
-	 * @param <Vtiger_Request> $details 
+	 * @param \App\Request $details
 	 */
-	public function handleRecording($details)
+	public function handleRecording(\App\Request $details)
 	{
 		$callid = $details->get('callUUID');
 		$recordModel = PBXManager_Record_Model::getInstanceBySourceUUID($callid);
@@ -212,11 +217,10 @@ class PBXManager_PBXManager_Connector
 
 	/**
 	 * Function to handle AGI event
-	 * @param <Vtiger_Request> $details 
+	 * @param \App\Request $details
 	 */
-	public function handleStartupCall($details, $userInfo, $customerInfo)
+	public function handleStartupCall(\App\Request $details, $userInfo, $customerInfo)
 	{
-		$current_user = vglobal('current_user');
 		$params = $this->prepareParameters($details, self::RINGING_TYPE);
 		$direction = $details->get('Direction');
 
@@ -232,10 +236,7 @@ class PBXManager_PBXManager_Connector
 		}
 
 		$params['starttime'] = $details->get('StartTime');
-		$params['callstatus'] = "ringing";
-		$user = CRMEntity::getInstance('Users');
-		$current_user = $user->getActiveAdminUser();
-
+		$params['callstatus'] = 'ringing';
 		$recordModel = PBXManager_Record_Model::getCleanInstance();
 		$recordModel->saveRecordWithArrray($params);
 
@@ -247,14 +248,13 @@ class PBXManager_PBXManager_Connector
 
 	/**
 	 * Function to respond for incoming calls
-	 * @param <Vtiger_Request> $details 
+	 * @param \App\Request $details
 	 */
-	public function respondToIncomingCall($details)
+	public function respondToIncomingCall(\App\Request $details)
 	{
-		$current_user = vglobal('current_user');
 		self::$NUMBERS = PBXManager_Record_Model::getUserNumbers();
 
-		header("Content-type: text/xml; charset=utf-8");
+		header('Content-type: text/xml; charset=utf-8');
 		$response = '<?xml version="1.0" encoding="utf-8"?>';
 		$response .= '<Response><Dial><Authentication>';
 		$response .= 'Success</Authentication>';
@@ -262,9 +262,7 @@ class PBXManager_PBXManager_Connector
 		if (self::$NUMBERS) {
 
 			foreach (self::$NUMBERS as $userId => $number) {
-				$userInstance = Users_Privileges_Model::getInstanceById($userId);
-				$current_user = $userInstance;
-				$callPermission = Users_Privileges_Model::isPermitted('PBXManager', 'ReceiveIncomingCalls');
+				$callPermission = \App\Privilege::isPermitted('PBXManager', 'ReceiveIncomingCalls');
 
 				if ($number != $details->get('callerIdNumber') && $callPermission) {
 					if (preg_match("/sip/", $number) || preg_match("/@/", $number)) {
@@ -294,7 +292,7 @@ class PBXManager_PBXManager_Connector
 
 	/**
 	 * Function to respond for outgoing calls
-	 * @param <Vtiger_Request> $details 
+	 * @param \App\Request $details
 	 */
 	public function respondToOutgoingCall($to)
 	{
@@ -322,11 +320,11 @@ class PBXManager_PBXManager_Connector
 	}
 
 	/**
-	 * Function to make outbound call 
-	 * @param <string> $number (Customer)
-	 * @param <string> $recordid
+	 * Function to make outbound call
+	 * @param string $number (Customer)
+	 * @return boolean
 	 */
-	public function call($number, $record)
+	public function call($number)
 	{
 		$user = Users_Record_Model::getCurrentUserModel();
 		$extension = $user->phone_crm_extension;
@@ -342,11 +340,10 @@ class PBXManager_PBXManager_Connector
 		$serviceURL .= 'to=' . urlencode($number) . '&';
 		$serviceURL .= 'context=' . urlencode($context);
 
-		$httpClient = new Vtiger_Net_Client($serviceURL);
-		$response = $httpClient->doPost(array());
-		$response = trim($response);
+		$httpClient = Requests::post($serviceURL);
+		$response = trim($httpClient->body);
 
-		if ($response == "Error" || $response == "" || $response === null || $response == "Authentication Failure") {
+		if ($response === 'Error' || $response === '' || $response === null || $response === 'Authentication Failure') {
 			return false;
 		}
 		return true;

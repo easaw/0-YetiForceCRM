@@ -2,33 +2,42 @@
 
 /**
  * Tree Category Modal Class
- * @package YetiForce.ModalView
- * @license licenses/License.html
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Vtiger_TreeCategoryModal_View extends Vtiger_BasicModal_View
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$currentUserPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPrivilegesModel->hasModulePermission($moduleName)) {
-			throw new \Exception\AppException(vtranslate($moduleName) . ' ' . vtranslate('LBL_NOT_ACCESSIBLE'));
+		$recordId = $request->getInteger('src_record');
+		if (!$recordId) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
-
-		if (!Users_Privileges_Model::isPermitted($request->get('src_module'), 'DetailView', $request->get('src_record'))) {
-			throw new \Exception\NoPermittedToRecord('LBL_PERMISSION_DENIED');
+		if (!\App\Privilege::isPermitted($request->getByType('src_module', 2), 'DetailView', $recordId)) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Function to get size modal window
+	 * @param \App\Request $request
+	 * @return string
+	 */
+	public function getSize(\App\Request $request)
+	{
+		return 'modal-lg';
+	}
+
+	public function process(\App\Request $request)
 	{
 		$this->preProcess($request);
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$srcRecord = $request->get('src_record');
-		$srcModule = $request->get('src_module');
+		$srcRecord = $request->getInteger('src_record');
+		$srcModule = $request->getByType('src_module', 2);
 
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
 		$treeCategoryModel = Vtiger_TreeCategoryModal_Model::getInstance($moduleModel);
@@ -36,7 +45,7 @@ class Vtiger_TreeCategoryModal_View extends Vtiger_BasicModal_View
 		$treeCategoryModel->set('srcModule', $srcModule);
 		$this->relationType = $treeCategoryModel->getRelationType();
 
-		$viewer->assign('TREE', \includes\utils\Json::encode($treeCategoryModel->getTreeData()));
+		$viewer->assign('TREE', \App\Json::encode($treeCategoryModel->getTreeData()));
 		$viewer->assign('SRC_RECORD', $srcRecord);
 		$viewer->assign('SRC_MODULE', $srcModule);
 		$viewer->assign('TEMPLATE', $treeCategoryModel->getTemplate());
@@ -48,7 +57,7 @@ class Vtiger_TreeCategoryModal_View extends Vtiger_BasicModal_View
 		$this->postProcess($request);
 	}
 
-	public function getModalScripts(Vtiger_Request $request)
+	public function getModalScripts(\App\Request $request)
 	{
 		$parentScriptInstances = parent::getModalScripts($request);
 
@@ -69,7 +78,7 @@ class Vtiger_TreeCategoryModal_View extends Vtiger_BasicModal_View
 		return $scriptInstances;
 	}
 
-	public function getModalCss(Vtiger_Request $request)
+	public function getModalCss(\App\Request $request)
 	{
 		$parentCssInstances = parent::getModalCss($request);
 		$cssFileNames = [

@@ -6,6 +6,7 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce Sp. z o.o.
  * ********************************************************************************** */
 
 class Settings_Vtiger_List_View extends Settings_Vtiger_Index_View
@@ -14,42 +15,49 @@ class Settings_Vtiger_List_View extends Settings_Vtiger_Index_View
 	protected $listViewEntries = false;
 	protected $listViewHeaders = false;
 
+	/**
+	 * List view model instance
+	 * @var Settings_Vtiger_ListView_Model
+	 */
+	public $listViewModel;
+
 	public function __construct()
 	{
 		parent::__construct();
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request, false);
 
 		$viewer = $this->getViewer($request);
 		$this->initializeListViewContents($request, $viewer);
-		$sourceModule = $request->get('sourceModule');
-		$viewer->assign('SOURCE_MODULE', $sourceModule);
+		if (!$request->isEmpty('sourceModule')) {
+			$sourceModule = $request->getByType('sourceModule', 2);
+			$viewer->assign('SOURCE_MODULE', $sourceModule);
+		}
 		$viewer->view('ListViewHeader.tpl', $request->getModule(false));
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$this->initializeListViewContents($request, $viewer);
 		$viewer->view('ListViewContents.tpl', $request->getModule(false));
 	}
-	/*
+
+	/**
 	 * Function to initialize the required data in smarty to display the List View Contents
+	 * @param \App\Request $request
+	 * @param Vtiger_Viewer $viewer
 	 */
-
-	public function initializeListViewContents(Vtiger_Request $request, Vtiger_Viewer $viewer)
+	public function initializeListViewContents(\App\Request $request, Vtiger_Viewer $viewer)
 	{
-		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
-		$pageNumber = $request->get('page');
-		$orderBy = $request->get('orderby');
-		$sortOrder = $request->get('sortorder');
-		$sourceModule = $request->get('sourceModule');
-		$forModule = $request->get('formodule');
-
+		$pageNumber = $request->getInteger('page');
+		$orderBy = $request->getForSql('orderby');
+		$sortOrder = $request->getForSql('sortorder');
+		$searchParams = $request->get('searchParams');
 		$searchKey = $request->get('search_key');
 		$searchValue = $request->get('search_value');
 
@@ -64,7 +72,10 @@ class Settings_Vtiger_List_View extends Settings_Vtiger_Index_View
 			$pageNumber = 1;
 		}
 
-		$listViewModel = Settings_Vtiger_ListView_Model::getInstance($qualifiedModuleName);
+		if (!$this->listViewModel) {
+			$this->listViewModel = Settings_Vtiger_ListView_Model::getInstance($qualifiedModuleName);
+		}
+		$listViewModel = $this->listViewModel;
 
 		$pagingModel = new Vtiger_Paging_Model();
 		$pagingModel->set('page', $pageNumber);
@@ -73,16 +84,22 @@ class Settings_Vtiger_List_View extends Settings_Vtiger_Index_View
 			$listViewModel->set('search_key', $searchKey);
 			$listViewModel->set('search_value', $searchValue);
 		}
+		if (!empty($searchParams)) {
+			$listViewModel->set('searchParams', $searchParams);
+			$viewer->assign('SEARCH_PARAMS', $searchParams);
+		}
 
 		if (!empty($orderBy)) {
 			$listViewModel->set('orderby', $orderBy);
 			$listViewModel->set('sortorder', $sortOrder);
 		}
-		if (!empty($sourceModule)) {
+		if (!$request->isEmpty('sourceModule')) {
+			$sourceModule = $request->getByType('sourceModule', 2);
 			$listViewModel->set('sourceModule', $sourceModule);
 		}
-		if (!empty($forModule)) {
-			$listViewModel->set('formodule', $forModule);
+		if (!$request->isEmpty('formodule')) {
+			$sourceModule = $request->getByType('formodule', 1);
+			$listViewModel->set('formodule', $sourceModule);
 		}
 		if (!$this->listViewHeaders) {
 			$this->listViewHeaders = $listViewModel->getListViewHeaders();
@@ -124,22 +141,22 @@ class Settings_Vtiger_List_View extends Settings_Vtiger_Index_View
 
 	/**
 	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
+		$jsFileNames = [
 			'modules.Vtiger.resources.List',
 			'modules.Settings.Vtiger.resources.List',
 			"modules.Settings.$moduleName.resources.List",
 			"modules.Settings.Vtiger.resources.$moduleName",
 			'modules.Vtiger.resources.ListSearch',
 			"modules.$moduleName.resources.ListSearch"
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);

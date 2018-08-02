@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * IGDN polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'IGDN' => '[WZ] Wydania na zewnątrz',
 	'SINGLE_IGDN' => '[WZ] Wydanie na zewnątrz',
@@ -12,7 +17,7 @@ $languageStrings = [
 	'FL_NUMBER' => 'Numer',
 	'FL_STORAGE' => 'Magazyn',
 	'FL_STATUS' => 'Status',
-	'FL_SSIGNLEORDERS' => 'Zamówienie jednorazowe',
+	'FL_SSIGNLEORDERS' => 'Zamówienie',
 	// Picklist
 	'PLL_DRAFT' => 'Wersja robocza',
 	'PLL_IN_REALIZATION' => 'W realizacji',

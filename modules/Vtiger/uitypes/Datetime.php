@@ -6,62 +6,80 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
+/**
+ * Uitype: 80
+ */
 class Vtiger_Datetime_UIType extends Vtiger_Date_UIType
 {
 
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritDoc}
 	 */
-	public function getTemplateName()
+	public function validate($value, $isUserFormat = false)
 	{
-		return 'uitypes/DateTime.tpl';
+		if ($this->validate || empty($value)) {
+			return;
+		}
+		$arrayDateTime = explode(' ', $value, 2);
+		$cnt = count($arrayDateTime);
+		if ($cnt === 1) { //Date
+			parent::validate($arrayDateTime[0], $isUserFormat);
+		} elseif ($cnt === 2) { //Date
+			parent::validate($arrayDateTime[0], $isUserFormat);
+			(new Vtiger_Time_UIType())->validate($arrayDateTime[1], $isUserFormat); //Time
+		}
+		$this->validate = true;
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
 		if (empty($value)) {
 			return '';
 		}
-		return $dateValue = self::getDisplayDateTimeValue($value);
+		switch ($this->getFieldModel()->getUIType()) {
+			case 80:
+				return $rawText ? Vtiger_Util_Helper::formatDateDiffInStrings($value) : '<span title="' . App\Fields\DateTime::formatToDisplay($value) . '">' . Vtiger_Util_Helper::formatDateDiffInStrings($value) . '</span>';
+			default:
+				return App\Fields\DateTime::formatToDisplay($value);
+		}
 	}
 
 	/**
-	 * Function to get Date and Time value for Display
-	 * @param <type> $date
-	 * @return <String>
+	 * {@inheritDoc}
 	 */
-	public static function getDisplayDateTimeValue($date)
+	public function getListViewDisplayValue($value, $record = false, $recordModel = false, $rawText = false)
 	{
-		$date = new DateTimeField($date);
-		return $date->getDisplayDateTimeValue();
-	}
-
-	/**
-	 * Function to get Date and Time value for Display
-	 * @param <type> $date
-	 * @return <String>
-	 */
-	public static function getDBDateTimeValue($date)
-	{
-		$date = new DateTimeField($date);
-		return $date->getDBInsertDateTimeValue();
+		if (empty($value)) {
+			return '';
+		}
+		switch ($this->getFieldModel()->getUIType()) {
+			case 80:
+				return $rawText ? \App\Fields\DateTime::formatToViewDate($value) : '<span title="' . App\Fields\DateTime::formatToDisplay($value) . '">' . \App\Fields\DateTime::formatToViewDate($value) . '</span>';
+		}
+		return \vtlib\Functions::textLength($this->getDisplayValue($value, $record, $recordModel, $rawText), $this->getFieldModel()->get('maxlengthtext'));
 	}
 
 	/**
 	 * Function to get the datetime value in user preferred hour format
 	 * @param <type> $dateTime
-	 * @return <String> date and time with hour format
+	 * @return string date and time with hour format
 	 */
 	public static function getDateTimeValue($dateTime)
 	{
-		return Vtiger_Util_Helper::convertDateTimeIntoUsersDisplayFormat($dateTime);
+		return App\Fields\DateTime::formatToDisplay($dateTime);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'uitypes/DateTime.tpl';
 	}
 }

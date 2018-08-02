@@ -6,12 +6,13 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Settings_Vtiger_TermsAndConditions_Model extends Vtiger_Base_Model
+class Settings_Vtiger_TermsAndConditions_Model extends \App\Base
 {
 
-	const tableName = 'vtiger_inventory_tandc';
+	const TABLE_NAME = 'vtiger_inventory_tandc';
 
 	public function getText()
 	{
@@ -25,34 +26,26 @@ class Settings_Vtiger_TermsAndConditions_Model extends Vtiger_Base_Model
 
 	public function getType()
 	{
-		return "Inventory";
+		return 'Inventory';
 	}
 
 	public function save()
 	{
-		$db = PearDatabase::getInstance();
-		$query = sprintf('SELECT 1 FROM %s', self::tableName);
-		$result = $db->pquery($query, []);
-		if ($db->num_rows($result) > 0) {
-			$db->update(self::tableName, ['tandc' => $this->getText()]);
+		$isExists = (new \App\Db\Query())->from(self::TABLE_NAME)->exists();
+		if ($isExists) {
+			\App\Db::getInstance()->createCommand()->update(self::TABLE_NAME, ['tandc' => $this->getText()])->execute();
 		} else {
-			$db->insert(self::tableName, [
-				'id' => $db->getUniqueID(self::tableName),
-				'type' => $this->getType(),
-				'tandc' => $this->getText()
-			]);
+			\App\Db::getInstance()->createCommand()->insert(self::TABLE_NAME, ['type' => $this->getType(),
+				'tandc' => $this->getText()])->execute();
 		}
 	}
 
 	public static function getInstance()
 	{
-		$db = PearDatabase::getInstance();
-		$query = sprintf('SELECT tandc FROM %s', self::tableName);
-		$result = $db->pquery($query, array());
+		$row = (new App\Db\Query())->select(['tandc'])->from(self::TABLE_NAME)->scalar();
 		$instance = new self();
-		if ($db->num_rows($result) > 0) {
-			$text = $db->query_result($result, 0, 'tandc');
-			$instance->setText($text);
+		if ($row) {
+			$instance->setText($row);
 		}
 		return $instance;
 	}

@@ -3,7 +3,8 @@
 /**
  * Wdiget to show neglected accounts
  * @package YetiForce.Dashboard
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Accounts_NeglectedAccounts_Dashboard extends Vtiger_IndexAjax_View
@@ -11,54 +12,53 @@ class Accounts_NeglectedAccounts_Dashboard extends Vtiger_IndexAjax_View
 
 	private $conditions = [];
 
-	private function getAccounts($moduleName, $user, $pagingModel)
+	/**
+	 * Function to get neglected accounts
+	 * @param string $moduleName
+	 * @param integer|array $user
+	 * @param Vtiger_Paging_Model $pagingModel
+	 * @return array
+	 */
+	private function getAccounts($moduleName, $user, Vtiger_Paging_Model $pagingModel)
 	{
-		$sql = 'SELECT vtiger_crmentity.crmid ,vtiger_account.accountname, vtiger_crmentity.smownerid,	vtiger_entity_stats.crmactivity 
-			FROM vtiger_account
-			INNER JOIN vtiger_crmentity ON vtiger_account.accountid = vtiger_crmentity.crmid
-			INNER JOIN vtiger_entity_stats ON vtiger_entity_stats.crmid = vtiger_account.accountid
-			WHERE vtiger_crmentity.setype = ? && vtiger_crmentity.deleted = ? && 
-			(vtiger_entity_stats.crmactivity <= ? || vtiger_entity_stats.crmactivity IS NULL)';
-		$params = [$moduleName, 0, 0];
-		if (is_array($user)) {
-			$sql .= ' && vtiger_crmentity.smownerid IN (' . generateQuestionMarks($user) . ') ';
-			$params = array_merge($params, $user);
-		} else {
-			$sql .= ' && vtiger_crmentity.smownerid = ? ';
-			$params[] = $user;
-		}
-		$sql.= \App\PrivilegeQuery::getAccessConditions($moduleName);
-		$sql .= ' ORDER BY vtiger_entity_stats.crmactivity IS NULL, vtiger_entity_stats.crmactivity  ASC  LIMIT ?, ?';
-		$params[] = $pagingModel->getStartIndex();
-		$params[] = $pagingModel->getPageLimit();
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery($sql, $params);
+		$queryGenerator = new App\QueryGenerator($moduleName);
+		$queryGenerator->setFields(['id', 'accountname', 'assigned_user_id']);
+		$queryGenerator->setCustomColumn('vtiger_entity_stats.crmactivity');
+		$queryGenerator->addJoin(['INNER JOIN', 'vtiger_entity_stats', 'vtiger_entity_stats.crmid = vtiger_account.accountid']);
+		$queryGenerator->addNativeCondition(['or', ['<=', 'vtiger_entity_stats.crmactivity', 0], ['vtiger_entity_stats.crmactivity' => null]]);
+		$queryGenerator->addCondition('assigned_user_id', $user, 'e');
+		$queryGenerator->setLimit($pagingModel->getPageLimit());
+		$queryGenerator->setOffset($pagingModel->getStartIndex());
+		$dataReader = $queryGenerator->createQuery()->orderBy(new yii\db\Expression('vtiger_entity_stats.crmactivity IS NULL'))
+			->addOrderBy(['vtiger_entity_stats.crmactivity' => SORT_ASC])->createCommand()->query();
 		$accounts = [];
-		while ($row = $db->getRow($result)) {
-			$row['userModel'] = Users_Privileges_Model::getInstanceById($row['smownerid']);
-			$accounts[$row['crmid']] = $row;
+		while ($row = $dataReader->read()) {
+			$row['userModel'] = Users_Privileges_Model::getInstanceById($row['assigned_user_id']);
+			$accounts[$row['id']] = $row;
 		}
-		$this->conditions[] = ['vtiger_entity_stats.crmactivity', 'IS NULL', '', QueryGenerator::$AND, 'tablename' => 'vtiger_entity_stats'];
-		$this->conditions[] = ['vtiger_entity_stats.crmactivity', 0, 'm', QueryGenerator::$OR];
+		$this->conditions = [
+			'condition' => ['or', ['vtiger_entity_stats.crmactivity' => null], ['<', 'vtiger_entity_stats.crmactivity', 0]],
+			'join' => [['LEFT JOIN', 'vtiger_entity_stats', 'vtiger_entity_stats.crmid = vtiger_crmentity.crmid']]
+		];
 		return $accounts;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$moduleName = $request->getModule();
-		$linkId = $request->get('linkid');
-		$user = $request->get('owner');
+		$linkId = $request->getInteger('linkid');
+		$user = $request->getByType('owner', 2);
 		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
 		if (empty($user)) {
 			$user = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget);
 		}
-		$accessibleUsers = \includes\fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleUsersForModule();
-		$accessibleGroups = \includes\fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleGroupForModule();
+		$accessibleUsers = \App\Fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleUsersForModule();
+		$accessibleGroups = \App\Fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleGroupForModule();
 		if ($user == 'all') {
 			$user = array_keys($accessibleUsers);
 		}
-		$page = $request->get('page');
+		$page = $request->getInteger('page');
 		if (empty($page)) {
 			$page = 1;
 		}
@@ -76,8 +76,7 @@ class Accounts_NeglectedAccounts_Dashboard extends Vtiger_IndexAjax_View
 		$viewer->assign('ACCESSIBLE_GROUPS', $accessibleGroups);
 		$viewer->assign('PAGING_MODEL', $pagingModel);
 		$viewer->assign('USER_CONDITIONS', $this->conditions);
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/NeglectedAccountsContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/NeglectedAccounts.tpl', $moduleName);

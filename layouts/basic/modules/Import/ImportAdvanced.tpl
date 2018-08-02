@@ -12,7 +12,7 @@
 {strip}
 <div class='widget_header row '>
 	<div class="col-xs-12">
-		{include file='BreadCrumbs.tpl'|@vtemplate_path:$MODULE}
+		{include file=\App\Layout::getTemplatePath('BreadCrumbs.tpl', $MODULE)}
 	</div>
 </div>
 <div>
@@ -22,15 +22,12 @@
 		<input type="hidden" name="mode" value="import" />
 		<input type="hidden" name="type" value="{$USER_INPUT->get('type')}" />
 		<input type="hidden" name="extension" value="{$USER_INPUT->get('extension')}" />
-		<input type="hidden" name="createRecordsByModel" value="{$CREATE_RECORDS_BY_MODEL}" />
 		<input type="hidden" name="has_header" value='{$HAS_HEADER}' />
 		<input type="hidden" name="file_encoding" value='{$USER_INPUT->get('file_encoding')}' />
 		<input type="hidden" name="delimiter" value='{$USER_INPUT->get('delimiter')}' />
 		<input type="hidden" name="merge_type" value='{$USER_INPUT->get('merge_type')}' />
 		<input type="hidden" name="merge_fields" value='{$MERGE_FIELDS}' />
-
 		<input type="hidden" id="mandatory_fields" name="mandatory_fields" value='{$ENCODED_MANDATORY_FIELDS}' />
-
 		<table  class="searchUIBasic col-xs-12 no-margin paddingLRZero">
 			{if $ERROR_MESSAGE neq ''}
 			<tr>
@@ -41,12 +38,12 @@
 			{/if}
 			<tr>
 				<td class="leftFormBorder1" colspan="2" valign="top">
-				{include file='Import_Step4.tpl'|@vtemplate_path:'Import'}
+				{include file=\App\Layout::getTemplatePath('Import_Step4.tpl', 'Import')}
 				</td>
 			</tr>
 			<tr>
 				<td align="right" colspan="2">
-				{include file='Import_Advanced_Buttons.tpl'|@vtemplate_path:'Import'}
+				{include file=\App\Layout::getTemplatePath('Import_Advanced_Buttons.tpl', 'Import')}
 				</td>
 			</tr>
 		</table>

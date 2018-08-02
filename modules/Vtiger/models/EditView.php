@@ -11,13 +11,13 @@
 /**
  * Vtiger EditView Model Class
  */
-class Vtiger_EditView_Model extends Vtiger_Base_Model
+class Vtiger_EditView_Model extends \App\Base
 {
 
 	/**
 	 * Function to get the instance
-	 * @param <String> $moduleName - module name
-	 * @param <String> $recordId - record id
+	 * @param string $moduleName - module name
+	 * @param string $recordId - record id
 	 * @return <Vtiger_DetailView_Model>
 	 */
 	public static function getInstance($moduleName, $recordId)

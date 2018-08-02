@@ -1,166 +1,114 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings search Module model class
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Search_Module_Model extends Settings_Vtiger_Module_Model
 {
 
-	public function getModulesEntity($tabid = false, $onlyActive = false)
+	/**
+	 * Get entity modules
+	 * @param integer $tabId
+	 * @param boolean $onlyActive
+	 * @return array
+	 */
+	public static function getModulesEntity($tabId = false, $onlyActive = false)
 	{
-		$db = PearDatabase::getInstance();
-		$params = [];
+		$query = (new \App\Db\Query);
 		if ($onlyActive) {
-			$sql = 'SELECT vtiger_entityname.* FROM vtiger_entityname 
-				LEFT JOIN vtiger_tab ON vtiger_entityname.tabid = vtiger_tab.tabid 
-				WHERE vtiger_tab.presence = ?';
-			$params [] = '0';
+			$query->select(['vtiger_entityname.*'])->from('vtiger_entityname')->leftJoin('vtiger_tab', 'vtiger_entityname.tabid = vtiger_tab.tabid')
+				->where(['vtiger_tab.presence' => 0]);
 		} else {
-			$sql = 'SELECT * FROM vtiger_entityname';
-			if ($tabid) {
-				$sql .= ' WHERE tabid = ?';
-				$params[] = $tabid;
+			$query->from(('vtiger_entityname'));
+
+			if ($tabId) {
+				$query->where(['tabid' => $tabId]);
 			}
 		}
-		$sql .= ' ORDER BY sequence';
-		$result = $db->pquery($sql, $params);
+		$query->orderBy('sequence');
+		$dataReader = $query->createCommand()->query();
 		$moduleEntity = [];
-		while ($row = $db->getRow($result)) {
+		while ($row = $dataReader->read()) {
 			$moduleEntity[$row['tabid']] = $row;
 		}
 		return $moduleEntity;
 	}
 
-	public function getFieldFromModule()
+	/**
+	 * Get fields
+	 * @return array
+	 */
+	public static function getFieldFromModule()
 	{
-		$adb = PearDatabase::getInstance();
-		$result = $adb->pquery("SELECT * from vtiger_field WHERE uitype NOT IN ('15','16','52','53','56','70','120')");
-		$fields = array();
-		while ($row = $adb->fetch_array($result)) {
-			$fields[$row['tabid']][] = $row;
+		$fields = [];
+		$dataReader = (new \App\Db\Query())->select(['columnname', 'tabid', 'fieldlabel'])->from('vtiger_field')->where(['not in', 'uitype', [15, 16, 52, 53, 56, 70, 99, 120]])->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$fields[$row['tabid']][$row['columnname']] = $row;
 		}
 		return $fields;
 	}
 
-	public static function compare_vale($actions, $item)
+	/**
+	 * Save parameters
+	 * @param array $params
+	 * @return boolean
+	 */
+	public static function save($params)
 	{
-		if (strpos($actions, ',')) {
-			$actionsTab = explode(",", $actions);
-			if (in_array($item, $actionsTab)) {
-				$return = true;
-			} else {
-				$return = false;
-			}
-		} else {
-			$return = $actions == $item ? true : false;
-		}
-		return $return;
-	}
-
-	public function Save($params)
-	{
-		$adb = PearDatabase::getInstance();
+		$db = App\Db::getInstance();
 		$name = $params['name'];
-
-		if ($name == 'searchcolumn' || $name == 'fieldname') {
-			$value = implode(',', $params['value']);
-			$adb->update('vtiger_entityname', [$name => $value], 'tabid = ?', [(int) $params['tabid']]);
-		} elseif ($name == 'turn_off') {
-			$adb->update('vtiger_entityname', ['turn_off' => $params['value']], 'tabid = ?', [(int) $params['tabid']]);
+		$fields = self::getFieldFromModule();
+		$tabId = (int) $params['tabid'];
+		if ($name === 'searchcolumn' || $name === 'fieldname') {
+			foreach ($params['value'] as $field) {
+				if (!isset($fields[$tabId][$field])) {
+					return false;
+				}
+			}
+			$db->createCommand()
+				->update('vtiger_entityname', [$name => implode(',', $params['value'])], ['tabid' => $tabId])
+				->execute();
+		} elseif ($name === 'turn_off') {
+			$db->createCommand()
+				->update('vtiger_entityname', ['turn_off' => $params['value']], ['tabid' => $tabId])
+				->execute();
 		}
+		return true;
 	}
 
+	/**
+	 * Update labels
+	 * @param array $params
+	 */
 	public static function updateLabels($params)
 	{
-		$adb = PearDatabase::getInstance();
-		$tabId = (int) $params['tabid'];
-		$modulesEntity = self::getModulesEntity($tabId);
-		$moduleEntity = $modulesEntity[$tabId];
-		$moduleName = $moduleEntity['modulename'];
-		$fieldName = $moduleEntity['fieldname'];
-		$searchColumns = $moduleEntity['searchcolumn'];
-		$moduleInfo = vtlib\Functions::getModuleFieldInfos($moduleName);
-		$columnsEntityName = explode(',', $fieldName);
-		$searchColumns = explode(',', $searchColumns);
-		$allColumns = array_unique(array_merge($columnsEntityName, $searchColumns));
-		$sqlExt = '';
-		$entityColumnName = '';
-		$searchColumnName = '';
-
-		$moduleInfoExtend = [];
-		foreach ($moduleInfo as $field => $fieldInfo) {
-			$moduleInfoExtend[$fieldInfo['columnname']] = $fieldInfo;
-		}
-
-		foreach ($allColumns as $key => $columnName) {
-			$columnNameExt = ',' . $columnName;
-			$fieldObiect = $moduleInfoExtend[$columnName];
-			if (in_array($fieldObiect['uitype'], [10, 51, 75, 81, 66, 67, 68])) {
-				$sqlExt .= " LEFT JOIN (SELECT extj_$key.crmid, extj_$key.label AS ext_$columnName FROM vtiger_crmentity extj_$key) ext_$key ON ext_$key.crmid = " . $fieldObiect['tablename'] . ".$columnName";
-				$columnNameExt = ',ext_' . $columnName;
-			}
-			if (in_array($columnName, $columnsEntityName)) {
-				$entityColumnName .= $columnNameExt;
-			}
-			if (in_array($columnName, $searchColumns)) {
-				$searchColumnName .= $columnNameExt;
-			}
-		}
-
-		$sql = 'UPDATE vtiger_crmentity';
-		$sql .= self::getFromClauseByColumn($moduleName, $moduleInfoExtend, $allColumns);
-		$sql .= $sqlExt;
-		$sql .= ' INNER JOIN u_yf_crmentity_label ON u_yf_crmentity_label.crmid = vtiger_crmentity.crmid';
-		$sql .= ' INNER JOIN u_yf_crmentity_search_label ON u_yf_crmentity_search_label.crmid = vtiger_crmentity.crmid';
-		$sql .= " SET u_yf_crmentity_label.label = CONCAT_WS(' ' $entityColumnName), u_yf_crmentity_search_label.searchlabel = CONCAT_WS(' ' $searchColumnName)";
-		$sql .= " WHERE vtiger_crmentity.setype = '$moduleName'";
-		$adb->query($sql);
+		$moduleName = App\Module::getModuleName((int) $params['tabid']);
+		$db = App\Db::getInstance();
+		$db->createCommand()->update('u_#__crmentity_search_label', ['searchlabel' => ''], ['setype' => $moduleName])->execute();
+		$subQuery = (new \App\Db\Query())->select(['crmid'])->from('vtiger_crmentity')->where(['setype' => $moduleName]);
+		$db->createCommand()->delete('u_#__crmentity_label', ['crmid' => $subQuery])->execute();
 	}
 
-	public static function getFromClauseByColumn($moduleName, $moduleInfoExtend, $columns)
+	/**
+	 * Update sequence number
+	 * @param array $modulesSequence
+	 */
+	public static function updateSequenceNumber($modulesSequence)
 	{
-		$focus = CRMEntity::getInstance($moduleName);
-		$tableBase = $focus->table_name;
-		$leftJoinTables = [$tableBase];
-		$leftJoin = '  LEFT JOIN ' . $tableBase . ' ON vtiger_crmentity.crmid = ' . $tableBase . '.' . $focus->table_index;
-		foreach ($columns as $columnName) {
-			$table = $moduleInfoExtend[$columnName]['tablename'];
-			if (in_array($table, $leftJoinTables)) {
-				continue;
-			}
-			$leftJoinTables[] = $table;
-			$focusTables = $focus->tab_name_index;
-			$leftJoin .= ' LEFT JOIN ' . $table . ' ON ' . $table . '.' . $focusTables[$table] . ' = ' . $tableBase . '.' . $focusTables[$tableBase];
-		}
-		return $leftJoin;
-	}
-
-	public function updateSequenceNumber($modulesSequence)
-	{
-		
-		\App\Log::trace("Entering Settings_Search_Module_Model::updateSequenceNumber(" . $modulesSequence . ") method ...");
-		$tabIdList = array();
-		$db = PearDatabase::getInstance();
-
-		$query = 'UPDATE vtiger_entityname SET ';
-		$query .=' sequence= CASE ';
+		\App\Log::trace('Entering Settings_Search_Module_Model::updateSequenceNumber() method ...');
+		$tabIdList = [];
+		$db = App\Db::getInstance();
+		$case = ' CASE ';
 		foreach ($modulesSequence as $newModuleSequence) {
 			$tabId = $newModuleSequence['tabid'];
-			$sequence = $newModuleSequence['sequence'];
 			$tabIdList[] = $tabId;
-			$query .= ' WHEN tabid=' . $tabId . ' THEN ' . $sequence;
+			$case .= " WHEN tabid = {$db->quoteValue($tabId)} THEN {$db->quoteValue($newModuleSequence['sequence'])}";
 		}
-
-		$query .=' END ';
-
-		$query .= sprintf(' WHERE tabid IN (%s)', generateQuestionMarks($tabIdList));
-		$db->pquery($query, [$tabIdList]);
-		\App\Log::trace("Exiting Settings_Search_Module_Model::updateSequenceNumber() method ...");
+		$case .= ' END ';
+		$db->createCommand()->update('vtiger_entityname', ['sequence' => new yii\db\Expression($case)], ['tabid' => $tabIdList])->execute();
+		\App\Log::trace('Exiting Settings_Search_Module_Model::updateSequenceNumber() method ...');
 	}
 }

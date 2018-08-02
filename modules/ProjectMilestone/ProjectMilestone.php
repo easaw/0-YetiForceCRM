@@ -13,7 +13,7 @@ class ProjectMilestone extends CRMEntity
 
 	public $table_name = 'vtiger_projectmilestone';
 	public $table_index = 'projectmilestoneid';
-	public $column_fields = Array();
+	public $column_fields = [];
 
 	/** Indicator if this is a custom module or standard module */
 	public $IsCustomModule = true;
@@ -21,86 +21,75 @@ class ProjectMilestone extends CRMEntity
 	/**
 	 * Mandatory table for supporting custom fields.
 	 */
-	public $customFieldTable = Array('vtiger_projectmilestonecf', 'projectmilestoneid');
+	public $customFieldTable = ['vtiger_projectmilestonecf', 'projectmilestoneid'];
 
 	/**
 	 * Mandatory for Saving, Include tables related to this module.
 	 */
-	public $tab_name = Array('vtiger_crmentity', 'vtiger_projectmilestone', 'vtiger_projectmilestonecf');
+	public $tab_name = ['vtiger_crmentity', 'vtiger_projectmilestone', 'vtiger_projectmilestonecf'];
 
 	/**
 	 * Mandatory for Saving, Include tablename and tablekey columnname here.
 	 */
-	public $tab_name_index = Array(
+	public $tab_name_index = [
 		'vtiger_crmentity' => 'crmid',
 		'vtiger_projectmilestone' => 'projectmilestoneid',
-		'vtiger_projectmilestonecf' => 'projectmilestoneid');
+		'vtiger_projectmilestonecf' => 'projectmilestoneid'];
 
 	/**
 	 * Mandatory for Listing (Related listview)
 	 */
-	public $list_fields = Array(
+	public $list_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'Project Milestone Name' => Array('projectmilestone', 'projectmilestonename'),
-		'Milestone Date' => Array('projectmilestone', 'projectmilestonedate'),
-		'Type' => Array('projectmilestone', 'projectmilestonetype'),
+		'Project Milestone Name' => ['projectmilestone', 'projectmilestonename'],
+		'Milestone Date' => ['projectmilestone', 'projectmilestonedate'],
+		'Type' => ['projectmilestone', 'projectmilestonetype'],
 		//'Assigned To' => Array('crmentity','smownerid')
-	);
-	public $list_fields_name = Array(
+	];
+	public $list_fields_name = [
 		/* Format: Field Label => fieldname */
 		'Project Milestone Name' => 'projectmilestonename',
 		'Milestone Date' => 'projectmilestonedate',
 		'Type' => 'projectmilestonetype',
 		//'Assigned To' => 'assigned_user_id'
-	);
+	];
+
+	/**
+	 * @var string[] List of fields in the RelationListView
+	 */
+	public $relationFields = ['projectmilestonename', 'projectmilestonedate', 'projectmilestonetype', 'assigned_user_id'];
 	// Make the field link to detail view from list view (Fieldname)
 	public $list_link_field = 'projectmilestonename';
 	// For Popup listview and UI type support
-	public $search_fields = Array(
+	public $search_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'Project Milestone Name' => Array('projectmilestone', 'projectmilestonename'),
-		'Milestone Date' => Array('projectmilestone', 'projectmilestonedate'),
-		'Type' => Array('projectmilestone', 'projectmilestonetype'),
-	);
-	public $search_fields_name = Array(
+		'Project Milestone Name' => ['projectmilestone', 'projectmilestonename'],
+		'Milestone Date' => ['projectmilestone', 'projectmilestonedate'],
+		'Type' => ['projectmilestone', 'projectmilestonetype'],
+	];
+	public $search_fields_name = [
 		/* Format: Field Label => fieldname */
 		'Project Milestone Namee' => 'projectmilestonename',
 		'Milestone Date' => 'projectmilestonedate',
 		'Type' => 'projectmilestonetype',
-	);
+	];
 	// For Popup window record selection
-	public $popup_fields = Array('projectmilestonename');
-	// Placeholder for sort fields - All the fields will be initialized for Sorting through initSortFields
-	public $sortby_fields = Array();
+	public $popup_fields = ['projectmilestonename'];
 	// For Alphabetical search
 	public $def_basicsearch_col = 'projectmilestonename';
 	// Column value to use on detail view record text display
 	public $def_detailview_recname = 'projectmilestonename';
 	// Required Information for enabling Import feature
-	public $required_fields = Array('projectmilestonename' => 1);
+	public $required_fields = ['projectmilestonename' => 1];
 	// Callback function list during Importing
-	public $special_functions = Array('set_import_assigned_user');
+	public $special_functions = ['set_import_assigned_user'];
 	public $default_order_by = '';
 	public $default_sort_order = 'ASC';
 	// Used when enabling/disabling the mandatory fields for the module.
 	// Refers to vtiger_field.fieldname values.
-	public $mandatory_fields = Array('createdtime', 'modifiedtime', 'projectmilestonename', 'projectid', 'assigned_user_id');
-
-	public function save_module($module)
-	{
-		
-	}
-
-	/**
-	 * Return query to use based on given modulename, fieldname
-	 * Useful to handle specific case handling for Popup
-	 */
-	public function getQueryByModuleField($module, $fieldname, $srcrecord)
-	{
-		// $srcrecord could be empty
-	}
+	public $mandatory_fields = ['createdtime', 'modifiedtime', 'projectmilestonename', 'projectid', 'assigned_user_id'];
 
 	/**
 	 * Get list view query (send more WHERE clause condition if required)
@@ -110,7 +99,7 @@ class ProjectMilestone extends CRMEntity
 		$query = "SELECT vtiger_crmentity.*, $this->table_name.*";
 
 		// Keep track of tables joined to avoid duplicates
-		$joinedTables = array();
+		$joinedTables = [];
 
 		// Select Custom Field Table Columns if present
 		if (!empty($this->customFieldTable))
@@ -137,13 +126,12 @@ class ProjectMilestone extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($module));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$module]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -170,7 +158,7 @@ class ProjectMilestone extends CRMEntity
 		require('user_privileges/sharing_privileges_' . $current_user->id . '.php');
 
 		$sec_query = '';
-		$tabid = \includes\Modules::getModuleId($module);
+		$tabid = \App\Module::getModuleId($module);
 
 		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[$tabid] == 3) {
 
@@ -208,7 +196,7 @@ class ProjectMilestone extends CRMEntity
 	/**
 	 * Create query to export the records.
 	 */
-	public function create_export_query($where)
+	public function createExportQuery($where)
 	{
 		$current_user = vglobal('current_user');
 
@@ -232,13 +220,12 @@ class ProjectMilestone extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($thismodule));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$thismodule]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -260,9 +247,9 @@ class ProjectMilestone extends CRMEntity
 	/**
 	 * Transform the value while exporting
 	 */
-	public function transform_export_value($key, $value)
+	public function transformExportValue($key, $value)
 	{
-		return parent::transform_export_value($key, $value);
+		return parent::transformExportValue($key, $value);
 	}
 
 	/**
@@ -306,7 +293,7 @@ class ProjectMilestone extends CRMEntity
 
 		$query = $select_clause . $from_clause .
 			" LEFT JOIN vtiger_users_last_import ON vtiger_users_last_import.bean_id=" . $this->table_name . "." . $this->table_index .
-			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values, $ui_type_arr, $module) .
+			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values) .
 			$where_clause .
 			" ORDER BY $table_cols," . $this->table_name . "." . $this->table_index . " ASC";
 
@@ -315,70 +302,17 @@ class ProjectMilestone extends CRMEntity
 
 	/**
 	 * Invoked when special actions are performed on the module.
-	 * @param String Module name
-	 * @param String Event Type (module.postinstall, module.disabled, module.enabled, module.preuninstall)
+	 * @param string $moduleName Module name
+	 * @param string $eventType Event Type (module.postinstall, module.disabled, module.enabled, module.preuninstall)
 	 */
-	public function vtlib_handler($modulename, $event_type)
+	public function moduleHandler($moduleName, $eventType)
 	{
-		$adb = PearDatabase::getInstance();
-		if ($event_type == 'module.postinstall') {
-
-			$projectMilestoneResult = $adb->pquery('SELECT tabid FROM vtiger_tab WHERE name=?', array('ProjectMilestone'));
-			$projectmilestoneTabid = $adb->query_result($projectMilestoneResult, 0, 'tabid');
-
+		if ($eventType === 'module.postinstall') {
 			// Mark the module as Standard module
-			$adb->pquery('UPDATE vtiger_tab SET customized=0 WHERE name=?', array($modulename));
-
-			if (\includes\Modules::getModuleId('CustomerPortal')) {
-				$checkAlreadyExists = $adb->pquery('SELECT 1 FROM vtiger_customerportal_tabs WHERE tabid=?', array($projectmilestoneTabid));
-				if ($checkAlreadyExists && $adb->num_rows($checkAlreadyExists) < 1) {
-					$maxSequenceQuery = $adb->query("SELECT max(sequence) as maxsequence FROM vtiger_customerportal_tabs");
-					$maxSequence = $adb->query_result($maxSequenceQuery, 0, 'maxsequence');
-					$nextSequence = $maxSequence + 1;
-					$adb->query("INSERT INTO vtiger_customerportal_tabs(tabid,visible,sequence) VALUES ($projectmilestoneTabid,1,$nextSequence)");
-					$adb->query("INSERT INTO vtiger_customerportal_prefs(tabid,prefkey,prefvalue) VALUES ($projectmilestoneTabid,'showrelatedinfo',1)");
-				}
-			}
-
-			\includes\fields\RecordNumber::setNumber($modulename, 'PM', 1);
-		} else if ($event_type == 'module.disabled') {
-			
-		} else if ($event_type == 'module.enabled') {
-			
-		} else if ($event_type == 'module.preuninstall') {
-			
-		} else if ($event_type == 'module.preupdate') {
-			
-		} else if ($event_type == 'module.postupdate') {
-
-			\includes\fields\RecordNumber::setNumber($modulename, 'PM', 1);
+			\App\Db::getInstance()->createCommand()->update('vtiger_tab', ['customized' => 0], ['name' => $moduleName])->execute();
+			\App\Fields\RecordNumber::setNumber($moduleName, 'PM', 1);
+		} else if ($eventType === 'module.postupdate') {
+			\App\Fields\RecordNumber::setNumber($moduleName, 'PM', 1);
 		}
 	}
-	/**
-	 * Handle saving related module information.
-	 * NOTE: This function has been added to CRMEntity (base class).
-	 * You can override the behavior by re-defining it here.
-	 */
-	// function save_related_module($module, $crmid, $with_module, $with_crmid) { }
-
-	/**
-	 * Handle deleting related module information.
-	 * NOTE: This function has been added to CRMEntity (base class).
-	 * You can override the behavior by re-defining it here.
-	 */
-	//function delete_related_module($module, $crmid, $with_module, $with_crmid) { }
-
-	/**
-	 * Handle getting related list information.
-	 * NOTE: This function has been added to CRMEntity (base class).
-	 * You can override the behavior by re-defining it here.
-	 */
-	//function get_related_list($id, $cur_tab_id, $rel_tab_id, $actions=false) { }
-
-	/**
-	 * Handle getting dependents list information.
-	 * NOTE: This function has been added to CRMEntity (base class).
-	 * You can override the behavior by re-defining it here.
-	 */
-	//function get_dependents_list($id, $cur_tab_id, $rel_tab_id, $actions=false) { }
 }

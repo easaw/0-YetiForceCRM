@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Accounts polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Account Name' => 'Nazwa kontrahenta',
 	'Account No' => 'Numer Kontrahenta',
@@ -28,13 +25,12 @@ $languageStrings = [
 	'LBL_FINANSIAL_SUMMARY' => 'Podsumowanie finansowe',
 	//FIELDS
 	'FL_LAST_INVOICE_DATE' => 'Data ostatniej faktury',
+	'FL_STATUS' => 'Status',
 	//OTHERS
-	'LBL_ADD_RECORD' => 'Dodaj rekord',
 	'LBL_COPY_BILLING_ADDRESS' => 'Kopiuj adres korespondencji',
 	'LBL_COPY_SHIPPING_ADDRESS' => 'Kopiuj adres dostawy',
 	'LBL_DUPLICATES_EXIST' => 'Taka nazwa firmy już istnieje',
 	'LBL_END_DATE' => 'Data zakończenia',
-	'LBL_RECORDS_LIST' => 'Lista rekordów',
 	'LBL_SHOW_ACCOUNT_HIERARCHY' => 'Hierarchia',
 	'LBL_START_DATE' => 'Data rozpoczęcia',
 	'Member Of' => 'Kontrahent nadrzędny',
@@ -63,16 +59,23 @@ $languageStrings = [
 	'Approval for email' => 'Zgoda na kontakt mailowy',
 	'Balance' => 'Saldo księgowe',
 	'Average profit sales order' => 'Średnia marża',
-	'LBL_CONVERTED_FROM_LEAD' => 'Skonwertowany z leada',
 	'LBL_LEGAL_FORM' => 'Forma prawna',
 	'LBL_INVENTORY_BALANCE' => 'Saldo',
 	'LBL_DISCOUNT' => 'Rabat',
-	'LBL_CREDIT_LIMIT' => 'Limit kredytowy',
+	'LBL_CREDIT_LIMIT' => 'Limit kupiecki',
 	'LBL_VIEW_ACCOUNTSLISTTREE' => 'Produkty i usługi',
 	'LBL_ACCOUNTS_LIST_TREE_ALERT' => 'Lista kontrahentów jest uzależniona od wybranych produktów w drzewie oraz filtru.',
 	'LBL_PARENT_IS_CHILD' => 'Wybrany kontrahent nadrzędny nie może być podrzędnym tego kontrahenta',
 	'LBL_NUMBER_OF_ACTIVE_CONTRACTS' => 'Ilość aktywnych umów',
 	//PICKLIST VALUES
+	'PLL_PROMISING_CLIENT' => 'Klient rokujący',
+	'PLL_ACTIVE_CLIENT' => 'Klient aktywny',
+	'PLL_SPECIAL_CLIENT' => 'Klient specjalny',
+	'PLL_LOST_CLIENT' => 'Klient utracony',
+	'PLL_UNOBTAINED_CLIENT' => 'Klient niepozyskany',
+	'PLL_INACTIVE_CLIENT' => 'Klient nieaktywny',
+	'PLL_CLOSED_CLIENT' => 'Klient zamknięty',
+	'PLL_BLACKLISTED_CLIENT' => 'Klient z czarnej listy',
 	'PLL_NATURAL_PERSON' => 'Osoba fizyczna',
 	'PLL_BUSINESS_ACTIVITY' => 'Działalność gospodarcza',
 	'PLL_GENERAL_PARTNERSHIP' => 'Spółka jawna',

@@ -1,22 +1,19 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Vtiger EmailList widget class
+ * @package YetiForce.Widget
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Vtiger_EmailList_Widget extends Vtiger_Basic_Widget
 {
 
-	public $dbParams = array('relatedmodule' => 'Emails');
+	public $dbParams = [];
 
 	public function getUrl()
 	{
-		return 'module=OSSMailView&view=widget&smodule=' . $this->Module . '&srecord=' . $this->Record . '&mode=showEmailsList&type=All&mailFilter=All&limit=' . $this->Data['limit'];
+		return 'module=OSSMailView&view=Widget&smodule=' . $this->Module . '&srecord=' . $this->Record . '&mode=showEmailsList&type=All&mailFilter=All&limit=' . $this->Data['limit'];
 	}
 
 	public function getConfigTplName()

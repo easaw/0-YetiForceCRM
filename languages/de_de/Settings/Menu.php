@@ -1,14 +1,12 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
-$languageStrings = array(
+/**
+ * Menu german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author skavenkf (K.Fink)
+ */
+$languageStrings = [
 	'LBL_MENU_BUILDER' => 'Menü - Konfiguration',
 	'LBL_MENU_BUILDER_DESCRIPTION' => 'Erzeuge und verwalte Menüeinträge.',
 	'LBL_DEFAULT_MENU' => 'Standard Menü',
@@ -48,7 +46,7 @@ $languageStrings = array(
 	'LBL_HOMEICON_DESC' => 'Menüeintrag der zur Startseite führt.',
 	'LBL_CUSTOMFILTER' => 'Filter',
 	'LBL_CUSTOMFILTER_DESC' => 'Menüeintrag führt zum gwählten Filter.',
-	'LBL_PROFILE' => 'Profil',
+	'LBL_PROFILE' => 'Profil/Passwort',
 	'LBL_PROFILE_DESC' => 'Menüeintrag welcher die Änderung der Benutzereinstellungen erlaubt.',
 	//Message
 	'LBL_REMOVED_MENU_ITEM' => 'Menüeintrag wurde gelöscht',
@@ -62,10 +60,10 @@ $languageStrings = array(
 	//End Remove modal
 	'LBL_MORE_INFO' => 'Hier klicken, für mehr Information',
 	'LBL_COPY_MENU' => 'Menü kopieren',
-);
-$jsLanguageStrings = array(
+];
+$jsLanguageStrings = [
 	'JS_EDIT' => 'Ändern',
 	'JS_REMOVE' => 'Löschen',
 	'JS_NO_DATA' => 'Kein Menü',
 	'JS_TEST_HOTKEY_OK' => 'Hotkey funktioniert richtig.',
-);
+];

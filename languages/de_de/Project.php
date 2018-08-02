@@ -13,7 +13,6 @@ $languageStrings = [
 	'Add Project Task' => 'Projektaufgabe hinzufügen',
 	// Basic Strings
 	'SINGLE_Project' => 'Projekt',
-	'LBL_ADD_RECORD' => 'Projekt hinzufügen',
 	'LBL_RECORDS_LIST' => 'Projektliste',
 	// Blocks
 	'LBL_PROJECT_INFORMATION' => 'Projektdetails',
@@ -34,6 +33,7 @@ $languageStrings = [
 	'LBL_SELECT_PROGRESS' => 'Fortschritt wählen',
 	'description' => 'Beschreibung',
 	'Related to' => 'Bezogen auf',
+	'FL_MEMBER_OF' => 'Übergeordnetes Projekt',
 	//Summary Information
 	'LBL_TASKS_OPEN' => 'Offene Aufgaben',
 	'LBL_TASKS_DUE' => 'Fällige Aufgaben',

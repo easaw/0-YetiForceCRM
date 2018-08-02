@@ -22,14 +22,14 @@ class Reports_ListAjax_View extends Reports_List_View
 		$this->exposeMethod('getPageCount');
 	}
 
-	public function preProcess(Vtiger_Request $request)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 			return;

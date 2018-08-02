@@ -9,19 +9,8 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Campaigns_DetailAjax_Action extends Vtiger_BasicAjax_Action
+class Campaigns_DetailAjax_Action extends Vtiger_RelatedList_View
 {
-
-	public function checkPermission(Vtiger_Request $request)
-	{
-		$moduleName = $request->getModule();
-		$userPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		$permission = $userPrivilegesModel->hasModulePermission($moduleName);
-
-		if (!$permission) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
-		}
-	}
 
 	public function __construct()
 	{
@@ -29,9 +18,9 @@ class Campaigns_DetailAjax_Action extends Vtiger_BasicAjax_Action
 		$this->exposeMethod('getRecordsCount');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 			return;
@@ -40,22 +29,22 @@ class Campaigns_DetailAjax_Action extends Vtiger_BasicAjax_Action
 
 	/**
 	 * Function to get related Records count from this relation
-	 * @param <Vtiger_Request> $request
+	 * @param \App\Request $request
 	 * @return <Number> Number of record from this relation
 	 */
-	public function getRecordsCount(Vtiger_Request $request)
+	public function getRecordsCount(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$relatedModuleName = $request->get('relatedModule');
-		$parentId = $request->get('record');
+		$relatedModuleName = $request->getByType('relatedModule', 2);
+		$parentId = $request->getInteger('record');
 		$label = $request->get('tab_label');
 
 		$parentRecordModel = Vtiger_Record_Model::getInstanceById($parentId, $moduleName);
 		$relationListView = Vtiger_RelationListView_Model::getInstance($parentRecordModel, $relatedModuleName, $label);
 		$count = $relationListView->getRelatedEntriesCount();
-		$result = array();
+		$result = [];
 		$result['module'] = $moduleName;
-		$result['viewname'] = $cvId;
+		$result['viewname'] = $request->getByType('viewname', 2);
 		$result['count'] = $count;
 
 		$response = new Vtiger_Response();

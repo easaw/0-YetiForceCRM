@@ -1,8 +1,9 @@
 <?php
 
 /**
- * @package YetiForce.Views
- * @license licenses/License.html
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_Inventory_DiscountConfiguration_View extends Settings_Vtiger_Index_View
@@ -13,10 +14,10 @@ class Settings_Inventory_DiscountConfiguration_View extends Settings_Vtiger_Inde
 		return 'DiscountConfiguration';
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__);
+
+		\App\Log::trace('Start ' . __METHOD__);
 		$qualifiedModule = $request->getModule(false);
 		$view = $this->getView();
 		$config = Settings_Inventory_Module_Model::getConfig($view);
@@ -29,12 +30,11 @@ class Settings_Inventory_DiscountConfiguration_View extends Settings_Vtiger_Inde
 		$viewer->assign('USER_MODEL', $currentUser);
 		$viewer->assign('CONFIG', $config);
 		$viewer->view('Config.tpl', $qualifiedModule);
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 	}
 
-	public function getPageLabels(Vtiger_Request $request)
+	public function getPageLabels(\App\Request $request)
 	{
-		$qualifiedModuleName = $request->getModule(false);
 		$view = $this->getView();
 		$translations = [];
 		$translations['title'] = 'LBL_' . strtoupper($view);
@@ -43,7 +43,7 @@ class Settings_Inventory_DiscountConfiguration_View extends Settings_Vtiger_Inde
 		return $translations;
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();

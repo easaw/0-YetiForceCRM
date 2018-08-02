@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * Contributor(s): 
- * *********************************************************************************************************************************** */
+/**
+ * OSSEmployees russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'OSSEmployees' => 'Сотрудники',
 	'SINGLE_OSSEmployees' => 'Сотрудник',
@@ -50,8 +46,8 @@ $languageStrings = [
 	'Inactive' => 'Уволен',
 	'Average daily working time' => 'Рабочее время',
 	'LBL_USER_EXISTS' => 'Сотрудник уже существует',
-	'FL_POSITION' => 'Position',
-	'FL_SECONDARY_PHONE' => 'Secondary phone',
+	'FL_POSITION' => 'Должность',
+	'FL_SECONDARY_PHONE' => 'Дополнительный телефон',
 	'FL_RBH' => 'RBH'
 ];
 

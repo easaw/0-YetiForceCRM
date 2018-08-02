@@ -2,8 +2,9 @@
 
 /**
  * Widget show estimated value by status
- * @package YetiForce.Github
- * @license licenses/License.html
+ * @package YetiForce.Dashboard
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class SSalesProcesses_EstimatedValueByStatus_Dashboard extends Vtiger_IndexAjax_View
@@ -38,25 +39,22 @@ class SSalesProcesses_EstimatedValueByStatus_Dashboard extends Vtiger_IndexAjax_
 	{
 		$moduleName = 'SSalesProcesses';
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-		$securityQuery = \App\PrivilegeQuery::getAccessConditions($moduleName);
-		$paramsSql = [];
-		$query = 'SELECT SUM(u_yf_ssalesprocesses.estimated) AS estimated, u_yf_ssalesprocesses.ssalesprocesses_status FROM u_yf_ssalesprocesses 
-			INNER JOIN vtiger_crmentity ON u_yf_ssalesprocesses.ssalesprocessesid = vtiger_crmentity.crmid AND vtiger_crmentity.deleted = 0
-			WHERE (ssalesprocesses_status <> \'\' AND  ssalesprocesses_status IS NOT NULL) ';
-		$query .= $securityQuery;
+		$query = (new \App\Db\Query())->select('SUM(u_#__ssalesprocesses.estimated) AS estimated, u_#__ssalesprocesses.ssalesprocesses_status')
+			->from('u_yf_ssalesprocesses')
+			->innerJoin('vtiger_crmentity', 'u_#__ssalesprocesses.ssalesprocessesid = vtiger_crmentity.crmid')
+			->where(['and', ['<>', 'ssalesprocesses_status', ''], ['vtiger_crmentity.deleted' => 0], ['not', ['ssalesprocesses_status' => null]]]);
+		\App\PrivilegeQuery::getConditions($query, $moduleName);
 		if (!empty($owner)) {
-			$query .= ' AND vtiger_crmentity.smownerid = ?';
-			$paramsSql [] = $owner;
+			$query->andWhere(['vtiger_crmentity.smownerid' => $owner]);
 		}
-		$query .= ' GROUP BY u_yf_ssalesprocesses.ssalesprocesses_status';
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery($query, $paramsSql);
+		$query->groupBy('u_#__ssalesprocesses.ssalesprocesses_status');
+		$dataReader = $query->createCommand()->query();
 		$data = [];
 		$i = 1;
 		$currencyInfo = vtlib\Functions::getDefaultCurrencyInfo();
-		while ($row = $db->getRow($result)) {
+		while ($row = $dataReader->read()) {
 			$data [] = [
-				\includes\Language::translate($row['ssalesprocesses_status'], $moduleName) . ' - ' . CurrencyField::convertToUserFormat($row['estimated']) . ' ' .$currencyInfo['currency_symbol'],
+				\App\Language::translate($row['ssalesprocesses_status'], $moduleName) . ' - ' . CurrencyField::convertToUserFormat($row['estimated']) . ' ' . $currencyInfo['currency_symbol'],
 				$i++,
 				$moduleModel->getListViewUrl() . $this->getSearchParams($owner, $row['ssalesprocesses_status'])
 			];
@@ -66,33 +64,27 @@ class SSalesProcesses_EstimatedValueByStatus_Dashboard extends Vtiger_IndexAjax_
 
 	/**
 	 * Main function
-	 * @param <Vtiger_Request> $request
+	 * @param \App\Request $request
 	 */
-	public function process(\Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$linkId = $request->get('linkid');
-		$data = $request->get('data');
+		$linkId = $request->getInteger('linkid');
 		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
 		if (!$request->has('owner'))
 			$owner = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget, $moduleName);
 		else
-			$owner = $request->get('owner');
+			$owner = $request->getByType('owner', 2);
 		if ($owner == 'all')
 			$owner = '';
-
-
 		$data = $this->getEstimatedValue($owner);
-
 		$viewer->assign('WIDGET', $widget);
 		$viewer->assign('MODULE_NAME', $moduleName);
 		$viewer->assign('DATA', $data);
 		$viewer->assign('CURRENTUSER', $currentUser);
-
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/DashBoardWidgetContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/EstimatedValueByStatus.tpl', $moduleName);

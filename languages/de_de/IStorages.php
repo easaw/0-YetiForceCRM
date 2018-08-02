@@ -1,9 +1,14 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * IStorages german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'IStorages' => 'Lager',
 	'SINGLE_IStorages' => 'Lager',
-	'LBL_DESCRIPTION_BLOCK' => 'Besschreibung',
+	'LBL_DESCRIPTION_BLOCK' => 'Beschreibung',
 	'LBL_ATTENTION_BLOCK' => 'Kommentare',
 	'FL_PARENT_STORAGE' => 'Hauptlager',
 	'FL_SUBJECT' => 'Betreff',

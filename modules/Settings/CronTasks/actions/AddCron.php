@@ -11,7 +11,7 @@
 class Settings_CronTasks_AddCron_Action extends Settings_Vtiger_Index_Action
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		vtlib\Cron::register(
 			$request->get('cron_name'), $request->get('path'), $this->calculateFrequency($request->get('frequency_value'), $request->get('time_format')), $request->get('cron_module'), $request->get('status'), $this->getSquence(), $request->get('description')
@@ -32,12 +32,8 @@ class Settings_CronTasks_AddCron_Action extends Settings_Vtiger_Index_Action
 
 	public function getSquence()
 	{
-		$db = PearDatabase::getInstance();
-
-		$sql = "select sequence from vtiger_cron_task ORDER BY sequence DESC";
-
-		$result = $db->pquery($sql, array(), true);
-
-		return $db->query_result($result, 0, 'sequence') + 1;
+		$db = \App\Db::getInstance();
+		$maxSequence = $db->getUniqueID('vtiger_cron_task', 'sequence', false);
+		return $maxSequence;
 	}
 }

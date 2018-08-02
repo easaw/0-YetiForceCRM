@@ -39,7 +39,7 @@ class Menu
 	 * Get instance of menu by label
 	 * @param String Menu label
 	 */
-	static function getInstance($value)
+	public static function getInstance($value)
 	{
 		return false;
 	}
@@ -50,22 +50,20 @@ class Menu
 	 * @param Boolean true appends linebreak, false to avoid it
 	 * @access private
 	 */
-	static function log($message, $delim = true)
+	public static function log($message, $delim = true)
 	{
-		Utils::Log($message, $delim);
+		Utils::log($message, $delim);
 	}
 
 	/**
 	 * Delete all menus associated with module
-	 * @param Module Instnace of module to use
+	 * @param ModuleBasic $moduleInstance
 	 */
-	static function deleteForModule($moduleInstance)
+	public static function deleteForModule(ModuleBasic $moduleInstance)
 	{
-		$db = \PearDatabase::getInstance();
-		$result = $db->pquery('SELECT id FROM yetiforce_menu WHERE module=?', [$moduleInstance->id]);
-		$db->delete('yetiforce_menu', 'module = ?', [$moduleInstance->id]);
-		$numRows = $db->getRowCount($result);
-		if ($numRows) {
+		$id = (new \App\Db\Query)->select('id')->from('yetiforce_menu')->where(['module' => $moduleInstance->id])->scalar();
+		if ($id) {
+			\App\Db::getInstance()->createCommand()->delete('yetiforce_menu', ['module' => $moduleInstance->id])->execute();
 			$menuRecordModel = new \Settings_Menu_Record_Model();
 			$menuRecordModel->refreshMenuFiles();
 		}

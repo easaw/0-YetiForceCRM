@@ -1,15 +1,11 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Leads polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
-	'LBL_SETUP_WEBFORMS' => 'Konfiguracja formularzy WWW',
 	'Verification data' => 'Wymagają weryfikacji',
 	'Attempted to Contact' => 'Zakwalifikowany do kontaktu',
 	'CANNOT_CONVERT' => 'Nie można wykonać konwertowania',
@@ -26,7 +22,6 @@ $languageStrings = [
 	'Junk Lead' => 'Śmieciowy',
 	'Building number' => 'Numer budynku',
 	'Local number' => 'Numer lokalu',
-	'LBL_ADD_RECORD' => 'Dodaj rekord',
 	'LBL_CONVERT_LEAD' => 'Konwertuj na kontrahenta',
 	'LBL_CONVERT_LEAD_ERROR_TITLE' => 'Moduły wyłączone',
 	'LBL_CONVERT_LEAD_ERROR' => 'Musisz wybrać albo kontakt albo kontrahenta, by móc konwertować do kontrahenta',
@@ -37,7 +32,6 @@ $languageStrings = [
 	'LBL_LEADS_FIELD_MAPPING' => 'Mapowanie pól',
 	'LBL_MANDATORY_FIELDS_ARE_EMPTY' => 'Wymagane pola są puste',
 	'LBL_LEAD_ALREADY_CONVERTED' => 'Lead był już konwertowany',
-	'LBL_RECORDS_LIST' => 'Lista rekordów',
 	'LBL_TRANSFER_RELATED_RECORD' => 'Transferuj powiązane rekordy do',
 	'Lead No' => 'Nr',
 	'Leads' => 'Leady',
@@ -58,20 +52,18 @@ $languageStrings = [
 	'Warm' => 'Ciepły',
 	'Website' => 'Strona internetowa',
 	/* YetiForce Lead Status */
-	'LBL_TO_REALIZE' => 'Do realizacji',
-	'LBL_VERIFICATION_OF_DATA' => 'Wymagają weryfikacji',
-	'LBL_PRELIMINARY_ANALYSIS_OF' => 'Wstępna analiza',
-	'LBL_ADVANCED_ANALYSIS' => 'Zaawansowana analiza',
-	'LBL_INITIAL_ACQUISITION' => 'Wstępne pozyskanie',
-	'LBL_CONTACTS_IN_THE_FUTURE' => 'Kontakt w przyszłości',
-	'LBL_LEAD_UNTAPPED' => 'Kontrahent niepozyskany',
-	'LBL_LEAD_ACQUIRED' => 'Kontrahent pozyskany',
+	'PLL_TO_REALIZE' => 'Do realizacji',
+	'PLL_CONTACTS_IN_THE_FUTURE' => 'Kontakt w przyszłości',
+	'PLL_LEAD_UNTAPPED' => 'Niepozyskany',
+	'PLL_LEAD_ACQUIRED' => 'Do konwersji',
+	'PLL_PENDING' => 'Oczekujący',
+	'PLL_IN_REALIZATION' => 'W realizacji',
+	'PLL_INCORRECT' => 'Niepoprawny',
 	/* YetiForce */
 	'Approval for phone calls' => 'Zgoda na kontakt telefoniczny',
 	'Approval for email' => 'Zgoda na kontakt mailowy',
 	'Contact Information' => 'Informacje kontaktowe',
 	'LBL_REGISTRATION_INFO' => 'Informacje rejestrowe',
-	'LBL_REQUIRES_VERIFICATION' => 'Weryfikacja danych',
 	//PICKLIST VALUES
 	'PLL_B2C' => 'B2C',
 	'PLL_B2B' => 'B2B',

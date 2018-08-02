@@ -19,17 +19,21 @@ class Reports_Folder_Action extends Vtiger_Action_Controller
 		$this->exposeMethod('delete');
 	}
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if (!Users_Privileges_Model::getCurrentUserPrivilegesModel()->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 			return;
@@ -38,27 +42,27 @@ class Reports_Folder_Action extends Vtiger_Action_Controller
 
 	/**
 	 * Function that saves/updates the Folder
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function save(Vtiger_Request $request)
+	public function save(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$folderModel = Reports_Folder_Model::getInstance();
 		$folderId = $request->get('folderid');
 
 		if (!empty($folderId)) {
-			$folderModel->set('folderid', $folderId);
+			$folderModel->set('folderid', (int) $folderId);
 		}
 
 		$folderModel->set('foldername', $request->get('foldername'));
 		$folderModel->set('description', $request->get('description'));
 
 		if ($folderModel->checkDuplicate()) {
-			throw new \Exception\AppException(vtranslate('LBL_DUPLICATES_EXIST', $moduleName));
+			throw new \App\Exceptions\AppException('LBL_DUPLICATES_EXIST');
 		}
 
 		$folderModel->save();
-		$result = array('success' => true, 'message' => vtranslate('LBL_FOLDER_SAVED', $moduleName), 'info' => $folderModel->getInfoArray());
+		$result = ['success' => true, 'message' => \App\Language::translate('LBL_FOLDER_SAVED', $moduleName), 'info' => $folderModel->getInfoArray()];
 
 		$response = new Vtiger_Response();
 		$response->setResult($result);
@@ -67,28 +71,28 @@ class Reports_Folder_Action extends Vtiger_Action_Controller
 
 	/**
 	 * Function that deletes the Folder
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function delete(Vtiger_Request $request)
+	public function delete(\App\Request $request)
 	{
-		$folderId = $request->get('folderid');
+		$folderId = $request->getInteger('folderid');
 		$moduleName = $request->getModule();
 
 		if ($folderId) {
 			$folderModel = Reports_Folder_Model::getInstanceById($folderId);
 
 			if ($folderModel->isDefault()) {
-				$message = vtranslate('LBL_FOLDER_CAN_NOT_BE_DELETED', $moduleName);
+				$message = \App\Language::translate('LBL_FOLDER_CAN_NOT_BE_DELETED', $moduleName);
 			} else {
 				if ($folderModel->hasReports()) {
-					$message = vtranslate('LBL_FOLDER_NOT_EMPTY', $moduleName);
+					$message = \App\Language::translate('LBL_FOLDER_NOT_EMPTY', $moduleName);
 				}
 			}
 			if ($message) {
-				$result = array('success' => false, 'message' => $message);
+				$result = ['success' => false, 'message' => $message];
 			} else {
 				$folderModel->delete();
-				$result = array('success' => true, 'message' => vtranslate('LBL_FOLDER_DELETED', $moduleName));
+				$result = ['success' => true, 'message' => \App\Language::translate('LBL_FOLDER_DELETED', $moduleName)];
 			}
 
 			$response = new Vtiger_Response();
@@ -97,7 +101,7 @@ class Reports_Folder_Action extends Vtiger_Action_Controller
 		}
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

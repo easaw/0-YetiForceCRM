@@ -1,18 +1,18 @@
 <?php
 
 /**
- * @package YetiForce.Views
- * @license licenses/License.html
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  */
 class Settings_CurrencyUpdate_Index_View extends Settings_Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__);
-		$db = PearDatabase::getInstance();
+
+		\App\Log::trace('Start ' . __METHOD__);
 		$qualifiedModule = $request->getModule(false);
 		$moduleModel = Settings_CurrencyUpdate_Module_Model::getCleanInstance();
 		$currentUser = Users_Record_Model::getCurrentUserModel();
@@ -50,13 +50,13 @@ class Settings_CurrencyUpdate_Index_View extends Settings_Vtiger_Index_View
 		$selectBankId = $moduleModel->getActiveBankId();
 
 		$history = $moduleModel->getRatesHistory($selectBankId, $dateCur, $request);
-		$bankTab = array();
+		$bankTab = [];
 
-		$bankSQL = "SELECT * FROM yetiforce_currencyupdate_banks";
-		$bankResult = $db->query($bankSQL, true);
-
+		$db = new \App\Db\Query();
+		$db->from('yetiforce_currencyupdate_banks');
+		$dataReader = $db->createCommand()->query();
 		$i = 0;
-		while ($row = $db->fetchByAssoc($bankResult)) {
+		while ($row = $dataReader->read()) {
 			$bankTab[$i]['id'] = $row['id'];
 			$bankName = $row['bank_name'];
 			$bankTab[$i]['bank_name'] = $bankName;
@@ -74,7 +74,7 @@ class Settings_CurrencyUpdate_Index_View extends Settings_Vtiger_Index_View
 		$viewer->assign('USER_MODEL', $currentUser);
 		$viewer->assign('MODULE_MODEL', $moduleModel);
 		$viewer->assign('MODULENAME', 'CurrencyUpdate');
-		$viewer->assign('DATE', ($request->has('duedate') ? Vtiger_Date_UIType::getDisplayValue($dateCur) : ''));
+		$viewer->assign('DATE', ($request->has('duedate') ? (new Vtiger_Date_UIType())->getDisplayValue($dateCur) : ''));
 		$viewer->assign('CURRNUM', $curr_num);
 		$viewer->assign('BANK', $bankTab);
 		$viewer->assign('HISTORIA', $history);
@@ -82,6 +82,6 @@ class Settings_CurrencyUpdate_Index_View extends Settings_Vtiger_Index_View
 		$viewer->assign('SUPPORTED_CURRENCIES', $moduleModel->getSupportedCurrencies());
 		$viewer->assign('UNSUPPORTED_CURRENCIES', $moduleModel->getUnSupportedCurrencies());
 		$viewer->view('Index.tpl', $qualifiedModule);
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 	}
 }

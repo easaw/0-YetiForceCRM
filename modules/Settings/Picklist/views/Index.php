@@ -11,10 +11,10 @@
 class Settings_Picklist_Index_View extends Settings_Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 
-		$sourceModule = $request->get('source_module');
+		$sourceModule = $request->getByType('source_module', 2);
 		$pickListSupportedModules = Settings_Picklist_Module_Model::getPicklistSupportedModules();
 		if (empty($sourceModule)) {
 			//take the first module as the source module
@@ -26,11 +26,11 @@ class Settings_Picklist_Index_View extends Settings_Vtiger_Index_View
 
 		$viewer->assign('PICKLIST_MODULES', $pickListSupportedModules);
 
-		$pickListFields = $moduleModel->getFieldsByType(array('picklist', 'multipicklist'));
+		$pickListFields = $moduleModel->getFieldsByType(['picklist', 'multipicklist']);
 		if (count($pickListFields) > 0) {
 			$selectedPickListFieldModel = reset($pickListFields);
 
-			$selectedFieldAllPickListValues = Vtiger_Util_Helper::getPickListValues($selectedPickListFieldModel->getName());
+			$selectedFieldAllPickListValues = App\Fields\Picklist::getValuesName($selectedPickListFieldModel->getName());
 
 
 			$viewer->assign('PICKLIST_FIELDS', $pickListFields);
@@ -55,14 +55,14 @@ class Settings_Picklist_Index_View extends Settings_Vtiger_Index_View
 		$viewer->view('Index.tpl', $qualifiedName);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
+		$jsFileNames = [
 			"modules.$moduleName.resources.$moduleName",
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);

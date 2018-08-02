@@ -12,20 +12,24 @@
 class Reports_EditFolder_View extends Vtiger_IndexAjax_View
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if (!Users_Privileges_Model::getCurrentUserPrivilegesModel()->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$folderId = $request->get('folderid');
+		$folderId = $request->getByType('folderid', 2);
 
 		if ($folderId) {
 			$folderModel = Reports_Folder_Model::getInstanceById($folderId);

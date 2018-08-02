@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * Contributor(s): 
- * *********************************************************************************************************************************** */
+/**
+ * OSSTimeControl english translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'PLL_HOLIDAY' => 'Holiday',
 	'PLL_BREAK_TIME' => 'Break from work',
@@ -111,4 +107,8 @@ $jsLanguageStrings = [
 	'JS_HOURS_SHOULD_BE_SMALLER_THAN' => 'Working time cannot exceed 24 hours',
 	'JS_START_DATE' => 'Start date',
 	'JS_END_DATE' => 'End date',
+	'JS_TOTAL_TIME' => 'Total time',
+ 	'JS_ASSIGNED_TO' => 'Assigned to',
+	'JS_TYPE' => 'Type',
+	'JS_NUMBER' => 'Number',
 ];

@@ -1,12 +1,12 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 <input type="hidden" id="pageStartRange" value="{$PAGING_MODEL->getRecordStartRange()}" />
 <input type="hidden" id="pageEndRange" value="{$PAGING_MODEL->getRecordEndRange()}" />
 <input type="hidden" id="previousPageExist" value="{$PAGING_MODEL->isPrevPageExists()}" />
 <input type="hidden" id="nextPageExist" value="{$PAGING_MODEL->isNextPageExists()}" />
 <input type="hidden" id="totalCount" value="{$LISTVIEW_COUNT}" />
-<input type="hidden" value="{$ORDER_BY}" id="orderBy">
-<input type="hidden" value="{$SORT_ORDER}" id="sortOrder">
+<input type="hidden" value="{$ORDER_BY}" id="orderBy" />
+<input type="hidden" value="{$SORT_ORDER}" id="sortOrder" />
 <input type="hidden" id="totalCount" value="{$LISTVIEW_COUNT}" />
 <input type='hidden' value="{$PAGE_NUMBER}" id='pageNumber'>
 <input type='hidden' value="{$PAGING_MODEL->getPageLimit()}" id='pageLimit'>
@@ -14,8 +14,8 @@
 
 <div class="listViewEntriesDiv" style='overflow-x:auto;'>
 	<span class="listViewLoadingImageBlock hide modal" id="loadingListViewModal">
-		<img class="listViewLoadingImage" src="{vimage_path('loading.gif')}" alt="no-image" title="{vtranslate('LBL_LOADING', $MODULE)}"/>
-		<p class="listViewLoadingMsg">{vtranslate('LBL_LOADING_LISTVIEW_CONTENTS', $MODULE)}........</p>
+		<img class="listViewLoadingImage" src="{\App\Layout::getImagePath('loading.gif')}" alt="no-image" title="{\App\Language::translate('LBL_LOADING')}" />
+		<p class="listViewLoadingMsg">{\App\Language::translate('LBL_LOADING_LISTVIEW_CONTENTS')}........</p>
 	</span>
 	{assign var="NAME_FIELDS" value=$MODULE_MODEL->getNameFields()}
 	{assign var=WIDTHTYPE value=$USER_MODEL->get('rowheight')}
@@ -26,7 +26,7 @@
 				{assign var=WIDTH value={99/(count($LISTVIEW_HEADERS))}}
 				{foreach item=LISTVIEW_HEADER from=$LISTVIEW_HEADERS}
 				<th width="{$WIDTH}%" nowrap {if $LISTVIEW_HEADER@last}colspan="2" {/if} class="{$WIDTHTYPE}">
-					<a  {if !($LISTVIEW_HEADER->has('sort'))} class="listViewHeaderValues cursorPointer" data-nextsortorderval="{if $COLUMN_NAME eq $LISTVIEW_HEADER->get('name')}{$NEXT_SORT_ORDER}{else}ASC{/if}" data-columnname="{$LISTVIEW_HEADER->get('name')}" {/if}>{vtranslate($LISTVIEW_HEADER->get('label'), $QUALIFIED_MODULE)}
+					<a  {if !($LISTVIEW_HEADER->has('sort'))} class="listViewHeaderValues cursorPointer" data-nextsortorderval="{if $COLUMN_NAME eq $LISTVIEW_HEADER->get('name')}{$NEXT_SORT_ORDER}{else}ASC{/if}" data-columnname="{$LISTVIEW_HEADER->get('name')}" {/if}>{\App\Language::translate($LISTVIEW_HEADER->get('label'), $QUALIFIED_MODULE)}
 						{if $COLUMN_NAME eq $LISTVIEW_HEADER->get('name')}&nbsp;&nbsp;<span class="{$SORT_IMAGE}"></span>{/if}</a>
 				</th>
 				{/foreach}
@@ -39,14 +39,14 @@
 			 >
 			<td width="1%" nowrap class="{$WIDTHTYPE}">
 				{if $MODULE eq 'CronTasks'}
-					<img src="{vimage_path('drag.png')}" class="alignTop" title="{vtranslate('LBL_DRAG',$QUALIFIED_MODULE)}" />
+					<img src="{\App\Layout::getImagePath('drag.png')}" class="alignTop" title="{\App\Language::translate('LBL_DRAG',$QUALIFIED_MODULE)}" />
 				{/if}
 			</td>
 				{foreach item=LISTVIEW_HEADER from=$LISTVIEW_HEADERS}
 					{assign var=LISTVIEW_HEADERNAME value=$LISTVIEW_HEADER->get('name')}
 					{assign var=LAST_COLUMN value=$LISTVIEW_HEADER@last}
 					<td class="listViewEntryValue {$WIDTHTYPE}"  width="{$WIDTH}%" nowrap>
-						&nbsp;{vtranslate($LISTVIEW_ENTRY->getDisplayValue($LISTVIEW_HEADERNAME), $QUALIFIED_MODULE)}
+						&nbsp;{\App\Language::translate($LISTVIEW_ENTRY->getDisplayValue($LISTVIEW_HEADERNAME), $QUALIFIED_MODULE)}
 						{if $LAST_COLUMN && $LISTVIEW_ENTRY->getRecordLinks()}
 							</td><td nowrap class="{$WIDTHTYPE}">
 								<div class="pull-right actions">
@@ -57,12 +57,12 @@
 											{if $LISTVIEW_ENTRIES_COUNT == 1}
 												{if $RECORD_LINK_LABEL neq 'LBL_DELETE_RECORD'}
 													<a {if stripos($RECORD_LINK_URL, 'javascript:')===0} onclick="{$RECORD_LINK_URL|substr:strlen("javascript:")};if(event.stopPropagation){ldelim}event.stopPropagation();{rdelim}else{ldelim}event.cancelBubble=true;{rdelim}" {else} href='{$RECORD_LINK_URL}' {/if}>
-														<span class="{$RECORD_LINK->getIcon()} alignMiddle" title="{vtranslate($RECORD_LINK->getLabel(), $QUALIFIED_MODULE)}"></span>
+														<span class="{$RECORD_LINK->getIcon()} alignMiddle" title="{\App\Language::translate($RECORD_LINK->getLabel(), $QUALIFIED_MODULE)}"></span>
 													</a>
 												{/if}
 											{else}
 												<a {if stripos($RECORD_LINK_URL, 'javascript:')===0} onclick="{$RECORD_LINK_URL|substr:strlen("javascript:")};if(event.stopPropagation){ldelim}event.stopPropagation();{rdelim}else{ldelim}event.cancelBubble=true;{rdelim}" {else} href='{$RECORD_LINK_URL}' {/if}>
-													<span class="{$RECORD_LINK->getIcon()} alignMiddle" title="{vtranslate($RECORD_LINK->getLabel(), $QUALIFIED_MODULE)}"></span>
+													<span class="{$RECORD_LINK->getIcon()} alignMiddle" title="{\App\Language::translate($RECORD_LINK->getLabel(), $QUALIFIED_MODULE)}"></span>
 												</a>
 											{/if}
 											{if !$RECORD_LINK@last}
@@ -86,7 +86,7 @@
 		<tbody>
 			<tr>
 				<td>
-					{vtranslate('LBL_NO_RECORDS_FOUND', $QUALIFIED_MODULE)}
+					{\App\Language::translate('LBL_NO_RECORDS_FOUND', $QUALIFIED_MODULE)}
 				</td>
 			</tr>
 		</tbody>

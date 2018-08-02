@@ -1,19 +1,13 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
-
+/**
+ * OSSPasswords polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'OSSSoldServices' => 'Usługi sprzedane',
 	'SINGLE_OSSSoldServices' => 'Usługa sprzedana',
-	'LBL_RECORDS_LIST' => 'Lista rekordów',
-	'LBL_ADD_RECORD' => 'Dodaj rekord',
 	// Blocks
 	'LBL_INFORMATION' => 'Blok informacji',
 	// Field Labels
@@ -34,6 +28,7 @@ $languageStrings = [
 	'LBL_GENERATE_EXTENSION' => 'Generuj przedłużenie',
 	'LBL_ORDER_TIME' => 'Czas realizacji',
 	'FL_RENEWAL_INVOICE' => 'Faktura odnowienia',
+	'FL_CONTACT' => 'Kontakt',
 	// picklist values
 	'FL_RENEWAL' => 'Odnowienie',
 	'PLL_DRAFT' => 'Wersja robocza',

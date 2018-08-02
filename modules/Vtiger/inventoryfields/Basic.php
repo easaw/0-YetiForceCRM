@@ -3,11 +3,12 @@
 /**
  * Inventory Basic Field Class
  * @package YetiForce.Fields
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
+class Vtiger_Basic_InventoryField extends \App\Base
 {
 
 	protected $name = '';
@@ -15,7 +16,7 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	protected $defaultValue = '';
 	protected $columnName = '-';
 	protected $colSpan = 10;
-	protected $dbType = 'varchar(100)';
+	protected $dbType = 'string';
 	protected $customColumn = [];
 	protected $summationValue = false;
 	protected $onlyOne = true;
@@ -58,7 +59,7 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 
 	public function getParamsConfig()
 	{
-		return \includes\utils\Json::decode($this->get('params'));
+		return \App\Json::decode($this->get('params'));
 	}
 
 	/**
@@ -85,11 +86,11 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	public function getTemplateName($view, $moduleName)
 	{
 		$tpl = $view . $this->name . '.tpl';
-		$filename = 'layouts' . DIRECTORY_SEPARATOR . Yeti_Layout::getActiveLayout() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $moduleName . DIRECTORY_SEPARATOR . 'inventoryfields' . DIRECTORY_SEPARATOR . $tpl;
+		$filename = 'layouts' . DIRECTORY_SEPARATOR . \App\Layout::getActiveLayout() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $moduleName . DIRECTORY_SEPARATOR . 'inventoryfields' . DIRECTORY_SEPARATOR . $tpl;
 		if (is_file($filename)) {
 			return $tpl;
 		}
-		$filename = 'layouts' . DIRECTORY_SEPARATOR . Yeti_Layout::getActiveLayout() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . 'Vtiger' . DIRECTORY_SEPARATOR . 'inventoryfields' . DIRECTORY_SEPARATOR . $tpl;
+		$filename = 'layouts' . DIRECTORY_SEPARATOR . \App\Layout::getActiveLayout() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . 'Vtiger' . DIRECTORY_SEPARATOR . 'inventoryfields' . DIRECTORY_SEPARATOR . $tpl;
 		if (is_file($filename)) {
 			return $tpl;
 		}
@@ -170,7 +171,7 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	 */
 	public function getDisplayValue($value)
 	{
-		return $value;
+		return \App\Purifier::encodeHtml($value);
 	}
 
 	/**
@@ -203,7 +204,7 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 
 	/**
 	 * Function to check whether the current field is visible
-	 * @return <Boolean> - true/false
+	 * @return boolean - true/false
 	 */
 	public function isVisible()
 	{
@@ -215,7 +216,7 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 
 	/**
 	 * Function to check whether the current field is editable
-	 * @return <Boolean> - true/false
+	 * @return boolean - true/false
 	 */
 	public function isEditable()
 	{
@@ -227,7 +228,7 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 
 	/**
 	 * Function to check whether the current field is editable
-	 * @return <Boolean> - true/false
+	 * @return boolean - true/false
 	 */
 	public function isColumnType()
 	{
@@ -281,5 +282,37 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	public function getFieldDataType()
 	{
 		return $this->fieldDataType;
+	}
+
+	/**
+	 * Get value from request
+	 * @param array $insertData
+	 * @param \App\Request $request
+	 * @param int $i
+	 * @return boolean
+	 */
+	public function getValueFromRequest(&$insertData, \App\Request $request, $i)
+	{
+		$column = $this->getColumnName();
+		if (empty($column) || $column === '-' || !$request->has($column . $i)) {
+			return false;
+		}
+		$value = $request->get($column . $i);
+		$this->validate($value, $column . $i, true);
+		$insertData[$column] = $value;
+	}
+
+	/**
+	 * Verification of data
+	 * @param mixed $value
+	 * @param string $columnName
+	 * @param boolean $isUserFormat
+	 * @throws \App\Exceptions\Security
+	 */
+	public function validate($value, $columnName, $isUserFormat = false)
+	{
+		if (!is_numeric($value) && (is_string($value) && $value !== strip_tags($value))) {
+			throw new \App\Exceptions\Security("ERR_ILLEGAL_FIELD_VALUE||$columnName||$value", 406);
+		}
 	}
 }

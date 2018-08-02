@@ -41,6 +41,7 @@ $languageStrings = [
 	'LBL_HAVE_BACKUP_DATABASE' => 'У меня есть резервная копия базы данных',
 	'LBL_HAVE_BACKUP_FILES' => 'У меня есть резервная копия файлов',
 	'LBL_HOST_NAME' => 'Хост',
+	'LBL_HOST_PORT' => 'Host port',
 	'LBL_IMAP_SUPPORT' => 'Поддержка IMAP',
 	'LBL_INDUSTRY_OPTION' => 'Пожалуйста, выберите соответствующую отрасль',
 	'LBL_INSTALLATION_IN_PROGRESS' => 'Установка',
@@ -98,6 +99,7 @@ $languageStrings = [
 	'LBL_CURL' => 'Поддержка cURL',
 	'LBL_OPEN_SSL' => 'Поддержка OpenSSL',
 	'LBL_READ_LICENSE' => 'Лицензия',
+	'LBL_CONFIGURATION_COMPANY_DETAILS' => 'Enter company details',
 ];
 
 $jsLanguageStrings = [
@@ -111,5 +113,6 @@ $jsLanguageStrings = [
 	'LBL_MANDATORY_FIELDS_ERROR' => 'Внимание! Поля отмеченные звездочкой, обязательны к заполнению.',
 	'LBL_PASS_REENTER_ERROR' => 'Внимание! Пароли не совпадают.',
 	'LBL_INVALID_EMAIL_ERROR' => 'Внимание! Неверный адрес электронной почты.',
+	'LBL_INVALID_USERNAME_ERROR' => 'Invalid username',
 	'LBL_RESOLVE_ERROR' => 'Пожалуйста, устраните ошибки перед продолжением установки',
 ];

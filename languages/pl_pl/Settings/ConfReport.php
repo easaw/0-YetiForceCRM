@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * ConfReport polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'ConfReport' => 'Konfiguracja serwera',
 	'LBL_CONFIGURATION' => 'Konfiguracja serwera',
@@ -15,6 +12,9 @@ $languageStrings = [
 	'LBL_PARAMETER' => 'Parametr',
 	'LBL_VALUE' => 'Aktualna konfiguracja',
 	'LBL_RECOMMENDED' => 'Zalecana konfiguracja',
+	'LBL_SYSTEM_STABILITY' => 'Konfiguracja stabilności systemu',
+	'LBL_SYSTEM_SECURITY' => 'Konfiguracja bezpieczeństwa systemu',
+	'LBL_SECURITY_ADVISORIES_CHECKER' => 'Raport podatności w używanych bibliotekach',
 	'LBL_FILES_PERMISSIONS' => 'Pliki/Foldery',
 	'LBL_FILE' => 'Nazwa',
 	'LBL_PATH' => 'Ścieżka',
@@ -41,9 +41,11 @@ $languageStrings = [
 	'LBL_PCRE_LIBRARY' => 'PCRE',
 	'LBL_XML_LIBRARY' => 'XML',
 	'LBL_JSON_LIBRARY' => 'JSON',
+	'LBL_MYSQLND_LIBRARY' => 'MySQL Native Driver (mysqlnd)',
 	'LBL_SESSION_LIBRARY' => 'SESSION',
 	'LBL_DOM_LIBRARY' => 'DOM',
-	'LBL_MBSTRING_LIBRARY' => 'php_mbstring (wymagane dla mPDF)',
+	'LBL_MBSTRING_LIBRARY' => 'Mbstring (wymagane dla mPDF)',
+	'LBL_EXIF_LIBRARY' => 'Exif (poprawia bezpieczeństwo wgrywanych plików)',
 	'LBL_ZIP_ARCHIVE' => 'ZIP',
 	'LBL_SPACE' => 'Pojemność',
 	'LBL_SPACE_TOTAL' => 'Całkowita',
@@ -53,4 +55,26 @@ $languageStrings = [
 	'LBL_PHPINI' => 'Konfiguracja PHP',
 	'LBL_LOG_FILE' => 'Logi błedów',
 	'LBL_CRM_DIR' => 'Katalog lokalny CRM',
+	'LBL_SOAP_LIBRARY' => 'SOAP',
+	'LBL_PHP_SAPI' => 'Server API',
+	'LBL_APCU_LIBRARY' => 'APCu',
+	'LBL_OPCACHE_LIBRARY' => 'OPcache',
+	'LBL_CRON_PHP' => 'Cron - Wersja PHP',
+	'LBL_CRON_PHPINI' => 'Cron - Konfiguracja PHP',
+	'LBL_CRON_LOG_FILE' => 'Cron - Logi błedów',
+	'LBL_ENVIRONMENTAL_INFORMATION' => 'Informacje o środowisku',
+	'LBL_CRON_PHP_SAPI' => 'Cron - Server API',
+	'LBL_OPERATING_SYSTEM' => 'System operacyjny',
+	'BTN_SERVER_SPEED_TEST' => 'Testuj szybkość serwera',
+	'LBL_LIB_NAME' => 'Nazwa biblioteki',
+	'LBL_VULNERABILITY_NAME' => 'Nazwa podatności',
+	'LBL_VULNERABILITY_URL' => 'Adres',
+	'HTTPS_HELP_TEXT' => 'SSL to technologia zabezpieczeń służąca do tworzenia zaszyfrowanego połączenia między serwerem internetowym a przeglądarką. Zalecamy włączenie jej aby uniemożliwić podsłuchiwanie komunikacji pomiędzy Tobą a serwerem.',
+	'HTACCESS_HELP_TEXT' => 'Plik .htaccess jest nieaktywny, jest on potrzebny do prawidłowej obsługi wszystkich integracji oraz do zabezpieczenia dostępu do katalogów z danymi użytkownika.',
+	'PUBLIC_HTML_HELP_TEXT' => 'Zalecamy aby domena kierowała do katalogu public_html, dzięki temu pliki systemu oraz twoje dane nie będą publiczne i nikt nie będzie mógł ich pobrać.',
+	'SESSION_REGENERATE_HELP_TEXT' => 'Zalecamy aby regenerowanie identyfikatora sesji było włączone, opcja ta utrudnia przejęcie sesji użytkowników. Zmiany należy dokonać w głównym pliku konfiguracyjnym.',
+	'LBL_TMP_DIR' => 'Tymczasowy katalog',
+];
+$jsLanguageStrings = [
+	'JS_SPEED_TEST_START' => 'Trwa sprawdzanie szybkości...',
 ];

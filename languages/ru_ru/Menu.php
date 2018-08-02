@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Menu russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_QUICK_CREATE_MODULE' => 'Быстрое создание',
 	'LBL_SEPARATOR' => 'Разделитель',
@@ -19,8 +16,8 @@ $languageStrings = [
 	'MEN_MARKETING' => 'Маркетинг',
 	'MEN_SUPPORT' => 'Поддержка',
 	'MEN_ACCOUNTING' => 'Бухгалтерия',
-	'MEN_HUMAN_RESOURCES' => 'Сотрудники',
-	'MEN_SECRETARY' => 'Секретариат',
+	'MEN_COMPANY' => 'Company',
+	'MEN_ORGANIZATION' => 'Organization',
 	'MEN_DATABESES' => 'База данных',
 	'MEN_TEAMWORK' => 'Команда',
 	'MEN_PRODUCTBASE' => 'База товаров',

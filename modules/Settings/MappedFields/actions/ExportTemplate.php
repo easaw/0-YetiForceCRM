@@ -3,13 +3,14 @@
 /**
  * Export to XML Class for MappedFields Settings
  * @package YetiForce.Action
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_MappedFields_ExportTemplate_Action extends Settings_Vtiger_Index_Action
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$recordId = $request->get('id');
 		$moduleInstance = Settings_MappedFields_Module_Model::getInstanceById($recordId);
@@ -17,7 +18,7 @@ class Settings_MappedFields_ExportTemplate_Action extends Settings_Vtiger_Index_
 		header('content-type: application/xml; charset=utf-8');
 		header('Pragma: public');
 		header('Cache-Control: private');
-		header('Content-Disposition: attachment; filename=' . $recordId . '_mftemplate.xml');
+		header('Content-Disposition: attachment; filename="' . $recordId . '_mftemplate.xml"');
 		header('Content-Description: PHP Generated Data');
 
 		$xml = new DOMDocument('1.0', 'utf-8');
@@ -37,7 +38,7 @@ class Settings_MappedFields_ExportTemplate_Action extends Settings_Vtiger_Index_
 				$name->appendChild($xml->createCDATASection(html_entity_decode($moduleInstance->getRecord()->getRaw($field))));
 			} else {
 				if (in_array($field, $changeNames)) {
-					$value = vtlib\Functions::getModuleName($moduleInstance->get($field));
+					$value = \App\Module::getModuleName($moduleInstance->get($field));
 				} else {
 					$value = $moduleInstance->get($field);
 				}

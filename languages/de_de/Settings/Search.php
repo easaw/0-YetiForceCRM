@@ -1,13 +1,11 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Search german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author skavenkf (K.Fink) 
+ */
 $languageStrings = [
 	'Search Configuration' => 'Suchkonfiguration',
 	'Search Setup' => 'Suche - Konfiguration',
@@ -21,7 +19,7 @@ $languageStrings = [
 	'Update labels' => 'Aktualisiere Beschriftung',
 	'LBL_SAVE_CHANGES_SEARCHING' => 'Änderungen gespeichert.',
 	'LBL_SAVE_CHANGES_LABLE' => 'Die Änderungen in der Konfiguration wurden gespeichert. Sie müssen dieses Modul aktualisieren, um die Änderungen innerhalb des Systems zu sehen.',
-	'Update has been completed' => 'Update für dieses Modul wurde erfolgreich abgeschlossen. Die Änderungen sind im System sichtbar.',
+	'Update has been completed' => 'Gewähltes Modul erfolgreich aktualisiert. Änderungen wurden per CRON durchgeführt. Laufzeit der Aktualisierung ist von der Anzahl der Datensätzen abhängig.',
 	'LBL_SAVE_MODULE_SEQUENCE' => 'Modulreihenfolge speichern',
 	'LBL_TURN_ON' => 'Einschalten',
 	'LBL_TURN_OFF' => 'Ausschalten',

@@ -17,11 +17,14 @@ class Vtiger_Theme extends Vtiger_Viewer
 	 */
 	public static function getThemeStyle()
 	{
+		$basePath = '';
+		if (!IS_PUBLIC_DIR) {
+			$basePath = 'public_html/';
+		}
 		$filePath = self::getThemePath() . '/' . 'style.css';
-		$completeFilePath = Vtiger_Loader::resolveNameToPath('~' . $filePath);
-
+		$completeFilePath = Vtiger_Loader::resolveNameToPath('~public_html/' . $filePath);
 		if (file_exists($completeFilePath)) {
-			return $filePath;
+			return $basePath . $filePath;
 		}
 		// Exception should be thrown???
 		return false;
@@ -30,20 +33,24 @@ class Vtiger_Theme extends Vtiger_Viewer
 	/**
 	 * Function to get the image path
 	 * This checks image in selected theme if not in images folder if it doest nor exists either case will retutn false
-	 * @param <string> $imageFileName - file name with extension
+	 * @param string $imageFileName - file name with extension
 	 * @return <string/boolean> - returns file path if exists or false;
 	 */
 	public static function getImagePath($imageFileName)
 	{
+		$basePath = '';
+		if (!IS_PUBLIC_DIR) {
+			$basePath = 'public_html/';
+		}
 		$imageFilePath = self::getThemePath() . '/' . 'images' . '/' . $imageFileName;
-		$fallbackPath = self::getBaseThemePath() . '/' . 'images' . '/' . $imageFileName;
-		$completeImageFilePath = Vtiger_Loader::resolveNameToPath('~' . $imageFilePath);
-		$completeFallBackThemePath = Vtiger_Loader::resolveNameToPath('~' . $fallbackPath);
-
+		$completeImageFilePath = Vtiger_Loader::resolveNameToPath('~' . 'public_html/' . $imageFilePath);
 		if (file_exists($completeImageFilePath)) {
-			return $imageFilePath;
-		} else if (file_exists($completeFallBackThemePath)) {
-			return $fallbackPath;
+			return $basePath . $imageFilePath;
+		}
+		$fallbackPath = self::getBaseThemePath() . '/' . 'images' . '/' . $imageFileName;
+		$completeFallBackThemePath = Vtiger_Loader::resolveNameToPath('~' . 'public_html/' . $fallbackPath);
+		if (file_exists($completeFallBackThemePath)) {
+			return $basePath . $fallbackPath;
 		}
 		return false;
 	}
@@ -52,34 +59,39 @@ class Vtiger_Theme extends Vtiger_Viewer
 	 * Function to get the image path or get defaulf
 	 * This function searches for an image, it takes a default name in case it's missing,
 	 * if there's no image with a default name it will return false
-	 * @param <string> $imageFileName - file name 
-	 * @param <string> $defaultFileName - file name 
+	 * @param string $imageFileName - file name
+	 * @param string $defaultFileName - file name
 	 * @return <string/boolean> - returns file path if exists or false;
 	 */
 	public static function getOrignOrDefaultImgPath($imageFileName, $defaultFileName)
 	{
+		$basePath = '';
+		if (!IS_PUBLIC_DIR) {
+			$basePath = 'public_html/';
+		}
 		$allowedImgTypes = ['.gif', '.jpg', '.png'];
 		foreach ($allowedImgTypes as $type) {
 			$imageFilePath = self::getThemePath() . '/' . 'images' . '/' . $imageFileName . $type;
-			$completeImageFilePath = Vtiger_Loader::resolveNameToPath('~' . $imageFilePath);
-			$fallbackPath = self::getBaseThemePath() . '/' . 'images' . '/' . $imageFileName . $type;
-			$completeFallBackThemePath = Vtiger_Loader::resolveNameToPath('~' . $fallbackPath);
+			$completeImageFilePath = Vtiger_Loader::resolveNameToPath('~public_html/' . $imageFilePath);
 			if (file_exists($completeImageFilePath)) {
-				return $imageFilePath;
-			} else if (file_exists($completeFallBackThemePath)) {
-				return $fallbackPath;
+				return $basePath . $imageFilePath;
+			}
+			$fallbackPath = self::getBaseThemePath() . '/' . 'images' . '/' . $imageFileName . $type;
+			$completeFallBackThemePath = Vtiger_Loader::resolveNameToPath('~public_html/' . $fallbackPath);
+			if (file_exists($completeFallBackThemePath)) {
+				return $basePath . $fallbackPath;
 			}
 		}
-
 		foreach ($allowedImgTypes as $type) {
 			$imageFilePath = self::getThemePath() . '/' . 'images' . '/' . $defaultFileName . $type;
-			$completeImageFilePath = Vtiger_Loader::resolveNameToPath('~' . $imageFilePath);
-			$fallbackPath = self::getBaseThemePath() . '/' . 'images' . '/' . $defaultFileName . $type;
-			$completeFallBackThemePath = Vtiger_Loader::resolveNameToPath('~' . $fallbackPath);
+			$completeImageFilePath = Vtiger_Loader::resolveNameToPath('~public_html/' . $imageFilePath);
 			if (file_exists($completeImageFilePath)) {
-				return $imageFilePath;
-			} else if (file_exists($completeFallBackThemePath)) {
-				return $fallbackPath;
+				return $basePath . $imageFilePath;
+			}
+			$fallbackPath = self::getBaseThemePath() . '/' . 'images' . '/' . $defaultFileName . $type;
+			$completeFallBackThemePath = Vtiger_Loader::resolveNameToPath('~public_html/' . $fallbackPath);
+			if (file_exists($completeFallBackThemePath)) {
+				return $basePath . $fallbackPath;
 			}
 		}
 		return false;
@@ -87,15 +99,15 @@ class Vtiger_Theme extends Vtiger_Viewer
 
 	/**
 	 * Function to get the Base Theme Path, until theme folder not selected theme folder
-	 * @return <string> - theme folder
+	 * @return string - theme folder
 	 */
 	public static function getBaseThemePath()
 	{
-		return 'layouts' . '/' . self::getLayoutName() . '/skins';
+		return 'layouts/' . self::getLayoutName() . '/skins';
 	}
 
 	/**
-	 *  * @return <string> -  path to base style
+	 *  * @return string -  path to base style
 	 */
 	public static function getBaseStylePath()
 	{
@@ -104,23 +116,21 @@ class Vtiger_Theme extends Vtiger_Viewer
 
 	/**
 	 * Function to get the selected theme folder path
-	 * @return <string> -  selected theme path
+	 * @return string -  selected theme path
 	 */
 	public static function getThemePath($theme = '')
 	{
 		if (empty($theme)) {
 			$theme = self::getDefaultThemeName();
 		}
-
 		$selectedThemePath = self::getBaseThemePath() . '/' . $theme;
-		$fallBackThemePath = self::getBaseThemePath() . '/' . self::getDefaultThemeName();
-
-		$completeSelectedThemePath = Vtiger_Loader::resolveNameToPath('~' . $selectedThemePath);
-		$completeFallBackThemePath = Vtiger_Loader::resolveNameToPath('~' . $fallBackThemePath);
-
+		$completeSelectedThemePath = Vtiger_Loader::resolveNameToPath('~public_html/' . $selectedThemePath);
 		if (file_exists($completeSelectedThemePath)) {
 			return $selectedThemePath;
-		} else if (file_exists($completeFallBackThemePath)) {
+		}
+		$fallBackThemePath = self::getBaseThemePath() . '/' . self::getDefaultThemeName();
+		$completeFallBackThemePath = Vtiger_Loader::resolveNameToPath('~public_html/' . $fallBackThemePath);
+		if (file_exists($completeFallBackThemePath)) {
 			return $fallBackThemePath;
 		}
 		return false;
@@ -128,12 +138,11 @@ class Vtiger_Theme extends Vtiger_Viewer
 
 	/**
 	 * Function to get the default theme name
-	 * @return <String> - Default theme name
+	 * @return string - Default theme name
 	 */
 	public static function getDefaultThemeName()
 	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$theme = $currentUserModel->get('theme');
+		$theme = \App\User::getCurrentUserModel()->getDetail('theme');
 		return empty($theme) ? self::DEFAULTTHEME : $theme;
 	}
 
@@ -155,16 +164,4 @@ class Vtiger_Theme extends Vtiger_Viewer
 		$baseLayoutPath = self::getBaseThemePath();
 		return $baseLayoutPath . '/' . $themeName;
 	}
-}
-
-function vimage_path($imageName)
-{
-	$args = func_get_args();
-	return call_user_func_array(array('Vtiger_Theme', 'getImagePath'), $args);
-}
-
-function vimage_path_default($imageName, $defaultImageName)
-{
-	$args = func_get_args();
-	return call_user_func_array(array('Vtiger_Theme', 'getOrignOrDefaultImgPath'), $args);
 }

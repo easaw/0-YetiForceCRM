@@ -3,13 +3,14 @@
 /**
  * Basic TreeView Model Class
  * @package YetiForce.TreeView
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-class Vtiger_TreeView_Model extends Vtiger_Base_Model
+class Vtiger_TreeView_Model extends \App\Base
 {
 
-	static $_cached_instance;
+	public static $_cached_instance;
 
 	/**
 	 * Function to get the Module Name
@@ -56,12 +57,13 @@ class Vtiger_TreeView_Model extends Vtiger_Base_Model
 		if ($this->has('fieldTemp')) {
 			return $this->get('fieldTemp');
 		}
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT tablename,columnname,fieldname,fieldparams FROM vtiger_field WHERE uitype = ? && tabid = ?', [302, vtlib\Functions::getModuleId($this->getModuleName())]);
-		if ($db->getRowCount($result) == 0) {
-			vtlib\Functions::throwNewException(vtranslate('ERR_TREE_NOT_FOUND', $this->getModuleName()));
+		$fieldTemp = (new App\Db\Query())->select(['tablename', 'columnname', 'fieldname', 'fieldparams'])
+			->from('vtiger_field')
+			->where(['uitype' => 302, 'tabid' => \App\Module::getModuleId($this->getModuleName())])
+			->one();
+		if (!$fieldTemp) {
+			throw new \App\Exceptions\AppException('ERR_TREE_NOT_FOUND');
 		}
-		$fieldTemp = $db->getRow($result);
 		$this->set('fieldTemp', $fieldTemp);
 		return $fieldTemp;
 	}
@@ -87,7 +89,7 @@ class Vtiger_TreeView_Model extends Vtiger_Base_Model
 
 	/**
 	 * Load records tree address
-	 * @return <String> - url
+	 * @return string - url
 	 */
 	public function getTreeViewUrl()
 	{
@@ -131,7 +133,7 @@ class Vtiger_TreeView_Model extends Vtiger_Base_Model
 				'type' => 'category',
 				'record_id' => $row['tree'],
 				'parent' => $parent == 0 ? '#' : $parent,
-				'text' => vtranslate($row['name'], $this->getModuleName()),
+				'text' => \App\Language::translate($row['name'], $this->getModuleName()),
 				'state' => ($row['state']) ? $row['state'] : '',
 				'icon' => $row['icon']
 			];

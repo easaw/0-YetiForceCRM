@@ -3,41 +3,49 @@
 /**
  * Get mails adress class
  * @package YetiForce.Action
- * @license licenses/License.html
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class OSSMail_GetMail_Action extends Vtiger_Action_Controller
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		if (!$currentUserPriviligesModel->hasModulePermission($moduleName)) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+		if (!\App\Privilege::isPermitted($request->getByType('sourceModule', 2), 'DetailView', $request->getInteger('sourceRecord'))) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$sourceRecord = $request->get('sourceRecord');
-		$sourceModule = $request->get('sourceModule');
-		$maxEmails = $request->get('maxEmails');
+		$sourceRecord = $request->getInteger('sourceRecord');
+		$sourceModule = $request->getByType('sourceModule', 2);
+		$maxEmails = $request->has('maxEmails') ? $request->getInteger('maxEmails') : 0;
 
 		$emails = [];
 		$emailFields = OSSMailScanner_Record_Model::getEmailSearch($sourceModule);
 		$recordModel = Vtiger_Record_Model::getInstanceById($sourceRecord, $sourceModule);
 		$name = $recordModel->getName();
-		foreach ($emailFields as &$emailField) {
+		foreach ($emailFields as $emailField) {
 			$email = $recordModel->get($emailField['fieldname']);
 			if (!empty($email)) {
 				$emails[] = [
 					'name' => $name,
-					'fieldlabel' => vtranslate($emailField['fieldlabel'], $emailField['name']),
+					'fieldlabel' => App\Language::translate($emailField['fieldlabel'], $emailField['name']),
 					'email' => $email
 				];
-				if ($maxEmails == 1) {
+				if ($maxEmails === 1) {
 					break;
 				}
 			}

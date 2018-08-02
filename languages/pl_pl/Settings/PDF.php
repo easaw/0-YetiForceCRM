@@ -1,12 +1,13 @@
 <?php
 /**
- * Polish language
- * @package YetiForce.Language
- * @license licenses/License.html
- * @author Maciej Stencel <m.stencel@yetiforce.com>
- * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ * PDF polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  */
 $languageStrings = [
+	'PLL_TEXT' => 'Tekst',
+	'PLL_IMAGE' => 'Obraz',
 	'LBL_PDF' => 'PDF',
 	'LBL_PDF_DESCRIPTION' => 'Testowa wersja konfiguracji szablonów PDF.',
 	'LBL_CREATING_PDF' => 'Utwórz szablon pdf',
@@ -26,8 +27,8 @@ $languageStrings = [
 	'LBL_DOCUMENT_PERMISSIONS' => 'Uprawnienia',
 	'LBL_DOCUMENT_WATERMARK' => 'Znak wodny',
 	'Module' => 'Moduł',
-	'active' => 'Aktywny',
-	'inactive' => 'Nieaktywny',
+	'PLL_ACTIVE' => 'Aktywny',
+	'PLL_INACTIVE' => 'Nieaktywny',
 	'LBL_PRIMARY_NAME' => 'Nazwa podstawowa',
 	'LBL_SECONDARY_NAME' => 'Nazwa dodatkowa',
 	'LBL_FOLDER_NAME' => 'Nazwa folderu',

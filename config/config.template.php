@@ -1,7 +1,7 @@
 <?php
 /* * *******************************************************************************
  * The contents of this file are subject to the SugarCRM Public License Version 1.1.2
- * ("License"); You may not use this file except in compliance with the 
+ * ("License"); You may not use this file except in compliance with the
  * License. You may obtain a copy of the License at http://www.sugarcrm.com/SPL
  * Software distributed under the License is distributed on an  "AS IS"  basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for
@@ -20,8 +20,8 @@ AppConfig::iniSet('memory_limit', '512M');
 // lifetime of session
 AppConfig::iniSet('session.gc_maxlifetime', '21600');
 
-// show or hide calendar, world clock, calculator, chat and CKEditor 
-// Do NOT remove the quotes if you set these to false! 
+// show or hide calendar, world clock, calculator, chat and CKEditor
+// Do NOT remove the quotes if you set these to false!
 $CALENDAR_DISPLAY = 'true';
 $WORLD_CLOCK_DISPLAY = 'true';
 $CALCULATOR_DISPLAY = 'true';
@@ -68,22 +68,22 @@ $tmp_dir = '_VT_TMPDIR_';
 // import_dir default value prepended by cache_dir = import/
 $import_dir = 'cache/import/';
 
-// upload_dir default 
+// upload_dir default
 $upload_dir = 'cache/upload/';
 
 // maximum file size for uploaded files in bytes also used when uploading import files
 // upload_maxsize default value = 3000000
 $upload_maxsize = 52428800;  // 50MB
 // flag to allow export functionality
-// 'all' to allow anyone to use exports 
-// 'admin' to only allow admins to export 
-// 'none' to block exports completely 
+// 'all' to allow anyone to use exports
+// 'admin' to only allow admins to export
+// 'none' to block exports completely
 // allow_exports default value = all
 $allow_exports = 'all';
 
 // files with one of these extensions will have '.txt' appended to their filename on upload
 // upload_badext default value = php, php3, php4, php5, pl, cgi, py, asp, cfm, js, vbs, html, htm
-$upload_badext = array('php', 'php3', 'php4', 'php5', 'pl', 'cgi', 'py', 'asp', 'cfm', 'js', 'vbs', 'html', 'htm', 'exe', 'bin', 'bat', 'sh', 'dll', 'phps', 'phtml', 'xhtml', 'rb', 'msi', 'jsp', 'shtml', 'sth', 'shtm');
+$upload_badext = ['php', 'php3', 'php4', 'php5', 'pl', 'cgi', 'py', 'asp', 'cfm', 'js', 'vbs', 'html', 'htm', 'exe', 'bin', 'bat', 'sh', 'dll', 'phps', 'phtml', 'xhtml', 'rb', 'msi', 'jsp', 'shtml', 'sth', 'shtm'];
 
 // list_max_entries_per_page default value = 20
 $list_max_entries_per_page = '20';
@@ -146,7 +146,7 @@ $default_timezone = '_TIMEZONE_';
 
 /** If timezone is configured, try to set it */
 if (isset($default_timezone) && function_exists('date_default_timezone_set')) {
-	@date_default_timezone_set($default_timezone);
+	date_default_timezone_set($default_timezone);
 }
 
 // Maximum length of characters for title
@@ -161,19 +161,16 @@ $breadcrumbs = true;
 //Separator for menu breadcrumbs default value = '>'
 $breadcrumbs_separator = '>';
 
-//Pop-up window type with record list  1 - Normal , 2 - Expanded search
-$popupType = 1;
-
 //Minimum cron frequency [min]
 $MINIMUM_CRON_FREQUENCY = 1;
 
 //Update the current session id with a newly generated one after login
-$session_regenerate_id = false;
+$session_regenerate_id = true;
 
 $davStorageDir = 'storage/Files';
 $davHistoryDir = 'storage/FilesHistory';
 
-// prod and demo
+// prod, demo, test
 $systemMode = 'prod';
 
 // Force site access to always occur under SSL (https) for selected areas. You will not be able to access selected areas under non-ssl. Note, you must have SSL enabled on your server to utilise this option.
@@ -188,10 +185,7 @@ $backgroundClosingModal = true;
 // Enable CSRF-protection
 $csrfProtection = true;
 
-// Enable encrypt backup, Support from PHP 5.6.x
-$encryptBackup = false;
-
-// Is sending emails active. 
+// Is sending emails active.
 $isActiveSendingMails = true;
 
 // Should the task in cron be unblocked if the script execution time was exceeded
@@ -206,10 +200,11 @@ $langInLoginView = false;
 // System's lyout selection in the login window (true/false).
 $layoutInLoginView = false;
 
-// Set the default layout 
+// Set the default layout
 $defaultLayout = 'basic';
 
-// Logo is visible in footer.
-$isVisibleLogoInFooter = true;
-
+// Redirect to proper url when wrong url is entered.
 $forceRedirect = true;
+
+// Enable advanced phone number validation. Enabling  it will block saving invalid phone number.
+$phoneFieldAdvancedVerification = true;

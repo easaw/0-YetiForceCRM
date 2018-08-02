@@ -3,13 +3,17 @@
 /**
  * Switch Users View Class
  * @package YetiForce.View
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_Users_SwitchUsers_View extends Settings_Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
@@ -22,13 +26,16 @@ class Settings_Users_SwitchUsers_View extends Settings_Vtiger_Index_View
 		$viewer->view('SwitchUsers.tpl', $qualifiedModuleName);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
-		$jsFileNames = array(
+		$jsFileNames = [
 			"modules.Settings.$moduleName.resources.SwitchUsers",
-		);
+		];
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
 		return $headerScriptInstances;

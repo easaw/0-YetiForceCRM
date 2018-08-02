@@ -1,26 +1,36 @@
 <?php
 
 /**
- *
- * @package YetiForce.actions
- * @license licenses/License.html
+ * Calendar ActivityStateAjax action class
+ * @package YetiForce.Action
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Calendar_ActivityStateAjax_Action extends Calendar_SaveAjax_Action
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermittedToRecord
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
-		$state = $request->get('state');
+		parent::checkPermission($request);
+		if (!$this->record->getField('activitystatus')->isEditable()) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+		if ($request->isEmpty('state')) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+	}
 
-		$recordModel = Vtiger_Record_Model::getInstanceById($recordId);
-		$recordModel->set('activitystatus', $state);
-		$recordModel->set('mode', 'edit');
-		$recordModel->save();
-
+	public function process(\App\Request $request)
+	{
+		$this->record->getModule()->getFieldByName('activitystatus')->getUITypeModel()->setValueFromRequest($request, $this->record, 'state');
+		$this->record->save();
 		$response = new Vtiger_Response();
 		$response->setResult(['success' => true]);
 		$response->emit();

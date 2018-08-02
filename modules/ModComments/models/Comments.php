@@ -12,7 +12,7 @@ class ModComments_CommentsModel
 {
 
 	private $data;
-	static $ownerNamesCache = array();
+	public static $ownerNamesCache = [];
 
 	public function __construct($datarow)
 	{
@@ -23,7 +23,7 @@ class ModComments_CommentsModel
 	{
 		$authorid = $this->data['smcreatorid'];
 		if (!isset(self::$ownerNamesCache[$authorid])) {
-			self::$ownerNamesCache[$authorid] = \includes\fields\Owner::getLabel($authorid);
+			self::$ownerNamesCache[$authorid] = \App\Fields\Owner::getLabel($authorid);
 		}
 		return self::$ownerNamesCache[$authorid];
 	}
@@ -36,6 +36,6 @@ class ModComments_CommentsModel
 
 	public function content()
 	{
-		return decode_html($this->data['commentcontent']);
+		return App\Purifier::decodeHtml($this->data['commentcontent']);
 	}
 }

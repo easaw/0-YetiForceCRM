@@ -12,15 +12,16 @@
 {strip}
 {if isset($SETTING_EXIST)}
 	<a class="btn btn-xs btn-default" name="dfilter">
-		<span class='icon-cog' border='0' align="absmiddle" title="{vtranslate('LBL_FILTER')}" alt="{vtranslate('LBL_FILTER')}"></span>
-	</a>
+		<span class='icon-cog' border='0' align="absmiddle" title="{\App\Language::translate('LBL_FILTER')}" alt="{\App\Language::translate('LBL_FILTER')}"></span>
+	</a>&nbsp;
 {/if}
 <a class="btn btn-xs btn-default" href="javascript:void(0);" name="drefresh" data-url="{$WIDGET->getUrl()}&content=data">
-	<span class="glyphicon glyphicon-refresh" hspace="2" border="0" align="absmiddle" title="{vtranslate('LBL_REFRESH')}" alt="{vtranslate('LBL_REFRESH')}"></span>
+	<span class="glyphicon glyphicon-refresh" hspace="2" border="0" align="absmiddle" title="{\App\Language::translate('LBL_REFRESH')}" alt="{\App\Language::translate('LBL_REFRESH')}"></span>
 </a>
 {if !$WIDGET->isDefault()}
+	&nbsp;
 	<a name="dclose" class="widget btn btn-xs btn-default" data-url="{$WIDGET->getDeleteUrl()}">
-		<span class="glyphicon glyphicon-remove" hspace="2" border="0" align="absmiddle" title="{vtranslate('LBL_CLOSE')}" alt="{vtranslate('LBL_CLOSE')}"></span>
+		<span class="glyphicon glyphicon-remove" hspace="2" border="0" align="absmiddle" title="{\App\Language::translate('LBL_CLOSE')}" alt="{\App\Language::translate('LBL_CLOSE')}"></span>
 	</a>
 {/if}
 {/strip}

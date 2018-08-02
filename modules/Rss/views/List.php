@@ -11,25 +11,17 @@
 class Rss_List_View extends Vtiger_Index_View
 {
 
-	public function checkPermission(Vtiger_Request $request)
-	{
-		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
-		}
-	}
-
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 	}
 
-	public function preProcessTplName(Vtiger_Request $request)
+	public function preProcessTplName(\App\Request $request)
 	{
 		return 'ListViewPreProcess.tpl';
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -39,7 +31,7 @@ class Rss_List_View extends Vtiger_Index_View
 		$viewer->view('ListViewContents.tpl', $moduleName);
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	public function postProcess(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -51,7 +43,7 @@ class Rss_List_View extends Vtiger_Index_View
 	 * Function to initialize the required data in smarty to display the List View Contents
 	 */
 
-	public function initializeListViewContents(Vtiger_Request $request, Vtiger_Viewer $viewer)
+	public function initializeListViewContents(\App\Request $request, Vtiger_Viewer $viewer)
 	{
 		$module = $request->getModule();
 		$recordId = $request->get('id');
@@ -67,29 +59,28 @@ class Rss_List_View extends Vtiger_Index_View
 		$viewer = $this->getViewer($request);
 		$viewer->assign('MODULE', $module);
 		$viewer->assign('RECORD', $recordInstance);
-		$linkParams = array('MODULE' => $module, 'ACTION' => $request->get('view'));
+		$linkParams = ['MODULE' => $module, 'ACTION' => $request->getByType('view', 1)];
 		$viewer->assign('QUICK_LINKS', $moduleModel->getSideBarLinks($linkParams));
 		$viewer->assign('LISTVIEW_HEADERS', $this->getListViewRssHeaders($module));
 	}
 
 	/**
 	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
+		$jsFileNames = [
 			'modules.Vtiger.resources.List',
 			"modules.$moduleName.resources.List",
 			'modules.CustomView.resources.CustomView',
 			"modules.$moduleName.resources.CustomView",
-			"modules.Emails.resources.MassEdit",
-			"modules.Vtiger.resources.CkEditor"
-		);
+			'modules.Vtiger.resources.CkEditor'
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
@@ -102,25 +93,27 @@ class Rss_List_View extends Vtiger_Index_View
 	 */
 	public function getListViewRssHeaders($module)
 	{
-		$headerFieldModels = array();
-		$headerFields = array(
-			'title' => array(
+		$headerFields = [
+			'title' => [
 				'uitype' => '1',
 				'name' => 'title',
 				'label' => 'LBL_SUBJECT',
 				'typeofdata' => 'V~O',
 				'diplaytype' => '1',
-			),
-			'sender' => array(
+			],
+			'sender' => [
 				'uitype' => '1',
 				'name' => 'sender',
 				'label' => 'LBL_SENDER',
 				'typeofdata' => 'V~O',
 				'diplaytype' => '1',
-			)
-		);
+			]
+		];
 		foreach ($headerFields as $fieldName => $fieldDetails) {
-			$fieldModel = Settings_Webforms_Field_Model::getInstanceByRow($fieldDetails);
+			$fieldModel = new Vtiger_Field_Model();
+			foreach ($fieldDetails as $name => $value) {
+				$fieldModel->set($name, $value);
+			}
 			$fieldModel->module = $module;
 			$fieldModelsList[$fieldName] = $fieldModel;
 		}

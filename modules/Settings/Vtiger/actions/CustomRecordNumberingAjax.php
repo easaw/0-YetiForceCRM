@@ -19,18 +19,23 @@ class Settings_Vtiger_CustomRecordNumberingAjax_Action extends Settings_Vtiger_I
 		$this->exposeMethod('updateRecordsWithSequenceNumber');
 	}
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * The function checks permissions
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\AppException
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		parent::checkPermission($request);
-		$qualifiedModuleName = $request->getModule(false);
-		$sourceModule = $request->get('sourceModule');
+		$request->getModule(false);
+		$sourceModule = $request->getByType('sourceModule', 2);
 
 		if (!$sourceModule) {
-			throw new \Exception\AppException(vtranslate('LBL_PERMISSION_DENIED', $qualifiedModuleName));
+			throw new \App\Exceptions\AppException('LBL_PERMISSION_DENIED');
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if (!empty($mode)) {
@@ -41,12 +46,12 @@ class Settings_Vtiger_CustomRecordNumberingAjax_Action extends Settings_Vtiger_I
 
 	/**
 	 * Function to get Module custom numbering data
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function getModuleCustomNumberingData(Vtiger_Request $request)
+	public function getModuleCustomNumberingData(\App\Request $request)
 	{
-		$sourceModule = $request->get('sourceModule');
-		$moduleData = \includes\fields\RecordNumber::getNumber($sourceModule);
+		$sourceModule = $request->getByType('sourceModule', 2);
+		$moduleData = \App\Fields\RecordNumber::getNumber($sourceModule);
 
 		$response = new Vtiger_Response();
 		$response->setEmitType(Vtiger_Response::$EMIT_JSON);
@@ -56,25 +61,21 @@ class Settings_Vtiger_CustomRecordNumberingAjax_Action extends Settings_Vtiger_I
 
 	/**
 	 * Function save module custom numbering data
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function saveModuleCustomNumberingData(Vtiger_Request $request)
+	public function saveModuleCustomNumberingData(\App\Request $request)
 	{
 		$qualifiedModuleName = $request->getModule(false);
-		$sourceModule = $request->get('sourceModule');
-
-		$moduleModel = Settings_Vtiger_CustomRecordNumberingModule_Model::getInstance($sourceModule);
+		$moduleModel = Settings_Vtiger_CustomRecordNumberingModule_Model::getInstance($request->getByType('sourceModule', 2));
 		$moduleModel->set('prefix', $request->get('prefix'));
 		$moduleModel->set('sequenceNumber', $request->get('sequenceNumber'));
 		$moduleModel->set('postfix', $request->get('postfix'));
-
 		$result = $moduleModel->setModuleSequence();
-
 		$response = new Vtiger_Response();
 		if ($result['success']) {
-			$response->setResult(vtranslate('LBL_SUCCESSFULLY_UPDATED', $qualifiedModuleName));
+			$response->setResult(App\Language::translate('LBL_SUCCESSFULLY_UPDATED', $qualifiedModuleName));
 		} else {
-			$message = vtranslate('LBL_PREFIX_IN_USE', $qualifiedModuleName);
+			$message = App\Language::translate('LBL_PREFIX_IN_USE', $qualifiedModuleName);
 			$response->setError($message);
 		}
 		$response->emit();
@@ -82,11 +83,11 @@ class Settings_Vtiger_CustomRecordNumberingAjax_Action extends Settings_Vtiger_I
 
 	/**
 	 * Function to update record with sequence number
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function updateRecordsWithSequenceNumber(Vtiger_Request $request)
+	public function updateRecordsWithSequenceNumber(\App\Request $request)
 	{
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 
 		$moduleModel = Settings_Vtiger_CustomRecordNumberingModule_Model::getInstance($sourceModule);
 		$result = $moduleModel->updateRecordsWithSequence();
@@ -96,7 +97,7 @@ class Settings_Vtiger_CustomRecordNumberingAjax_Action extends Settings_Vtiger_I
 		$response->emit();
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

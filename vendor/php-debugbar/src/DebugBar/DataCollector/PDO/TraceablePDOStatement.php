@@ -1,4 +1,5 @@
-<?php namespace DebugBar\DataCollector\PDO;
+<?php
+namespace DebugBar\DataCollector\PDO;
 
 use PDO;
 use PDOException;
@@ -14,7 +15,7 @@ class TraceablePDOStatement extends PDOStatement
 	protected $pdo;
 
 	/** @var array */
-	protected $boundParameters = array();
+	protected $boundParameters = [];
 
 	/**
 	 * TraceablePDOStatement constructor.

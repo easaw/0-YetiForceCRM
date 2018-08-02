@@ -11,7 +11,7 @@
 /**
  * Vtiger Record Structure Model
  */
-class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
+class Vtiger_RecordStructure_Model extends \App\Base
 {
 
 	protected $record = false;
@@ -38,7 +38,7 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 
 	/**
 	 * Function to get the record
-	 * @return <Vtiger_Record_Model>
+	 * @return Vtiger_Record_Model
 	 */
 	public function getRecord()
 	{
@@ -52,7 +52,7 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 
 	/**
 	 * Function to get the module
-	 * @return <Vtiger_Module_Model>
+	 * @return Vtiger_Module_Model
 	 */
 	public function getModule()
 	{
@@ -105,7 +105,7 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 
 	/**
 	 * Function to retieve the instance from record model
-	 * @param <Vtiger_Record_Model> $recordModel - record instance
+	 * @param Vtiger_Record_Model $recordModel - record instance
 	 * @return Vtiger_RecordStructure_Model
 	 */
 	public static function getInstanceFromRecordModel($recordModel, $mode = self::RECORD_STRUCTURE_MODE_DEFAULT)
@@ -119,7 +119,7 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 
 	/**
 	 * Function to retieve the instance from module model
-	 * @param <Vtiger_Module_Model> $moduleModel - module instance
+	 * @param Vtiger_Module_Model $moduleModel - module instance
 	 * @return Vtiger_RecordStructure_Model
 	 */
 	public static function getInstanceForModule($moduleModel, $mode = self::RECORD_STRUCTURE_MODE_DEFAULT)

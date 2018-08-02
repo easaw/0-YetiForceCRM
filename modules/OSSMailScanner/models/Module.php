@@ -1,14 +1,11 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * OSSMailScanner module model class
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class OSSMailScanner_Module_Model extends Vtiger_Module_Model
 {
 
@@ -26,18 +23,19 @@ class OSSMailScanner_Module_Model extends Vtiger_Module_Model
 
 	public function getSettingLinks()
 	{
-		vimport('~~modules/com_vtiger_workflow/VTWorkflowUtils.php');
+		Vtiger_Loader::includeOnce('~~modules/com_vtiger_workflow/VTWorkflowUtils.php');
 		$layoutEditorImagePath = Vtiger_Theme::getImagePath('LayoutEditor.gif');
 		$settingsLinks = [];
-		$db = PearDatabase::getInstance();
-		$result = $db->query("SELECT fieldid FROM vtiger_settings_field WHERE name = 'OSSMailScanner' && description = 'OSSMailScanner'");
-
-		$settingsLinks[] = array(
+		$fieldId = (new App\Db\Query())->select(['fieldid'])
+			->from('vtiger_settings_field')
+			->where(['name' => 'OSSMailScanner', 'description' => 'OSSMailScanner'])
+			->scalar();
+		$settingsLinks[] = [
 			'linktype' => 'LISTVIEWSETTING',
 			'linklabel' => 'LBL_MODULE_CONFIGURATION',
-			'linkurl' => 'index.php?module=OSSMailScanner&parent=Settings&view=index&block=4&fieldid=' . $db->getSingleValue($result),
+			'linkurl' => 'index.php?module=OSSMailScanner&parent=Settings&view=Index&block=4&fieldid=' . $fieldId,
 			'linkicon' => $layoutEditorImagePath
-		);
+		];
 		return $settingsLinks;
 	}
 }

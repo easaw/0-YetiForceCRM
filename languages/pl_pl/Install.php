@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
-
+/**
+ * Install polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LANGNAME' => 'Polski',
 	'ERR_DATABASE_CONNECTION_FAILED' => 'Nie można się połączyć z bazą danych',
@@ -18,7 +14,7 @@ $languageStrings = [
 	'ERR_UNABLE_CREATE_DATABASE' => 'Nie można utworzyć bazy danych',
 	'LBL_ADMIN_INFORMATION' => 'Informacje dotyczące administratora',
 	'LBL_ADMIN_USER_INFORMATION' => 'Informacje dotyczące administratora',
-	'LBL_CONFIRM_CONFIGURATION_SETTINGS' => 'Potwierdż wprowadzoną konfiguracje',
+	'LBL_CONFIRM_CONFIGURATION_SETTINGS' => 'Potwierdź wprowadzoną konfiguracje',
 	'LBL_CREATE_NEW_DB' => 'Utwórz nową bazę danych',
 	'LBL_CURRENCIES' => 'Waluta',
 	'LBL_CURRENCY' => 'Waluta',
@@ -29,7 +25,8 @@ $languageStrings = [
 	'LBL_DISAGREE' => 'Nie zgadzam się',
 	'LBL_EMAIL' => 'Mail',
 	'LBL_GD_LIBRARY' => 'Wsparcie dla biblioteki GD',
-	'LBL_HOST_NAME' => 'Adres serwera',
+	'LBL_HOST_NAME' => 'Adres',
+	'LBL_HOST_PORT' => 'Port',
 	'LBL_I_AGREE' => 'Zgadzam się',
 	'LBL_IMAP_SUPPORT' => 'Wsparcie dla IMAP',
 	'LBL_INSTALLATION_IN_PROGRESS' => 'Trwa proces instalacji',
@@ -42,6 +39,7 @@ $languageStrings = [
 	'LBL_PASSWORD_MISMATCH' => 'Proszę wprowadzić ponownie hasła. Hasła do siebie nie pasują.',
 	'LBL_PHP_CONFIGURATION' => 'PHP konfiguracja',
 	'LBL_PHP_RECOMMENDED_SETTINGS' => 'Zalecane parametry PHP',
+	'LBL_SECURITY_RECOMMENDED_SETTINGS' => 'Zalecane parametry bezpieczeństwa',
 	'LBL_PHP_VERSION' => 'Wersja PHP',
 	'LBL_PLEASE_WAIT' => 'Proszę czekać...',
 	'LBL_PRESENT_VALUE' => 'Aktualne wartości',
@@ -62,7 +60,7 @@ $languageStrings = [
 	'LBL_WELCOME' => 'Witamy',
 	'LBL_ZLIB_SUPPORT' => 'Wsparcie dla Zlib',
 	'MSG_DB_PARAMETERS_INVALID' => 'Określony użytkownik bazy danych, hasło, nazwa hosta, typ bazy danych lub port jest nieprawidłowy',
-	'MSG_DB_ROOT_USER_NOT_AUTHORIZED' => 'Wiadomość: Określony użytkownik root bazy danych nie ma uprawnień do tworzenia bazy danych lub nazwy bazy danych zawiera znaki specjalne. Spróbuj zmienić ustawienia bazy danych',
+	'MSG_DB_ROOT_USER_NOT_AUTHORIZED' => 'Wiadomość: Określony użytkownik root bazy danych nie ma uprawnień do tworzenia bazy danych lub nazwa bazy danych zawiera znaki specjalne. Spróbuj zmienić ustawienia bazy danych',
 	'MSG_DB_USER_NOT_AUTHORIZED' => 'Określony użytkownik bazy danych nie ma dostępu, aby połączyć się z serwerem bazy danych z hosta',
 	'MSG_LIST_REASONS' => 'Może to wynikać z następujących powodów',
 	'LBL_PDO_SUPPORT' => 'Wsparcie dla PDO',
@@ -72,6 +70,7 @@ $languageStrings = [
 	'LBL_INDUSTRY_OPTION' => 'Proszę wybrać odpowiednią gałąź gospodarki.',
 	'LBL_BACK' => 'Cofnij',
 	'LBL_READ_LICENSE' => 'Licencja',
+	'LBL_CONFIGURATION_COMPANY_DETAILS' => 'Wprowadź dane firmy',
 	//Migration
 	'LBL_MIGRATION' => 'Migracja',
 	'LBL_START_MIGRATION' => 'Rozpocznij migrację',
@@ -110,5 +109,6 @@ $jsLanguageStrings = [
 	'LBL_MANDATORY_FIELDS_ERROR' => 'Uwaga! Pola wymagane są puste.',
 	'LBL_PASS_REENTER_ERROR' => 'Należy ponownie wpisać hasło. Pole Hasło i Powtórz hasło nie zgadzają się.',
 	'LBL_INVALID_EMAIL_ERROR' => 'Uwaga! Niepoprawny adres email.',
+	'LBL_INVALID_USERNAME_ERROR' => 'Niedozwolona nazwa uzytkownika.',
 	'LBL_RESOLVE_ERROR' => 'Proszę naprawić błąd przed kontynuowaniem instalacji',
 ];

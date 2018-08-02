@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * SSalesProcesses polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'SSalesProcesses' => 'Szanse sprzedaży',
 	'SINGLE_SSalesProcesses' => 'Szansa sprzedaży',
@@ -22,6 +27,8 @@ $languageStrings = [
 	'FL_TYPE' => 'Rodzaj',
 	'FL_STATUS' => 'Status',
 	'FL_CAMPAIGN' => 'Kampania marketingowa',
+	'FL_MEMBER_OF' => 'Szansa sprzedaży nadrzędna',
+	'FL_START_DATE' => 'Czas rozpoczęcia',
 	//Picklist
 	'PLL_WEBSITE' => 'Strona WWW',
 	'PLL_PHONE' => 'Telefon',
@@ -55,4 +62,5 @@ $languageStrings = [
 	'LBL_SWITCHHEADER_ON_0' => 'Otwarte',
 	'LBL_SWITCHHEADER_OFF_0' => 'Zamknięte',
 	'LBL_HEADERSWITCH_OPEN_CLOSED' => 'Otwarte/Zamknięte',
+	'LBL_SHOW_HIERARCHY' => 'Hierarchia',
 ];

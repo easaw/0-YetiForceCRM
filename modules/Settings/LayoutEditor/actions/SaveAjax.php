@@ -2,8 +2,9 @@
 
 /**
  * Save Inventory Action Class
- * @package YetiForce.Actions
- * @license licenses/License.html
+ * @package YetiForce.Action
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_LayoutEditor_SaveAjax_Action extends Settings_Vtiger_IndexAjax_View
@@ -18,13 +19,13 @@ class Settings_LayoutEditor_SaveAjax_Action extends Settings_Vtiger_IndexAjax_Vi
 		$this->exposeMethod('delete');
 	}
 
-	public function setInventory(Vtiger_Request $request)
+	public function setInventory(\App\Request $request)
 	{
 		$param = $request->get('param');
 		$moduleName = $param['module'];
 		$status = false;
 		$inventoryInstance = Vtiger_Inventory_Model::getInstance($moduleName);
-		$status = $inventoryInstance->setInventoryTable($param['status']);
+		$status = $inventoryInstance->setMode($param['status']);
 		if ($status) {
 			$status = true;
 		}
@@ -35,33 +36,36 @@ class Settings_LayoutEditor_SaveAjax_Action extends Settings_Vtiger_IndexAjax_Vi
 		$response->emit();
 	}
 
-	public function saveInventoryField(Vtiger_Request $request)
+	/**
+	 * Function is used to create and edit fields in advanced block
+	 * @param \App\Request $request
+	 */
+	public function saveInventoryField(\App\Request $request)
 	{
 		$param = $request->get('param');
 		$moduleName = $param['module'];
 		$name = $param['name'];
-		$id = $param['id'];
+		$id = (int) $param['id'];
 		$edit = false;
 		$inventoryField = Vtiger_InventoryField_Model::getInstance($moduleName);
 		if (!empty($id)) {
-			$return = $inventoryField->saveField($name, $param);
+			$inventoryField->saveField($name, $param);
 			$edit = true;
 		} else {
-			$return = $inventoryField->addField($name, $param);
-			$id = $return['id'];
+			$id = $inventoryField->addField($name, $param);
 		}
 		$arrayInstane = $inventoryField->getFields(false, [$id], 'Settings');
 		$data = [];
 		if (current($arrayInstane)) {
 			$data = current($arrayInstane)->getData();
-			$data['translate'] = vtranslate($data['label'], $moduleName);
+			$data['translate'] = \App\Language::translate($data['label'], $moduleName);
 		}
 		$response = new Vtiger_Response();
 		$response->setResult(['data' => $data, 'edit' => $edit]);
 		$response->emit();
 	}
 
-	public function saveSequence(Vtiger_Request $request)
+	public function saveSequence(\App\Request $request)
 	{
 		$param = $request->get('param');
 		$moduleName = $param['module'];
@@ -75,7 +79,7 @@ class Settings_LayoutEditor_SaveAjax_Action extends Settings_Vtiger_IndexAjax_Vi
 		$response->emit();
 	}
 
-	public function delete(Vtiger_Request $request)
+	public function delete(\App\Request $request)
 	{
 		$param = $request->get('param');
 		$moduleName = $param['module'];

@@ -1,13 +1,11 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Widgets management german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author skavenkf (K.Fink)
+ */
 $languageStrings = [
 	'LBL_CHOISE_AUTHORIZED' => 'Rolle wählen',
 	'LBL_ADD_DASHBOARD_BLOCK' => 'Zusammenfassungsblock zum Modul hinzufügen',
@@ -35,12 +33,23 @@ $languageStrings = [
 	'LBL_VIEW_CONFIGURATION' => 'Konfigurationssicht',
 	'LBL_WIDGET_ADDED' => 'Widget wurde dem Block erfolgreich hinzugefügt ',
 	'LBL_CACHE_WIDGET' => 'Cache',
+	'LBL_TICK_SIZE' => 'Tick size (y)',
+	'LBL_MAXIMUM_VALUE' => 'Maximaler Wert (y)',
 	'LBL_SHOW_USERS' => 'Benutzernamen anzeigen',
 	'LBL_TITLE_WIDGET' => 'Widgetname',
 	'LBL_ADDRESS_RSS' => 'RSS Addresse',
 	'LBL_ADD_CHANNEL' => 'Kanal hinzufügen',
 	'LBL_ADD_RSS' => 'RSS',
 	'LBL_ADD_CHART_FILTER' => 'Chart mit Filter',
+	'LBL_NOTIFICATION_BY_SENDER' => 'Anzahl von Benachrichtigungen je Sender',
+	'LBL_NOTIFICATION_BY_RECIPIENT' => 'Anzahl von Benachrichtigungen je Empfänger',
+	'LBL_DEFAULT_DATE' => 'Standard Tag',
+	'PLL_CURRENT_DAY' => 'Aktueller Tag',
+	'PLL_CURRENT_WEEK' => 'Aktuelle Woche',
+	'PLL_CURRENT_MONTH' => 'Aktueller Monat',
+	'PLL_CURRENT_YEAR' => 'Aktuelles Jahr',
+	'LBL_SAVE_DASHBOARD' => 'Dashboard speichern',
+	'LBL_NAME_DASHBOARD' => 'Dashboard Name',
 ];
 $jsLanguageStrings = [
 	'JS_BLOCK_ADDED' => 'Block wurde erfolgreich hinzugefügt',

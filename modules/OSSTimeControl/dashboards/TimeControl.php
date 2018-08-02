@@ -1,25 +1,22 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * OSSTimeControl TimeControl dashboard class
+ * @package YetiForce.Dashboard
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 {
 
 	public function getSearchParams($assignedto = '', $date)
 	{
-		$conditions = array();
-		$listSearchParams = array();
+		$conditions = [];
+		$listSearchParams = [];
 		if ($assignedto != '')
-			array_push($conditions, array('assigned_user_id', 'e', $assignedto));
+			array_push($conditions, ['assigned_user_id', 'e', $assignedto]);
 		if (!empty($date)) {
-			array_push($conditions, array('due_date', 'bw', $date . ',' . $date . ''));
+			array_push($conditions, ['due_date', 'bw', $date . ',' . $date . '']);
 		}
 		$listSearchParams[] = $conditions;
 		return '&search_params=' . json_encode($listSearchParams);
@@ -28,35 +25,34 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 	public function getWidgetTimeControl($user, $time)
 	{
 		if (!$time) {
-			return array();
+			return [];
 		}
-
-		$currentUser = Users_Record_Model::getCurrentUserModel();
+		$date['start'] = Vtiger_Date_UIType::getDBInsertedValue($time['start']);
+		$date['end'] = Vtiger_Date_UIType::getDBInsertedValue($time['end']);
 		$module = 'HelpDesk';
-		$db = PearDatabase::getInstance();
-		$param = array('OSSTimeControl', $user, $time['start'], $time['end']);
-		$sql = "SELECT sum_time AS daytime, due_date, timecontrol_type FROM vtiger_osstimecontrol
-					INNER JOIN vtiger_crmentity ON vtiger_osstimecontrol.osstimecontrolid = vtiger_crmentity.crmid
-					WHERE vtiger_crmentity.setype = ? && vtiger_crmentity.smownerid = ? ";
-		if ($securityParameter != '')
-			$sql.= $securityParameter;
-		$sql .= \App\PrivilegeQuery::getAccessConditions($module);
-		$sql .= "AND (vtiger_osstimecontrol.date_start >= ? && vtiger_osstimecontrol.due_date <= ?) && vtiger_osstimecontrol.deleted = 0 ORDER BY due_date ";
-		$result = $db->pquery($sql, $param);
-		$data = array();
-		$days = array();
+		$query = (new App\Db\Query())->select(['daytime' => 'sum_time', 'due_date', 'timecontrol_type'])
+			->from('vtiger_osstimecontrol')
+			->innerJoin('vtiger_crmentity', 'vtiger_osstimecontrol.osstimecontrolid = vtiger_crmentity.crmid')
+			->where(['vtiger_crmentity.setype' => 'OSSTimeControl', 'vtiger_crmentity.smownerid' => $user]);
+		\App\PrivilegeQuery::getConditions($query, $module);
+		$query->andWhere([
+			'and',
+			['>=', 'vtiger_osstimecontrol.due_date', $date['start']],
+			['<=', 'vtiger_osstimecontrol.due_date', $date['end']],
+			['vtiger_osstimecontrol.deleted' => 0]
+		])->orderBy('due_date');
+
+		$days = [];
 		$timeTypes = [];
 		$sumWorkTime = 0;
 		$sumBreakTime = 0;
-		$countDays = 0;
 		$workedDaysAmount = [];
 		$holidayDaysAmount = [];
 		$response = [];
 
-		$numRows = $db->num_rows($result);
-		for ($i = 0; $i < $numRows; $i++) {
-			$row = $db->query_result_rowdata($result, $i);
-			$workingTimeByType[vtranslate($row['timecontrol_type'], 'OSSTimeControl')] += $row['daytime'];
+		$dataReader = $query->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$workingTimeByType[\App\Language::translate($row['timecontrol_type'], 'OSSTimeControl')] += $row['daytime'];
 			$workingTime[$row['due_date']][$row['timecontrol_type']] += $row['daytime'];
 			if (!array_key_exists($row['timecontrol_type'], $timeTypes)) {
 				$timeTypes[$row['timecontrol_type']] = $counter++;
@@ -77,19 +73,21 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 				$days[] = $row['due_date'];
 		}
 
-		if ($numRows > 0) {
-			$sql = "SELECT timecontrol_type, color FROM vtiger_timecontrol_type";
-			$result = $db->query($sql);
-			while ($row = $db->fetch_array($result)) {
+		if ($dataReader->count() > 0) {
+			$dataReader = (new App\Db\Query())->select(['timecontrol_type', 'color'])
+					->from('vtiger_timecontrol_type')
+					->createCommand()->query();
+
+			while ($row = $dataReader->read()) {
 				$colors[$row['timecontrol_type']] = $row['color'];
 			}
 
 			$counter = 0;
-			$result = array();
+			$result = [];
 			foreach ($workingTime as $timeKey => $timeValue) {
 				foreach ($timeTypes as $timeTypeKey => $timeTypeKey) {
 					$result[$timeTypeKey]['data'][$counter][0] = $counter;
-					$result[$timeTypeKey]['label'] = vtranslate($timeTypeKey, 'OSSTimeControl');
+					$result[$timeTypeKey]['label'] = \App\Language::translate($timeTypeKey, 'OSSTimeControl');
 					$result[$timeTypeKey]['color'] = $colors[$timeTypeKey];
 					if ($timeValue[$timeTypeKey]) {
 						$result[$timeTypeKey]['data'][$counter][1] = $timeValue[$timeTypeKey];
@@ -110,8 +108,6 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 			$workedDaysAmount = count($workedDaysAmount);
 			$holidayDaysAmount = count($holidayDaysAmount);
 			$allDaysAndWeekends = $this->getDays($time['start'], $time['end']);
-			$response['workingDays'] = $allDaysAndWeekends['workingDays'];
-
 			if ($sumWorkTime > 0) {
 				if (0 == $workedDaysAmount)
 					$averageWorkingTime = $sumWorkTime;
@@ -125,13 +121,11 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 				else
 					$averageBreakTime = $sumBreakTime / $workedDaysAmount;
 			}
-
 			$response['holiayDays'] = $holidayDaysAmount;
 			$response['daysWorked'] = $workedDaysAmount;
 			$response['workDays'] = $allDaysAndWeekends['workDays'];
 			$response['allDays'] = $allDaysAndWeekends['days'];
 			$response['weekends'] = $allDaysAndWeekends['weekends'];
-			$response['coundDaysType'] = $coundDaysType;
 			$response['averageWorkingTime'] = number_format($averageWorkingTime, 2, '.', ' ');
 			$response['sumBreakTime'] = number_format($averageBreakTime, 2, '.', ' ');
 			$response['legend'] = $workingTimeByType;
@@ -139,34 +133,33 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 			$response['ticks'] = $ticks;
 			$response['days'] = $days;
 		}
-
 		return $response;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$loggedUserId = $currentUser->get('id');
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$linkId = $request->get('linkid');
-		$user = $request->get('user');
-		$time = $request->get('time');
-		if (empty($time)) {
-			$time['start'] = date('Y-m-d', mktime(0, 0, 0, date('m'), 1, date('Y')));
-			$time['end'] = date('Y-m-d', mktime(23, 59, 59, date('m') + 1, 0, date('Y')));
-		}
-		$time['start'] = vtlib\Functions::currentUserDisplayDate($time['start']);
-		$time['end'] = vtlib\Functions::currentUserDisplayDate($time['end']);
-
-		if (empty($user))
-			$user = $loggedUserId;
-		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
+		$linkId = $request->getInteger('linkid');
+		$user = $request->getByType('user', 2);
+		$time = $request->getDateRange('time');
 		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
-
+		if (empty($time)) {
+			$time = Settings_WidgetsManagement_Module_Model::getDefaultDate($widget);
+			if ($time === false) {
+				$time['start'] = date('Y-m-d', mktime(0, 0, 0, date('m'), 1, date('Y')));
+				$time['end'] = date('Y-m-d', mktime(23, 59, 59, date('m') + 1, 0, date('Y')));
+			}
+			$time['start'] = \App\Fields\Date::formatToDisplay($time['start']);
+			$time['end'] = \App\Fields\Date::formatToDisplay($time['end']);
+		}
+		if (empty($user)) {
+			$user = $loggedUserId;
+		}
 		$data = $this->getWidgetTimeControl($user, $time);
 		$daysAmount = count($data['ticks']);
-
 		$listViewUrl = 'index.php?module=OSSTimeControl&view=List&viewname=All';
 		for ($i = 0; $i < $daysAmount; $i++) {
 			$data['links'][$i][0] = $i;
@@ -189,7 +182,7 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 		$viewer->assign('WORKEDDAYS', $data['daysWorked']);
 		$viewer->assign('HOLIDAYDAYS', $data['holiayDays']);
 		$viewer->assign('AVERAGEBREAKTIME', $data['sumBreakTime']);
-		$viewer->assign('WORKINGDAYS', $data['workingDays']);
+		$viewer->assign('WORKINGDAYS', $data['workDays']);
 		$viewer->assign('WEEKENDDAYS', $data['weekends']);
 		$viewer->assign('AVERAGEWORKTIME', $data['averageWorkingTime']);
 		$viewer->assign('ALLDAYS', $data['allDays']);
@@ -199,8 +192,7 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 		$viewer->assign('CURRENTUSER', $currentUser);
 		$viewer->assign('LOGGEDUSERID', $loggedUserId);
 		$viewer->assign('SOURCE_MODULE', 'OSSTimeControl');
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/TimeControlContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/TimeControl.tpl', $moduleName);
@@ -222,16 +214,12 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 			$weekends = 0;
 			while ($begin <= $end) {
 				$days++;
-				$whatDay = date("N", $begin);
+				$whatDay = date('N', $begin);
 				$day = date('Y-m-d', $begin);
 				$isWorkDay = true;
-				$isHolidayNotInWeekend = true;
 				foreach ($holidayDays as $key => $value) {
 					if ($day == $value['date']) {
 						$isWorkDay = false;
-						if ($whatDay > 5) {
-							$isHolidayNotInWeekend = false;
-						}
 						unset($holidayDays[$key]);
 					}
 				}
@@ -239,16 +227,14 @@ class OSSTimeControl_TimeControl_Dashboard extends Vtiger_IndexAjax_View
 					if ($whatDay == $value)
 						$isWorkDay = false;
 				}
-
-				if ($isWorkDay)
+				if ($isWorkDay) {
 					$workDays++;
-
+				}
 				if ($whatDay > 5 && !$isWorkDay && $notWorkingDaysType) {
 					$weekends++;
 				}
 				$begin += 86400;
 			};
-			$workingDays = $days - $weekends;
 			$result = ['workDays' => $workDays, 'weekends' => $weekends, 'days' => $days];
 			return $result;
 		}

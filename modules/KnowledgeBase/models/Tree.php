@@ -1,28 +1,43 @@
 <?php
-
 /**
  * Model of tree
  * @package YetiForce.Model
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
-class KnowledgeBase_Tree_Model extends Vtiger_Base_Model
+
+/**
+ * Class tree model for module knowledge base
+ */
+class KnowledgeBase_Tree_Model extends \App\Base
 {
 
+	/**
+	 * Last id in tree
+	 * @var int
+	 */
 	private $lastIdinTree;
 
+	/**
+	 * Get module name
+	 * @return string
+	 */
 	public function getModuleName()
 	{
 		return $this->get('moduleName');
 	}
 
+	/**
+	 * Get folders
+	 * @return array
+	 */
 	public function getFolders()
 	{
 		$folders = [];
-		$db = PearDatabase::getInstance();
 		$lastId = 0;
-		$result = $db->pquery('SELECT * FROM vtiger_trees_templates_data WHERE templateid = ?', [$this->getTemplate()]);
-		while ($row = $db->getRow($result)) {
+		$dataReader = (new \App\Db\Query())->from('vtiger_trees_templates_data')->where(['templateid' => $this->getTemplate()])->createCommand()->query();
+		while ($row = $dataReader->read()) {
 			$treeID = (int) ltrim($row['tree'], 'T');
 			$pieces = explode('::', $row['parenttrre']);
 			end($pieces);
@@ -32,7 +47,7 @@ class KnowledgeBase_Tree_Model extends Vtiger_Base_Model
 				'type' => 'folder',
 				'record_id' => $row['tree'],
 				'parent' => $parent == 0 ? '#' : $parent,
-				'text' => vtranslate($row['name'], $this->getModuleName())
+				'text' => \App\Language::translate($row['name'], $this->getModuleName())
 			];
 			if (!empty($row['icon'])) {
 				$tree['icon'] = $row['icon'];
@@ -46,39 +61,44 @@ class KnowledgeBase_Tree_Model extends Vtiger_Base_Model
 		return $folders;
 	}
 
+	/**
+	 * Get template
+	 * @return array
+	 */
 	public function getTemplate()
 	{
 		return $this->getTreeField()['fieldparams'];
 	}
 
+	/**
+	 * Get tree field
+	 * @return array
+	 */
 	public function getTreeField()
 	{
 		if ($this->has('fieldTemp')) {
 			return $this->get('fieldTemp');
 		}
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT tablename,columnname,fieldname,fieldlabel,fieldparams FROM vtiger_field WHERE uitype = ? && tabid = ?', [302, vtlib\Functions::getModuleId($this->getModuleName())]);
-		$fieldTemp = $db->getRow($result);
+		$fieldTemp = (new \App\Db\Query())->select(['tablename', 'columnname', 'fieldname', 'fieldlabel', 'fieldparams'])->from('vtiger_field')->where(['uitype' => 302, 'tabid' => \App\Module::getModuleId($this->getModuleName())])->one();
 		$this->set('fieldTemp', $fieldTemp);
 		return $fieldTemp;
 	}
 
+	/**
+	 * Get all records
+	 * @return array
+	 */
 	public function getAllRecords()
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$queryGenerator = new QueryGenerator($this->getModuleName(), $currentUser);
-		$queryGenerator->setFields(['category', 'knowledgebase_view', 'subject']);
-		$queryGenerator->setCustomColumn('knowledgebaseid');
-		$listQuery = $queryGenerator->getQuery('SELECT');
-		$db = PearDatabase::getInstance();
-		$result = $db->query($listQuery);
-		$records = [];
-		while ($row = $db->getRow($result)) {
-			$records[] = $row;
-		}
-		return $records;
+		$queryGenerator = new App\QueryGenerator($this->getModuleName());
+		$queryGenerator->setFields(['id', 'category', 'knowledgebase_view', 'subject']);
+		return $queryGenerator->createQuery()->all();
 	}
 
+	/**
+	 * Get documents
+	 * @return array
+	 */
 	public function getDocuments()
 	{
 		$records = $this->getAllRecords();
@@ -89,7 +109,7 @@ class KnowledgeBase_Tree_Model extends Vtiger_Base_Model
 			$tree[] = [
 				'id' => $this->lastIdinTree,
 				'type' => $item['knowledgebase_view'],
-				'record_id' => $item['knowledgebaseid'],
+				'record_id' => $item['id'],
 				'parent' => $parent == 0 ? '#' : $parent,
 				'text' => $item['subject'],
 				'icon' => 'glyphicon glyphicon-file'
@@ -98,6 +118,11 @@ class KnowledgeBase_Tree_Model extends Vtiger_Base_Model
 		return $tree;
 	}
 
+	/**
+	 * Get instance
+	 * @param KnowledgeBase_Module_Model $moduleModel
+	 * @return \self
+	 */
 	static public function getInstance($moduleModel)
 	{
 		$model = new self();

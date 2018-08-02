@@ -1,8 +1,13 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * SSingleOrders english translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
-	'SSingleOrders' => 'Sales Orders',
-	'SINGLE_SSingleOrders' => 'Sales Order',
+	'SSingleOrders' => 'Purchase Orders',
+	'SINGLE_SSingleOrders' => 'Purchase Order',
 	//BLOCKS
 	'LBL_SSINGLEORDERS_INFORMATION' => 'Basic information',
 	'LBL_CUSTOM_INFORMATION' => 'System information',
@@ -14,8 +19,8 @@ $languageStrings = [
 	'LBL_STATUS' => 'Status',
 	'LBL_CLOSED_TIME' => 'Closed time',
 	'LBL_RESPONSE_TIME' => 'Respone time',
-	'LBL_REALIZATION_START_DATE' => 'Realization start date',
-	'LBL_REALIZATION_COMPLETION_DATE' => 'Realization completion date',
+	'LBL_REALIZATION_START_DATE' => 'Start date',
+	'LBL_REALIZATION_COMPLETION_DATE' => 'Completion date',
 	'LBL_ACTUAL_COMPLETION_DATE' => 'Actual completion date',
 	'LBL_COMPANY_NAME' => 'Company name',
 	'SINGLE_SSalesProcesses' => 'Opportunity',

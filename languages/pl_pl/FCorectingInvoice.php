@@ -1,9 +1,9 @@
 <?php
 /**
- * FCorectingInvoice language
+ * FCorectingInvoice polish translation
  * @package YetiForce.Language
- * @license licenses/License.html
- * @author Tomasz Kur <t.kur@yetiforce.com>
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  */
 $languageStrings = [
 	'FCorectingInvoice' => 'Faktury Korekta',

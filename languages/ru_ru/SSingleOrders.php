@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * SSingleOrders russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'SSingleOrders' => 'Заказы',
 	'SINGLE_SSingleOrders' => 'Заказ',
@@ -14,8 +19,8 @@ $languageStrings = [
 	'LBL_NUMBER' => 'Номер',
 	'LBL_STATUS' => 'Статус',
 	'LBL_RESPONSE_TIME' => 'Время отклика',
-	'LBL_REALIZATION_START_DATE' => 'Дата начала продаж',
-	'LBL_REALIZATION_COMPLETION_DATE' => 'Дата окончания продаж',
+	'LBL_REALIZATION_START_DATE' => 'Start date',
+	'LBL_REALIZATION_COMPLETION_DATE' => 'Completion date',
 	'LBL_ACTUAL_COMPLETION_DATE' => 'Фактическая дата окончания продаж',
 	'LBL_COMPANY_NAME' => 'Название компании',
 	'SINGLE_SSalesProcesses' => 'Сделка',

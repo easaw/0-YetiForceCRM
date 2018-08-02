@@ -1,17 +1,14 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * Contributor(s): YetiForce.com
- * *********************************************************************************************************************************** */
+/**
+ * ModuleManager polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_ERROR_MOVE_UPLOADED_FILE' => 'Błąd podczas wgrywania plików',
 	'ModuleManager' => 'Zarządzanie Modułami',
+	'Module Manager' => 'Zarządzanie Modułami',
 	'LBL_ACCEPT_AND_INSTALL' => 'Akceptuj i instaluj',
 	'LBL_DECLINE' => 'Odrzuć',
 	'LBL_EXISTS' => 'Istnieje',
@@ -33,7 +30,7 @@ $languageStrings = [
 	'LBL_LICENSE' => 'Licencja',
 	'LBL_MODULE_NAME' => 'Nazwa pakietu',
 	'LBL_NO_LICENSE_PROVIDED' => 'Brak licencji producenta',
-	'LBL_NOT_FOUND' => "Przykro nam, nie ma aktualnie rozszerzeń dla Twojej wersji systemu CRM",
+	'LBL_NOT_FOUND' => 'Przykro nam, nie ma aktualnie rozszerzeń dla Twojej wersji systemu CRM',
 	'LBL_PROCEED_WITH_IMPORT' => 'Czy chcesz kontynuować import?',
 	'LBL_PUBLISHED_ON' => 'Opublikowany przez',
 	'LBL_PUBLISHER' => 'Opublikowane',
@@ -73,7 +70,7 @@ $languageStrings = [
 	'LBL_VIEW_MODULEIMPORT' => 'Import',
 	// Library
 	'LBL_LIBRARY_NAME' => 'Nazwa',
-	'LBL_LIBRARY_STATUS' => 'Ststus',
+	'LBL_LIBRARY_STATUS' => 'Status',
 	'LBL_LIBRARY_URL' => 'Adres repozytorium biblioteki',
 	'LBL_LIBRARY_DIR' => 'Katalog biblioteki',
 	'LBL_LIBRARY_ACTION' => 'Akcje',
@@ -83,6 +80,7 @@ $languageStrings = [
 	'LBL_LIBRARY_NO_DOWNLOAD' => 'Niepobrana',
 	'LBL_LIBRARY_NEEDS_UPDATING' => 'Wymaga aktualizacji',
 	'LBL_NO_PERMISSION_TO_DIR' => 'Brak uprawnień do katalogów',
+	'LBL_ERROR_NO_VALID_PREFIX' => 'Nieprawidłowy prefix języka',
 ];
 $jsLanguageStrings = [
 	'JS_UPDATED_MODULE' => 'Aktualizacja przebiegła pomyślnie.',
@@ -93,4 +91,5 @@ $jsLanguageStrings = [
 	'JS_CLICK_HERE' => 'Kliknij tutaj',
 	'JS_ON' => 'Na',
 	'JS_REMOVED_MODULE' => 'Usunięto moduł',
+	'JS_SPECIAL_CHARACTERS_NOT_ALLOWED' => 'Znaki specjalne takie jak  & < > \' " : , są niedozwolone',
 ];

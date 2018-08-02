@@ -6,69 +6,107 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * ********************************************************************************** */
 
 class Users_Login_Action extends Vtiger_Action_Controller
 {
 
+	/**
+	 * Users record model
+	 * @var Users_Record_Model
+	 */
+	private $userRecordModel;
+
+	/**
+	 * Base user model
+	 * @var \App\User
+	 */
+	private $userModel;
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public function loginRequired()
 	{
 		return false;
 	}
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		return true;
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function process(\App\Request $request)
 	{
-		$username = $request->get('username');
+		$moduleName = $request->getModule();
+		$userName = $request->get('username');
 		$password = $request->getRaw('password');
-
-		$checkBlocked = Settings_BruteForce_Module_Model::checkBlocked();
-		$bruteForceSettings = Settings_BruteForce_Module_Model::getBruteForceSettings();
-		if ($checkBlocked && $bruteForceSettings['active']) {
-			Settings_BruteForce_Module_Model::sendNotificationEmail();
-			header('Location: index.php?module=Users&parent=Settings&view=Login&error=2');
-		}
-
-		$user = CRMEntity::getInstance('Users');
-		$user->column_fields['user_name'] = $username;
 		$moduleModel = Users_Module_Model::getInstance('Users');
-
-		if ($user->doLogin($password)) {
-			if (AppConfig::main('session_regenerate_id'))
-				Vtiger_Session::regenerateId(true); // to overcome session id reuse.
-			$userid = $user->retrieve_user_id($username);
-			Vtiger_Session::set('AUTHUSERID', $userid);
-
-			Vtiger_Session::set('authenticated_user_id', $userid);
-			Vtiger_Session::set('app_unique_key', AppConfig::main('application_unique_key'));
-			Vtiger_Session::set('authenticated_user_language', AppConfig::main('default_language'));
-			Vtiger_Session::set('user_name', $username);
-			Vtiger_Session::set('full_user_name', \includes\fields\Owner::getUserLabel($userid, true));
-
-			if ($request->has('language') && AppConfig::main('langInLoginView')) {
-				Vtiger_Session::set('language', $request->get('language'));
+		$bfInstance = Settings_BruteForce_Module_Model::getCleanInstance();
+		if ($bfInstance->isActive() && $bfInstance->isBlockedIp()) {
+			$bfInstance->incAttempts();
+			$moduleModel->saveLoginHistory(strtolower($userName), 'Blocked IP');
+			header('Location: index.php?module=Users&view=Login');
+			return false;
+		}
+		$this->userRecordModel = Users_Record_Model::getCleanInstance('Users')->set('user_name', $userName);
+		if (!empty($password) && $this->userRecordModel->doLogin($password)) {
+			$this->userModel = App\User::getUserModel($this->userRecordModel->getId());
+			if (\App\Session::get('UserAuthMethod') === 'PASSWORD' && $this->userRecordModel->verifyPasswordChange($this->userModel)) {
+				\App\Session::set('UserLoginMessage', App\Language::translate('LBL_YOUR_PASSWORD_HAS_EXPIRED', $moduleName));
+				\App\Session::set('UserLoginMessageType', 'error');
+				header('Location: index.php');
+				return true;
 			}
-			if ($request->has('layout')) {
-				Vtiger_Session::set('layout', $request->get('layout'));
-			}
-			//Track the login History
-			$moduleModel->saveLoginHistory($user->column_fields['user_name']);
-			//End
+			$this->afterLogin($request);
+			$moduleModel->saveLoginHistory(strtolower($userName)); //Track the login History
 			if (isset($_SESSION['return_params'])) {
-				$return_params = urldecode($_SESSION['return_params']);
-				header("Location: index.php?$return_params");
+				header('Location: index.php?' . urldecode($_SESSION['return_params']));
+			} elseif (AppConfig::performance('SHOW_ADMIN_PANEL') && $this->userModel->isAdmin()) {
+				header('Location: index.php?module=Vtiger&parent=Settings&view=Index');
 			} else {
 				header('Location: index.php');
 			}
-		} else {
-			//Track the login History
-			$browser = Settings_BruteForce_Module_Model::browserDetect();
-			$moduleModel->saveLoginHistory($username, 'Failed login', $browser);
-			header('Location: index.php?module=Users&parent=Settings&view=Login&error=1');
+			return true;
+		}
+		\App\Session::set('UserLoginMessage', App\Language::translate('LBL_INVALID_USER_OR_PASSWORD', $moduleName));
+		if ($bfInstance->isActive()) {
+			$bfInstance->updateBlockedIp();
+			if ($bfInstance->isBlockedIp()) {
+				$bfInstance->sendNotificationEmail();
+				\App\Session::set('UserLoginMessage', App\Language::translate('LBL_TOO_MANY_FAILED_LOGIN_ATTEMPTS', $moduleName));
+				\App\Session::set('UserLoginMessageType', 'error');
+			}
+		}
+		$moduleModel->saveLoginHistory(App\Purifier::encodeHtml($request->getRaw('username')), 'Failed login'); //Track the login History
+		header('Location: index.php?module=Users&view=Login');
+	}
+
+	/**
+	 * After login function
+	 * @param \App\Request $request
+	 */
+	public function afterLogin(\App\Request $request)
+	{
+		if (AppConfig::main('session_regenerate_id')) {
+			App\Session::regenerateId(true); // to overcome session id reuse.
+		}
+		App\Session::set('authenticated_user_id', $this->userRecordModel->getId());
+		App\Session::set('app_unique_key', AppConfig::main('application_unique_key'));
+		App\Session::set('user_name', $this->userRecordModel->get('user_name'));
+		App\Session::set('full_user_name', $this->userModel->getName());
+		if ($request->has('loginLanguage') && AppConfig::main('langInLoginView')) {
+			App\Session::set('language', $request->getByType('loginLanguage'));
+		}
+		if ($request->has('layout')) {
+			App\Session::set('layout', $request->getByType('layout'));
 		}
 	}
 }

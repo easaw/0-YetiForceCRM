@@ -24,7 +24,7 @@ class DateTimeField
 	public function __construct($value)
 	{
 		if (empty($value)) {
-			$value = date("Y-m-d H:i:s");
+			$value = date('Y-m-d H:i:s');
 		}
 		$this->date = null;
 		$this->time = null;
@@ -38,7 +38,7 @@ class DateTimeField
 	public function getDBInsertDateValue($user = null)
 	{
 
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . '(' . $this->datetime . ')');
+		\App\Log::trace('Start ' . __METHOD__ . '(' . $this->datetime . ')');
 		$value = explode(' ', $this->datetime);
 		if (count($value) == 2) {
 			$value[0] = self::convertToUserFormat($value[0]);
@@ -50,7 +50,7 @@ class DateTimeField
 		} else {
 			$insert_date = self::convertToDBFormat($value[0]);
 		}
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 		return $insert_date;
 	}
 
@@ -62,14 +62,14 @@ class DateTimeField
 	public function getDBInsertDateTimeValue($user = null)
 	{
 
-		\App\Log::trace(__CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace(__METHOD__);
 		return $this->getDBInsertDateValue($user) . ' ' . $this->getDBInsertTimeValue($user);
 	}
 
 	public function getDisplayDateTimeValue($user = null)
 	{
 
-		\App\Log::trace(__CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace(__METHOD__);
 		return $this->getDisplayDate($user) . ' ' . $this->getDisplayTime($user);
 	}
 
@@ -89,7 +89,7 @@ class DateTimeField
 	{
 
 		$current_user = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . ' ' . serialize($date));
+		\App\Log::trace('Start ' . __METHOD__ . ' ' . serialize($date));
 		if (empty($user)) {
 			$user = $current_user;
 		}
@@ -99,7 +99,7 @@ class DateTimeField
 			$format = 'yyyy-mm-dd';
 		}
 		$return = self::__convertToDBFormat($date, $format);
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 		return $return;
 	}
 
@@ -111,37 +111,15 @@ class DateTimeField
 	 */
 	public static function __convertToDBFormat($date, $format)
 	{
-
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . ' ' . serialize($date) . ' | ' . $format);
 		if (empty($date)) {
-			\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+			\App\Log::trace('End ' . __METHOD__);
 			return $date;
 		}
 		if ($format == '') {
 			$format = 'yyyy-mm-dd';
 		}
 		$dbDate = '';
-		switch ($format) {
-			case 'dd-mm-yyyy': list($d, $m, $y) = explode('-', $date);
-				break;
-			case 'mm-dd-yyyy': list($m, $d, $y) = explode('-', $date);
-				break;
-			case 'yyyy-mm-dd': list($y, $m, $d) = explode('-', $date);
-				break;
-			case 'dd.mm.yyyy': list($d, $m, $y) = explode('.', $date);
-				break;
-			case 'mm.dd.yyyy': list($m, $d, $y) = explode('.', $date);
-				break;
-			case 'yyyy.mm.dd': list($y, $m, $d) = explode('.', $date);
-				break;
-			case 'dd/mm/yyyy': list($d, $m, $y) = explode('/', $date);
-				break;
-			case 'mm/dd/yyyy': list($m, $d, $y) = explode('/', $date);
-				break;
-			case 'yyyy/mm/dd': list($y, $m, $d) = explode('/', $date);
-				break;
-		}
-
+		list($y, $m, $d) = App\Fields\Date::explode($date, $format);
 		if (!$y || !$m || !$d) {
 			if (strpos($date, '-') !== false) {
 				$separator = '-';
@@ -150,14 +128,14 @@ class DateTimeField
 			} elseif (strpos($date, '/') !== false) {
 				$separator = '/';
 			}
-			$formatToConvert = str_replace(array('/', '.'), array('-', '-'), $format);
+			$formatToConvert = str_replace(['/', '.'], ['-', '-'], $format);
 			$dateToConvert = str_replace($separator, '-', $date);
 			switch ($formatToConvert) {
-				case 'dd-mm-yyyy': list($d, $m, $y) = explode('-', $dateToConvert);
+				case 'dd-mm-yyyy': list($d, $m, $y) = explode('-', $dateToConvert, 3);
 					break;
-				case 'mm-dd-yyyy': list($m, $d, $y) = explode('-', $dateToConvert);
+				case 'mm-dd-yyyy': list($m, $d, $y) = explode('-', $dateToConvert, 3);
 					break;
-				case 'yyyy-mm-dd': list($y, $m, $d) = explode('-', $dateToConvert);
+				case 'yyyy-mm-dd': list($y, $m, $d) = explode('-', $dateToConvert, 3);
 					break;
 			}
 			$dbDate = $y . '-' . $m . '-' . $d;
@@ -166,7 +144,6 @@ class DateTimeField
 		} else {
 			$dbDate = $y . '-' . $m . '-' . $d;
 		}
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
 		return $dbDate;
 	}
 
@@ -211,7 +188,7 @@ class DateTimeField
 	public static function __convertToUserFormat($date, $format)
 	{
 
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . ' ' . serialize($date) . ' | ' . $format);
+		\App\Log::trace('Start ' . __METHOD__ . ' ' . serialize($date) . ' | ' . $format);
 		$date = self::convertToInternalFormat($date);
 		$separator = '-';
 		if (strpos($date[0], '-') !== false) {
@@ -221,7 +198,7 @@ class DateTimeField
 		} elseif (strpos($date[0], '/') !== false) {
 			$separator = '/';
 		}
-		list($y, $m, $d) = explode($separator, $date[0]);
+		list($y, $m, $d) = array_pad(explode($separator, $date[0]), 3, null);
 
 		switch ($format) {
 			case 'dd-mm-yyyy': $date[0] = $d . '-' . $m . '-' . $y;
@@ -249,13 +226,19 @@ class DateTimeField
 		} else {
 			$userDate = $date[0];
 		}
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 		return $userDate;
 	}
 
-	public static function getDayFromDate($date)
+	/**
+	 * Function to get day of week as string
+	 * @param string $date
+	 * @param boolean $shortName
+	 * @return string
+	 */
+	public static function getDayFromDate($date, $shortName = false)
 	{
-		return date('l', strtotime($date));
+		return date($shortName ? 'D' : 'l', strtotime($date));
 	}
 
 	/**
@@ -268,13 +251,13 @@ class DateTimeField
 	{
 
 		$current_user = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . "($value) method ...");
+		\App\Log::trace('Start ' . __METHOD__ . "($value) method ...");
 		if (empty($user)) {
 			$user = $current_user;
 		}
 		$timeZone = $user->time_zone ? $user->time_zone : AppConfig::main('default_timezone');
 		$return = DateTimeField::convertTimeZone($value, self::getDBTimeZone(), $timeZone);
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 		return $return;
 	}
 
@@ -288,7 +271,7 @@ class DateTimeField
 	{
 
 		$current_user = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . "($value)");
+		\App\Log::trace('Start ' . __METHOD__ . "($value)");
 		if (empty($user)) {
 			$user = $current_user;
 		}
@@ -299,7 +282,7 @@ class DateTimeField
 		}
 
 		$return = DateTimeField::convertTimeZone($value, $timeZone, self::getDBTimeZone());
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 		return $return;
 	}
 
@@ -313,7 +296,7 @@ class DateTimeField
 	public static function convertTimeZone($time, $sourceTimeZoneName, $targetTimeZoneName)
 	{
 
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . "($time, $sourceTimeZoneName, $targetTimeZoneName)");
+		\App\Log::trace('Start ' . __METHOD__ . "($time, $sourceTimeZoneName, $targetTimeZoneName)");
 
 		$sourceTimeZone = new DateTimeZone($sourceTimeZoneName);
 		if ($time == '24:00')
@@ -334,7 +317,7 @@ class DateTimeField
 		self::$cache[$time][$targetTimeZoneName] = $myDateTime;
 		//}
 		$myDateTime = self::$cache[$time][$targetTimeZoneName];
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 		return $myDateTime;
 	}
 
@@ -345,9 +328,9 @@ class DateTimeField
 	public function getDBInsertTimeValue($user = null)
 	{
 
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . '(' . $this->datetime . ')');
+		\App\Log::trace('Start ' . __METHOD__ . '(' . $this->datetime . ')');
 		$date = self::convertToDBTimeZone($this->datetime, $user);
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 		return $date->format("H:i:s");
 	}
 
@@ -371,16 +354,15 @@ class DateTimeField
 	public function getDisplayTime($user = null)
 	{
 
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . '(' . $this->datetime . ')');
+		\App\Log::trace('Start ' . __METHOD__ . '(' . $this->datetime . ')');
 		$date = self::convertToUserTimeZone($this->datetime, $user);
 		$time = $date->format("H:i");
 
 		//Convert time to user preferred value
-		$userModel = Users_Privileges_Model::getCurrentUserModel();
-		if ($userModel->get('hour_format') == '12') {
+		if (\App\User::getCurrentUserModel()->getDetail('hour_format') === '12') {
 			$time = Vtiger_Time_UIType::getTimeValueInAMorPM($time);
 		}
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 		return $time;
 	}
 
@@ -394,7 +376,7 @@ class DateTimeField
 		return $time;
 	}
 
-	static function getDBTimeZone()
+	public static function getDBTimeZone()
 	{
 		if (empty(self::$databaseTimeZone)) {
 			$defaultTimeZone = date_default_timezone_get();
@@ -406,14 +388,14 @@ class DateTimeField
 		return self::$databaseTimeZone;
 	}
 
-	static function getPHPDateFormat($user = null)
+	public static function getPHPDateFormat($user = null)
 	{
 		$current_user = vglobal('current_user');
 		if (empty($user)) {
 			$user = $current_user;
 		}
 		$dateFormat = empty($user->date_format) ? 'Y-m-d' : $user->date_format;
-		return str_replace(array('yyyy', 'mm', 'dd'), array('Y', 'm', 'd'), $dateFormat);
+		return str_replace(['yyyy', 'mm', 'dd'], ['Y', 'm', 'd'], $dateFormat);
 	}
 
 	private static function sanitizeDate($value, $user)
@@ -427,7 +409,7 @@ class DateTimeField
 		}
 
 		$value = str_replace('T', ' ', $value);
-		list($date, $time) = explode(' ', $value);
+		list($date, $time) = array_pad(explode(' ', $value), 2, '');
 		if (!empty($date) && !in_array($time, ['AM', 'PM'])) {
 			$date = self::__convertToDBFormat($date, $user->date_format);
 			$value = $date;

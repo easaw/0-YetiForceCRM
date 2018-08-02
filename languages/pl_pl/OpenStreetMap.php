@@ -1,6 +1,12 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * OpenStreetMap polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
+	'OpenStreetMap' => 'OpenStreetMap',
 	'LBL_GROUP_BY' => 'Grupuj',
 	'LBL_GROUP_NEIGHBOURS' => 'Połącz najbliższe elementy',
 	'LBL_NOT_FOUND_PLACE' => 'Nie odnaleziono miejsca',
@@ -16,5 +22,7 @@ $languageStrings = [
 	'LBL_SEARCH_IN_RADIUS' => 'Wyszukaj w promieniu',
 	'LBL_COPY_TO_CLIPBOARD' => 'Kopiuj do schowka',
 	'LBL_CLIPBOARD' => 'Schowek',
-	'LBL_INDIRECT_POINT' => 'Punkt pośredni'
+	'LBL_INDIRECT_POINT' => 'Punkt pośredni',
+	//Errors
+	'ERR_ADDRESS_NOT_FOUND' => 'Nie znaleziono adresu',
 ];

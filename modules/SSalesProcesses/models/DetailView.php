@@ -3,7 +3,8 @@
 /**
  * SSalesProcesses DetailView Model Class
  * @package YetiForce.Model
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
@@ -14,10 +15,8 @@ class SSalesProcesses_DetailView_Model extends Vtiger_DetailView_Model
 	{
 		$recordModel = $this->getRecord();
 		$moduleName = $recordModel->getModuleName();
-
-		$relatedLinks = Vtiger_DetailView_Model::getDetailViewRelatedLinks();
-		$showPSTab = \includes\Modules::isModuleActive('OutsourcedProducts') || \includes\Modules::isModuleActive('Products') || \includes\Modules::isModuleActive('Services') || \includes\Modules::isModuleActive('OSSOutsourcedServices') || \includes\Modules::isModuleActive('Assets') || \includes\Modules::isModuleActive('OSSSoldServices');
-
+		$relatedLinks = parent::getDetailViewRelatedLinks();
+		$showPSTab = (!AppConfig::module($moduleName, 'HIDE_SUMMARY_PRODUCTS_SERVICES')) && (\App\Module::isModuleActive('OutsourcedProducts') || \App\Module::isModuleActive('Products') || \App\Module::isModuleActive('Services') || \App\Module::isModuleActive('OSSOutsourcedServices') || \App\Module::isModuleActive('Assets') || \App\Module::isModuleActive('OSSSoldServices'));
 		if ($showPSTab) {
 			$relatedLinks[] = [
 				'linktype' => 'DETAILVIEWTAB',

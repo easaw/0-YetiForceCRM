@@ -1,32 +1,28 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com.
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ *
+ * @package YetiForce.Workflows
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 
+/**
+ * Function to get addresses email to contacts
+ * @param int $id
+ * @return array
+ */
 function getContactsMailsFromTicket($id)
 {
 	if (empty($id)) {
 		return [];
 	}
-
-	$db = PearDatabase::getInstance();
 	$mails = [];
-	$sql = 'SELECT `relcrmid` as contactid FROM `vtiger_crmentityrel` WHERE `module` = ? && `relmodule` = ? && `crmid` = ?;';
-	$result = $db->pquery($sql, ['HelpDesk', 'Contacts', $id]);
-	$num = $db->num_rows($result);
-
-	while ($contactId = $db->getSingleValue($result)) {
-		if (isRecordExists($contactId)) {
+	$query = (new \App\Db\Query())->select(['relcrmid as contactid'])->from('vtiger_crmentityrel')->where(['module' => 'HelpDesk', 'relmodule' => 'Contacts', 'crmid' => $id])->createCommand()->query();
+	while ($contactId = $query->readColumn(0)) {
+		if (App\Record::isExists($contactId)) {
 			$contactRecord = Vtiger_Record_Model::getInstanceById($contactId, 'Contacts');
 			$primaryEmail = $contactRecord->get('email');
-
-			if ($contactRecord->get('emailoptout') == 1 && !empty($primaryEmail)) {
+			if (($contactRecord->get('emailoptout') == 1 || !AppConfig::module('HelpDesk', 'CONTACTS_CHECK_EMAIL_OPTOUT')) && !empty($primaryEmail)) {
 				$mails[] = $primaryEmail;
 			}
 		}
@@ -34,193 +30,124 @@ function getContactsMailsFromTicket($id)
 	return $mails;
 }
 
-function HeldDeskChangeNotifyContacts($entityData)
+/**
+ * Function to send mail to contacts. Function invoke by workflow
+ * @param Vtiger_Record_Model $recordModel
+ */
+function HelpDeskChangeNotifyContacts(Vtiger_Record_Model $recordModel)
 {
-	
-	\App\Log::trace('Entering HeldDeskChangeNotifyContacts');
-	$wsId = $entityData->getId();
-	$parts = explode('x', $wsId);
-	$entityId = $parts[1];
-
-	$mails = getContactsMailsFromTicket($entityId);
+	\App\Log::trace('Entering HelpDeskChangeNotifyContacts');
+	$recordId = $recordModel->getId();
+	$mails = getContactsMailsFromTicket($recordId);
 	if (count($mails) > 0) {
-		$mails = implode(',', $mails);
-		$data = [
-			'sysname' => 'NotifyContactOnTicketChange',
-			'to_email' => $mails,
-			'module' => 'HelpDesk',
-			'record' => $entityId
-		];
-		$recordModel = Vtiger_Record_Model::getCleanInstance('OSSMailTemplates');
-		if ($recordModel->sendMailFromTemplate($data)) {
-			\App\Log::trace('HeldDeskChangeNotifyContacts');
-			return true;
-		}
+		\App\Mailer::sendFromTemplate([
+			'template' => 'NotifyContactOnTicketChange',
+			'moduleName' => 'HelpDesk',
+			'recordId' => $recordId,
+			'to' => $mails,
+		]);
 	}
-
-	\App\Log::trace('HeldDeskChangeNotifyContacts');
-	return false;
+	\App\Log::trace('HelpDeskChangeNotifyContacts');
 }
 
-function HeldDeskClosedNotifyContacts($entityData)
+/**
+ * Function to send mail to contacts. Function invoke by workflow
+ * @param Vtiger_Record_Model $recordModel
+ */
+function HelpDeskClosedNotifyContacts(Vtiger_Record_Model $recordModel)
 {
-	
-	\App\Log::trace('Entering HeldDeskClosedNotifyContacts');
-	$wsId = $entityData->getId();
-	$parts = explode('x', $wsId);
-	$entityId = $parts[1];
-
-	$mails = getContactsMailsFromTicket($entityId);
+	\App\Log::trace('Entering HelpDeskClosedNotifyContacts');
+	$recordId = $recordModel->getId();
+	$mails = getContactsMailsFromTicket($recordId);
 	if (count($mails) > 0) {
-		$mails = implode(',', $mails);
-		$data = [
-			'sysname' => 'NotifyContactOnTicketClosed',
-			'to_email' => $mails,
-			'module' => 'HelpDesk',
-			'record' => $entityId
-		];
-		$recordModel = Vtiger_Record_Model::getCleanInstance('OSSMailTemplates');
-		if ($recordModel->sendMailFromTemplate($data)) {
-			\App\Log::trace('HeldDeskClosedNotifyContacts');
-			return true;
-		}
+		\App\Mailer::sendFromTemplate([
+			'template' => 'NotifyContactOnTicketClosed',
+			'moduleName' => 'HelpDesk',
+			'recordId' => $recordId,
+			'to' => $mails,
+		]);
 	}
-
-	\App\Log::trace('HeldDeskClosedNotifyContacts');
-	return false;
+	\App\Log::trace('HelpDeskClosedNotifyContacts');
 }
 
-function HeldDeskNewCommentAccount($entityData)
+/**
+ * Function to send mail to accounts. Function invoke by workflow
+ * @param Vtiger_Record_Model $recordModel
+ */
+function HelpDeskNewCommentAccount(Vtiger_Record_Model $recordModel)
 {
-	
-	$db = PearDatabase::getInstance();
-	\App\Log::trace('Entering HeldDeskNewCommentAccount');
-
-	$wsId = $entityData->getId();
-	$parts = explode('x', $wsId);
-	$entityId = $parts[1];
-
-	$data = $entityData->getData();
-	$relatedToWSId = $data['related_to'];
-	$relatedToId = explode('x', $relatedToWSId);
-	$moduleName = vtlib\Functions::getCRMRecordType($relatedToId[1]);
+	\App\Log::trace('Entering HelpDeskNewCommentAccount');
+	$relatedToId = $recordModel->get('related_to');
+	$moduleName = \App\Record::getType($relatedToId);
 	$mail = false;
-	if (!empty($relatedToWSId) && $moduleName == 'HelpDesk') {
-		if ($moduleName == 'HelpDesk') {
-			$sql = 'SELECT vtiger_account.email1 FROM vtiger_account
-INNER JOIN vtiger_crmentity ON vtiger_crmentity.crmid = vtiger_account.accountid
-INNER JOIN vtiger_troubletickets ON vtiger_troubletickets.parent_id = vtiger_account.accountid
-WHERE vtiger_crmentity.deleted = 0 && vtiger_troubletickets.ticketid = ? && vtiger_account.emailoptout = 1';
-			$result = $db->pquery($sql, [$relatedToId[1]]);
-			if ($result->rowCount() > 0) {
-				$mail = $db->getSingleValue($result);
-			}
-		}
+	if (!empty($relatedToId) && $moduleName === 'HelpDesk') {
+		$mail = (new \App\Db\Query())->select(['vtiger_account.email1'])->from('vtiger_account')->innerJoin('vtiger_crmentity', 'vtiger_crmentity.crmid = vtiger_account.accountid')->innerJoin('vtiger_troubletickets', 'vtiger_troubletickets.parent_id = vtiger_account.accountid')->where(['vtiger_crmentity.deleted' => 0, 'vtiger_troubletickets.ticketid' => $relatedToId, 'vtiger_account.emailoptout' => 1])->scalar();
 	}
 	if ($mail) {
-		$data = [
-			'sysname' => 'NewCommentAddedToTicketAccount',
-			'to_email' => $mail,
-			'module' => 'ModComments',
-			'record' => $entityId
-		];
-		$recordModel = Vtiger_Record_Model::getCleanInstance('OSSMailTemplates');
-		if ($recordModel->sendMailFromTemplate($data)) {
-			\App\Log::trace('HeldDeskNewCommentAccount');
-			return true;
-		}
+		\App\Mailer::sendFromTemplate([
+			'template' => 'NewCommentAddedToTicketAccount',
+			'moduleName' => 'ModComments',
+			'recordId' => $recordModel->getId(),
+			'to' => $mail,
+		]);
 	}
-
-	\App\Log::trace('HeldDeskNewCommentAccount');
-	return false;
+	\App\Log::trace('HelpDeskNewCommentAccount');
 }
 
-function HeldDeskNewCommentContacts($entityData)
+/**
+ * Function to send mail to contacts. Function invoke by workflow
+ * @param Vtiger_Record_Model $recordModel
+ */
+function HelpDeskNewCommentContacts(Vtiger_Record_Model $recordModel)
 {
-	
-	\App\Log::trace('Entering HeldDeskNewCommentAccount');
-
-	$wsId = $entityData->getId();
-	$parts = explode('x', $wsId);
-	$entityId = $parts[1];
-	$data = $entityData->getData();
-	$relatedToWSId = $data['related_to'];
-	$relatedToId = explode('x', $relatedToWSId);
-
-	$mails = getContactsMailsFromTicket($relatedToId[1]);
+	\App\Log::trace('Entering HelpDeskNewCommentAccount');
+	$mails = getContactsMailsFromTicket($recordModel->get('related_to'));
 	if (count($mails) > 0) {
-		$mails = implode(',', $mails);
-		$data = [
-			'sysname' => 'NewCommentAddedToTicketContact',
-			'to_email' => $mails,
-			'module' => 'ModComments',
-			'record' => $entityId
-		];
-		$recordModel = Vtiger_Record_Model::getCleanInstance('OSSMailTemplates');
-		if ($recordModel->sendMailFromTemplate($data)) {
-			\App\Log::trace('HeldDeskNewCommentAccount');
-			return true;
-		}
+		\App\Mailer::sendFromTemplate([
+			'template' => 'NewCommentAddedToTicketContact',
+			'moduleName' => 'ModComments',
+			'recordId' => $recordModel->getId(),
+			'to' => $mails,
+		]);
 	}
-
-	\App\Log::trace('HeldDeskNewCommentAccount');
-	return false;
+	\App\Log::trace('HelpDeskNewCommentAccount');
 }
 
-function HeldDeskNewCommentOwner($entityData)
+/**
+ * Function to send mail to users. Function invoke by workflow
+ * @param Vtiger_Record_Model $recordModel
+ */
+function HelpDeskNewCommentOwner(Vtiger_Record_Model $recordModel)
 {
-	
-	\App\Log::trace('Entering HeldDeskNewCommentAccount');
-	$db = PearDatabase::getInstance();
-
-	$wsId = $entityData->getId();
-	$parts = explode('x', $wsId);
-	$entityId = $parts[1];
-	$data = $entityData->getData();
-	$relatedToWSId = $data['related_to'];
-	$relatedToId = explode('x', $relatedToWSId);
+	\App\Log::trace('Entering HelpDeskNewCommentAccount');
+	$relatedToId = $recordModel->get('related_to');
 	$mails = [];
-
-	$sql = 'SELECT smownerid FROM vtiger_crmentity WHERE deleted = 0 && crmid = ? ';
-	$result = $db->pquery($sql, [$relatedToId[1]]);
-	if ($result->rowCount() > 0) {
-		$smownerid = $db->getSingleValue($result);
-		$ownerType = vtws_getOwnerType($smownerid);
-		if ($ownerType == 'Users') {
-			$user = new Users();
-			$currentUser = $user->retrieveCurrentUserInfoFromFile($smownerid);
-			if ($currentUser->column_fields['emailoptout'] == '1') {
-				$mails[] = $currentUser->column_fields['email1'];
+	$result = (new \App\Db\Query())->select(['smownerid'])->from('vtiger_crmentity')->where(['deleted' => 0, 'crmid' => $relatedToId])->scalar();
+	if ($result) {
+		$smownerId = $result;
+		$ownerType = \App\Fields\Owner::getType($smownerId);
+		if ($ownerType === 'Users') {
+			$user = App\User::getUserModel($smownerId);
+			if ($user->getDetail('emailoptout') == 1) {
+				$mails[] = $user->getDetail('email1');
 			}
 		} else {
-			require_once('include/utils/GetGroupUsers.php');
-			$ggu = new GetGroupUsers();
-			$ggu->getAllUsersInGroup($smownerid);
-			foreach ($ggu->group_users as $userId) {
-				$user = new Users();
-				$currentUser = $user->retrieveCurrentUserInfoFromFile($userId);
-				if ($currentUser->column_fields['emailoptout'] == '1') {
-					$mails[] = $currentUser->column_fields['email1'];
+			$groupUsers = \App\PrivilegeUtil::getUsersByGroup($smownerId);
+			foreach ($groupUsers as $userId) {
+				$user = App\User::getUserModel($userId);
+				if ($user->getDetail('emailoptout') == 1) {
+					$mails[] = $user->getDetail('email1');
 				}
 			}
 		}
 	}
-
 	if (count($mails) > 0) {
-		$mails = implode(',', $mails);
-		$data = [
-			'sysname' => 'NewCommentAddedToTicketOwner',
-			'to_email' => $mails,
-			'module' => 'ModComments',
-			'record' => $entityId
-		];
-		$recordModel = Vtiger_Record_Model::getCleanInstance('OSSMailTemplates');
-		if ($recordModel->sendMailFromTemplate($data)) {
-			\App\Log::trace('HeldDeskNewCommentAccount');
-			return true;
-		}
+		\App\Mailer::sendFromTemplate([
+			'template' => 'NewCommentAddedToTicketOwner',
+			'moduleName' => 'ModComments',
+			'recordId' => $recordModel->getId(),
+			'to' => $mails,
+		]);
 	}
-
-	\App\Log::trace('HeldDeskNewCommentAccount');
-	return false;
+	\App\Log::trace('HelpDeskNewCommentAccount');
 }

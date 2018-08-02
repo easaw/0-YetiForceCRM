@@ -12,59 +12,65 @@
 class Settings_Currency_Record_Model extends Settings_Vtiger_Record_Model
 {
 
+	/**
+	 * Return currency id
+	 * @return int|null
+	 */
 	public function getId()
 	{
 		return $this->get('id');
 	}
 
+	/**
+	 * Return currency name
+	 * @return string
+	 */
 	public function getName()
 	{
 		return $this->get('currency_name');
 	}
 
-	public function isDisabledRestricted()
-	{
-		$db = PearDatabase::getInstance();
-		$disabledRestircted = $this->get('_disable_restricted');
-		if (!empty($disabledRestircted)) {
-			return $disabledRestircted;
-		}
-		$query = 'SELECT 1 FROM vtiger_users WHERE currency_id = ?';
-		$params = array($this->getId());
-		$result = $db->pquery($query, $params);
-
-		$disabledRestircted = ($db->num_rows($result) > 0 ) ? true : false;
-		$this->set('_disable_restricted', $disabledRestircted);
-		return $disabledRestircted;
-	}
-
+	/**
+	 * Check if currency is base
+	 * @return bool
+	 */
 	public function isBaseCurrency()
 	{
 		return ($this->get('defaultid') != '-11') ? false : true;
 	}
 
+	/**
+	 * Return record actions links
+	 * @return array
+	 */
 	public function getRecordLinks()
 	{
 		if ($this->isBaseCurrency()) {
-			//NO Edit and delete link for base currency 
-			return array();
+			//NO Edit and delete link for base currency
+			return [];
 		}
-		$editLink = array(
+		$editLink = [
 			'linkurl' => "javascript:Settings_Currency_Js.triggerEdit(event, '" . $this->getId() . "')",
 			'linklabel' => 'LBL_EDIT',
+			'linkclass' => 'btn-info btn-sm',
 			'linkicon' => 'glyphicon glyphicon-pencil'
-		);
+		];
 		$editLinkInstance = Vtiger_Link_Model::getInstanceFromValues($editLink);
 
-		$deleteLink = array(
+		$deleteLink = [
 			'linkurl' => "javascript:Settings_Currency_Js.triggerDelete(event,'" . $this->getId() . "')",
 			'linklabel' => 'LBL_DELETE',
+			'linkclass' => 'btn-sm btn-danger',
 			'linkicon' => 'glyphicon glyphicon-trash'
-		);
+		];
 		$deleteLinkInstance = Vtiger_Link_Model::getInstanceFromValues($deleteLink);
-		return array($editLinkInstance, $deleteLinkInstance);
+		return [$editLinkInstance, $deleteLinkInstance];
 	}
 
+	/**
+	 * return delete state of record
+	 * @return int
+	 */
 	public function getDeleteStatus()
 	{
 		if ($this->has('deleted')) {
@@ -74,78 +80,91 @@ class Settings_Currency_Record_Model extends Settings_Vtiger_Record_Model
 		return 0;
 	}
 
+	/**
+	 * Populate changes to database
+	 * @return int
+	 */
 	public function save()
 	{
-		$db = PearDatabase::getInstance();
-		$ID = $this->getId();
-		$tableName = Settings_Currency_Module_Model::tableName;
-		if (!empty($ID)) {
-			$db->update($tableName, [
+		$db = \App\Db::getInstance();
+		$id = $this->getId();
+		$tableName = Settings_Currency_Module_Model::TABLE_NAME;
+		if (!empty($id)) {
+			$db->createCommand()->update($tableName, [
 				'currency_name' => $this->get('currency_name'),
 				'currency_code' => $this->get('currency_code'),
 				'currency_status' => $this->get('currency_status'),
 				'currency_symbol' => $this->get('currency_symbol'),
 				'conversion_rate' => $this->get('conversion_rate'),
 				'deleted' => $this->getDeleteStatus()
-				], 'id = ?', [$ID]);
+				], ['id' => $id])->execute();
 		} else {
-			$ID = $db->getUniqueID($tableName);
-			$db->insert($tableName, [
-				'id' => $ID,
-				'currency_name' => $this->get('currency_name'),
-				'currency_code' => $this->get('currency_code'),
-				'currency_status' => $this->get('currency_status'),
-				'currency_symbol' => $this->get('currency_symbol'),
-				'conversion_rate' => $this->get('conversion_rate'),
-				'defaultid' => 0,
-				'deleted' => 0
-			]);
+			$db->createCommand()
+				->insert($tableName, [
+					'currency_name' => $this->get('currency_name'),
+					'currency_code' => $this->get('currency_code'),
+					'currency_status' => $this->get('currency_status'),
+					'currency_symbol' => $this->get('currency_symbol'),
+					'conversion_rate' => $this->get('conversion_rate'),
+					'defaultid' => 0,
+					'deleted' => 0
+				])->execute();
+			$id = $db->getLastInsertID('vtiger_currency_info_id_seq');
 		}
-		return $ID;
+		self::clearCache();
+		return $id;
 	}
 
-	public static function getInstance($ID)
+	/**
+	 * Function clears cache
+	 */
+	public static function clearCache()
 	{
-		$db = PearDatabase::getInstance();
-		if (vtlib\Utils::isNumber($ID)) {
-			$query = sprintf('SELECT * FROM %s WHERE id = ?', Settings_Currency_Module_Model::tableName);
+		\App\Cache::delete('Currency', 'List');
+	}
+
+	/**
+	 * Returns instance of self
+	 * @param int $id
+	 * @return \self
+	 */
+	public static function getInstance($id)
+	{
+		$db = (new App\Db\Query())->from(Settings_Currency_Module_Model::TABLE_NAME);
+		if (vtlib\Utils::isNumber($id)) {
+			$query = $db->where(['id' => $id]);
 		} else {
-			$query = sprintf('SELECT * FROM %s WHERE currency_name = ?', Settings_Currency_Module_Model::tableName);
+			$query = $db->where(['currency_name' => $id]);
 		}
-		$result = $db->pquery($query, [$ID]);
-		if ($db->getRowCount($result) > 0) {
-			$row = $db->getRow($result);
+		$row = $query->createCommand()->queryOne();
+		if ($row) {
 			$instance = new self();
 			$instance->setData($row);
 		}
 		return $instance;
 	}
 
-	public static function getAllNonMapped($includedIds = array())
+	/**
+	 * Return all non mapped currences
+	 * @param array $includedIds
+	 * @return  \Settings_Currency_Record_Model[]
+	 */
+	public static function getAllNonMapped($includedIds = [])
 	{
-		$db = PearDatabase::getInstance();
 		if (!is_array($includedIds)) {
 			if (!empty($includedIds)) {
-				$includedIds = array($includedIds);
+				$includedIds = [$includedIds];
 			} else {
-				$includedIds = array();
+				$includedIds = [];
 			}
 		}
-
-		$query = 'SELECT vtiger_currencies.* FROM vtiger_currencies 
-                    LEFT JOIN vtiger_currency_info ON vtiger_currency_info.currency_name = vtiger_currencies.currency_name
-                    WHERE vtiger_currency_info.currency_name IS NULL or vtiger_currency_info.deleted=1';
-		$params = array();
+		$query = (new \App\Db\Query())->select(['vtiger_currencies.*'])->from('vtiger_currencies')->leftJoin('vtiger_currency_info', 'vtiger_currency_info.currency_name = vtiger_currencies.currency_name')->where(['or', ['vtiger_currency_info.currency_name' => null], ['vtiger_currency_info.deleted' => 1]]);
 		if (!empty($includedIds)) {
-			$params = $includedIds;
-			$query .= ' or vtiger_currency_info.id IN(' . generateQuestionMarks($includedIds) . ')';
+			$query->orWhere(['vtiger_currency_info.id' => $includedIds]);
 		}
-		$result = $db->pquery($query, $params);
-		$currencyModelList = array();
-		$num_rows = $db->num_rows($result);
-
-		for ($i = 0; $i < $num_rows; $i++) {
-			$row = $db->query_result_rowdata($result, $i);
+		$currencyModelList = [];
+		$dataReader = $query->createCommand()->query();
+		while ($row = $dataReader->read()) {
 			$modelInstance = new self();
 			$modelInstance->setData($row);
 			$currencyModelList[$row['currencyid']] = $modelInstance;
@@ -153,23 +172,21 @@ class Settings_Currency_Record_Model extends Settings_Vtiger_Record_Model
 		return $currencyModelList;
 	}
 
+	/**
+	 * Return currences
+	 * @param array $excludedIds
+	 * @return  \Settings_Currency_Record_Model[]
+	 */
 	public static function getAll($excludedIds = [])
 	{
-		$db = PearDatabase::getInstance();
-
-		if (!is_array($excludedIds)) {
-			$excludedIds = [$excludedIds];
-		}
-
-		$query = sprintf('SELECT * FROM %s WHERE deleted = ? && currency_status = ?', Settings_Currency_Module_Model::tableName);
-		$params = [0, 'Active'];
+		$query = (new App\Db\Query())->from(Settings_Currency_Module_Model::TABLE_NAME)
+			->where(['deleted' => 0, 'currency_status' => 'Active']);
 		if (!empty($excludedIds)) {
-			$params[] = $excludedIds;
-			$query .= ' && id NOT IN (' . generateQuestionMarks($excludedIds) . ')';
+			$query->andWhere(['<>', 'id', $excludedIds]);
 		}
-		$result = $db->pquery($query, $params);
+		$dataReader = $query->createCommand()->query();
 		$instanceList = [];
-		while ($row = $db->getRow($result)) {
+		while ($row = $dataReader->read()) {
 			$instanceList[$row['id']] = new Settings_Currency_Record_Model($row);
 		}
 		return $instanceList;

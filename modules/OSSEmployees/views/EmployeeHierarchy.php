@@ -1,30 +1,40 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
+/**
+ * OSSEmployees EmployeeHierarchy view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class OSSEmployees_EmployeeHierarchy_View extends Vtiger_View_Controller
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermittedToRecord
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPriviligesModel->hasModulePermission($moduleName)) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		$recordId = $request->getInteger('record');
+		if (!$recordId) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+		if (!\App\Privilege::isPermitted($request->getModule(), 'DetailView', $recordId)) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
-
-		$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleName);
+		$recordModel = Vtiger_Record_Model::getInstanceById($request->getInteger('record'), $moduleName);
 		$hierarchy = $recordModel->getEmployeeHierarchy();
 
 		$viewer->assign('MODULE', $moduleName);
@@ -32,7 +42,7 @@ class OSSEmployees_EmployeeHierarchy_View extends Vtiger_View_Controller
 		$viewer->view('EmployeeHierarchy.tpl', $moduleName);
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	public function postProcess(\App\Request $request)
 	{
 		
 	}

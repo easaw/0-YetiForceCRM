@@ -6,25 +6,41 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class CustomView_Approve_Action extends Vtiger_Action_Controller
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function checkPermission(\App\Request $request)
+	{
+		if (!CustomView_Record_Model::getInstanceById($request->getInteger('record'))->isPending()) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		if ($currentUser->isAdminUser()) {
-			$customViewModel = CustomView_Record_Model::getInstanceById($request->get('record'));
+			$customViewModel = CustomView_Record_Model::getInstanceById($request->getInteger('record'));
 			$moduleModel = $customViewModel->getModule();
-
 			$customViewModel->approve();
 		}
 		$listViewUrl = $moduleModel->getListViewUrl();
 		header("Location: $listViewUrl");
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

@@ -3,7 +3,8 @@
 /**
  * Wdiget to show work time
  * @package YetiForce.Dashboard
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class OSSTimeControl_AllTimeControl_Dashboard extends Vtiger_IndexAjax_View
@@ -25,44 +26,41 @@ class OSSTimeControl_AllTimeControl_Dashboard extends Vtiger_IndexAjax_View
 	public function getWidgetTimeControl($user, $time)
 	{
 		if (!$time) {
-			return array();
+			return [];
 		}
 		$timeDatabase['start'] = DateTimeField::convertToDBFormat($time['start']);
 		$timeDatabase['end'] = DateTimeField::convertToDBFormat($time['end']);
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		if ($user == 'all') {
-			$accessibleUsers = \includes\fields\Owner::getInstance(false, $currentUser)->getAccessibleUsers();
+			$accessibleUsers = \App\Fields\Owner::getInstance(false, $currentUser)->getAccessibleUsers();
 			$user = array_keys($accessibleUsers);
 		}
 		if (!is_array($user)) {
 			$accessibleUsers[$user] = Users_Record_Model::getInstanceById($user, 'Users')->getName();
 			$user = [$user];
 		}
-		$db = PearDatabase::getInstance();
-		$sql = "SELECT timecontrol_type, color FROM vtiger_timecontrol_type";
-		$result = $db->query($sql);
-		while ($row = $db->fetch_array($result)) {
-			$colors[$row['timecontrol_type']] = $row['color'];
-		}
+		$colors = (new App\Db\Query())->select(['timecontrol_type', 'color'])->from('vtiger_timecontrol_type')->createCommand()->queryAllByGroup(0);
 		$module = 'OSSTimeControl';
 		$param[] = $module;
 		$param = array_merge($param, $user);
-		$sql = sprintf('SELECT sum_time AS daytime, due_date, timecontrol_type, vtiger_crmentity.smownerid FROM vtiger_osstimecontrol
-					INNER JOIN vtiger_crmentity ON vtiger_osstimecontrol.osstimecontrolid = vtiger_crmentity.crmid
-					WHERE vtiger_crmentity.setype = ? && vtiger_crmentity.smownerid IN (%s) ', generateQuestionMarks($user));
-		$sql .= \App\PrivilegeQuery::getAccessConditions($module, false);
-		$sql .= "AND (vtiger_osstimecontrol.date_start >= ? && vtiger_osstimecontrol.due_date <= ?) && vtiger_osstimecontrol.deleted = 0 ";
-		$param[] = $timeDatabase['start'];
-		$param[] = $timeDatabase['end'];
-		$result = $db->pquery($sql, $param);
+		$query = (new App\Db\Query())->select(['daytime' => 'sum_time', 'due_date', 'timecontrol_type', 'vtiger_crmentity.smownerid'])
+			->from('vtiger_osstimecontrol')
+			->innerJoin('vtiger_crmentity', 'vtiger_osstimecontrol.osstimecontrolid = vtiger_crmentity.crmid')
+			->where(['vtiger_crmentity.setype' => $module, 'vtiger_crmentity.smownerid' => $user]);
+		\App\PrivilegeQuery::getConditions($query, $module);
+		$query->andWhere([
+			'and',
+			['>=', 'vtiger_osstimecontrol.due_date', $timeDatabase['start']],
+			['<=', 'vtiger_osstimecontrol.due_date', $timeDatabase['end']],
+			['vtiger_osstimecontrol.deleted' => 0]
+		]);
 		$timeTypes = [];
 		$response = [];
-		$numRows = $db->num_rows($result);
 		$smOwners = [];
 		$counter = 0;
-		for ($i = 0; $i < $numRows; $i++) {
-			$row = $db->query_result_rowdata($result, $i);
-			$workingTimeByType[vtranslate($row['timecontrol_type'], 'OSSTimeControl')] += $row['daytime'];
+		$dataReader = $query->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$workingTimeByType[\App\Language::translate($row['timecontrol_type'], 'OSSTimeControl')] += $row['daytime'];
 			$workingTime[$row['smownerid']][$row['timecontrol_type']] += $row['daytime'];
 			if (!array_key_exists($row['timecontrol_type'], $timeTypes)) {
 				$timeTypes[$row['timecontrol_type']] = $counter++;
@@ -70,13 +68,13 @@ class OSSTimeControl_AllTimeControl_Dashboard extends Vtiger_IndexAjax_View
 			if (!in_array($row['smownerid'], $smOwners))
 				$smOwners[] = $row['smownerid'];
 		}
-		if ($numRows > 0) {
+		if ($dataReader->count() > 0) {
 			$counter = 0;
 			$result = [];
 			foreach ($workingTime as $timeKey => $timeValue) {
 				foreach ($timeTypes as $timeTypeKey => $timeTypeKey) {
 					$result[$timeTypeKey]['data'][$counter][0] = $counter;
-					$result[$timeTypeKey]['label'] = vtranslate($timeTypeKey, 'OSSTimeControl');
+					$result[$timeTypeKey]['label'] = \App\Language::translate($timeTypeKey, 'OSSTimeControl');
 					$result[$timeTypeKey]['color'] = $colors[$timeTypeKey];
 					if ($timeValue[$timeTypeKey]) {
 						$result[$timeTypeKey]['data'][$counter][1] = $timeValue[$timeTypeKey];
@@ -105,27 +103,33 @@ class OSSTimeControl_AllTimeControl_Dashboard extends Vtiger_IndexAjax_View
 		return $response;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$loggedUserId = $currentUser->get('id');
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$linkId = $request->get('linkid');
-		$user = $request->get('owner');
-		$time = $request->get('time');
-		if ($time === null) {
-			$time['start'] = vtlib\Functions::currentUserDisplayDateNew();
-			$time['end'] = vtlib\Functions::currentUserDisplayDateNew();
-		}
+		$linkId = $request->getInteger('linkid');
+		$user = $request->getByType('owner', 2);
+		$time = $request->getDateRange('time');
 		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
-		if ($user === null) {
+		if (empty($time)) {
+			$time = Settings_WidgetsManagement_Module_Model::getDefaultDate($widget);
+			if ($time === false) {
+				$time['start'] = vtlib\Functions::currentUserDisplayDateNew();
+				$time['end'] = vtlib\Functions::currentUserDisplayDateNew();
+			} else {
+				$time['start'] = \App\Fields\Date::formatToDisplay($time['start']);
+				$time['end'] = \App\Fields\Date::formatToDisplay($time['end']);
+			}
+		}
+		if (empty($user)) {
 			$user = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget);
 		}
 		$data = $this->getWidgetTimeControl($user, $time);
 		$TCPModuleModel = Settings_TimeControlProcesses_Module_Model::getCleanInstance();
-		$accessibleUsers = \includes\fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleUsersForModule();
-		$accessibleGroups = \includes\fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleGroupForModule();
+		$accessibleUsers = \App\Fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleUsersForModule();
+		$accessibleGroups = \App\Fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleGroupForModule();
 		$viewer->assign('TCPMODULE_MODEL', $TCPModuleModel->getConfigInstance());
 		$viewer->assign('USERID', $user);
 		$viewer->assign('DTIME', $time);
@@ -136,8 +140,7 @@ class OSSTimeControl_AllTimeControl_Dashboard extends Vtiger_IndexAjax_View
 		$viewer->assign('LOGGEDUSERID', $loggedUserId);
 		$viewer->assign('ACCESSIBLE_USERS', $accessibleUsers);
 		$viewer->assign('ACCESSIBLE_GROUPS', $accessibleGroups);
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/TimeControlContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/AllTimeControl.tpl', $moduleName);

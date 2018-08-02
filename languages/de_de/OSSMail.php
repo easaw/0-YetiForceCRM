@@ -1,5 +1,11 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * OSSMail german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author SkavenKF (K.Fink)
+ */
 $languageStrings = [
 	'OSSMail' => 'Meine Mailbox',
 	'OSSMail_manual' => 'E-Mail Modul',
@@ -59,17 +65,23 @@ $languageStrings = [
 	'LBL_NOMAILSLIST' => 'Keine E-Mails',
 	'LBL_MAIL_NOT_FOUND_IN_DB' => 'Mail nicht in der Datenbank gefunden.',
 	'LBL_IMPORT_MAIL_MANUALLY' => 'Mail manuell importieren',
-	'LBL_RELATIONS' => 'Organisationen/Kontakte',
+	'LBL_RELATIONS' => 'Organisationen',
+	'LBL_RELATIONS_EXTEND' => 'Kontakte',
 	'LBL_PROCESS' => 'Prozesse',
 	'LBL_SUB_PROCESS' => 'Unterprozesse',
 	'LBL_REMOVE_RELATION' => 'Beziehung löschen',
-	'LBL_ADD_RECORD' => 'Datensatz erzeugen',
 	'LBL_SELECT_RECORD' => 'Beziehung zu einem bestehenden Datensatz',
 	'LBL_ADD_CALENDAR' => 'Ereignis hinzufügen',
 	'LBL_ADD_MODCOMMENTS' => 'Kommentar hinzufügen',
 	'LBL_ADD_HELPDESK' => 'Ticket hinzufügen',
 	'LBL_ADD_PRODUCTS' => 'Produkt hinzufügen',
 	'LBL_ADD_SERVICES' => 'Service  hinzufügen',
+	'LBL_SEND_MASS_EMAIL' => 'Massenmail senden',
+	'LBL_NUMBER_OF_FOUND_MAIL_ADDRESSES' => 'Anzahl gefundener E-Mail-Adressen',
+	'LBL_NUMBER_OF_SELECTED_RECORDS' => 'Anzahl selektierter Datensätze',
+	'LBL_MINIMIZE_BAR' => 'Minimieren',
+	//BTN
+	'LBL_CREATEMAIL' => 'E-Mail senden',
 ];
 $jsLanguageStrings = [
 	'NoFindEmailInRecord' => 'Datensatz hat keine E-Mail-Adresse',

@@ -1,10 +1,15 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Notification english translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Notification' => 'Notification',
 	'SINGLE_Notification' => 'Notification',
 	'Notification ID' => 'Notification ID',
-	'LBL_CUSTOM_INFORMATION' => 'Custom Information',
+	'LBL_NOTIFICATION_CONTENTS' => 'Notification contents',
 	'FL_TITLE' => 'title',
 	'LBL_NOTIFICATION_INFORMATION' => 'Basic information',
 	'FL_RELATED_MODULE' => 'Related module',
@@ -32,6 +37,13 @@ $languageStrings = [
 	'FL_USER' => 'User',
 	'FL_TYPE' => 'Type',
 	'LBL_MARK_AS_READ' => 'Mark as read',
+	'LBL_NO_NOTIFICATIONS' => 'No notifications',
+	'LBL_CRON_LAUNCHING_FREQUENCY' => 'Cron launching frequency',
+	'LBL_MODULES' => 'Modules',
+	'LBL_SENT_NOTIFICATIONS' => 'Send notifications',
+	'LBL_NOTIFICATION_SETTINGS' => 'Notification settings',
+	'LBL_UNREAD' => 'Unread',
+	'LBL_NO_UNREAD_NOTIFICATIONS' => 'No unread notifications',
 ];
 $jsLanguageStrings = [
 	'JS_MARKED_AS_READ' => 'Marked as read',

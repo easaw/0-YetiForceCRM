@@ -8,10 +8,10 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class Settings_Vtiger_Systems_Model extends Vtiger_Base_Model
+class Settings_Vtiger_Systems_Model extends \App\Base
 {
 
-	const tableName = 'vtiger_systems';
+	const TABLE_NAME = 'vtiger_systems';
 
 	public function getId()
 	{
@@ -29,17 +29,17 @@ class Settings_Vtiger_Systems_Model extends Vtiger_Base_Model
 		$db = PearDatabase::getInstance();
 
 		$id = $this->getId();
-		$params = array();
+		$params = [];
 		array_push($params, $this->get('server'), $this->get('server_port'), $this->get('server_username'), $this->get('server_password'), $this->get('server_type'), $this->isSmtpAuthEnabled(), $this->get('server_path'), $this->get('from_email_field'));
 
 		if (empty($id)) {
-			$id = $db->getUniqueID(self::tableName);
+			$id = $db->getUniqueID(self::TABLE_NAME);
 			//To keep id in the beginning
 			array_unshift($params, $id);
-			$query = sprintf('INSERT INTO %s VALUES(?,?,?,?,?,?,?,?,?)', self::tableName);
+			$query = sprintf('INSERT INTO %s VALUES(?,?,?,?,?,?,?,?,?)', self::TABLE_NAME);
 		} else {
 			$query = sprintf('UPDATE %s SET server = ?, server_port= ?, server_username = ?, server_password = ?,
-                server_type = ?,  smtp_auth= ?, server_path = ?, from_email_field=? WHERE id = ?', self::tableName);
+                server_type = ?,  smtp_auth= ?, server_path = ?, from_email_field=? WHERE id = ?', self::TABLE_NAME);
 			$params[] = $id;
 		}
 		$db->pquery($query, $params);
@@ -49,7 +49,7 @@ class Settings_Vtiger_Systems_Model extends Vtiger_Base_Model
 	public static function getInstanceFromServerType($type, $componentName)
 	{
 		$db = PearDatabase::getInstance();
-		$query = sprintf('SELECT * FROM %s WHERE server_type = ?', self::tableName);
+		$query = sprintf('SELECT * FROM %s WHERE server_type = ?', self::TABLE_NAME);
 		$params = [$type];
 		$result = $db->pquery($query, $params);
 		try {
@@ -58,8 +58,8 @@ class Settings_Vtiger_Systems_Model extends Vtiger_Base_Model
 			$modelClassName = self;
 		}
 		$instance = new $modelClassName();
-		if ($db->num_rows($result) > 0) {
-			$rowData = $db->query_result_rowdata($result, 0);
+		if ($db->numRows($result) > 0) {
+			$rowData = $db->queryResultRowData($result, 0);
 			$instance->setData($rowData);
 		}
 		return $instance;

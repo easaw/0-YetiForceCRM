@@ -18,19 +18,11 @@
 	{/foreach}
 	<div class="row">
 		<div class="col-md-8">
-			<div class="dashboardTitle" title="{vtranslate($WIDGET->getTitle(), $MODULE_NAME)}"><strong>&nbsp;&nbsp;{vtranslate($WIDGET->getTitle(), $MODULE_NAME)}</strong></div>
+			<div class="dashboardTitle" title="{\App\Language::translate($WIDGET->getTitle(), $MODULE_NAME)}"><strong>&nbsp;&nbsp;{\App\Language::translate($WIDGET->getTitle(), $MODULE_NAME)}</strong></div>
 		</div>
 		<div class="col-md-4">
 			<div class="box pull-right">
-				{include file="dashboards/DashboardHeaderIcons.tpl"|@vtemplate_path:$MODULE_NAME}
-			</div>
-		</div>
-	</div>
-	<hr class="widgetHr"/>
-	<div class="row" >
-		<div class="col-md-12">
-			<div class="pull-right">
-				&nbsp;
+				{include file=\App\Layout::getTemplatePath('dashboards/DashboardHeaderIcons.tpl', $MODULE_NAME)}
 			</div>
 		</div>
 	</div>

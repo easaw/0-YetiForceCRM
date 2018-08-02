@@ -11,9 +11,9 @@
 class Settings_PickListDependency_SaveAjax_Action extends Settings_Vtiger_Index_Action
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 		$sourceField = $request->get('sourceField');
 		$targetField = $request->get('targetField');
 		$recordModel = Settings_PickListDependency_Record_Model::getInstance($sourceModule, $sourceField, $targetField);
@@ -21,14 +21,14 @@ class Settings_PickListDependency_SaveAjax_Action extends Settings_Vtiger_Index_
 		$response = new Vtiger_Response();
 		try {
 			$result = $recordModel->save($request->get('mapping'));
-			$response->setResult(array('success' => $result));
+			$response->setResult(['success' => $result]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

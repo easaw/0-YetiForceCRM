@@ -20,27 +20,26 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 		$this->exposeMethod('step3');
 	}
 
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
 		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
-
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 		if ($record) {
 			$reportModel = Reports_Record_Model::getCleanInstance($record);
 			if (!$reportModel->isEditable()) {
-				throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+				throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 			}
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 		$viewer = $this->getViewer($request);
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 		$moduleName = $request->getModule();
 		$reportModel = Reports_Record_Model::getCleanInstance($record);
 		$primaryModule = $reportModel->getPrimaryModule();
@@ -54,7 +53,7 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 				$viewer->assign('MODULE', $primaryModule);
 				$viewer->assign('MESSAGE', 'LBL_PERMISSION_DENIED');
 				$viewer->view('OperationNotPermitted.tpl', $primaryModule);
-				throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+				throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 			}
 		}
 		$viewer->assign('REPORT_MODEL', $reportModel);
@@ -65,7 +64,7 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 		$viewer->view('EditHeader.tpl', $request->getModule());
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if (!empty($mode)) {
@@ -75,16 +74,16 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 		}
 	}
 
-	public function step1(Vtiger_Request $request)
+	public function step1(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 		$weekDays = ['Sunday' => 0, 'Monday' => 1, 'Tuesday' => 2, 'Wednesday' => 3, 'Thursday' => 4, 'Friday' => 5, 'Saturday' => 6];
 
 		$reportModel = Reports_Record_Model::getCleanInstance($record);
 		if (!$reportModel->has('folderid')) {
-			$reportModel->set('folderid', $request->get('folder'));
+			$reportModel->set('folderid', $request->getByType('folder', 2));
 		}
 		$data = $request->getAll();
 		foreach ($data as $name => $value) {
@@ -108,10 +107,10 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 		$relatedModules = $reportModel->getReportRelatedModules();
 
 		foreach ($relatedModules as $primaryModule => $relatedModuleList) {
-			$translatedRelatedModules = array();
+			$translatedRelatedModules = [];
 
 			foreach ($relatedModuleList as $relatedModuleName) {
-				$translatedRelatedModules[$relatedModuleName] = vtranslate($relatedModuleName, $relatedModuleName);
+				$translatedRelatedModules[$relatedModuleName] = \App\Language::translate($relatedModuleName, $relatedModuleName);
 			}
 			$relatedModules[$primaryModule] = $translatedRelatedModules;
 		}
@@ -136,11 +135,11 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 		$viewer->view('Step1.tpl', $moduleName);
 	}
 
-	public function step2(Vtiger_request $request)
+	public function step2(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 
 		$reportModel = Reports_Record_Model::getCleanInstance($record);
 		if (!empty($record)) {
@@ -151,9 +150,9 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 
 		$data = $request->getAll();
 		foreach ($data as $name => $value) {
-			if ($name == 'schdayoftheweek' || $name == 'schdayofthemonth' || $name == 'schannualdates' || $name == 'recipients') {
+			if ($name === 'schdayoftheweek' || $name === 'schdayofthemonth' || $name === 'schannualdates' || $name === 'recipients') {
 				if (is_string($value)) { // need to save these as json data
-					$value = array($value);
+					$value = [$value];
 				}
 			}
 			$reportModel->set($name, $value);
@@ -171,7 +170,7 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 
 		$primaryModuleFields = $reportModel->getPrimaryModuleFields();
 		$secondaryModuleFields = $reportModel->getSecondaryModuleFields();
-		if ($primaryModule == 'HelpDesk') {
+		if ($primaryModule === 'HelpDesk') {
 			foreach ($primaryModuleFields as $module => $blockFields) {
 				foreach ($blockFields as $key => $value) {
 					if (isset($value)) {
@@ -187,7 +186,7 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 
 		if (!empty($secondaryModuleFields)) {
 			foreach ($secondaryModuleFields as $module => $blockFields) {
-				if ($module == 'HelpDesk') {
+				if ($module === 'HelpDesk') {
 					foreach ($blockFields as $key => $value) {
 						if (isset($value)) {
 							foreach ($value as $key1 => $value1) {
@@ -219,11 +218,11 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 		$viewer->view('step2.tpl', $moduleName);
 	}
 
-	public function step3(Vtiger_Request $request)
+	public function step3(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 
 		$reportModel = Reports_Record_Model::getCleanInstance($record);
 		if (!empty($record)) {
@@ -232,9 +231,9 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 		}
 		$data = $request->getAll();
 		foreach ($data as $name => $value) {
-			if ($name == 'schdayoftheweek' || $name == 'schdayofthemonth' || $name == 'schannualdates' || $name == 'recipients') {
+			if ($name === 'schdayoftheweek' || $name === 'schdayofthemonth' || $name === 'schannualdates' || $name === 'recipients') {
 				if (!is_array($value)) { // need to save these as json data
-					$value = array($value);
+					$value = [$value];
 				}
 			}
 			$reportModel->set($name, $value);
@@ -248,7 +247,7 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 
 			$secondaryModules = explode(':', $secondaryModules);
 		} else {
-			$secondaryModules = array();
+			$secondaryModules = [];
 		}
 
 		$viewer->assign('RECORD_ID', $record);
@@ -259,10 +258,10 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 		$primaryModuleRecordStructure = $recordStructureInstance->getPrimaryModuleRecordStructure();
 		$secondaryModuleRecordStructures = $recordStructureInstance->getSecondaryModuleRecordStructure();
 
-		if ($primaryModule == 'HelpDesk') {
+		if ($primaryModule === 'HelpDesk') {
 			foreach ($primaryModuleRecordStructure as $blockLabel => $blockFields) {
 				foreach ($blockFields as $field => $object) {
-					if ($field == 'update_log') {
+					if ($field === 'update_log') {
 						unset($primaryModuleRecordStructure[$blockLabel][$field]);
 					}
 				}
@@ -271,10 +270,10 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 
 		if (!empty($secondaryModuleRecordStructures)) {
 			foreach ($secondaryModuleRecordStructures as $module => $structure) {
-				if ($module == 'HelpDesk') {
+				if ($module === 'HelpDesk') {
 					foreach ($structure as $blockLabel => $blockFields) {
 						foreach ($blockFields as $field => $object) {
-							if ($field == 'update_log') {
+							if ($field === 'update_log') {
 								unset($secondaryModuleRecordStructures[$module][$blockLabel][$field]);
 							}
 						}
@@ -283,25 +282,16 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 			}
 		}
 		// End
-
 		$viewer->assign('SECONDARY_MODULES', $secondaryModules);
 		$viewer->assign('PRIMARY_MODULE_RECORD_STRUCTURE', $primaryModuleRecordStructure);
 		$viewer->assign('SECONDARY_MODULE_RECORD_STRUCTURES', $secondaryModuleRecordStructures);
-		$dateFilters = Vtiger_Field_Model::getDateFilterTypes();
-		foreach ($dateFilters as $comparatorKey => $comparatorInfo) {
-			$comparatorInfo['startdate'] = DateTimeField::convertToUserFormat($comparatorInfo['startdate']);
-			$comparatorInfo['enddate'] = DateTimeField::convertToUserFormat($comparatorInfo['enddate']);
-			$comparatorInfo['label'] = vtranslate($comparatorInfo['label'], $moduleName);
-			$dateFilters[$comparatorKey] = $comparatorInfo;
-		}
-		$viewer->assign('DATE_FILTERS', $dateFilters);
-
-		if (($primaryModule == 'Calendar') || (in_array('Calendar', $secondaryModules))) {
+		$viewer->assign('DATE_FILTERS', Vtiger_AdvancedFilter_Helper::getDateFilter($moduleName));
+		if (($primaryModule === 'Calendar') || (in_array('Calendar', $secondaryModules))) {
 			$advanceFilterOpsByFieldType = Calendar_Field_Model::getAdvancedFilterOpsByFieldType();
 		} else {
 			$advanceFilterOpsByFieldType = Vtiger_Field_Model::getAdvancedFilterOpsByFieldType();
 		}
-		$viewer->assign('ADVANCED_FILTER_OPTIONS', Vtiger_Field_Model::getAdvancedFilterOptions());
+		$viewer->assign('ADVANCED_FILTER_OPTIONS', \App\CustomView::ADVANCED_FILTER_OPTIONS);
 		$viewer->assign('ADVANCED_FILTER_OPTIONS_BY_TYPE', $advanceFilterOpsByFieldType);
 		$viewer->assign('MODULE', $moduleName);
 
@@ -317,35 +307,20 @@ Class Reports_Edit_View extends Vtiger_Edit_View
 
 	/**
 	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
-
-		$jsFileNames = array(
+		$jsFileNames = [
 			"modules.$moduleName.resources.Edit1",
 			"modules.$moduleName.resources.Edit2",
 			"modules.$moduleName.resources.Edit3",
-			'~libraries/jquery/jquery.datepick.package-4.1.0/jquery.datepick.js',
-		);
-
+		];
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
 		return $headerScriptInstances;
-	}
-
-	public function getHeaderCss(Vtiger_Request $request)
-	{
-		$headerCssInstances = parent::getHeaderCss($request);
-		$moduleName = $request->getModule();
-		$cssFileNames = array(
-			'~libraries/jquery/jquery.datepick.package-4.1.0/jquery.datepick.css',
-		);
-		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
-		$headerCssInstances = array_merge($cssInstances, $headerCssInstances);
-		return $headerCssInstances;
 	}
 }

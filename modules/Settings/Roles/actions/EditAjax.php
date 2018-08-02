@@ -17,27 +17,27 @@ Class Settings_Roles_EditAjax_Action extends Settings_Vtiger_IndexAjax_View
 		$this->exposeMethod('checkDuplicate');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 			return;
 		}
 	}
 
-	public function checkDuplicate(Vtiger_Request $request)
+	public function checkDuplicate(\App\Request $request)
 	{
 		$roleName = $request->get('rolename');
 		$recordId = $request->get('record');
 
-		$recordModel = Settings_Roles_Record_Model::getInstanceByName($roleName, array($recordId));
+		$recordModel = Settings_Roles_Record_Model::getInstanceByName($roleName, [$recordId]);
 
 		$response = new Vtiger_Response();
 		if (!empty($recordModel)) {
-			$response->setResult(array('success' => true, 'message' => vtranslate('LBL_DUPLICATES_EXIST', $request->getModule(false))));
+			$response->setResult(['success' => true, 'message' => \App\Language::translate('LBL_DUPLICATES_EXIST', $request->getModule(false))]);
 		} else {
-			$response->setResult(array('success' => false));
+			$response->setResult(['success' => false]);
 		}
 		$response->emit();
 	}

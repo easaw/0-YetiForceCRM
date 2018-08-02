@@ -6,7 +6,7 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
- * Contributor(s): YetiForce.com
+ * Contributor(s): YetiForce Sp. z o.o.
  * ********************************************************************************** */
 
 class Users_EditRecordStructure_Model extends Vtiger_EditRecordStructure_Model
@@ -22,7 +22,7 @@ class Users_EditRecordStructure_Model extends Vtiger_EditRecordStructure_Model
 			return $this->structuredValues;
 		}
 
-		$values = array();
+		$values = [];
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$recordModel = $this->getRecord();
 		$recordId = $recordModel->getId();
@@ -31,39 +31,35 @@ class Users_EditRecordStructure_Model extends Vtiger_EditRecordStructure_Model
 		foreach ($blockModelList as $blockLabel => $blockModel) {
 			$fieldModelList = $blockModel->getFields();
 			if ($fieldModelList) {
-				$values[$blockLabel] = array();
+				$values[$blockLabel] = [];
 				foreach ($fieldModelList as $fieldName => $fieldModel) {
-					if ($fieldModel->get('uitype') == 115 && $currentUserModel->isAdminUser() === true) {
-						$fieldModel->set('editable', true);
-					}
 					if (empty($recordId) && ($fieldModel->get('uitype') == 99 || $fieldModel->get('uitype') == 106)) {
 						$fieldModel->set('editable', true);
 					}
-					if ($fieldModel->get('uitype') == 156 && $currentUserModel->isAdminUser() === true) {
+					if ($fieldModel->get('uitype') == 156 && $currentUserModel->isAdminUser() === true && $currentUserModel->getId() !== $recordId) {
 						$fieldModel->set('editable', true);
 						$fieldValue = false;
-						$defaultValue = $fieldModel->getDefaultFieldValue();
 						if ($recordModel->get($fieldName) === 'on') {
 							$fieldValue = true;
 						}
 						$recordModel->set($fieldName, $fieldValue);
 					}
-					if ($fieldName == 'is_owner') {
+					if ($fieldName === 'is_owner') {
 						$fieldModel->set('editable', false);
-					} else if ($fieldName == 'reports_to_id' && !$currentUserModel->isAdminUser()) {
+					} else if ($fieldName === 'reports_to_id' && !$currentUserModel->isAdminUser()) {
 						continue;
 					}
 					if ($fieldModel->isEditable() && $fieldName != 'is_owner') {
-						if ($recordModel->get($fieldName) != '') {
+						if ($recordModel->get($fieldName) !== '') {
 							$fieldModel->set('fieldvalue', $recordModel->get($fieldName));
 						} else {
 							$defaultValue = $fieldModel->getDefaultFieldValue();
-							if ($fieldName == 'time_zone' && empty($defaultValue))
+							if ($fieldName === 'time_zone' && empty($defaultValue))
 								$defaultValue = vglobal('default_timezone');
-							if (!empty($defaultValue) && !$recordId)
+							if ($defaultValue !== '' && !$recordId) {
 								$fieldModel->set('fieldvalue', $defaultValue);
+							}
 						}
-
 						if (!$recordId && $fieldModel->get('uitype') == 99) {
 							$fieldModel->set('editable', true);
 							$fieldModel->set('fieldvalue', '');

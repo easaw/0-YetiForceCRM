@@ -3,7 +3,8 @@
 /**
  * Advanced permission edit view class
  * @package YetiForce.Settings.View
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_AdvancedPermission_Edit_View extends Settings_Vtiger_Index_View
@@ -16,7 +17,7 @@ class Settings_AdvancedPermission_Edit_View extends Settings_Vtiger_Index_View
 		$this->exposeMethod('step2');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if (!empty($mode)) {
@@ -28,9 +29,9 @@ class Settings_AdvancedPermission_Edit_View extends Settings_Vtiger_Index_View
 
 	/**
 	 * Edit view first step
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function step1(Vtiger_Request $request)
+	public function step1(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -50,14 +51,14 @@ class Settings_AdvancedPermission_Edit_View extends Settings_Vtiger_Index_View
 
 	/**
 	 * Edit view second step
-	 * @param Vtiger_Request $request
+	 * @param \App\Request $request
 	 */
-	public function step2(Vtiger_Request $request)
+	public function step2(\App\Request $request)
 	{
 		$qualifiedModuleName = $request->getModule(false);
 		$record = $request->get('record');
 		$recordModel = Settings_AdvancedPermission_Record_Model::getInstance($record);
-		$selectedModule = \includes\Modules::getModuleName($recordModel->get('tabid'));
+		$selectedModule = \App\Module::getModuleName($recordModel->get('tabid'));
 		$moduleModel = Vtiger_Module_Model::getInstance($selectedModule);
 		$recordStructureInstance = Vtiger_RecordStructure_Model::getInstanceForModule($moduleModel);
 
@@ -71,7 +72,7 @@ class Settings_AdvancedPermission_Edit_View extends Settings_Vtiger_Index_View
 		$viewer->view('EditViewS2.tpl', $qualifiedModuleName);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$jsFileNames = [

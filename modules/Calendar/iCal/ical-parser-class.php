@@ -1,11 +1,11 @@
 <?php
 
-class iCal
+class Ical
 {
 
 	public $folders;
 
-	public function iCal()
+	public function __construct()
 	{
 		$this->folders = 'cache/import/';
 	}
@@ -38,7 +38,7 @@ class iCal
 							$begin = true;
 							$majorarray['TYPE'] = $tmpholderarray[1];
 						} else {
-							$majorarray[$tmpholderarray[1]] = array();
+							$majorarray[$tmpholderarray[1]] = [];
 							$key = $tmpholderarray[1];
 						}
 					} else if ($tmpholderarray[0] == 'END') {
@@ -62,7 +62,7 @@ class iCal
 			$icalarray[] = $majorarray;
 			unset($majorarray);
 		}
-		
+
 		$countTodoResult = count($todoresult[0]);
 		for ($i = 0; $i < $countTodoResult; $i++) {
 			$tmpbyline = explode("\n", $todoresult[0][$i]);
@@ -80,7 +80,7 @@ class iCal
 							$begin = true;
 							$majorarray['TYPE'] = $tmpholderarray[1];
 						} else {
-							$majorarray[$tmpholderarray[1]] = array();
+							$majorarray[$tmpholderarray[1]] = [];
 							$key = $tmpholderarray[1];
 						}
 					} else if ($tmpholderarray[0] == 'END') {

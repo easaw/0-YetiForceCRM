@@ -1,7 +1,8 @@
 <?php
 /**
- * @package YetiForce.models
- * @license licenses/License.html
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  */
 
@@ -38,7 +39,7 @@ abstract class Settings_CurrencyUpdate_AbstractBank_Model
 	 * Fetch exchange rates
 	 * @param <Array> $currencies - list of systems active currencies
 	 * @param <Date> $date - date for which exchange is fetched
-	 * @param <Boolean> $cron - if true then it is fired by server and crms currency conversion rates are updated 
+	 * @param boolean $cron - if true then it is fired by server and crms currency conversion rates are updated 
 	 */
 
 	abstract public function getRates($currencies, $date, $cron = false);

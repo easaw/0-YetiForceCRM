@@ -19,7 +19,7 @@ class Settings_Leads_Module_Model extends Vtiger_Module_Model
 	public function getFields($blockInstance = false)
 	{
 		if (!$this->fields) {
-			$fieldModelsList = array();
+			$fieldModelsList = [];
 			$fieldIds = $this->getMappingSupportedFieldIdsList();
 
 			foreach ($fieldIds as $fieldId) {
@@ -38,23 +38,24 @@ class Settings_Leads_Module_Model extends Vtiger_Module_Model
 	public function getMappingSupportedFieldIdsList()
 	{
 		if (empty($this->supportedFieldIdsList)) {
-			$selectedTabidsList[] = \includes\Modules::getModuleId($this->getName());
+			$selectedTabidsList[] = \App\Module::getModuleId($this->getName());
 			$presense = [0, 2];
 			$restrictedFieldNames = ['campaignrelstatus'];
 			$restrictedUitypes = $this->getRestrictedUitypes();
 			$selectedGeneratedTypes = [1, 2];
-
-			$db = PearDatabase::getInstance();
-			$query = sprintf('SELECT fieldid FROM vtiger_field
-						WHERE presence IN (%s)
-						AND tabid IN (%s)
-						AND uitype NOT IN (%s)
-						AND fieldname NOT IN (%s)
-						AND generatedtype IN (%s)', generateQuestionMarks($presense), generateQuestionMarks($selectedTabidsList), generateQuestionMarks($restrictedUitypes), generateQuestionMarks($restrictedFieldNames), generateQuestionMarks($selectedGeneratedTypes));
-
-			$params = array_merge($presense, $selectedTabidsList, $restrictedUitypes, $restrictedFieldNames, $selectedGeneratedTypes);
-			$result = $db->pquery($query, $params);
-			$this->supportedFieldIdsList = $db->getArrayColumn($result);
+			$dataReader = (new \App\Db\Query())->select('fieldid')
+					->from('vtiger_field')
+					->where([
+						'presence' => $presense,
+						'tabid' => $selectedTabidsList,
+						'generatedtype' => $selectedGeneratedTypes
+					])
+					->andWhere(['and', ['NOT IN', 'uitype', $restrictedUitypes], ['NOT IN', 'fieldname', $restrictedFieldNames]])
+					->createCommand()->query();
+			$this->supportedFieldIdsList = [];
+			while ($field = $dataReader->readColumn(0)) {
+				$this->supportedFieldIdsList [] = $field;
+			}
 		}
 		return $this->supportedFieldIdsList;
 	}
@@ -65,12 +66,12 @@ class Settings_Leads_Module_Model extends Vtiger_Module_Model
 	 */
 	public function getRestrictedUitypes()
 	{
-		return array(4, 51, 52, 53, 57, 58, 69, 70);
+		return [4, 51, 52, 53, 57, 58, 69, 70];
 	}
 
 	/**
 	 * Function to get instance of module
-	 * @param <String> $moduleName
+	 * @param string $moduleName
 	 * @return <Settings_Leads_Module_Model>
 	 */
 	public static function getInstance($moduleName)

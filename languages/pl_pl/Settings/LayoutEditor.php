@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * LayoutEditor polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Calendar' => 'Do wykonania',
 	'Checkbox' => 'Pole zaznaczenia',
@@ -84,6 +81,7 @@ $languageStrings = [
 	'LBL_GENERATED_TYPE' => 'Systemowe',
 	'LBL_TREE_TEMPLATE' => 'Drzewo',
 	'Tree' => 'Pole drzewa',
+	'CategoryMultipicklist' => 'Pole drzewa (wielokrotnego wyboru)',
 	'LBL_FIELD_MASK' => 'Maska',
 	'LBL_FIELD_MASK_INFO' => 'Domyślnie definicje maskujące<br />9: numeryczny<br />a: alfabetycznie<br />*: Alfanumeryczny<br /><br />Przykład:<br />(99) 9999-9999<br />+48 999-999-999<br />aaa_999_aaa<br />dd/mm/yyyy',
 	'MultiReferenceValue' => 'Wartości z modułu powiązanego',
@@ -119,7 +117,8 @@ $languageStrings = [
 	'LBL_SELECT_TYPE_OF_INVENTORY' => 'Wybierz rodzaj pola',
 	'LBL_NEXT' => 'Dalej',
 	'LBL_PARAMS_MODULES' => 'Moduły',
-	'LBL_PARAMS_LIMIT' => 'Limit kredytowy <br>- Blokada zapisu',
+	'LBL_PARAMS_LIMIT' => 'Limit kredytowy <br />- Blokada zapisu',
+	'LBL_PARAMS_LIMIT_CONDITIONS' => 'Wymagane pola',
 	'LBL_DISPLAY_TYPE' => 'Typ pola',
 	'LBL_DISPLAYTYPE_ALL' => 'Widoczne wszędzie',
 	'LBL_DISPLAYTYPE_READONLY' => 'Tylko do odczytu',
@@ -156,7 +155,17 @@ $languageStrings = [
 	'LBL_ADVANCED_BLOCK_FIELDS' => 'Pola bloku zaawansowanego',
 	'LBL_ADD_ADVANCED_BLOCK_FIELDS' => 'Dodaj pola bloku zaawansowanego',
 	'LBL_MAX_LENGTH_TEXT' => 'Maksymalna długość tekstu',
-	'LBL_MAX_WIDTH_COLUMN' => 'Szerokość kolumny [%]'
+	'LBL_MAX_WIDTH_COLUMN' => 'Szerokość kolumny [%]',
+	'LBL_EDIT_CUSTOM_FIELD' => 'Edytuj pole',
+	'LBL_EXCEEDED_MAXIMUM_NUMBER_CHARACTERS_FOR_FIELD_NAME' => 'Przekroczono dozwoloną długość nazwy pola, maks 30 znaków',
+	'LBL_RELATED_TAB_TYPE' => 'Zakładki',
+	'LBL_DETAIL_TOP_TYPE' => 'Szczegóły góra',
+	'LBL_DETAIL_BOTTOM_TYPE' => 'Szczegóły dól',
+	'LBL_SUMMARY_TOP_TYPE' => 'Podsumowanie góra',
+	'LBL_SUMMARY_BOTTOM_TYPE' => 'Podsumowanie dół',
+	'LBL_RELATED_VIEW_TYPE' => 'Miejsce wyświetlania',
+	'LBL_RELATED_VIEW_TYPE_DESC' => 'Wybierz przynajmniej jedno miejsce wyświetlania bloku',
+	'LBL_CUSTOM_CONFIGURATION' => 'Konfiguracja niestandardowa',
 ];
 
 $jsLanguageStrings = [

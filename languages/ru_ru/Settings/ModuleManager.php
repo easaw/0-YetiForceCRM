@@ -44,7 +44,7 @@ $languageStrings = [
 	'LBL_FINISH' => 'Завершено',
 	'LBL_IMPORT_ZIP' => 'Установка из файла',
 	'LBL_IMPORT_MODULE' => 'Установка из магазина',
-	'LBL_NOT_FOUND' => "Извините, на данной момент нет ни одного расширения для вашей версии CRM",
+	'LBL_NOT_FOUND' => 'Извините, на данной момент нет ни одного расширения для вашей версии CRM',
 	'LBL_INVALID_IMPORT_TRY_AGAIN' => ' предусмотрено для установки модуля! Попробуйте еще раз.',
 	'LBL_IMPORTED_MODULE' => '%s модулей успешно импортировано.',
 	'LBL_IMPORTING_MODULE' => 'Установка модуля',
@@ -72,6 +72,19 @@ $languageStrings = [
 	'LBL_EXTENSION_MODULE' => 'Расширение модуля',
 	'LBL_LANGUAGE_MODULE' => 'Языковой пакет',
 	'LBL_VIEW_MODULEIMPORT' => 'Установка',
+	// Library
+	'LBL_LIBRARY_NAME' => 'Название',
+	'LBL_LIBRARY_STATUS' => 'Статус',
+	'LBL_LIBRARY_URL' => 'Адрес репозитория библиотеки',
+	'LBL_LIBRARY_DIR' => 'Папка библиотеки',
+	'LBL_LIBRARY_ACTION' => 'Действия',
+	'BTN_LIBRARY_DOWNLOAD' => 'Скачать библиотеку',
+	'BTN_LIBRARY_UPDATE' => 'Обновить библиотеку',
+	'LBL_LIBRARY_DOWNLOADED' => 'Скачано',
+	'LBL_LIBRARY_NO_DOWNLOAD' => 'Не скачано',
+	'LBL_LIBRARY_NEEDS_UPDATING' => 'Требуется обновление',
+	'LBL_NO_PERMISSION_TO_DIR' => 'Нет разрешения на доступ к папкам',
+	'LBL_ERROR_NO_VALID_PREFIX' => 'Invalid language prefix',
 ];
 $jsLanguageStrings = [
 	'JS_ON' => 'вкл',
@@ -82,4 +95,5 @@ $jsLanguageStrings = [
 	'JS_UPDATE_SUCCESSFULL' => 'Обновление успешно',
 	'JS_UPDATED_MODULE' => 'Модуль успешно обновлен',
 	'JS_REMOVED_MODULE' => 'Удалить модуль',
+	'JS_SPECIAL_CHARACTERS_NOT_ALLOWED' => 'Специальные символы, такие как & < > \' " : , не допускаются',
 ];

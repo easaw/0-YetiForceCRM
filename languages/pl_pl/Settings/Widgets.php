@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Widgets polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Widgets' => 'Moduły - widżety',
 	'LBL_MODULE_DESC' => 'Moduł zarządzający widgetami na podsumowaniu.',
@@ -26,7 +23,7 @@ $languageStrings = [
 	'PreviewMail' => 'Podgląd maila',
 	'FastEdit' => 'Edycja listy wyboru',
 	'Related module' => 'Moduł powiązany',
-	'Size' => 'Koluma',
+	'Size' => 'Kolumna',
 	'Label' => 'Nazwa',
 	'Add button' => 'Przycisk Dodaj',
 	'Select button' => 'Przycisk Wybierz',
@@ -52,11 +49,17 @@ $languageStrings = [
 	'Filter info' => 'Czy w widgecie ma być możliwość filtrowania danych według listy wyboru',
 	'None' => 'Brak',
 	'ProductsServices' => 'Usługi produktów',
+	'LBL_SELECTING_FIELDS' => 'Wybór pól',
+	'LBL_SELECTING_FIELDS_INFO' => 'Nazwa pól z wybranego modułu, które mają być wyświetlone w widoku.',
+	'LBL_VIEW_TYPE' => 'Widok',
+	'LBL_VIEW_TYPE_INFO' => 'Sposób wyświetlenia wigdetu.',
+	'LBL_LIST' => 'Lista',
+	'LBL_SUMMARY' => 'Podsumowanie',
 	'LBL_SELECT_BUTTON_INFO' => 'Włącz pokazywanie przycisku wybierz',
 	'LBL_CONDITION' => 'Warunek',
 	'LBL_CONDITION_INFO' => 'Wybierz warunek pokazywania rekordów',
 	'LBL_SHOW_ALL_RECORDS' => 'Pokaż wszystkie rekordy',
-	'LBL_SHOW_ALL_RECORDS_INFO' => 'Nie - Uwzględniane są uprawnienia <br> Tak - Wyszukiwanie rekordów z pominięciem uprawnień',
+	'LBL_SHOW_ALL_RECORDS_INFO' => 'Nie - Uwzględniane są uprawnienia <br /> Tak - Wyszukiwanie rekordów z pominięciem uprawnień',
 	'LBL_SHITCH_HEADER' => 'Przełącznik w nagłówku',
 	'LBL_SHITCH_HEADER_INFO' => 'Przełącznik (switch) umieszczony w nagłówku widgetu.',
 	'HistoryRelation' => 'Oś czasu',

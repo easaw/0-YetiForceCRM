@@ -1,4 +1,4 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 	<div class="mfTemplateContents">
 		<form name="editMFTemplate" action="index.php" method="post" id="mf_step3" class="form-horizontal">
@@ -12,13 +12,13 @@
 			<div class="col-md-12 paddingLRZero">
 				<div class="panel panel-default">
 					<div class="panel-body padding0">
-						{include file='AdvanceFilterExpressions.tpl'|@vtemplate_path}
+						{include file=\App\Layout::getTemplatePath('AdvanceFilterExpressions.tpl')}
 					</div>
 					<div class="panel-footer clearfix">
 						<div class="btn-toolbar pull-right">
-							<button class="btn btn-danger backStep" type="button">{vtranslate('LBL_BACK', $QUALIFIED_MODULE)}</button>
-							<button class="btn btn-success" type="submit">{vtranslate('LBL_NEXT', $QUALIFIED_MODULE)}</button>
-							<button class="btn btn-warning cancelLink" type="reset">{vtranslate('LBL_CANCEL', $QUALIFIED_MODULE)}</button>
+							<button class="btn btn-danger backStep" type="button">{\App\Language::translate('LBL_BACK', $QUALIFIED_MODULE)}</button>
+							<button class="btn btn-success" type="submit">{\App\Language::translate('LBL_NEXT', $QUALIFIED_MODULE)}</button>
+							<button class="btn btn-warning cancelLink" type="reset">{\App\Language::translate('LBL_CANCEL', $QUALIFIED_MODULE)}</button>
 						</div>
 					</div>
 				</div>

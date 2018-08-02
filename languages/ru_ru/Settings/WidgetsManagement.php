@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * WidgetsManagement russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_MAXIMUM_VALUE' => 'Максимальное значение',
 	'LBL_TICK_SIZE' => 'Размер шкалы',
@@ -42,7 +39,16 @@ $languageStrings = [
 	'LBL_ADDRESS_RSS' => 'RSS канал',
 	'LBL_ADD_CHANNEL' => 'Добавить канал',
 	'LBL_ADD_RSS' => 'RSS',
-	'LBL_ADD_CHART_FILTER' => 'Chart from filter',
+	'LBL_ADD_CHART_FILTER' => 'Диаграмма из фильтра',
+	'LBL_NOTIFICATION_BY_SENDER' => 'Количество уведомлений по отправителю',
+	'LBL_NOTIFICATION_BY_RECIPIENT' => 'Количество уведомлений по получателю',
+	'LBL_DEFAULT_DATE' => 'Дата по умолчанию',
+	'PLL_CURRENT_DAY' => 'Текущий день',
+	'PLL_CURRENT_WEEK' => 'Текущая неделя',
+	'PLL_CURRENT_MONTH' => 'Текущий месяц',
+	'PLL_CURRENT_YEAR' => 'Текущий год',
+	'LBL_SAVE_DASHBOARD' => 'Сохранить панель',
+	'LBL_NAME_DASHBOARD' => 'Название панели',
 ];
 $jsLanguageStrings = [
 	'JS_BLOCK_ADDED' => 'Блок Виджетов успешно добавлен',

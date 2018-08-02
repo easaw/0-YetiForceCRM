@@ -1,28 +1,29 @@
 <?php
 
 /**
- * Show modal to add issue 
+ * Show modal to add issue
  * @package YetiForce.View
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Settings_Github_AddIssue_View extends Vtiger_BasicModal_View
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		if (!$currentUserModel->isAdminUser()) {
-			throw new \Exception\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$qualifiedModule = $request->getModule(false);
 		$viewer = $this->getViewer($request);
 		$clientModel = Settings_Github_Client_Model::getInstance();
-		$configuration = Settings_ConfReport_Module_Model::getConfigurationValue();
+		$configuration = Settings_ConfReport_Module_Model::getStabilityConf();
 		$libraries = Settings_ConfReport_Module_Model::getConfigurationLibrary();
 		$errorLibraries = [];
 		foreach ($libraries as $key => $value) {

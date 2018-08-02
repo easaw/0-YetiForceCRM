@@ -8,6 +8,7 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 $languageStrings = [
+	'Status' => 'Status',
 	'Not Held' => 'Nicht stattgefunden',
 	'Held' => 'Stattgefunden',
 	'Activity Type' => 'Aktivitätsart',
@@ -53,7 +54,6 @@ $languageStrings = [
 	'LBL_MINUTES' => 'Minuten',
 	'LBL_ON' => 'ein',
 	'LBL_OTHER_EVENTS' => 'Andere Ereignisse',
-	'LBL_RECORDS_LIST' => 'Kalenderliste', //Duplicated key-value pair
 	'LBL_RESULT' => 'Ergebnis',
 	'LBL_SELECT_ACTIVITY_TYPE' => 'Aktivitätsart wählen',
 	'LBL_SELECT_CALENDAR_COLOR' => 'Wähle Kalenderfarbe',
@@ -140,8 +140,16 @@ $languageStrings = [
 	'LBL_CACHE_CLEAR' => 'View leeren',
 	'LBL_PROCESS' => 'Prozess',
 	'LBL_SAVE_AND_CLOSE' => 'Sichern und schließen',
+	'LBL_SHOW_LOCATION' => 'Karte anzeigen',
+	'FL_RECURRENCE' => 'Wiederholung',
+	'FL_REAPEAT' => 'Wiederholen',
 ];
 $jsLanguageStrings = [
+	'LBL_CANT_SELECT_CONTACT_FROM_LEADS' => 'Kontakt aus Lead nicht verwendbar',
+	'JS Activity Type' => 'Aktivitätstyp',
+	'JS_SATATUS' => 'Status',
+	'JS_END_DATE' => 'Enddatum',
+	'JS_START_DATE' => 'Startdatum',
 	'JS_NO_EDIT_PERMISSION' => 'Sie haben keine Berechtigung, die Kalendereinträge zu ändern',
 	'JS_NO_DELETE_PERMISSION' => 'Sie haben keine Erlaubnis, Kalendereinträge zu löschen.',
 	'JS_RECORD_DELETED' => 'Datensatz wurde gelöscht',
@@ -157,7 +165,7 @@ $jsLanguageStrings = [
 	'JS_LOCATION' => 'Ort',
 	'JS_PRIORITY' => 'Priorität',
 	'JS_STATUS' => 'Status',
-	'JS_Activity Type' => 'Activitätstyp',
+	'JS_Activity Type' => 'Aktivitätstyp',
 	'JS_Not Started' => 'Nicht gestartet',
 	'JS_In Progress' => 'In Arbeit',
 	'JS_Completed' => 'Abgeschlossen',

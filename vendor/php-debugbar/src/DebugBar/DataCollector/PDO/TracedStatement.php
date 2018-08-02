@@ -1,4 +1,5 @@
-<?php namespace DebugBar\DataCollector\PDO;
+<?php
+namespace DebugBar\DataCollector\PDO;
 
 /**
  * Holds information about a statement
@@ -23,7 +24,7 @@ class TracedStatement
 	 * @param array $params
 	 * @param string $preparedId
 	 */
-	public function __construct($sql, array $params = array(), $preparedId = null)
+	public function __construct($sql, array $params = [], $preparedId = null)
 	{
 		$this->sql = $sql;
 		$this->parameters = $this->checkParameters($params);
@@ -37,8 +38,8 @@ class TracedStatement
 	 */
 	public function start($startTime = null, $startMemory = null)
 	{
-		$this->startTime = $startTime ? : microtime(true);
-		$this->startMemory = $startMemory ? : memory_get_usage(true);
+		$this->startTime = $startTime ?: microtime(true);
+		$this->startMemory = $startMemory ?: memory_get_usage(true);
 	}
 
 	/**
@@ -49,9 +50,9 @@ class TracedStatement
 	 */
 	public function end(\Exception $exception = null, $rowCount = 0, $endTime = null, $endMemory = null)
 	{
-		$this->endTime = $endTime ? : microtime(true);
+		$this->endTime = $endTime ?: microtime(true);
 		$this->duration = $this->endTime - $this->startTime;
-		$this->endMemory = $endMemory ? : memory_get_usage(true);
+		$this->endMemory = $endMemory ?: memory_get_usage(true);
 		$this->memoryDelta = $this->endMemory - $this->startMemory;
 		$this->exception = $exception;
 		$this->rowCount = $rowCount;
@@ -128,7 +129,7 @@ class TracedStatement
 	 */
 	public function getParameters()
 	{
-		$params = array();
+		$params = [];
 		foreach ($this->parameters as $name => $param) {
 			$params[$name] = htmlentities($param, ENT_QUOTES, 'UTF-8', false);
 		}

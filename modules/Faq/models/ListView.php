@@ -20,8 +20,6 @@ class Faq_ListView_Model extends Vtiger_ListView_Model
 
 	public function getAdvancedLinks()
 	{
-		return array();
+		return [];
 	}
 }
-
-?>

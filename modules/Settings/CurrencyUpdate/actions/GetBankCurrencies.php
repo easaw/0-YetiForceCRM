@@ -1,22 +1,18 @@
 <?php
 
 /**
- * @package YetiForce.actions
- * @license licenses/License.html
+ * @package YetiForce.Action
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  */
-class Settings_CurrencyUpdate_GetBankCurrencies_Action extends Vtiger_Action_Controller
+class Settings_CurrencyUpdate_GetBankCurrencies_Action extends Settings_Vtiger_Basic_Action
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		return true;
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		$name = 'Settings_CurrencyUpdate_models_' . $request->get('name') . '_BankModel';
+		$mode = $request->getMode();
+		$name = 'Settings_CurrencyUpdate_Models_' . $request->get('name') . '_BankModel';
 		$moduleModel = Settings_CurrencyUpdate_Module_Model::getCleanInstance();
 		$response = new Vtiger_Response();
 

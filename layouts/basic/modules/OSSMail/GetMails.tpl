@@ -5,12 +5,12 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-					<h3 class="modal-title">{vtranslate('LBL_SELECT_EMAIL_IDS', 'Emails')}</h3>
+					<h3 class="modal-title">{App\Language::translate('LBL_SELECT_EMAIL_IDS', 'Emails')}</h3>
 				</div>
 				<div class="modal-body">
 					<div class="container-fluid">
 						<div>
-							<h4>{vtranslate('LBL_MUTIPLE_EMAIL_SELECT_ONE', 'Vtiger')}</h4>
+							<h4>{App\Language::translate('LBL_MUTIPLE_EMAIL_SELECT_ONE')}</h4>
 						</div>
 						<div class="modal-Fields">
 							{foreach from=$EMAILS item=ITEM}
@@ -28,10 +28,10 @@
 				</div>	
 				<div class="modal-footer">
 					<button type="button" class="btn btn-success selectButton">
-						{vtranslate('LBL_SELECT', 'Vtiger')}
+						{App\Language::translate('LBL_SELECT')}
 					</button>
 					<button type="button" class="btn btn-warning" data-dismiss="modal">
-						{vtranslate('LBL_CANCEL', 'Vtiger')}
+						{App\Language::translate('LBL_CANCEL')}
 					</button>
 				</div>
 			</div>

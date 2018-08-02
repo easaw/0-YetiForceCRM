@@ -1,14 +1,15 @@
 <?php
 /**
- * @package YetiForce.models
- * @license licenses/License.html
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  */
 
 /**
  * Class for connection to Narodowy Bank Polski currency exchange rates
  */
-class Settings_CurrencyUpdate_models_NBP_BankModel extends Settings_CurrencyUpdate_AbstractBank_Model
+class Settings_CurrencyUpdate_Models_NBP_BankModel extends Settings_CurrencyUpdate_AbstractBank_Model
 {
 	/*
 	 * Returns bank name
@@ -65,31 +66,29 @@ class Settings_CurrencyUpdate_models_NBP_BankModel extends Settings_CurrencyUpda
 				$numberOfDays++;
 			}
 		}
-
-		$xml = simplexml_load_file($newXmlSrc);
-
-		$xmlObj = $xml->children();
-
-		$num = count($xmlObj->pozycja);
-
-		for ($i = 0; $i <= $num; $i++) {
-			if (!$xmlObj->pozycja[$i]->nazwa_waluty) {
-				continue;
+		$headers = get_headers($newXmlSrc, 1);
+		if (isset($headers['Status']) && strpos($headers['Status'], '302') !== false) {
+			$xml = simplexml_load_file($newXmlSrc);
+			$xmlObj = $xml->children();
+			$num = count($xmlObj->pozycja);
+			for ($i = 0; $i <= $num; $i++) {
+				if (!$xmlObj->pozycja[$i]->nazwa_waluty) {
+					continue;
+				}
+				$currencyCode = (string) $xmlObj->pozycja[$i]->kod_waluty;
+				if ($currencyCode == 'XDR') {
+					continue;
+				}
+				$currencyName = Settings_CurrencyUpdate_Module_Model::getCRMCurrencyName($currencyCode);
+				$supportedCurrencies[$currencyName] = $currencyCode;
 			}
-			$currencyCode = (string) $xmlObj->pozycja[$i]->kod_waluty;
-
-			if ($currencyCode == 'XDR') {
-				continue;
-			}
-
-			$currencyName = Settings_CurrencyUpdate_Module_Model::getCRMCurrencyName($currencyCode);
-			$supportedCurrencies[$currencyName] = $currencyCode;
+		} else {
+			App\Log::warning('Can not connect to the server' . $newXmlSrc);
 		}
-
 		return $supportedCurrencies;
 	}
 	/*
-	 * Returns banks main currency 
+	 * Returns banks main currency
 	 */
 
 	public function getMainCurrencyCode()
@@ -100,12 +99,11 @@ class Settings_CurrencyUpdate_models_NBP_BankModel extends Settings_CurrencyUpda
 	 * Fetch exchange rates
 	 * @param <Array> $currencies - list of systems active currencies
 	 * @param <Date> $date - date for which exchange is fetched
-	 * @param <Boolean> $cron - if true then it is fired by server and crms currency conversion rates are updated 
+	 * @param boolean $cron - if true then it is fired by server and crms currency conversion rates are updated
 	 */
 
 	public function getRates($otherCurrencyCode, $dateParam, $cron = false)
 	{
-		$db = PearDatabase::getInstance();
 		$moduleModel = Settings_CurrencyUpdate_Module_Model::getCleanInstance();
 		$selectedBank = $moduleModel->getActiveBankId();
 		$yesterday = date('Y-m-d', strtotime('-1 day'));
@@ -115,11 +113,9 @@ class Settings_CurrencyUpdate_models_NBP_BankModel extends Settings_CurrencyUpda
 
 		$today = date('Y-m-d');
 		$mainCurrency = vtlib\Functions::getDefaultCurrencyInfo()['currency_code'];
-
 		$dateCur = $dateParam;
 		$chosenYear = date('Y', strtotime($dateCur));
-		$date = str_replace('-', '', $dateCur);
-		$date = substr($date, 2);
+		$date = substr(str_replace('-', '', $dateCur), 2);
 
 		if (date('Y') == $chosenYear) {
 			$txtSrc = 'http://www.nbp.pl/kursy/xml/dir.txt';
@@ -142,7 +138,6 @@ class Settings_CurrencyUpdate_models_NBP_BankModel extends Settings_CurrencyUpda
 					$newXmlSrc = $xmlSrc . $lineStart . $date . '.xml';
 				}
 			}
-
 			if ($stateA === false) {
 				$newDate = strtotime("-$numberOfDays day", strtotime($dateCur));
 				$newDate = date('Y-m-d', $newDate);
@@ -162,14 +157,13 @@ class Settings_CurrencyUpdate_models_NBP_BankModel extends Settings_CurrencyUpda
 
 		$exchangeRate = 1.0;
 		// if currency is diffrent than PLN we need to calculate rate for converting other currencies to this one from PLN
-		if ($mainCurrency != $this->getMainCurrencyCode()) {
+		if ($mainCurrency !== $this->getMainCurrencyCode()) {
 			for ($i = 0; $i <= $num; $i++) {
-				if ($xmlObj->pozycja[$i]->kod_waluty == $mainCurrency) {
-					$exchangeRate = str_replace(',', '.', $xmlObj->pozycja[$i]->kurs_sredni);
+				if ((string) $xmlObj->pozycja[$i]->kod_waluty === $mainCurrency) {
+					$exchangeRate = (float) str_replace(',', '.', $xmlObj->pozycja[$i]->kurs_sredni);
 				}
 			}
 		}
-
 		for ($i = 0; $i <= $num; $i++) {
 			if (!$xmlObj->pozycja[$i]->nazwa_waluty) {
 				continue;
@@ -178,16 +172,14 @@ class Settings_CurrencyUpdate_models_NBP_BankModel extends Settings_CurrencyUpda
 			foreach ($otherCurrencyCode as $key => $currId) {
 				if ($key == $currency && $currency != $mainCurrency) {
 					$exchange = str_replace(',', '.', $xmlObj->pozycja[$i]->kurs_sredni);
-					$exchange = $exchange / $xmlObj->pozycja[$i]->przelicznik;
+					$exchange = ((float) $exchange) / ((float) $xmlObj->pozycja[$i]->przelicznik);
 					$exchangeVtiger = $exchangeRate / $exchange;
-					$exchange = $exchange / $exchangeRate;
+					$exchange = $exchangeRate ? ($exchange / $exchangeRate) : 0;
 
 					if ($cron === true || ((strtotime($dateParam) == strtotime($today)) || (strtotime($dateParam) == strtotime($lastWorkingDay)))) {
 						$moduleModel->setCRMConversionRate($currency, $exchangeVtiger);
 					}
-
 					$existingId = $moduleModel->getCurrencyRateId($currId, $datePublicationOfFile, $selectedBank);
-
 					if ($existingId > 0) {
 						$moduleModel->updateCurrencyRate($existingId, $exchange);
 					} else {
@@ -199,7 +191,7 @@ class Settings_CurrencyUpdate_models_NBP_BankModel extends Settings_CurrencyUpda
 
 		// currency diffrent than PLN, we need to add manually PLN rates
 		if ($mainCurrency != $this->getMainCurrencyCode()) {
-			$exchange = 1.00000 / $exchangeRate;
+			$exchange = $exchangeRate ? (1.00000 / $exchangeRate) : 0;
 			$mainCurrencyId = false;
 			foreach ($otherCurrencyCode as $code => $id) {
 				if ($code == $this->getMainCurrencyCode()) {

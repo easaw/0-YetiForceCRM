@@ -6,32 +6,56 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Vtiger_CurrencyList_UIType extends Vtiger_Base_UIType
+class Vtiger_CurrencyList_UIType extends Vtiger_Picklist_UIType
 {
 
 	/**
-	 * Function to get the Template name for the current UI Type Object
-	 * @return <String> - Template Name
+	 * {@inheritDoc}
 	 */
-	public function getTemplateName()
+	public function validate($value, $isUserFormat = false)
 	{
-		return 'uitypes/CurrencyList.tpl';
+		if ($this->validate || empty($value)) {
+			return;
+		}
+		if (!is_numeric($value)) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate = true;
 	}
 
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT currency_name FROM vtiger_currency_info WHERE currency_status = ? && id = ?', array('Active', $value));
-		if ($db->num_rows($result)) {
-			return $db->query_result($result, 0, 'currency_name');
-		}
-		return $value;
+		$currencylist = $this->getPicklistValues();
+		return \App\Purifier::encodeHtml(isset($currencylist[$value]) ? $currencylist[$value] : $value);
+	}
+
+	/**
+	 * Function to get all the available picklist values for the current field
+	 * @return array List of picklist values if the field
+	 */
+	public function getPicklistValues()
+	{
+		$fieldModel = $this->getFieldModel();
+		return $fieldModel->getCurrencyList();
 	}
 
 	public function getCurrenyListReferenceFieldName()
 	{
 		return 'currency_name';
+	}
+
+	/**
+	 * Function defines empty picklist element availability
+	 * @return boolean
+	 */
+	public function isEmptyPicklistOptionAllowed()
+	{
+		return false;
 	}
 }

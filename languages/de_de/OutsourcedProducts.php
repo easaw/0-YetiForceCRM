@@ -1,13 +1,17 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * OutsourcedProducts german translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author SkavenKF (K.Fink)
+ */
 $languageStrings = [
-	'LBL_RECORDS_LIST' => 'Liste Produkte',
 	'Inactive' => 'Inaktiv',
 	'Active' => 'Aktiv',
 	// Basic Strings
 	'OutsourcedProducts' => 'Outsourcing-Produkte',
 	'SINGLE_OutsourcedProducts' => 'Outsourcing-Produkt',
-	'LBL_ADD_RECORD' => 'Produkt hinzufügen',
 	// Blocks
 	'LBL_INFORMATION' => 'Ausgelagerte Produkte',
 	//Field Labels

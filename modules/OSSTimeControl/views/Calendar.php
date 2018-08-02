@@ -1,20 +1,19 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * OSSTimeControl calendar view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class OSSTimeControl_Calendar_View extends Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function process(\App\Request $request)
 	{
-		$mode = $request->getMode();
 		$viewer = $this->getViewer($request);
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$viewer->assign('CURRENT_USER', $currentUserModel);
@@ -24,7 +23,10 @@ class OSSTimeControl_Calendar_View extends Vtiger_Index_View
 		$viewer->view('CalendarView.tpl', $request->getModule());
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function postProcess(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$viewer = $this->getViewer($request);
@@ -32,28 +34,33 @@ class OSSTimeControl_Calendar_View extends Vtiger_Index_View
 		parent::postProcess($request);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
-		$jsFileNames = array(
-			'~libraries/fullcalendar/moment.min.js',
+		$jsFileNames = [
 			'~libraries/fullcalendar/fullcalendar.js',
 			'modules.' . $moduleName . '.resources.Calendar',
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
 		return $headerScriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
-		$cssFileNames = array(
+		$cssFileNames = [
 			'~libraries/fullcalendar/fullcalendar.min.css',
 			'~libraries/fullcalendar/fullcalendarCRM.css',
-		);
+		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
 		$headerCssInstances = array_merge($headerCssInstances, $cssInstances);
 

@@ -1,9 +1,13 @@
+sudo: required
+
+dist: trusty
+  
 language: php
 
 php:
-  - 5.6
+  - 7.2
+  - 7.1
   - 7.0
-  - hhvm
   - nightly
   
 matrix:
@@ -11,7 +15,12 @@ matrix:
   allow_failures:
     - php: hhvm
     - php: nightly
+    - php: 7.2
     
+branches:
+  only:
+    - developer
+   
 services:
   - mysql
   
@@ -21,30 +30,42 @@ mysql:
   encoding: utf8
   
 before_script:
-- if [[ $TRAVIS_PHP_VERSION != hhvm ]]; then phpenv config-add tests/travis.php.ini; fi
-- if [[ $TRAVIS_PHP_VERSION = hhvm ]]; then cat tests/travis.php.ini >> /etc/hhvm/php.ini; fi
-- sudo wget https://phar.phpunit.de/phpunit.phar
-- sudo chmod +x phpunit.phar
-- sudo mv phpunit.phar /usr/local/bin/phpunit
-- phpunit --version
-- mysql -e "SET GLOBAL sql_mode = 'NO_ENGINE_SUBSTITUTION'"
-- mysql -e "create database IF NOT EXISTS yetiforce;" -uroot
-- cp tests/copy/config.inc.php config/config.inc.php
-- cp tests/copy/debug.php config/debug.php
-- cp tests/.htaccess .htaccess
+- sudo wget https://phar.phpunit.de/phpunit-6.2.phar
+- sudo chmod +x phpunit-6.2.phar
+- sudo mv phpunit-6.2.phar /usr/local/bin/phpunit
+- sudo chmod -R 777 tests/setup/
+- ./tests/setup/before_script.sh
+- ./tests/setup/apache.sh
+- ./tests/setup/selenium.sh
   
 script:
 - cd tests
-- phpunit --debug --verbose --coverage-text --coverage-clover=coverage.clover
+- /usr/local/bin/phpunit --debug --verbose
     
-after_success:
-- cat LoginPage.txt
-- cat DetailView.txt
-- cat ListView.txt
-- cat EditView.txt
-- bash <(curl -s https://codecov.io/bash) 
-- codecov
-
-branches:
-  only:
-    - developer
+after_script:
+- sudo cat /var/log/apache2/error.log
+- sudo cat /var/log/apache2/access.log
+- sudo cat /var/log/apache2/other_vhosts_access.log
+- cat ../tests/records.log
+- cat ../cache/logs/errors.log
+- cat ../cache/logs/request.log
+- cat ../cache/logs/phpError.log
+- cat ../cache/logs/system.log
+- cat ../cache/logs/Importer.log
+- cat ../cache/logs/webserviceDebug.log
+- cat ../cache/logs/webserviceErrors.log
+- php ocular code-coverage:upload --format=php-clover coverage.xml
+- bash <(curl -s https://codecov.io/bash)
+- sudo ls -all ../screenshots
+- |
+    if [[ ${TRAVIS_PHP_VERSION:0:3} == "7.1" ]]; then
+      zip -r coverageHtml.zip coverageHtml/ > /dev/null
+      sudo apt-get install ncftp > /dev/null
+      ncftpput -R -v -u $AFU -p $AFP $AFA / coverageHtml.zip > /dev/null
+      ncftpput -R -v -u $AFU -p $AFP $AFA / ../screenshots > /dev/null
+      ncftpput -R -v -u $AFU -p $AFP $AFA / ../cache/logs/errors.log > /dev/null
+      ncftpput -R -v -u $AFU -p $AFP $AFA / ../cache/logs/system.log > /dev/null
+      ncftpput -R -v -u $AFU -p $AFP $AFA / ../cache/logs/phpError.log > /dev/null
+      ncftpput -R -v -u $AFU -p $AFP $AFA / ../cache/logs/webserviceDebug.log > /dev/null
+      ncftpput -R -v -u $AFU -p $AFP $AFA / ../cache/logs/webserviceErrors.log > /dev/null
+    fi

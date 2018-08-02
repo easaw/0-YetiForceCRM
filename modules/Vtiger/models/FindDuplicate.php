@@ -8,28 +8,38 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class Vtiger_FindDuplicate_Model extends Vtiger_Base_Model
+class Vtiger_FindDuplicate_Model extends \App\Base
 {
 
+	/**
+	 * Function to set module model
+	 * @param Vtiger_Module_Model $moduleModel
+	 */
 	public function setModule($moduleModel)
 	{
 		$this->module = $moduleModel;
 	}
 
+	/**
+	 * Function to get module model
+	 * @return Vtiger_Module_Model
+	 */
 	public function getModule()
 	{
 		return $this->module;
 	}
 
+	/**
+	 * Function to get header of table
+	 * @return array
+	 */
 	public function getListViewHeaders()
 	{
-		$db = PearDatabase::getInstance();
 		$moduleModel = $this->getModule();
 		$listViewHeaders = [];
-		$listViewHeaders[] = new Vtiger_Base_Model(array('name' => 'recordid', 'label' => 'ID'));
-		$headers = $db->getFieldsArray($this->result);
-		foreach ($headers as $header) {
-			$fieldModel = $moduleModel->getFieldByColumn($header);
+		$listViewHeaders[] = new \App\Base(['name' => 'id', 'label' => 'ID']);
+		foreach (array_unique($this->headers) as $header) {
+			$fieldModel = $moduleModel->getField($header);
 			if ($fieldModel) {
 				$listViewHeaders[] = $fieldModel;
 			}
@@ -37,66 +47,76 @@ class Vtiger_FindDuplicate_Model extends Vtiger_Base_Model
 		return $listViewHeaders;
 	}
 
-	public function getListViewEntries(Vtiger_Paging_Model $paging)
+	/**
+	 * Function to get query which searching duplicate records
+	 * @return App\Db\Query $query 
+	 */
+	public function getQuery()
 	{
-		$db = PearDatabase::getInstance();
 		$moduleModel = $this->getModule();
-		$module = $moduleModel->getName();
-
+		$orderby = [];
+		$duplicateCheckClause = [];
 		$fields = $this->get('fields');
-		$fieldModels = $moduleModel->getFields();
-		if (is_array($fields)) {
-			foreach ($fieldModels as $fieldName => $fieldModel) {
-				if (in_array($fieldName, $fields)) {
-					$tableColumns[] = $fieldModel->get('table') . '.' . $fieldModel->get('column');
-					$diffColumns[] = $fieldModel->get('column');
-				} elseif ($fieldModel->isMandatory()) {
-					$additionalColumns[] = $fieldModel->get('table') . '.' . $fieldModel->get('column');
-				}
+		$queryGenerator = new App\QueryGenerator($moduleModel->getName());
+		$queryGenerator->setFields($fields);
+		$queryGenerator->setField('id');
+		foreach ($moduleModel->getMandatoryFieldModels() as $fieldModel) {
+			$queryGenerator->setField($fieldModel->getFieldName());
+		}
+		if ($this->get('ignoreEmpty')) {
+			foreach ($fields as $fieldName) {
+				$queryGenerator->addCondition($fieldName, '', 'ny');
 			}
 		}
+		$this->headers = $queryGenerator->getFields();
+		$query = $queryGenerator->createQuery();
+		$queryGenerator->setFields($fields);
+		$subQuery = $queryGenerator->createQuery(true);
+		$subQuery->groupBy($fields)->andHaving((new yii\db\Expression('COUNT(*) > 1')));
+		foreach ($fields as $fieldName) {
+			$fieldModel = $moduleModel->getField($fieldName);
+			$orderby [$fieldName] = SORT_DESC;
+			$duplicateCheckClause [] = $fieldModel->getTableName() . '.' . $fieldModel->getColumnName() . ' = duplicates.' . $fieldModel->getFieldName();
+		}
+		$query->innerJoin(['duplicates' => $subQuery], implode(' AND ', $duplicateCheckClause));
+		$query->orderBy($orderby);
+		return $query;
+	}
 
-		$startIndex = $paging->getStartIndex();
+	/**
+	 * Function to get duplicate records
+	 * @param Vtiger_Paging_Model $paging
+	 * @return array
+	 */
+	public function getListViewEntries(Vtiger_Paging_Model $paging)
+	{
+		$fields = $this->get('fields');
 		$pageLimit = $paging->getPageLimit();
-		$ignoreEmpty = $this->get('ignoreEmpty');
-
-		$focus = CRMEntity::getInstance($module);
-		$query = $focus->getQueryForDuplicates($module, $tableColumns, '', $ignoreEmpty, $additionalColumns);
-
-		$query .= " LIMIT $startIndex, " . ($pageLimit + 1);
-
-		$result = $db->query($query);
-		$rows = $db->num_rows($result);
-		$this->result = $result;
-
+		$query = $this->getQuery();
+		$query->limit($pageLimit + 1)->offset($paging->getStartIndex());
+		$entries = $query->all();
+		$rows = count($entries);
 		$group = 'group0';
 		$temp = $fieldValues = [];
 		$groupCount = 0;
 		$groupRecordCount = 0;
-		$entries = [];
-		for ($i = 0; $i < $rows; $i++) {
-			$entries[] = $db->query_result_rowdata($result, $i);
-		}
-
-		$paging->calculatePageRange($entries);
-
+		$paging->calculatePageRange($rows);
 		if ($rows > $pageLimit) {
 			array_pop($entries);
 			$paging->set('nextPageExists', true);
 		} else {
 			$paging->set('nextPageExists', false);
 		}
-		$rows = count($entries);
-
 		for ($i = 0; $i < $rows; $i++) {
 			$row = $entries[$i];
+			if (!$row) {
+				continue;
+			}
 			if ($i != 0) {
 				$slicedArray = [];
-				foreach ($diffColumns as $diffColumn) {
-					$slicedArray[$diffColumn] = $row[$diffColumn];
+				foreach ($fields as $diffColumn) {
+					$slicedArray[$diffColumn] = strtolower(trim($row[$diffColumn]));
 				}
-				array_walk($temp, 'lower_array');
-				array_walk($slicedArray, 'lower_array');
 				$arrDiff = array_diff($temp, $slicedArray);
 				if (count($arrDiff) > 0) {
 					$groupCount++;
@@ -105,21 +125,22 @@ class Vtiger_FindDuplicate_Model extends Vtiger_Base_Model
 				}
 				$group = 'group' . $groupCount;
 			}
-			$fieldValues[$group][$groupRecordCount]['recordid'] = $row['recordid'];
 			foreach ($row as $field => $value) {
-				if (in_array($field, $diffColumns)) {
-					$temp[$field] = $value;
+				if (in_array($field, $fields)) {
+					$temp[$field] = strtolower(trim($value));
 				}
-				$fieldModel = $fieldModels[$field];
 				$resultRow[$field] = $value;
 			}
-
 			$fieldValues[$group][$groupRecordCount++] = $resultRow;
 		}
-
 		return $fieldValues;
 	}
 
+	/**
+	 * Function to get instance
+	 * @param string $module
+	 * @return \self
+	 */
 	public static function getInstance($module)
 	{
 		$self = new self();
@@ -128,79 +149,30 @@ class Vtiger_FindDuplicate_Model extends Vtiger_Base_Model
 		return $self;
 	}
 
+	/**
+	 * Function to get numbers all records
+	 * @return int
+	 */
 	public function getRecordCount()
 	{
-		if ($this->rows) {
-			$rows = $this->rows;
-		} else {
-			$db = PearDatabase::getInstance();
-
-			$moduleModel = $this->getModule();
-			$module = $moduleModel->getName();
-			$fields = $this->get('fields');
-			$fieldModels = $moduleModel->getFields();
-			if (is_array($fields)) {
-				foreach ($fieldModels as $fieldName => $fieldModel) {
-					if (in_array($fieldName, $fields)) {
-						$tableColumns[] = $fieldModel->get('table') . '.' . $fieldModel->get('column');
-					}
-					if ($fieldModel->isMandatory()) {
-						$additionalColumns[] = $fieldModel->get('table') . '.' . $fieldModel->get('column');
-					}
-				}
-			}
-			$focus = CRMEntity::getInstance($module);
-			$ignoreEmpty = $this->get('ignoreEmpty');
-			$additionalColumns = array_diff($additionalColumns, $tableColumns);
-			$query = $focus->getQueryForDuplicates($module, $tableColumns, '', $ignoreEmpty, $additionalColumns);
-
-			$position = stripos($query, 'from');
-			if ($position) {
-				$split = preg_split('/ from /i', $query);
-				$splitCount = count($split);
-				$query = 'SELECT count(*) AS count ';
-				for ($i = 1; $i < $splitCount; $i++) {
-					$query = $query . ' FROM ' . $split[$i];
-				}
-			}
-			$result = $db->query($query);
-			$rows = $db->query_result($result, 0, 'count');
-		}
-		return $rows;
+		return $this->getQuery()->orderBy([])->count();
 	}
 
-	public function getMassDeleteRecords(Vtiger_Request $request)
+	/**
+	 * Function to get ids of records
+	 * @param \App\Request $request
+	 * @return int[]
+	 */
+	public static function getMassDeleteRecords(\App\Request $request)
 	{
-		$db = PearDatabase::getInstance();
-		$module = $request->getModule();
-		$moduleModel = Vtiger_Module_Model::getInstance($module);
-
-		$fields = $request->get('fields');
-		$ignoreEmpty = $request->get('ignoreEmpty');
-		$ignoreEmptyValue = false;
-		if ($ignoreEmpty == 'on')
-			$ignoreEmptyValue = true;
-
-		$fieldModels = $moduleModel->getFields();
-		if (is_array($fields)) {
-			foreach ($fields as $fieldName) {
-				$fieldModel = $fieldModels[$fieldName];
-				$tableColumns[] = $fieldModel->get('table') . '.' . $fieldModel->get('column');
-			}
-		}
-
-		$focus = CRMEntity::getInstance($module);
-		$query = $focus->getQueryForDuplicates($module, $tableColumns, '', $ignoreEmpty);
-		$result = $db->query($query);
-
+		$findDuplicatesModel = self::getInstance($request->getModule());
+		$findDuplicatesModel->set('ignoreEmpty', $request->get('ignoreEmpty') === 'on');
+		$findDuplicatesModel->set('fields', $request->get('fields'));
+		$dataReader = $findDuplicatesModel->getQuery()->createCommand()->query();
 		$recordIds = [];
-		while ($row = $db->getRow($result)) {
-			$recordIds[] = $row['recordid'];
+		while ($record = $dataReader->read()) {
+			$recordIds [] = $record['id'];
 		}
-
-		$excludedIds = $request->get('excluded_ids');
-		$recordIds = array_diff($recordIds, $excludedIds);
-
-		return $recordIds;
+		return array_diff($recordIds, $request->get('excluded_ids'));
 	}
 }

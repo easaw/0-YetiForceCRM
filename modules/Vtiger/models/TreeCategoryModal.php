@@ -3,13 +3,14 @@
 /**
  * Basic TreeCategoryModal Model Class
  * @package YetiForce.TreeCategoryModal
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-class Vtiger_TreeCategoryModal_Model extends Vtiger_Base_Model
+class Vtiger_TreeCategoryModal_Model extends \App\Base
 {
 
-	static $_cached_instance;
+	public static $_cached_instance;
 
 	/**
 	 * Function to get the Module Name
@@ -38,9 +39,7 @@ class Vtiger_TreeCategoryModal_Model extends Vtiger_Base_Model
 		if ($this->has('fieldTemp')) {
 			return $this->get('fieldTemp');
 		}
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT tablename,columnname,fieldname,fieldlabel,fieldparams FROM vtiger_field WHERE uitype = ? && tabid = ?', [302, vtlib\Functions::getModuleId($this->getModuleName())]);
-		$fieldTemp = $db->getRow($result);
+		$fieldTemp = (new \App\Db\Query())->select(['tablename', 'columnname', 'fieldname', 'fieldlabel', 'fieldparams'])->from('vtiger_field')->where(['uitype' => 302, 'tabid' => \App\Module::getModuleId($this->getModuleName())])->one();
 		$this->set('fieldTemp', $fieldTemp);
 		return $fieldTemp;
 	}
@@ -78,7 +77,7 @@ class Vtiger_TreeCategoryModal_Model extends Vtiger_Base_Model
 	{
 		$srcModuleModel = Vtiger_Module_Model::getInstance($this->get('srcModule'));
 		$relationModel = Vtiger_Relation_Model::getInstance($srcModuleModel, $this->get('module'));
-		return $relationModel->isDeletable();
+		return $relationModel->privilegeToDelete();
 	}
 
 	public function getTreeData()
@@ -108,7 +107,7 @@ class Vtiger_TreeCategoryModal_Model extends Vtiger_Base_Model
 				'type' => 'category',
 				'record_id' => $row['tree'],
 				'parent' => $parent == 0 ? '#' : $parent,
-				'text' => vtranslate($row['name'], $this->getModuleName())
+				'text' => \App\Language::translate($row['name'], $this->getModuleName())
 			];
 			if (!empty($row['icon'])) {
 				$tree['icon'] = $row['icon'];
@@ -132,7 +131,7 @@ class Vtiger_TreeCategoryModal_Model extends Vtiger_Base_Model
 	private function getSelectedTreeList()
 	{
 		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT tree FROM u_yf_crmentity_rel_tree WHERE crmid = ? && relmodule = ?', [$this->get('srcRecord'), $this->get('module')->getId()]);
+		$result = $db->pquery('SELECT tree FROM u_yf_crmentity_rel_tree WHERE crmid = ? AND relmodule = ?', [$this->get('srcRecord'), $this->get('module')->getId()]);
 		return $db->getArrayColumn($result);
 	}
 
@@ -144,7 +143,7 @@ class Vtiger_TreeCategoryModal_Model extends Vtiger_Base_Model
 		$parentRecordModel = Vtiger_Record_Model::getInstanceById($this->get('srcRecord'), $this->get('srcModule'));
 		$relationListView = Vtiger_RelationListView_Model::getInstance($parentRecordModel, $this->getModuleName());
 		$pagingModel = new Vtiger_Paging_Model();
-		$pagingModel->set('limit', 'no_limit');
+		$pagingModel->set('limit', 0);
 		$entries = $relationListView->getEntries($pagingModel);
 
 		vglobal('currentModule', $currentModule);
@@ -164,8 +163,9 @@ class Vtiger_TreeCategoryModal_Model extends Vtiger_Base_Model
 			$listViewModel->set('src_record', $this->get('srcRecord'));
 		}
 		$pagingModel = new Vtiger_Paging_Model();
-		$pagingModel->set('limit', 'no_limit');
-		$listEntries = $listViewModel->getListViewEntries($pagingModel, true);
+		$pagingModel->set('limit', 0);
+		$listViewModel->get('query_generator')->setField($this->getTreeField()['fieldname']);
+		$listEntries = $listViewModel->getListViewEntries($pagingModel);
 		return $listEntries;
 	}
 

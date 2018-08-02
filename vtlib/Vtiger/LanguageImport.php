@@ -52,7 +52,7 @@ class LanguageImport extends LanguageExport
 		$this->initImport($zipfile, $overwrite);
 
 		// Call module import function
-		$this->import_Language($zipfile);
+		$this->importLanguage($zipfile);
 	}
 
 	/**
@@ -70,89 +70,77 @@ class LanguageImport extends LanguageExport
 	 * Import Module
 	 * @access private
 	 */
-	public function import_Language($zipfile)
+	public function importLanguage($zipfile)
 	{
 		$name = $this->_modulexml->name;
 		$prefix = $this->_modulexml->prefix;
 		$label = $this->_modulexml->label;
 
 		self::log("Importing $label [$prefix] ... STARTED");
-		$unzip = new Unzip($zipfile);
-		$filelist = $unzip->getList();
+		if (strpos($prefix, '/') !== false) {
+			\App\Log::error("Importing $label ... Wrong prefix - [$prefix]");
+			return;
+		}
 		$vtiger6format = false;
+		$zip = new \App\Zip($zipfile);
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$fileName = $zip->getNameIndex($i);
+			if ($zip->isdir($fileName)) {
+				continue;
+			}
+			if (strpos($fileName, '/') === false) {
+				continue;
+			}
+			$targetdir = substr($fileName, 0, strripos($fileName, '/'));
+			$targetfile = basename($fileName);
+			$prefixparts = explode('_', $prefix);
+			$dounzip = false;
+			if (is_dir($targetdir)) {
+				// Case handling for jscalendar
+				if (stripos($targetdir, 'jscalendar/lang') === 0 && stripos($targetfile, "calendar-" . $prefixparts[0] . ".js") === 0) {
 
-		foreach ($filelist as $filename => $fileinfo) {
-			if (!$unzip->isdir($filename)) {
-
-				if (strpos($filename, '/') === false)
-					continue;
-
-				$targetdir = substr($filename, 0, strripos($filename, '/'));
-				$targetfile = basename($filename);
-
-				$prefixparts = explode('_', $prefix);
-
-				$dounzip = false;
-				if (is_dir($targetdir)) {
-					// Case handling for jscalendar
-					if (stripos($targetdir, 'jscalendar/lang') === 0 && stripos($targetfile, "calendar-" . $prefixparts[0] . ".js") === 0) {
-
-						if (file_exists("$targetdir/calendar-en.js")) {
-							$dounzip = true;
-						}
+					if (file_exists("$targetdir/calendar-en.js")) {
+						$dounzip = true;
 					}
-					// Case handling for phpmailer
-					else if (stripos($targetdir, 'modules/Emails/language') === 0 && stripos($targetfile, "phpmailer.lang-$prefix.php") === 0) {
-
-						if (file_exists("$targetdir/phpmailer.lang-en_us.php")) {
-							$dounzip = true;
-						}
-					}
-					// Handle javascript language file
-					else if (preg_match("/$prefix.lang.js/", $targetfile)) {
-						$corelangfile = "$targetdir/en_us.lang.js";
-						if (file_exists($corelangfile)) {
-							$dounzip = true;
-						}
-					}
-					// Handle php language file
-					else if (preg_match("/$prefix.lang.php/", $targetfile)) {
-						$corelangfile = "$targetdir/en_us.lang.php";
-						if (file_exists($corelangfile)) {
-							$dounzip = true;
-						}
-					}
-					// vtiger6 format
-					else if ($targetdir == "modules" || $targetdir == "modules/Settings" || $targetdir == "modules" . DIRECTORY_SEPARATOR . "Settings") {
-						$vtiger6format = true;
+				} else if (preg_match("/$prefix.lang.js/", $targetfile)) {// Handle javascript language file
+					$corelangfile = "$targetdir/en_us.lang.js";
+					if (file_exists($corelangfile)) {
 						$dounzip = true;
 					}
 				}
-
-				if ($dounzip) {
-					// vtiger6 format
-					if ($vtiger6format) {
-						$targetdir = "languages/$prefix/" . str_replace("modules", "", $targetdir);
-						@mkdir($targetdir, 0777, true);
+				// Handle php language file
+				else if (preg_match("/$prefix.lang.php/", $targetfile)) {
+					$corelangfile = "$targetdir/en_us.lang.php";
+					if (file_exists($corelangfile)) {
+						$dounzip = true;
 					}
-
-					if ($unzip->unzip($filename, "$targetdir/$targetfile") !== false) {
-						self::log("Copying file $filename ... DONE");
-					} else {
-						self::log("Copying file $filename ... FAILED");
-					}
-				} else {
-					self::log("Copying file $filename ... SKIPPED");
+				}
+				// vtiger6 format
+				else if (in_array($targetdir, ['modules', 'modules' . DIRECTORY_SEPARATOR . 'Settings', 'modules' . DIRECTORY_SEPARATOR . 'Other'])) {
+					$vtiger6format = true;
+					$dounzip = true;
 				}
 			}
+			if ($dounzip) {
+				// vtiger6 format
+				if ($vtiger6format) {
+					$targetdir = "languages/$prefix/" . str_replace('modules', '', $targetdir);
+					@mkdir($targetdir, 0777, true);
+				}
+				if ($zip->unzipFile($fileName, "$targetdir/$targetfile") !== false) {
+					self::log("Copying file $fileName ... DONE");
+				} else {
+					self::log("Copying file $fileName ... FAILED");
+				}
+			} else {
+				self::log("Copying file $fileName ... SKIPPED");
+			}
 		}
-		if ($unzip)
-			$unzip->close();
-
+		if ($zip) {
+			$zip->close();
+		}
 		self::register($prefix, $label, $name);
-
 		self::log("Importing $label [$prefix] ... DONE");
-
 		return;
 	}
 }

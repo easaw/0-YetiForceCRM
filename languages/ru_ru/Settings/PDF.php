@@ -1,14 +1,13 @@
 <?php
 /**
- * Polish language
- * @package YetiForce.Language
- * @license licenses/License.html
- * @author Maciej Stencel <m.stencel@yetiforce.com>
- * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ * PDF russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  */
 $languageStrings = [
-	'image' => 'Изображение',
-	'text' => 'Текст',
+	'PLL_IMAGE' => 'Изображение',
+	'PLL_TEXT' => 'Текст',
 	'PAGENUM' => 'Номер страницы',
 	'PAGENO' => 'Количество страниц',
 	'LBL_INSERT' => 'Вставить',
@@ -31,8 +30,8 @@ $languageStrings = [
 	'LBL_DOCUMENT_PERMISSIONS' => 'Права доступа',
 	'LBL_DOCUMENT_WATERMARK' => 'Водяной знак',
 	'Module' => 'Модуль',
-	'active' => 'Активный',
-	'inactive' => 'Неактивный',
+	'PLL_ACTIVE' => 'Активный',
+	'PLL_INACTIVE' => 'Неактивный',
 	'LBL_PRIMARY_NAME' => 'Полное название',
 	'LBL_SECONDARY_NAME' => 'Краткое название',
 	'LBL_FOLDER_NAME' => 'Имя папки',
@@ -108,8 +107,8 @@ $languageStrings = [
 	'LBL_FOOTER_HEIGHT' => 'Отступ нижнего колонтитула',
 	'LBL_HEADER_IN_MILIMETERS' => 'Отступ верхнего колонтитула в миллиметрах',
 	'LBL_FOOTER_IN_MILIMETERS' => 'Отступ нижнего колонтитула в миллиметрах',
-	'LBL_GENERATE_ONE_PDF' => 'Generate one PDF for many records',
-	'LBL_GENERATE_ONE_PDF_INFO' => 'In case when PDF includes a special function that generates one table for many records, checking this box will result in generating one PDF file.',
+	'LBL_GENERATE_ONE_PDF' => 'Создать один PDF файл для нескольких записей',
+	'LBL_GENERATE_ONE_PDF_INFO' => 'В случае, если шаблон содержит специальную функцию, генерирующую одну таблицу для многих записей, галка в этом чекбоксе позволит получить один PDF.',
 	// page format names
 	'4A0' => '4A0',
 	'2A0' => '2A0',
@@ -165,7 +164,7 @@ $languageStrings = [
 	'B' => 'B',
 	'A' => 'A',
 	'DEMY' => 'Формат бумаги',
-	'ROYAL' => 'Rotyal'
+	'ROYAL' => 'Royal'
 ];
 $jsLanguageStrings = [
 	'JS_PDF_SAVED_SUCCESSFULLY' => 'Шаблон PDF сохранен',

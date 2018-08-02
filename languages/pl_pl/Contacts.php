@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Contacts polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Member Of' => 'Firma',
 	'Birthdate' => 'Data urodzin',
@@ -15,13 +12,11 @@ $languageStrings = [
 	'Contact Image' => 'Zdjęcie kontaktu',
 	'Contacts' => 'Kontakty',
 	'Email' => 'Mail podstawowy',
-	'LBL_ADD_RECORD' => 'Dodaj rekord',
 	'LBL_CONTACT_INFORMATION' => 'Informacje podstawowe',
 	'LBL_COPY_MAILING_ADDRESS' => 'Kopiuj adres podstawowy',
 	'LBL_COPY_OTHER_ADDRESS' => 'Kopiuj adres dodatkowy',
 	'LBL_CUSTOMER_PORTAL_INFORMATION' => 'Portal klienta',
 	'LBL_IMAGE_INFORMATION' => 'Zdjęcie',
-	'LBL_RECORDS_LIST' => 'Lista rekordów',
 	'Office Phone' => 'Telefon podstawowy',
 	'Portal User' => 'Użytkownik portalu klienta',
 	'Reference' => 'Referencje',

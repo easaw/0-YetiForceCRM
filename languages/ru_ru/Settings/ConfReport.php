@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * VERSION YetiForceCRM: 1.1.0 RC
- * *********************************************************************************************************************************** */
+/**
+ * ConfReport russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_CRM_DIR' => 'Локальный каталог системы',
 	'LBL_LOG_FILE' => 'Журнал ошибок',
@@ -35,6 +31,9 @@ $languageStrings = [
 	'LBL_PARAMETER' => 'Параметр',
 	'LBL_VALUE' => 'Текущее значение',
 	'LBL_RECOMMENDED' => 'Рекомендуемое значение',
+	'LBL_SYSTEM_STABILITY' => 'Настройки стабильности системы',
+	'LBL_SYSTEM_SECURITY' => 'Настройки безопасности системы',
+	'LBL_SECURITY_ADVISORIES_CHECKER' => 'Уязвимости в использованных библиотеках',
 	'LBL_FILES_PERMISSIONS' => 'Папки / Файлы',
 	'LBL_FILE' => 'Название',
 	'LBL_PATH' => 'Путь к файлу',
@@ -60,16 +59,40 @@ $languageStrings = [
 	'LBL_PCRE_LIBRARY' => 'PCRE',
 	'LBL_XML_LIBRARY' => 'XML',
 	'LBL_JSON_LIBRARY' => 'JSON',
+	'LBL_MYSQLND_LIBRARY' => 'MySQL Native Driver (mysqlnd)',
 	'LBL_SESSION_LIBRARY' => 'SESSION',
 	'LBL_DOM_LIBRARY' => 'DOM',
-	'LBL_MBSTRING_LIBRARY' => 'php_mbstring (required for mPDF)',
+	'LBL_MBSTRING_LIBRARY' => 'Mbstring (требуется для mPDF)',
+	'LBL_EXIF_LIBRARY' => 'Exif (улучшает безопасность загружаемых файлов)',
 	'LBL_ZIP_ARCHIVE' => 'ZIP',
 	'LBL_SPACE' => 'Объем',
 	'LBL_SPACE_TOTAL' => 'Всего',
 	'LBL_SPACE_FREE' => 'Свободно',
 	'LBL_SPACE_USED' => 'Занято',
-	'LBL_VALUE' => 'Value',
-	'LBL_PHPINI' => 'PHP configuraton',
-	'LBL_LOG_FILE' => 'Logs',
-	'LBL_CRM_DIR' => 'CRM Local directory',
+	'LBL_VALUE' => 'Значение',
+	'LBL_PHPINI' => 'Конфигурация PHP',
+	'LBL_LOG_FILE' => 'Логи',
+	'LBL_CRM_DIR' => 'Локальная директория CRM',
+	'LBL_SOAP_LIBRARY' => 'SOAP',
+	'LBL_PHP_SAPI' => 'API сервера',
+	'LBL_APCU_LIBRARY' => 'APCu',
+	'LBL_OPCACHE_LIBRARY' => 'OPcache',
+	'LBL_CRON_PHP' => 'Cron - Версия PHP',
+	'LBL_CRON_PHPINI' => 'Cron - Конфигурация PHP',
+	'LBL_CRON_LOG_FILE' => 'Cron - Логи ошибок',
+	'LBL_CRON_PHP_SAPI' => 'Cron - API сервера',
+	'LBL_ENVIRONMENTAL_INFORMATION' => 'Информация об окружении',
+	'LBL_OPERATING_SYSTEM' => 'ОС',
+	'BTN_SERVER_SPEED_TEST' => 'Тест скорости сервера',
+	'LBL_LIB_NAME' => 'Название библиотеки',
+ 	'LBL_VULNERABILITY_NAME' => 'Название уязвимости',
+ 	'LBL_VULNERABILITY_URL' => 'Адрес уязвимости',
+	'HTTPS_HELP_TEXT' => 'SSL - это стандартная технология безопасности для создания зашифрованного соединения между веб-сервером и браузером.',
+	'HTACCESS_HELP_TEXT' => 'Файлы .htaccess могут быть использованы для изменения настроек ПО на сервере с целью включить или отключить дополнительные сервисы. YetiForceCRM требуется доступ к этому файлу для правильного функционирования некоторых функций.',
+	'PUBLIC_HTML_HELP_TEXT' => 'Мы рекомендуем устанавливать систему таким образом, чтобы использовалась только папка public_html. Это улучшает безопасность, не позволяя доступ к непубличным папкам и файлам по прямым ссылкам',
+	'SESSION_REGENERATE_HELP_TEXT' => 'We recommend to enable the regeneration of session ID, this option makes it difficult to take over the user session. Changes should be made in the main configuration file.',
+	'LBL_TMP_DIR' => 'Temporary directory',
+];
+$jsLanguageStrings = [
+	'JS_SPEED_TEST_START' => 'Проверяем скорость...',
 ];

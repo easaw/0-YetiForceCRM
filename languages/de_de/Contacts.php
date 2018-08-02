@@ -17,13 +17,11 @@ $languageStrings = [
 	'Contacts' => 'Kontakte',
 	'Do Not Call' => 'nicht anrufen',
 	'EMail' => 'Primäre E-Mail Adresse',
-	'LBL_ADD_RECORD' => 'Kontakt hinzufügen',
 	'LBL_CONTACT_INFORMATION' => 'Kontakt',
 	'LBL_COPY_MAILING_ADDRESS' => 'E-Mail Adresse kopieren',
 	'LBL_COPY_OTHER_ADDRESS' => 'Weitere Adresse kopieren',
 	'LBL_CUSTOMER_PORTAL_INFORMATION' => 'Kundenportal',
 	'LBL_IMAGE_INFORMATION' => 'Bild vom Kontakt',
-	'LBL_RECORDS_LIST' => 'Liste Kontakte',
 	'Office Phone' => 'Primäre Telefonummer',
 	'Portal User' => 'Portal Nutzer',
 	'Reference' => 'Referenz',
@@ -58,7 +56,7 @@ $languageStrings = [
 	'End of support for contact' => 'Wartungsende für den Kontakt',
 	'Birthdays of contacts' => 'Geburtstage der Kontakte',
 	'LBL_SWITCH_ON_DECISION_MAKER' => 'Entscheider',
-	'LBL_SWITCH_OFF_DECISION_MAKER' => 'Alle', 
+	'LBL_SWITCH_OFF_DECISION_MAKER' => 'Alle',
 ];
 $jsLanguageStrings = [
 ];

@@ -3,7 +3,8 @@
 /**
  * UIType sharedOwner Field Class
  * @package YetiForce.Fields
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
@@ -11,66 +12,138 @@ class Vtiger_SharedOwner_UIType extends Vtiger_Base_UIType
 {
 
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritDoc}
 	 */
-	public function getTemplateName()
+	public function getDBValue($value, $recordModel = false)
 	{
-		return 'uitypes/SharedOwner.tpl';
-	}
-
-	public function getListSearchTemplateName()
-	{
-		return 'uitypes/SharedOwnerFieldSearchView.tpl';
+		if (is_array($value)) {
+			$value = implode(',', $value);
+		}
+		return \App\Purifier::decodeHtml($value);
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($values, $record = false, $recordInstance = false, $rawText = false)
+	public function validate($value, $isUserFormat = false)
 	{
-		$db = PearDatabase::getInstance();
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$displayValue = '';
-
-		$result = $db->pquery('SELECT DISTINCT userid FROM u_yf_crmentity_showners WHERE crmid = ?', [$record]);
-		while (($shownerid = $db->getSingleValue($result)) !== false) {
-			if (\includes\fields\Owner::getType($shownerid) === 'Users') {
-				if ($currentUser->isAdminUser() && !$rawText) {
-					$displayValue .= '<a href="index.php?module=User&view=Detail&record=' . $shownerid . '">' . rtrim(\includes\fields\Owner::getLabel($shownerid)) . '</a>,';
-				} else {
-					$displayValue .= rtrim(\includes\fields\Owner::getLabel($shownerid)) . ',';
-				}
-			} else {
-				if ($currentUser->isAdminUser() && !$rawText) {
-					$displayValue .= '<a href="index.php?module=Groups&parent=Settings&view=Detail&record=' . $shownerid . '">' . rtrim(\includes\fields\Owner::getLabel($shownerid)) . '</a>,';
-				} else {
-					$displayValue .= rtrim(\includes\fields\Owner::getLabel($shownerid)) . ',';
-				}
+		if ($this->validate || empty($value)) {
+			return;
+		}
+		if (!is_array($value)) {
+			settype($value, 'array');
+		}
+		foreach ($value as $shownerid) {
+			if (!is_numeric($shownerid)) {
+				throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
 			}
 		}
-		return rtrim($displayValue, ',');
+		$this->validate = true;
 	}
 
 	/**
-	 * Function to get the display value in edit view
-	 * @param reference record id
-	 * @return link
+	 * {@inheritDoc}
 	 */
-	public function getEditViewDisplayValue($value, $record = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		if ($record === false) {
-			return [];
+		$isAdmin = \App\User::getCurrentUserModel()->isAdmin();
+		if (empty($value)) {
+			return '';
+		} elseif (!is_array($value)) {
+			$values = explode(',', $value);
 		}
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT DISTINCT userid FROM u_yf_crmentity_showners WHERE crmid = ?', [$record]);
-		$values = [];
-		while (($shownerid = $db->getSingleValue($result)) !== false) {
-			$values[] = $shownerid;
+		$displayValue = [];
+		foreach ($values as $shownerid) {
+			$ownerName = rtrim(\App\Fields\Owner::getLabel($shownerid));
+			if (!$isAdmin || $rawText) {
+				$displayValue[] = $ownerName;
+				continue;
+			}
+			$detailViewUrl = '';
+			switch (\App\Fields\Owner::getType($shownerid)) {
+				case 'Users':
+					$userModel = Users_Privileges_Model::getInstanceById($shownerid);
+					$userModel->setModule('Users');
+					if ($userModel->get('status') === 'Inactive') {
+						$ownerName = '<span class="redColor">' . $ownerName . '</span>';
+					}
+					if (App\User::getCurrentUserModel()->isAdmin()) {
+						$detailViewUrl = $userModel->getDetailViewUrl();
+					}
+					break;
+				case 'Groups':
+					if (App\User::getCurrentUserModel()->isAdmin()) {
+						$recordModel = new Settings_Groups_Record_Model();
+						$recordModel->set('groupid', $shownerid);
+						$detailViewUrl = $recordModel->getDetailViewUrl();
+					}
+					break;
+				default:
+					$ownerName = '<span class="redColor">---</span>';
+					break;
+			}
+			if (!empty($detailViewUrl)) {
+				$displayValue[] = "<a href=\"$detailViewUrl\">$ownerName</a>";
+			}
 		}
-		return $values;
+		return implode(', ', $displayValue);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getListViewDisplayValue($value, $record = false, $recordModel = false, $rawText = false)
+	{
+		$values = $this->getSharedOwners($record);
+		if (empty($values)) {
+			return '';
+		}
+		$display = $shownerData = [];
+		$maxLengthText = $this->getFieldModel()->get('maxlengthtext');
+		$isAdmin = \App\User::getCurrentUserModel()->isAdmin();
+		foreach ($values as $key => $shownerid) {
+			$name = \App\Fields\Owner::getLabel($shownerid);
+			switch (\App\Fields\Owner::getType($shownerid)) {
+				case 'Users':
+					$userModel = Users_Privileges_Model::getInstanceById($shownerid);
+					$userModel->setModule('Users');
+					$display[$key] = $name;
+					if ($userModel->get('status') === 'Inactive') {
+						$shownerData[$key]['inactive'] = true;
+					}
+					if ($isAdmin && !$rawText) {
+						$shownerData[$key]['link'] = $userModel->getDetailViewUrl();
+					}
+					break;
+				case 'Groups':
+					if (empty($name)) {
+						continue;
+					}
+					$display[$key] = $name;
+					$recordModel = new Settings_Groups_Record_Model();
+					$recordModel->set('groupid', $shownerid);
+					$detailViewUrl = $recordModel->getDetailViewUrl();
+					if ($isAdmin && !$rawText) {
+						$shownerData[$key]['link'] = $detailViewUrl;
+					}
+
+					break;
+
+				default:
+					break;
+			}
+		}
+		$display = implode(', ', $display);
+		$display = explode(', ', \vtlib\Functions::textLength($display, $maxLengthText));
+		foreach ($display as $key => &$shownerName) {
+			if (isset($shownerData[$key]['inactive'])) {
+				$shownerName = '<span class="redColor">' . $shownerName . '</span>';
+			}
+			if (isset($shownerData[$key]['link'])) {
+				$shownerName = "<a href='" . $shownerData[$key]['link'] . "'>$shownerName</a>";
+			}
+		}
+		return implode(', ', $display);
 	}
 
 	/**
@@ -86,48 +159,30 @@ class Vtiger_SharedOwner_UIType extends Vtiger_Base_UIType
 			return $shownerid;
 		}
 
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT DISTINCT userid FROM u_yf_crmentity_showners WHERE crmid = ?', [$record]);
-		$values = [];
-		while (($shownerid = $db->getSingleValue($result)) !== false) {
-			$values[] = $shownerid;
-		}
+		$query = (new \App\Db\Query())->select('userid')->from('u_#__crmentity_showners')->where(['crmid' => $record])->distinct();
+		$values = $query->column();
+		if (empty($values))
+			$values = [];
 		Vtiger_Cache::set('SharedOwner', $record, $values);
 		return $values;
 	}
 
-	public function getSearchViewList($module, $view)
+	public static function getSearchViewList($moduleName, $cvId)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$db = PearDatabase::getInstance();
-
-		$queryGenerator = new QueryGenerator($module, $currentUser);
-		$meta = $queryGenerator->getMeta($module);
-		$baseTable = $meta->getEntityBaseTable();
-		$tableIndexList = $meta->getEntityTableIndexList();
-		$baseTableIndex = $tableIndexList[$baseTable];
-
-		$queryGenerator->initForCustomViewById($view);
+		$queryGenerator = new App\QueryGenerator($moduleName);
+		$queryGenerator->initForCustomViewById($cvId);
 		$queryGenerator->setFields([]);
-		$queryGenerator->setCustomColumn('userid');
-		$queryGenerator->setCustomFrom([
-			'joinType' => 'INNER',
-			'relatedTable' => 'u_yf_crmentity_showners',
-			'relatedIndex' => 'crmid',
-			'baseTable' => $baseTable,
-			'baseIndex' => $baseTableIndex,
-		]);
-		$listQuery = $queryGenerator->getQuery('SELECT DISTINCT');
-		$result = $db->query($listQuery);
-
+		$queryGenerator->setCustomColumn('u_#__crmentity_showners.userid');
+		$queryGenerator->addJoin(['INNER JOIN', 'u_#__crmentity_showners', "{$queryGenerator->getColumnName('id')} = u_#__crmentity_showners.crmid"]);
+		$dataReader = $queryGenerator->createQuery()->distinct()->createCommand()->query();
 		$users = $group = [];
-		while ($id = $db->getSingleValue($result)) {
-			$name = \includes\fields\Owner::getUserLabel($id);
+		while ($id = $dataReader->readColumn(0)) {
+			$name = \App\Fields\Owner::getUserLabel($id);
 			if (!empty($name)) {
 				$users[$id] = $name;
 				continue;
 			}
-			$name = \includes\fields\Owner::getGroupName($id);
+			$name = \App\Fields\Owner::getGroupName($id);
 			if ($name !== false) {
 				$group[$id] = $name;
 				continue;
@@ -135,6 +190,30 @@ class Vtiger_SharedOwner_UIType extends Vtiger_Base_UIType
 		}
 		asort($users);
 		asort($group);
-		return [ 'users' => $users, 'group' => $group];
+		return ['users' => $users, 'group' => $group];
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'uitypes/SharedOwner.tpl';
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getListSearchTemplateName()
+	{
+		return 'uitypes/SharedOwnerFieldSearchView.tpl';
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function isListviewSortable()
+	{
+		return false;
 	}
 }

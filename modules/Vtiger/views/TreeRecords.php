@@ -3,22 +3,23 @@
 /**
  * Basic TreeView View Class
  * @package YetiForce.TreeView
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Vtiger_TreeRecords_View extends Vtiger_Index_View
 {
 
-	public function getBreadcrumbTitle(Vtiger_Request $request)
+	public function getBreadcrumbTitle(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
 		$treeViewModel = Vtiger_TreeView_Model::getInstance($moduleModel);
-		$pageTitle = vtranslate($treeViewModel->getName(), $moduleName);
+		$pageTitle = \App\Language::translate($treeViewModel->getName(), $moduleName);
 		return $pageTitle;
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 		$moduleName = $request->getModule();
@@ -27,12 +28,12 @@ class Vtiger_TreeRecords_View extends Vtiger_Index_View
 
 		$treeList = $treeViewModel->getTreeList();
 		$viewer = $this->getViewer($request);
-		$viewer->assign('TREE_LIST', \includes\utils\Json::encode($treeList));
+		$viewer->assign('TREE_LIST', \App\Json::encode($treeList));
 		$viewer->assign('SELECTABLE_CATEGORY', 0);
 		$viewer->view('TreeRecordsPreProcess.tpl', $moduleName);
 	}
 
-	public function postProcess(Vtiger_Request $request, $display = true)
+	public function postProcess(\App\Request $request, $display = true)
 	{
 		$moduleName = $request->getModule();
 		$viewer = $this->getViewer($request);
@@ -43,16 +44,16 @@ class Vtiger_TreeRecords_View extends Vtiger_Index_View
 		parent::postProcess($request);
 	}
 
-	protected function postProcessDisplay(Vtiger_Request $request)
+	protected function postProcessDisplay(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$viewer->view('TreeRecordsPostProcess.tpl', $request->getModule());
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$branches = $request->get('branches');
-		$filter = $request->get('filter');
+		$filter = $request->getByType('filter', 2);
 		if (empty($branches)) {
 			return;
 		}
@@ -63,11 +64,11 @@ class Vtiger_TreeRecords_View extends Vtiger_Index_View
 		$treeViewModel = Vtiger_TreeView_Model::getInstance($moduleModel);
 
 		$pagingModel = new Vtiger_Paging_Model();
-		$pagingModel->set('limit', 'no_limit');
+		$pagingModel->set('limit', 0);
 		$listViewModel = Vtiger_ListView_Model::getInstance($moduleName, $filter);
 		$listViewModel->set('search_params', $treeViewModel->getSearchParams($branches));
 
-		$listEntries = $listViewModel->getListViewEntries($pagingModel, true);
+		$listEntries = $listViewModel->getListViewEntries($pagingModel);
 		if (count($listEntries) === 0) {
 			return;
 		}
@@ -79,7 +80,7 @@ class Vtiger_TreeRecords_View extends Vtiger_Index_View
 		$viewer->view('TreeRecords.tpl', $moduleName);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$parentScriptInstances = parent::getFooterScripts($request);
 
@@ -95,7 +96,7 @@ class Vtiger_TreeRecords_View extends Vtiger_Index_View
 		return $scriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$parentCssInstances = parent::getHeaderCss($request);
 		$cssFileNames = [

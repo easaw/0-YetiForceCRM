@@ -3,7 +3,8 @@
 /**
  * Record Class for MappedFields Settings
  * @package YetiForce.Model
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_MappedFields_Record_Model extends Settings_Vtiger_Record_Model
@@ -16,7 +17,7 @@ class Settings_MappedFields_Record_Model extends Settings_Vtiger_Record_Model
 
 	public function getName()
 	{
-		return vtlib\Functions::getModuleName($this->get('tabid'));
+		return \App\Module::getModuleName($this->get('tabid'));
 	}
 
 	public function getEditViewUrl()
@@ -69,5 +70,21 @@ class Settings_MappedFields_Record_Model extends Settings_Vtiger_Record_Model
 		}
 
 		return $links;
+	}
+
+	/**
+	 * Function to get the Display Value, for the current field type with given DB Insert Value
+	 * @param string $key
+	 * @return string
+	 */
+	public function getDisplayValue($key)
+	{
+		$value = $this->get($key);
+		switch ($key) {
+			case 'status':
+				$value = $value ? 'active' : 'inactive';
+				break;
+		}
+		return $value;
 	}
 }

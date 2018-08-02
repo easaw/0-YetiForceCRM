@@ -11,6 +11,7 @@
 $languageStrings = [
 	'LBL_ERROR_MOVE_UPLOADED_FILE' => 'Uploading files failed',
 	'ModuleManager' => 'Module Manager',
+	'Module Manager' => 'Module Manager',
 	'LBL_IMPORT_MODULE_FROM_FILE' => 'Import bundle from file',
 	'LBL_IMPORT_MODULE' => 'Import module',
 	'LBL_IMPORTED_UPDATE' => 'System has been updated successfully.',
@@ -44,7 +45,7 @@ $languageStrings = [
 	'LBL_FINISH' => 'Finish',
 	'LBL_IMPORT_ZIP' => 'Install from file',
 	'LBL_IMPORT_MODULE' => 'Install from Vtiger',
-	'LBL_NOT_FOUND' => "Sorry, no extensions are currently available for the current version of your CRM",
+	'LBL_NOT_FOUND' => 'Sorry, no extensions are currently available for the current version of your CRM',
 	'LBL_INVALID_IMPORT_TRY_AGAIN' => ' provided for module import! Try again.',
 	'LBL_IMPORTED_MODULE' => '%s module has been imported successfully.',
 	'LBL_IMPORTING_MODULE' => 'Importing module',
@@ -72,6 +73,19 @@ $languageStrings = [
 	'LBL_EXTENSION_MODULE' => 'Extensions module',
 	'LBL_LANGUAGE_MODULE' => 'Language pack',
 	'LBL_VIEW_MODULEIMPORT' => 'Import',
+	// Library
+	'LBL_LIBRARY_NAME' => 'Name',
+	'LBL_LIBRARY_STATUS' => 'Status',
+	'LBL_LIBRARY_URL' => 'Library repository address',
+	'LBL_LIBRARY_DIR' => 'Library directory',
+	'LBL_LIBRARY_ACTION' => 'Actions',
+	'BTN_LIBRARY_DOWNLOAD' => 'Download library',
+	'BTN_LIBRARY_UPDATE' => 'Update library',
+	'LBL_LIBRARY_DOWNLOADED' => 'Downloaded',
+	'LBL_LIBRARY_NO_DOWNLOAD' => 'Not downloaded',
+	'LBL_LIBRARY_NEEDS_UPDATING' => 'Update required',
+	'LBL_NO_PERMISSION_TO_DIR' => 'No permission to directories',
+	'LBL_ERROR_NO_VALID_PREFIX' => 'Invalid language prefix',
 ];
 $jsLanguageStrings = [
 	'JS_UPDATED_MODULE' => 'Update Successful',
@@ -82,4 +96,5 @@ $jsLanguageStrings = [
 	'JS_CLICK_HERE' => 'Click here',
 	'JS_ON' => 'On',
 	'JS_REMOVED_MODULE' => 'Removed module',
+	'JS_SPECIAL_CHARACTERS_NOT_ALLOWED' => 'Special characters like & < > \' " : , are not allowed',
 ];

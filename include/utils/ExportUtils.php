@@ -17,21 +17,19 @@
 function getPermittedBlocks($module, $disp_view)
 {
 	$adb = PearDatabase::getInstance();
-	
+
 	\App\Log::trace("Entering into the function getPermittedBlocks($module, $disp_view)");
 
-	$tabid = \includes\Modules::getModuleId($module);
-	$block_detail = [];
+	$tabid = \App\Module::getModuleId($module);
 	$query = "select blockid,blocklabel,show_title from vtiger_blocks where tabid=? and $disp_view=0 and visible = 0 order by sequence";
-	$result = $adb->pquery($query, array($tabid));
-	$noofrows = $adb->num_rows($result);
+	$result = $adb->pquery($query, [$tabid]);
+	$noofrows = $adb->numRows($result);
 	$blockid_list = '(';
 	for ($i = 0; $i < $noofrows; $i++) {
-		$blockid = $adb->query_result($result, $i, "blockid");
+		$blockid = $adb->queryResult($result, $i, "blockid");
 		if ($i != 0)
 			$blockid_list .= ', ';
 		$blockid_list .= $blockid;
-		$block_label[$blockid] = $adb->query_result($result, $i, "blocklabel");
 	}
 	$blockid_list .= ')';
 
@@ -46,24 +44,19 @@ function getPermittedBlocks($module, $disp_view)
  */
 function getPermittedFieldsQuery($module, $disp_view)
 {
-	$adb = PearDatabase::getInstance();
-	
 	\App\Log::trace("Entering into the function getPermittedFieldsQuery($module, $disp_view)");
-
-	$current_user = vglobal('current_user');
-	require('user_privileges/user_privileges_' . $current_user->id . '.php');
 
 	//To get the permitted blocks
 	$blockid_list = getPermittedBlocks($module, $disp_view);
+	$tabid = \App\Module::getModuleId($module);
 
-	$tabid = \includes\Modules::getModuleId($module);
-	if ($is_admin === true || $profileGlobalPermission[1] == 0 || $profileGlobalPermission[2] == 0 || $module == "Users") {
+	$currentUser = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+	if ($module === 'Users') {
 		$sql = sprintf("SELECT vtiger_field.columnname, vtiger_field.fieldlabel, vtiger_field.tablename FROM vtiger_field WHERE vtiger_field.tabid=%d && vtiger_field.block IN %s && vtiger_field.displaytype IN (1,2,4,5) and vtiger_field.presence in (0,2) ORDER BY block,sequence", $tabid, $blockid_list);
 	} else {
-		$profileList = getCurrentUserProfileList();
+		$profileList = $currentUser->getProfiles();
 		$sql = sprintf("SELECT vtiger_field.columnname, vtiger_field.fieldlabel, vtiger_field.tablename FROM vtiger_field INNER JOIN vtiger_profile2field ON vtiger_profile2field.fieldid=vtiger_field.fieldid INNER JOIN vtiger_def_org_field ON vtiger_def_org_field.fieldid=vtiger_field.fieldid WHERE vtiger_field.tabid=%d && vtiger_field.block IN %s && vtiger_field.displaytype IN (1,2,4,5) && vtiger_profile2field.visible=0 && vtiger_def_org_field.visible=0 && vtiger_profile2field.profileid IN (%s) and vtiger_field.presence in (0,2) GROUP BY vtiger_field.fieldid ORDER BY block,sequence", $tabid, $blockid_list, implode(",", $profileList));
 	}
-
 	\App\Log::trace("Exit from the function getPermittedFieldsQuery($module, $disp_view). Return value = $sql");
 	return $sql;
 }
@@ -75,16 +68,16 @@ function getPermittedFieldsQuery($module, $disp_view)
 function getFieldsListFromQuery($query)
 {
 	$adb = PearDatabase::getInstance();
-	
+
 	\App\Log::trace("Entering into the function getFieldsListFromQuery($query)");
 
 	$result = $adb->query($query);
-	$num_rows = $adb->num_rows($result);
+	$numRows = $adb->numRows($result);
 
-	for ($i = 0; $i < $num_rows; $i++) {
-		$columnName = $adb->query_result($result, $i, "columnname");
-		$fieldlabel = $adb->query_result($result, $i, "fieldlabel");
-		$tablename = $adb->query_result($result, $i, "tablename");
+	for ($i = 0; $i < $numRows; $i++) {
+		$columnName = $adb->queryResult($result, $i, "columnname");
+		$fieldlabel = $adb->queryResult($result, $i, "fieldlabel");
+		$tablename = $adb->queryResult($result, $i, "tablename");
 
 		//HANDLE HERE - Mismatch fieldname-tablename in field table, in future we have to avoid these if elses
 		if ($columnName == 'smownerid') {//for all assigned to user name
@@ -104,8 +97,6 @@ function getFieldsListFromQuery($query)
 			$fields .= " concat(vtiger_contactdetails.lastname,' ',vtiger_contactdetails.firstname) as 'Contact Name',";
 		} elseif ($tablename == 'vtiger_products' && $columnName == 'vendor_id') {//Product - Vendor Name
 			$fields .= "vtiger_vendor.vendorname as '" . $fieldlabel . "',";
-		} elseif ($tablename == 'vtiger_producttaxrel' && $columnName == 'taxclass') {//avoid product - taxclass
-			$fields .= "";
 		} elseif ($tablename == 'vtiger_attachments' && $columnName == 'name') {//Emails filename
 			$fields .= $tablename . ".name as '" . $fieldlabel . "',";
 		}

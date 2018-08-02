@@ -3,19 +3,20 @@
 /**
  * Edit View Class for MappedFields Settings
  * @package YetiForce.View
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_MappedFields_Edit_View extends Settings_Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$step = strtolower($request->getMode());
 		$this->step($step, $request);
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 		$viewer = $this->getViewer($request);
@@ -30,7 +31,7 @@ class Settings_MappedFields_Edit_View extends Settings_Vtiger_Index_View
 		$viewer->view('EditHeader.tpl', $request->getModule(false));
 	}
 
-	public function step($step, Vtiger_Request $request)
+	public function step($step, \App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -55,7 +56,7 @@ class Settings_MappedFields_Edit_View extends Settings_Vtiger_Index_View
 				$viewer->view('Step4.tpl', $qualifiedModuleName);
 				break;
 			case 'step3':
-				$moduleSourceName = vtlib\Functions::getModuleName($moduleInstance->get('tabid'));
+				$moduleSourceName = \App\Module::getModuleName($moduleInstance->get('tabid'));
 				$moduleModel = Vtiger_Module_Model::getInstance($moduleSourceName);
 				$recordStructureInstance = Vtiger_RecordStructure_Model::getInstanceForModule($moduleModel);
 				$viewer->assign('RECORD_STRUCTURE', $recordStructureInstance->getStructure());
@@ -65,8 +66,8 @@ class Settings_MappedFields_Edit_View extends Settings_Vtiger_Index_View
 				break;
 			case 'step2':
 				$assignedToValues = [];
-				$assignedToValues['LBL_USERS'] = \includes\fields\Owner::getInstance()->getAccessibleUsers();
-				$assignedToValues['LBL_GROUPS'] = \includes\fields\Owner::getInstance()->getAccessibleGroups();
+				$assignedToValues['LBL_USERS'] = \App\Fields\Owner::getInstance()->getAccessibleUsers();
+				$assignedToValues['LBL_GROUPS'] = \App\Fields\Owner::getInstance()->getAccessibleGroups();
 				$viewer->assign('SEL_MODULE_MODEL', Settings_MappedFields_Module_Model::getInstance($moduleInstance->get('tabid')));
 				$viewer->assign('REL_MODULE_MODEL', Settings_MappedFields_Module_Model::getInstance($moduleInstance->get('reltabid')));
 				$viewer->assign('USERS_LIST', $assignedToValues);
@@ -79,7 +80,7 @@ class Settings_MappedFields_Edit_View extends Settings_Vtiger_Index_View
 		}
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();

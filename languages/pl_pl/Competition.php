@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Competition polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Competition' => 'Konkurenci',
 	'SINGLE_Competition' => 'Konkurent',
@@ -8,7 +13,7 @@ $languageStrings = [
 	'LBL_CUSTOM_INFORMATION' => 'Informacje systemowe',
 	'LBL_DESCRIPTION_INFORMATION' => 'Informacje opisowe',
 	//FIELDS
-	'LBL_SUBJECT' => 'Temat',
+	'LBL_SUBJECT' => 'Nazwa',
 	'LBL_NUMBER' => 'Numer',
 	'LBL_CLOSED_TIME' => 'Czas zamknięcia',
 	'LBL_VAT_ID' => 'NIP',

@@ -13,7 +13,6 @@ $languageStrings = [
 	'LBL_SUMMARY' => 'Work time summary',
 	// Basic Strings
 	'SINGLE_Project' => 'Project',
-	'LBL_ADD_RECORD' => 'Add record',
 	'LBL_RECORDS_LIST' => 'Projects list',
 	// Blocks
 	'LBL_PROJECT_INFORMATION' => 'Project details',
@@ -34,6 +33,7 @@ $languageStrings = [
 	'LBL_SELECT_PROGRESS' => 'Select progress',
 	'description' => 'Description',
 	'Related to' => 'Related to',
+	'FL_MEMBER_OF' => 'Parent Project',
 	//Summary Information
 	'LBL_TASKS_OPEN' => 'Tasks opened',
 	'LBL_TASKS_DUE' => 'Tasks due',

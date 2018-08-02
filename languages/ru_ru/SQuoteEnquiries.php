@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * SQuoteEnquiries russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'SQuoteEnquiries' => 'Запросы',
 	'SINGLE_SQuoteEnquiries' => 'Запрос',
@@ -13,7 +18,7 @@ $languageStrings = [
 	'LBL_SUBJECT' => 'Тема',
 	'LBL_NUMBER' => 'Номер',
 	'LBL_STATUS' => 'Статус',
-	'LBL_RESPONSE_TIME' => 'Respone time',
+	'LBL_RESPONSE_TIME' => 'Время ответа',
 	'SINGLE_SSalesProcesses' => 'Сделка',
 	//PICKLIST VALUES
 	'PLL_DRAFT' => 'Черновик',

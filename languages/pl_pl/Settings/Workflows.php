@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Workflows polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'ADD_CONDITIONS' => 'Dodaj warunek',
 	'ADD_TASKS' => 'Dodaj zadania',
@@ -51,7 +48,7 @@ $languageStrings = [
 	'LBL_RAW_TEXT' => 'Czysty tekst',
 	'LBL_RECEPIENTS' => 'Odbiorcy',
 	'LBL_RECREATE_CONDITIONS' => 'Ponowne tworzenie warunków',
-	'LBL_SAVE_AND_CONTINUE' => 'Zapisz i kontynuj',
+	'LBL_SAVE_AND_CONTINUE' => 'Zapisz i kontynuuj',
 	'LBL_SELECT_OPTIONS' => 'Wybór opcji',
 	'LBL_SEND_NOTIFICATION' => 'Wyślij powiadomienie',
 	'LBL_SET_FIELD_VALUES' => 'Ustaw wartość pola',
@@ -133,7 +130,7 @@ $languageStrings = [
 	'LBL_EXCEEDING_MAXIMUM_LIMIT' => 'Maksymalny limit przekroczony',
 	'LBL_NEXT_TRIGGER_TIME' => 'Następny czas uruchomienia',
 	'LBL_ACTIVATION_TASKS' => 'Aktywuj zadania',
-	'LBL_DEACTIVATION_TASKS' => 'Dezaktywuj zadnia',
+	'LBL_DEACTIVATION_TASKS' => 'Dezaktywuj zadania',
 	'LBL_ALL_TASKS' => 'Liczba zadań',
 	'LBL_ACTIVE_TASKS' => 'Aktywnych zadań',
 	'LBL_DO_NOT_DUPLICATE_RECORDS' => 'Nie powielaj rekordów',
@@ -142,22 +139,22 @@ $languageStrings = [
 	'LBL_VALUE_OF_SERVER' => 'Wartość z serwera',
 	'LBL_WORKFLOWS_RUN_TIME' => 'Data i czas uruchomienia obiegu informacji',
 	'Sales stage - Negotiations' => 'Proces sprzedażowy - Negocjacje',
-	'LBL_UPDATE_DATES_BASE_DATE_CHANGES' => 'Aktualizuj daty wygenrowanych wydarzeń kiedy data bazowa ulegnie zmianie',
+	'LBL_UPDATE_DATES_BASE_DATE_CHANGES' => 'Aktualizuj daty wygenerowanych wydarzeń kiedy data bazowa ulegnie zmianie',
 	'LBL_CURRENT_USER' => 'Aktualnie zalogowany użytkownik',
+	'LBL_SELECT_TEMPLATE' => 'Wybierz szablon',
 	//workflow trigger types
 	'ONCE' => 'Raz gdy zostaną spełnione warunki',
 	'ON_EVERY_SAVE' => 'Każdy zapis rekordu(np. tworzenie, modyfikacja)',
 	'ON_FIRST_SAVE' => 'Tworzenie rekordu',
 	'ON_MODIFY' => 'Modyfikacja rekordu',
 	'ON_DELETE' => 'Usuwanie rekordu',
-	'TRIGGER' => 'Ręczne wywołanie przez uzytkownika',
+	'TRIGGER' => 'Ręczne wywołanie przez użytkownika',
 	'BLOCK_EDIT' => 'Blokada edycji',
 	'ON_SCHEDULE' => 'Harmonogram wykonywania (co określony czas)',
 	//workflow task
 	'EmailTempleteList' => 'Wybierz szablon maila który ma zostać wysłany',
 	'Do you send all attachments' => 'Czy wysłać wszystkie załączniki?',
 	'Select e-mail address' => 'Wybierz adres mail',
-	'Send a copy to email' => 'Kopia na adres',
 	//workflow task types
 	'Send Mail' => 'Wyślij maila',
 	'Invoke Custom Function' => 'Uruchom funkcje niestandardowe',
@@ -174,7 +171,8 @@ $languageStrings = [
 	'LBL_UPDATE_DATES_CREATED_EVENTS_AUTOMATICALLY' => 'Aktualizuj daty automatycznie utworzonych wydarzeń',
 	'LBL_UPDATE_WORK_TIME_AUTOMATICALLY' => 'Automatycznie aktualizuj czas pracy',
 	'LBL_UPDATE_WORK_TIME' => 'Aktualizacja czasu pracy',
-	'LBL_UPDATE_RELATED_FIELD' => 'Aktualizuj rekord powiązany',
+	'LBL_UPDATE_RELATED_FIELD' => 'Aktualizuj rekordy powiązane',
+	'LBL_AUTO_ASSIGN' => 'Automatyczny przydział rekordu',
 	//workflow add time
 	'Current Date' => 'Aktualna data',
 	'Current Time' => 'Aktualny czas',
@@ -207,13 +205,13 @@ $languageStrings = [
 	'LBL_WATCHDOG' => 'Śledzenie zmian',
 	'LBL_UPDATE_WORK_TIME' => 'Aktualizuj czas pracy',
 	'LBL_SKIP_CURRENT_USER' => 'Pomiń obecnego użytkownika',
-	'LBL_LIST_OF_ALL_CHANGES_IN_RECORD' => 'Lista wszystkich zmian w rekordzie',
-	'LBL_LIST_OF_ALL_VALUES_IN_RECORD' => 'Lista wszystkich wartości w rekordzie',
+	'LBL_LIST_OF_CHANGES_IN_RECORD' => 'Lista zmian w rekordzie',
+	'LBL_LIST_OF_NEW_VALUES_IN_RECORD' => 'Lista nowych wartości w rekordzie',
 	//VTWatchdog
 	'LBL_SELECT_ACTION_TYPE' => 'Wybierz typ powiadomienia',
 	'LBL_SELECT_RECIPIENTS' => 'Odbiorcy',
 	'LBL_MESSAGE' => 'Wiadomość',
-	'LBL_MESSAGE_INFO' => 'Treść widomości obsługuje zmienne, nazwa zmiennej może być taka jak nazwa systemowa pola lub funkcje specjalne.<br/><br/>Przykładowe zmienne dla pól:<br/><strong>$accountname$</strong> - Wartość z pola<br/><strong>%accountname%</strong> - Etykieta pola<br/><br/>Funkcje specjalne:',
+	'LBL_MESSAGE_INFO' => 'Treść wiadomości obsługuje zmienne, nazwa zmiennej może być taka jak nazwa systemowa pola lub funkcje specjalne.<br /><br />Przykładowe zmienne dla pól:<br /><strong>$accountname$</strong> - Wartość z pola<br /><strong>%accountname%</strong> - Etykieta pola<br /><br />Funkcje specjalne:',
 	'LBL_WATCHING_USERS' => 'Użytkownicy obserwujący',
 	'LBL_VALUE_FROM_FIELD' => 'Wartość z pola',
 	'LBL_FIELDS_LABELS' => 'Etykieta pola',
@@ -243,7 +241,10 @@ $languageStrings = [
 	'Notify Contact On New comment added to ticket' => 'Powiadom kontakt o nowym komentarzu do zgłoszenia z portalu',
 	'Security risk has been detected - Brute Force' => 'Wykryto zagrożenie bezpieczeństwa - Brute Force',
 	'Backup has been made' => 'Stworzono kopię zapasową',
-	'Notify Account On New comment added to ticket' => 'Powiadom kontrahenta o nowym komentarzu do zgłoszenia z portalu'
+	'Notify Account On New comment added to ticket' => 'Powiadom kontrahenta o nowym komentarzu do zgłoszenia z portalu',
+	'LBL_OWNER_REKORD' => 'Właściciel rekordu',
+	'LBL_SMTP' => 'SMTP',
+	'LBL_CHECK_EMAIL_OPTOUT' => 'Sprawdzaj zgode na kontakt mailowy odbiorców',
 ];
 $jsLanguageStrings = [
 	'JS_SAME_FIELDS_SELECTED_MORE_THAN_ONCE' => 'Te same pola zaznaczono więcej niż jedej raz',

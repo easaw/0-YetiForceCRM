@@ -12,11 +12,15 @@
 class Reports_DetailAjax_Action extends Vtiger_BasicAjax_Action
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if (!Users_Privileges_Model::getCurrentUserPrivilegesModel()->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
@@ -26,9 +30,9 @@ class Reports_DetailAjax_Action extends Vtiger_BasicAjax_Action
 		$this->exposeMethod('getRecordsCount');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 			return;
@@ -37,12 +41,12 @@ class Reports_DetailAjax_Action extends Vtiger_BasicAjax_Action
 
 	/**
 	 * Function to get related Records count from this relation
-	 * @param <Vtiger_Request> $request
+	 * @param \App\Request $request
 	 * @return <Number> Number of record from this relation
 	 */
-	public function getRecordsCount(Vtiger_Request $request)
+	public function getRecordsCount(\App\Request $request)
 	{
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 		$reportModel = Reports_Record_Model::getInstanceById($record);
 		$reportModel->setModule('Reports');
 		$reportModel->set('advancedFilter', $request->get('advanced_filter'));

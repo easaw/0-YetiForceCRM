@@ -26,16 +26,20 @@ class Language extends LanguageImport
 
 	/**
 	 * Function to remove language files related to a module
-	 * @param Vtiger_Module Instance of module
+	 * @param ModuleBasic $moduleInstance
 	 */
-	static function deleteForModule($moduleInstance)
+	public static function deleteForModule(ModuleBasic $moduleInstance)
 	{
-		$db = \PearDatabase::getInstance();
-		$result = $db->query('SELECT prefix FROM vtiger_language');
-		while ($lang = $db->getSingleValue($result)) {
-			$langFilePath = "languages/$lang/" . $moduleInstance->name . '.php';
-			if (file_exists($langFilePath))
-				@unlink($langFilePath);
+		$query = (new \App\Db\Query())->select(['prefix'])->from('vtiger_language');
+		foreach ($query->column() as $lang) {
+			$langFilePath = "languages/$lang/{$moduleInstance->name}.php";
+			if (file_exists($langFilePath)) {
+				unlink($langFilePath);
+			}
+			$langFilePath = "languages/$lang/Settings/{$moduleInstance->name}.php";
+			if (file_exists($langFilePath)) {
+				unlink($langFilePath);
+			}
 		}
 	}
 }

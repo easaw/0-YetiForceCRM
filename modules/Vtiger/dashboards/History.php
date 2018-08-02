@@ -11,18 +11,15 @@
 class Vtiger_History_Dashboard extends Vtiger_IndexAjax_View
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-
-		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$viewer = $this->getViewer($request);
-
 		$data = $request->getAll();
 		$moduleName = $request->getModule();
-		$type = $request->get('type');
-		$page = $request->get('page');
-		$linkId = $request->get('linkid');
-		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
+		$type = $request->getByType('type');
+		$page = $request->getInteger('page');
+		$linkId = $request->getInteger('linkid');
+		$widget = Vtiger_Widget_Model::getInstance($linkId, \App\User::getCurrentUserId());
 		$limit = (int) $widget->get('limit');
 
 		if (empty($limit)) {
@@ -37,7 +34,6 @@ class Vtiger_History_Dashboard extends Vtiger_IndexAjax_View
 
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
 		$history = $moduleModel->getHistory($pagingModel, $type);
-
 		$modCommentsModel = Vtiger_Module_Model::getInstance('ModComments');
 
 		$viewer->assign('WIDGET', $widget);
@@ -47,9 +43,7 @@ class Vtiger_History_Dashboard extends Vtiger_IndexAjax_View
 		$viewer->assign('NEXTPAGE', (count($history) < $limit) ? 0 : $page + 1);
 		$viewer->assign('COMMENTS_MODULE_MODEL', $modCommentsModel);
 		$viewer->assign('DATA', $data);
-
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/HistoryContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/History.tpl', $moduleName);

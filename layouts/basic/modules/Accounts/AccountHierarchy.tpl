@@ -14,16 +14,17 @@
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
 				<div class="modal-header">
-					<button class="close" data-dismiss="modal" title="{vtranslate('LBL_CLOSE')}">x</button>
-					<h3 class="modal-title">{vtranslate('LBL_SHOW_ACCOUNT_HIERARCHY', $MODULE)}</h3>
+					<button class="close" data-dismiss="modal" title="{\App\Language::translate('LBL_CLOSE')}">x</button>
+					<h3 class="modal-title">{\App\Language::translate('LBL_SHOW_ACCOUNT_HIERARCHY', $MODULE)}</h3>
 				</div>
 				<div class="modal-body maxHeightModal">
+					<div class="table-responsive">
 						<table class="table table-bordered">
 							<thead>
 								<tr class="blockHeader">
 									{foreach item=HEADERNAME from=$ACCOUNT_HIERARCHY['header']}
-										<th>{vtranslate($HEADERNAME, $MODULE)}</th>
-									{/foreach}
+										<th>{\App\Language::translate($HEADERNAME, $MODULE)}</th>
+										{/foreach}
 								</tr>
 							</thead>
 							<tbody>
@@ -31,11 +32,11 @@
 									<tr {if $smarty.foreach.hierarchyEntries.first} class="bgAzure" {/if} data-id="{$RECORD_ID}">
 										{foreach item=LISTFIELDS from=$ENTRIES}
 											<td>
-												{if $LISTFIELDS['fieldname'] == 'active' && Users_Privileges_Model::isPermitted($MODULE, 'EditView', $RECORD_ID)}
+												{if $LISTFIELDS['fieldname'] === 'active' && \App\Privilege::isPermitted($MODULE, 'EditView', $RECORD_ID)}
 													<button class="btn{if !empty($LISTFIELDS['rawData'])} btn-success {else} btn-warning {if isset($LAST_MODIFIED[$RECORD_ID])} popoverTooltip {/if}{/if}btn-xs toChangeBtn" data-record-id="{$RECORD_ID}"
 															data-fieldname="{$LISTFIELDS['fieldname']}"
 															{if empty($LISTFIELDS['rawData']) && isset($LAST_MODIFIED[$RECORD_ID])}
-																data-content="{vtranslate('LBL_DEACTIVATED_BY', $MODULE)}<b>{$LAST_MODIFIED[$RECORD_ID]['active']['userModel']->getName()}</b> - {$LAST_MODIFIED[$RECORD_ID]['active']['changedon']} "
+																data-content="{\App\Language::translate('LBL_DEACTIVATED_BY', $MODULE)}<b>{$LAST_MODIFIED[$RECORD_ID]['active']['userModel']->getName()}</b> - {$LAST_MODIFIED[$RECORD_ID]['active']['changedon']} "
 															{/if}
 															>
 														{$LISTFIELDS['data']}
@@ -49,10 +50,11 @@
 								{/foreach}
 							</tbody>
 						</table>
+					</div>
 				</div>
 				<div class="modal-footer">
 					<div class=" pull-right cancelLinkContainer">
-						<button class="btn btn-warning" type="reset" data-dismiss="modal"><strong>{vtranslate('LBL_CLOSE', $MODULE)}</strong></button>
+						<button class="btn btn-warning" type="reset" data-dismiss="modal"><strong>{\App\Language::translate('LBL_CLOSE', $MODULE)}</strong></button>
 					</div>
 				</div>
 			</div>

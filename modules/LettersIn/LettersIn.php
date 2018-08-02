@@ -1,20 +1,17 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com.
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * LettersIn CRMEntity class
+ * @package YetiForce.CRMEntity
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class LettersIn extends CRMEntity
 {
 
 	public $table_name = 'vtiger_lettersin';
 	public $table_index = 'lettersinid';
-	public $column_fields = Array();
+	public $column_fields = [];
 
 	/** Indicator if this is a custom module or standard module */
 	public $IsCustomModule = true;
@@ -22,85 +19,74 @@ class LettersIn extends CRMEntity
 	/**
 	 * Mandatory table for supporting custom fields.
 	 */
-	public $customFieldTable = Array('vtiger_lettersincf', 'lettersinid');
+	public $customFieldTable = ['vtiger_lettersincf', 'lettersinid'];
 
 	/**
 	 * Mandatory for Saving, Include tables related to this module.
 	 */
-	public $tab_name = Array('vtiger_crmentity', 'vtiger_lettersin', 'vtiger_lettersincf');
+	public $tab_name = ['vtiger_crmentity', 'vtiger_lettersin', 'vtiger_lettersincf'];
 
 	/**
 	 * Mandatory for Saving, Include tablename and tablekey columnname here.
 	 */
-	public $tab_name_index = Array(
+	public $tab_name_index = [
 		'vtiger_crmentity' => 'crmid',
 		'vtiger_lettersin' => 'lettersinid',
-		'vtiger_lettersincf' => 'lettersinid');
+		'vtiger_lettersincf' => 'lettersinid'];
 
 	/**
 	 * Mandatory for Listing (Related listview)
 	 */
-	public $list_fields = Array(
+	public $list_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'Number' => Array('lettersin', 'number'),
-		'Title' => Array('lettersin', 'title'),
-		'Assigned To' => Array('crmentity', 'smownerid'),
-		'Created Time' => Array('crmentity', 'createdtime'),
-	);
-	public $list_fields_name = Array(
+		'Number' => ['lettersin', 'number'],
+		'Title' => ['lettersin', 'title'],
+		'Assigned To' => ['crmentity', 'smownerid'],
+		'Created Time' => ['crmentity', 'createdtime'],
+	];
+	public $list_fields_name = [
 		/* Format: Field Label => fieldname */
 		'Number' => 'number',
 		'Title' => 'title',
 		'Assigned To' => 'assigned_user_id',
 		'Created Time' => 'createdtime',
-	);
+	];
+
+	/**
+	 * @var string[] List of fields in the RelationListView
+	 */
+	public $relationFields = ['number', 'title', 'assigned_user_id', 'createdtime'];
 	// Make the field link to detail view from list view (Fieldname)
 	public $list_link_field = 'title';
 	// For Popup listview and UI type support
-	public $search_fields = Array(
-		'Number' => Array('lettersin', 'number'),
-		'Title' => Array('lettersin', 'title'),
-		'Assigned To' => Array('crmentity', 'smownerid'),
-		'Created Time' => Array('crmentity', 'createdtime'),
-	);
-	public $search_fields_name = Array(
+	public $search_fields = [
+		'Number' => ['lettersin', 'number'],
+		'Title' => ['lettersin', 'title'],
+		'Assigned To' => ['crmentity', 'smownerid'],
+		'Created Time' => ['crmentity', 'createdtime'],
+	];
+	public $search_fields_name = [
 		'Number' => 'number',
 		'Title' => 'title',
 		'Assigned To' => 'assigned_user_id',
 		'Created Time' => 'createdtime',
-	);
+	];
 	// For Popup window record selection
-	public $popup_fields = Array('title');
-	// Placeholder for sort fields - All the fields will be initialized for Sorting through initSortFields
-	public $sortby_fields = Array();
+	public $popup_fields = ['title'];
 	// For Alphabetical search
 	public $def_basicsearch_col = 'title';
 	// Column value to use on detail view record text display
 	public $def_detailview_recname = 'title';
 	// Required Information for enabling Import feature
-	public $required_fields = Array('title' => 1);
+	public $required_fields = ['title' => 1];
 	// Callback function list during Importing
-	public $special_functions = Array('set_import_assigned_user');
+	public $special_functions = ['set_import_assigned_user'];
 	public $default_order_by = '';
 	public $default_sort_order = 'ASC';
 	// Used when enabling/disabling the mandatory fields for the module.
 	// Refers to vtiger_field.fieldname values.
-	public $mandatory_fields = Array('createdtime', 'modifiedtime', 'title', 'assigned_user_id');
-
-	public function save_module($module)
-	{
-		
-	}
-
-	/**
-	 * Return query to use based on given modulename, fieldname
-	 * Useful to handle specific case handling for Popup
-	 */
-	public function getQueryByModuleField($module, $fieldname, $srcrecord)
-	{
-		// $srcrecord could be empty
-	}
+	public $mandatory_fields = ['createdtime', 'modifiedtime', 'title', 'assigned_user_id'];
 
 	/**
 	 * Get list view query (send more WHERE clause condition if required)
@@ -110,7 +96,7 @@ class LettersIn extends CRMEntity
 		$query = "SELECT vtiger_crmentity.*, $this->table_name.*";
 
 		// Keep track of tables joined to avoid duplicates
-		$joinedTables = array();
+		$joinedTables = [];
 
 		// Select Custom Field Table Columns if present
 		if (!empty($this->customFieldTable))
@@ -137,13 +123,12 @@ class LettersIn extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($module));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$module]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -170,7 +155,7 @@ class LettersIn extends CRMEntity
 		require('user_privileges/sharing_privileges_' . $current_user->id . '.php');
 
 		$sec_query = '';
-		$tabid = \includes\Modules::getModuleId($module);
+		$tabid = \App\Module::getModuleId($module);
 
 		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[$tabid] == 3) {
 
@@ -208,7 +193,7 @@ class LettersIn extends CRMEntity
 	/**
 	 * Create query to export the records.
 	 */
-	public function create_export_query($where)
+	public function createExportQuery($where)
 	{
 		$current_user = vglobal('current_user');
 
@@ -232,13 +217,12 @@ class LettersIn extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($thismodule));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$thismodule]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -260,9 +244,9 @@ class LettersIn extends CRMEntity
 	/**
 	 * Transform the value while exporting
 	 */
-	public function transform_export_value($key, $value)
+	public function transformExportValue($key, $value)
 	{
-		return parent::transform_export_value($key, $value);
+		return parent::transformExportValue($key, $value);
 	}
 
 	/**
@@ -306,7 +290,7 @@ class LettersIn extends CRMEntity
 
 		$query = $select_clause . $from_clause .
 			" LEFT JOIN vtiger_users_last_import ON vtiger_users_last_import.bean_id=" . $this->table_name . "." . $this->table_index .
-			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values, $ui_type_arr, $module) .
+			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values) .
 			$where_clause .
 			" ORDER BY $table_cols," . $this->table_name . "." . $this->table_index . " ASC";
 
@@ -315,56 +299,29 @@ class LettersIn extends CRMEntity
 
 	/**
 	 * Invoked when special actions are performed on the module.
-	 * @param String Module name
-	 * @param String Event Type (module.postinstall, module.disabled, module.enabled, module.preuninstall)
+	 * @param string $moduleName Module name
+	 * @param string $eventType Event Type (module.postinstall, module.disabled, module.enabled, module.preuninstall)
 	 */
-	public function vtlib_handler($modulename, $event_type)
+	public function moduleHandler($moduleName, $eventType)
 	{
-		$adb = PearDatabase::getInstance();
-		if ($event_type == 'module.postinstall') {
-			$ModuleInstance = CRMEntity::getInstance($modulename);
-			\includes\fields\RecordNumber::setNumber($modulename, 'LI', '1');
+		if ($eventType === 'module.postinstall') {
+			$ModuleInstance = CRMEntity::getInstance($moduleName);
+			\App\Fields\RecordNumber::setNumber($moduleName, 'LI', '1');
 			$modcommentsModuleInstance = vtlib\Module::getInstance('ModComments');
 			if ($modcommentsModuleInstance && file_exists('modules/ModComments/ModComments.php')) {
 				include_once 'modules/ModComments/ModComments.php';
 				if (class_exists('ModComments'))
-					ModComments::addWidgetTo(array('LettersIn'));
+					ModComments::addWidgetTo(['LettersIn']);
 			}
-
-			$modcommentsModuleInstance = vtlib\Module::getInstance('ModTracker');
-			if ($modcommentsModuleInstance && file_exists('modules/ModTracker/ModTracker.php')) {
-				include_once 'modules/ModTracker/ModTracker.php';
-				$tabid = vtlib\Functions::getModuleId($modulename);
-				$moduleModTrackerInstance = new ModTracker();
-				if (!$moduleModTrackerInstance->isModulePresent($tabid)) {
-					$res = $adb->pquery("INSERT INTO vtiger_modtracker_tabs VALUES(?,?)", array($tabid, 1));
-					$moduleModTrackerInstance->updateCache($tabid, 1);
-				} else {
-					$updatevisibility = $adb->pquery("UPDATE vtiger_modtracker_tabs SET visible = 1 WHERE tabid = ?", array($tabid));
-					$moduleModTrackerInstance->updateCache($tabid, 1);
-				}
-				if (!$moduleModTrackerInstance->isModTrackerLinkPresent($tabid)) {
-					$moduleInstance = vtlib\Module::getInstance($tabid);
-					$moduleInstance->addLink('DETAILVIEWBASIC', 'View History', "javascript:ModTrackerCommon.showhistory('\$RECORD\$')", '', '', array('path' => 'modules/ModTracker/ModTracker.php', 'class' => 'ModTracker', 'method' => 'isViewPermitted'));
-				}
-			}
-			$adb->pquery('UPDATE vtiger_tab SET customized=0 WHERE name=?', array($modulename));
-			$adb->pquery('UPDATE vtiger_field SET summaryfield=1 WHERE tablename=? && columnname=?', array('vtiger_lettersin', 'title'));
-			$adb->pquery('UPDATE vtiger_field SET summaryfield=1 WHERE tablename=? && columnname=?', array('vtiger_lettersin', 'smownerid'));
-			$adb->pquery('UPDATE vtiger_field SET summaryfield=1 WHERE tablename=? && columnname=?', array('vtiger_lettersin', 'lin_type_ship'));
-			$adb->pquery('UPDATE vtiger_field SET summaryfield=1 WHERE tablename=? && columnname=?', array('vtiger_lettersin', 'lin_type_doc'));
-			$adb->pquery('UPDATE vtiger_field SET summaryfield=1 WHERE tablename=? && columnname=?', array('vtiger_lettersin', 'date_adoption'));
-			$adb->pquery('UPDATE vtiger_field SET summaryfield=1 WHERE tablename=? && columnname=?', array('vtiger_lettersin', 'relatedid'));
-		} else if ($event_type == 'module.disabled') {
-			
-		} else if ($event_type == 'module.enabled') {
-			
-		} else if ($event_type == 'module.preuninstall') {
-			
-		} else if ($event_type == 'module.preupdate') {
-			
-		} else if ($event_type == 'module.postupdate') {
-			
+			CRMEntity::getInstance('ModTracker')->enableTrackingForModule(\App\Module::getModuleId($moduleName));
+			$dbCommand = \App\Db::getInstance()->createCommand();
+			$dbCommand->update('vtiger_tab', ['customized' => 0], ['name' => $moduleName])->execute();
+			$dbCommand->update('vtiger_field', ['summaryfield' => 1], ['tablename' => 'vtiger_lettersin', 'columnname' => 'title'])->execute();
+			$dbCommand->update('vtiger_field', ['summaryfield' => 1], ['tablename' => 'vtiger_lettersin', 'columnname' => 'smownerid'])->execute();
+			$dbCommand->update('vtiger_field', ['summaryfield' => 1], ['tablename' => 'vtiger_lettersin', 'columnname' => 'lin_type_ship'])->execute();
+			$dbCommand->update('vtiger_field', ['summaryfield' => 1], ['tablename' => 'vtiger_lettersin', 'columnname' => 'lin_type_doc'])->execute();
+			$dbCommand->update('vtiger_field', ['summaryfield' => 1], ['tablename' => 'vtiger_lettersin', 'columnname' => 'date_adoption'])->execute();
+			$dbCommand->update('vtiger_field', ['summaryfield' => 1], ['tablename' => 'vtiger_lettersin', 'columnname' => 'relatedid'])->execute();
 		}
 	}
 }

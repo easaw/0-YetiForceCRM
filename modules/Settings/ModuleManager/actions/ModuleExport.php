@@ -17,7 +17,7 @@ Class Settings_ModuleManager_ModuleExport_Action extends Settings_Vtiger_IndexAj
 		$this->exposeMethod('exportModule');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if (!empty($mode)) {
@@ -26,18 +26,17 @@ Class Settings_ModuleManager_ModuleExport_Action extends Settings_Vtiger_IndexAj
 		}
 	}
 
-	protected function exportModule(Vtiger_Request $request)
+	protected function exportModule(\App\Request $request)
 	{
 		$moduleName = $request->get('forModule');
 
-		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-
+		$moduleModel = \vtlib\Module::getInstance($moduleName);
 		if (!$moduleModel->isExportable()) {
 			echo 'Module not exportable!';
 			return;
 		}
 
 		$package = new vtlib\PackageExport();
-		$package->export($moduleModel, '', sprintf("%s-%s.zip", $moduleModel->get('name'), $moduleModel->get('version')), true);
+		$package->export($moduleModel, '', sprintf("%s-%s.zip", $moduleModel->name, $moduleModel->version), true);
 	}
 }

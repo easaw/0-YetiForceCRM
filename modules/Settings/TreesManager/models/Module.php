@@ -1,32 +1,29 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings TreesManager module model class
+ * @package YetiForce.Model
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_TreesManager_Module_Model extends Settings_Vtiger_Module_Model
 {
 
 	public $baseTable = 'vtiger_trees_templates';
 	public $baseIndex = 'id';
-	public $nameFields = array('name');
-	public $listFields = array('name' => 'LBL_NAME', 'module' => 'LBL_MODULE');
+	public $nameFields = ['name'];
+	public $listFields = ['name' => 'LBL_NAME', 'module' => 'LBL_MODULE'];
 	public $name = 'TreesManager';
 
 	public static function getSupportedModules()
 	{
-		$supportedModuleModels = Vtiger_Module_Model::getAll(array(0, 2));
+		$supportedModuleModels = Vtiger_Module_Model::getAll([0, 2]);
 		return $supportedModuleModels;
 	}
 
 	/**
 	 * Function to get Create view url
-	 * @return <String> Url
+	 * @return string Url
 	 */
 	public static function getCreateRecordUrl()
 	{
@@ -35,7 +32,7 @@ class Settings_TreesManager_Module_Model extends Settings_Vtiger_Module_Model
 
 	/**
 	 * Function to get List view url
-	 * @return <String> Url
+	 * @return string Url
 	 */
 	public function getListViewUrl()
 	{

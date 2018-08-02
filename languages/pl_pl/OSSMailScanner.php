@@ -1,5 +1,10 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * OSSMailScanner polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'OSSMailScanner' => 'Skaner wiadomości email',
 	'OSSMailScanner_manual' => 'Skaner wiadomości email',
@@ -115,7 +120,7 @@ $languageStrings = [
 	'stop_user' => 'Zatrzymał skanowanie',
 	'Email_Subject' => 'Powiadomienie: CRON wykonuje się za długo',
 	'Email_Body' => 'Witaj<br /><br />CRON wykonuje się za długo, sprawdź czy system pocztowy działa poprawnie.<br /><br />Pozdrawia Admin',
-	'Email_FromName' => 'vtiger CRON',
+	'Email_FromName' => 'Skaner poczty',
 	'JS_info_restart_ok' => 'Odblokowano crona',
 	'permissions_all' => 'Widoczne dla wszystkich',
 	'permissions_vtiger' => 'Na podstawie uprawnień vtigera',

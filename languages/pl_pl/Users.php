@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Users polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'SINGLE_Users' => 'Użytkownik',
 	'Last Name' => 'Nazwisko',
@@ -30,6 +27,9 @@ $languageStrings = [
 	'Home Phone' => 'Telefon domowy',
 	'INTERNAL_MAIL_COMPOSER' => 'Wewnętrzny klient email',
 	'Language' => 'Język',
+	'FL_AVAILABLE' => 'Dostępny',
+	'FL_AUTO_ASSIGN_RECORDS' => 'Automatyczny przydział rekordów',
+	'FL_RECORD_LIMIT_IN_MODULE' => 'Limit rekordów w module',
 	'LBL_ABOUT_ME' => 'O mnie',
 	'LBL_ACTIVE_USERS' => 'Aktywni użytkownicy',
 	'LBL_ADD_RECORD' => 'Dodaj użytkownika',
@@ -53,7 +53,6 @@ $languageStrings = [
 	'LBL_DELETE_USER_PERMANENTLY' => 'Usuń użytkownika na stałe',
 	'LBL_DELETE_USER' => 'Użytkownik do usunięcia',
 	'LBL_DEPARTMENT' => 'Dział',
-	'LBL_EMAIL_SEND' => 'Wysłaliśmy Ci email potrzebny do zresetowania hasła.',
 	'LBL_GET_MORE' => 'Wykorzystaj lepiej YetiForce',
 	'LBL_GET_STARTED' => 'Pierwsze kroki',
 	'LBL_HIDDEN' => 'Ukryte',
@@ -70,7 +69,7 @@ $languageStrings = [
 	'LBL_MORE_INFORMATION' => 'Więcej informacji',
 	'LBL_MY_PREFERENCES' => 'Moje ustawienia',
 	'LBL_NEW_PASSWORD' => 'Nowe hasło',
-	'LBL_OLD_PASSWORD' => 'Stare hasło',
+	'LBL_OLD_PASSWORD' => 'Aktualne hasło',
 	'LBL_OPERATING_CURRENCY' => 'Waluty bazowej nie można później modyfikować. Wybierz walutę operacyjną',
 	'LBL_PHONE' => 'Telefon',
 	'LBL_PROFILE_TO_BE_DELETED' => 'Profil do usunięcia',
@@ -107,7 +106,6 @@ $languageStrings = [
 	'Street Address' => 'Nazwa ulicy',
 	'Summary' => 'Podsumowanie',
 	'Symbol Placement' => 'Miejsce symbolu waluty',
-	'Tag Cloud' => 'Chmura tagów',
 	'Theme' => 'Skórka',
 	'Time Zone' => 'Strefa czasowa',
 	'Title' => 'Tytuł',
@@ -217,16 +215,10 @@ $languageStrings = [
 	// Login page
 	'Recover password' => 'Przypomnij hasło',
 	'Login' => 'Logowanie',
-	'Invalid username or password.' => 'Nieprawidłowa nazwa użytkownika lub hasło.',
-	'Too many failed login attempts.' => 'Zbyt wiele nieudanych prób logowania. IP zostało zablokowane.',
-	'Outgoing mail server was not configured.' => 'Serwer poczty wychodzącej nie został skonfigurowany.',
-	'Mail has been sent to your inbox, please check your e-mail.' => 'Email został wysłany, sprawdź swój e-mail.',
-	'Invalid Username or Email address.' => 'Nieprawidłowa nazwa użytkownika lub adres e-mail.',
 	'Please enter valid username' => 'Proszę podać poprawną nazwę użytkownika',
 	'Please enater valid email address' => 'Proszę podać poprawny adres e-mail',
 	'The email address contains illegal characters.' => 'Adres e-mail zawiera niedozwolone znaki.',
 	'Please enter new Password' => 'Wprowadź nowe hasło',
-	'Password and Confirm Password should be same' => 'Hasła powinny być takie same',
 	'LBL_MOBILE_VERSION_TITLE' => 'Wersja mobilna systemu CRM',
 	'LBL_MOBILE_VERSION_DESC' => 'Wykryliśmy, że korzystasz z małej rozdzielczości ekranu, w celu ułatwienia pracy zalecamy korzystanie z wersji mobilnej systemu CRM.',
 	'LBL_MOBILE_VERSION_BUTTON' => 'Uruchom wersję mobilną',
@@ -269,8 +261,6 @@ $languageStrings = [
 	'seletedusers' => 'Wybrani użytkownicy',
 	'Share calendar users' => 'Udostępnij użytkownikom',
 	'LBL_SELECT_USERS' => 'Wybierz użytkowników',
-	'LBL_MASS_PASSWORD_EDITING' => 'Masowa edycja haseł użytkowników',
-	'LBL_MASS_PWD_EDIT' => 'Masowa edycja haseł',
 	'Meeting' => 'Spotkanie',
 	'Call' => 'Telefon',
 	'Mobile Call' => 'Połączenie',
@@ -293,12 +283,12 @@ $languageStrings = [
 	'Help Desk Department' => 'Dział wsparcia',
 	'Human Resources Department' => 'Dział kadr',
 	"Secretary's Office" => 'Sekretariat',
-	"Organization" => 'Organizacja',
-	"Financial Department" => 'Dział finansów',
-	"Production Department" => 'Dział produkcji',
-	"Marketing Department" => 'Dział marketingu',
-	" " => 'Brak',
-	"LBL_BASIC_EXPORT" => 'Eksport podstawowych danych',
+	'Organization' => 'Organizacja',
+	'Financial Department' => 'Dział finansów',
+	'Production Department' => 'Dział produkcji',
+	'Marketing Department' => 'Dział marketingu',
+	' ' => 'Brak',
+	'LBL_BASIC_EXPORT' => 'Eksport podstawowych danych',
 	'LBL_GENERATED_COLOR' => 'Wygenerowano kolor',
 	'LBL_SAVE_COLOR' => 'Zapisano kolor',
 	'LBL_EMAIL' => 'e-mail',
@@ -312,21 +302,49 @@ $languageStrings = [
 	'PLL_COMPLETED' => 'Wykonane',
 	'LBL_SELECT_LAYOUT' => 'Wybierz układ',
 	'LBL_SWITCH' => 'Przełącz',
-	'LBL_SWITCH_USER' => 'Przełącz na użytkownika',
+	'LBL_SWITCH_USER' => 'Zmień kontekst pracy',
 	'LBL_SWITCH_TO_YOURSELF' => 'Przełącz na siebie',
+	'LBL_CHANGE_ACCESS_KEY' => 'Zmień Access Key',
+	'LBL_ACCESS_KEY_UPDATED_SUCCESSFULLY' => 'Klucz pomyślnie zaktualizowany',
+	'LBL_FAILED_TO_UPDATE_ACCESS_KEY' => 'Nie udało się zaktualizować klucza',
+	'LBL_USER_MAIL_EXIST' => 'Użytkownik o podanym adresie email już istnieje',
+	'LBL_INVALID_USERNAME' => 'Nieprawidłowa nazwa użytkownika',
+	'LBL_USER_NAME_EXISTS' => 'Użytkownik o takiej nazwie już istnieje',
+	'LBL_USER_NAME_HAS_ALREADY_BEEN_USED' => 'Nazwa użytkownika była już wykorzystana, system nie pozwala na użycie tej samej nazwy powtórnie.',
+	'LBL_FORBIDDEN_USERNAMES' => 'Nazwa użytkownika znajduje się na liście niebezpiecznych nazw.',
+	'BTN_RESET_PASSWORD' => 'Resetuj hasło',
+	'BTN_MASS_RESET_PASSWORD' => 'Masowo resetuj hasło',
+	'LBL_RESET_PASSWORD_HEAD' => 'Resetuj hasło użytkownika',
+	'LBL_MASS_RESET_PASSWORD_HEAD' => 'Masowe resetowanie haseł użytkowników',
+	'LBL_RESET_PASSWORD_DESC' => 'System wygeneruje nowe hasło, które zostanie wysłane na adres email użytkownika.',
+	'LBL_RESET_PASSWORD_ERROR' => 'System nie może zresetować hasła ponieważ nie ma aktywnego konta SMTP dla powiadomień systemowych.',
+	'LBL_PASSWORD_WAS_RESET_AND_SENT_TO_USER' => 'Hasło zostało zresetowane i wysłane do użytkownika.',
+	'LBL_PASSWORD_WAS_RESET_AND_SENT_TO_USERS' => 'Hasła zostały zresetowane i wysłane do użytkowników.',
+	'LBL_PASSWORD_SHOULD_BE_SAME' => 'Hasła powinny być takie same',
+	'LBL_INCORRECT_OLD_PASSWORD' => 'Podano niepoprawne stare hasło. Wpisz ponownie.',
+	'LBL_SEND_EMAIL_RESET_PASSWORD' => 'System wygenerował nowe hasło i wysłał na podany adres mailowy.',
+	'LBL_NO_USER_FOUND' => 'Nie znaleziono użytkownika.',
+	'LBL_TOO_MANY_FAILED_LOGIN_ATTEMPTS' => 'Zbyt wiele nieudanych prób logowania. IP zostało zablokowane.',
+	'LBL_IP_IS_BLOCKED' => 'Twój IP został zablokowany czasowo bo znajduje się na czarnej liście, prosimy o kontakt z administratorem.',
+	'FL_DATE_PASSWORD_CHANGE' => 'Ostatnia zmiana hasła',
+	'FL_FORCE_PASSWORD_CHANGE' => 'Wymuś zmianę hasła',
+	'LBL_PASSWORD_SUCCESSFULLY_CHANGED' => 'Twoje hasło zostało pomyślnie zmienione.',
+	'LBL_YOUR_PASSWORD_HAS_EXPIRED' => 'Twoje hasło straciło ważność, prosimy o kontakt z administratorem w celu zresetowania hasła.',
+	'LBL_YOUR_PASSWORD_WILL_EXPIRE' => 'Użytkowniku, Twoje hasło straci ważność za %s dni, po tym czasie system zablokuje dostęp do Twojego konta. Zalecamy szybką zmianę hasła.',
+	'LBL_CHANGING_PASSWORD_OF_ANOTHER_USER' => 'Zmieniając hasło innego użytkownika wymuszasz na nim zmianę hasła podczas pierwszego zalogowania.',
+	'LBL_FORCE_PASSWORD_CHANGE_ALERT' => 'Użytkowniku twoje hasło musi zostać zmienione. Aby kontynuować pracę w systemie musisz wprowadzić nowe hasło.',
+	'LBL_NEW_PASSWORD_CRITERIA' => 'Nowe hasło musi spełniać następujące kryteria:',
+	'LBL_USERS_NEED_CHANGE_PASSWORD' => 'Użytkownicy którzy muszą zmienić hasło',
+	'LBL_NOT_CHANGE_PASS_AUTH_EXTERNAL_SYSTEM' => 'Nie mozna zmienić hasła, użytkownik używa autoryzacji w systemie zewnętrznym.',
+	'FL_VIEW_DATE_FORMAT' => 'Format daty podglądu',
+	'PLL_FULL' => 'Pełna data czas',
+	'PLL_ELAPSED' => 'Ile upłyneło czasu',
 ];
-
 $jsLanguageStrings = [
-	//Curency seperator validation messages
-	'JS_DECIMAL_SEPERATOR_AND_GROUPING_SEPERATOR_CANT_BE_SAME' => 'Separator dziesiętny i grupowania nie mogą być takie same',
+	//Curency separator validation messages
+	'JS_DECIMAL_SEPARATOR_AND_GROUPING_SEPARATOR_CANT_BE_SAME' => 'Separator dziesiętny i grupowania nie mogą być takie same',
 	'JS_ENTER_CONFIRMATION_PASSWORD' => 'Wpisz potwierdzenie nowego hasła.',
-	'JS_ENTER_NEW_PASSWORD' => 'Wpisz nowe hasło.',
-	'JS_ENTER_OLD_PASSWORD' => 'Wpisz swoje stare hasło.',
-	'JS_INVALID_PASSWORD' => 'Musisz podać poprawną nazwę użytkownika i hasło.',
-	'JS_PASSWORD_CHANGE_FAILED_1' => 'Nie udało się zmienic hasła dla ',
-	'JS_PASSWORD_CHANGE_FAILED_2' => ' niepowodzenie. Nowe hasło musi zostać ustawione.',
-	'JS_PASSWORD_INCORRECT_OLD' => 'Podano niepoprawne stare hasło. Wpisz ponownie.',
 	'JS_REENTER_PASSWORDS' => 'Wpisz hasła ponownie. Nowe hasło i potwierdzenie hasła nie są identyczne.',
-	'JS_USER_MAIL_EXIST' => 'Użytkownik o podanym adresie email już istnieje',
+	'JS_NEW_ACCESS_KEY_REQUESTED' => 'Wprowadź nowy klucz dostępu',
+	'JS_CHANGE_ACCESS_KEY_CONFIRMATION' => 'Zażądano nowego klucza dostępowego. Z nowego przepisu klucz dostępu, trzeba zastąpić stary klucz dostępu z nową we wszystkich zainstalowanych rozszerzeń. chcesz kontynuować?',
 ];
-

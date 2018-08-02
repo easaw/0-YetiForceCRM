@@ -8,10 +8,10 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class Import_Map_Model extends Vtiger_Base_Model
+class Import_Map_Model extends \App\Base
 {
 
-	static $tableName = 'vtiger_import_maps';
+	public static $tableName = 'vtiger_import_maps';
 	public $map;
 	public $user;
 
@@ -23,10 +23,10 @@ class Import_Map_Model extends Vtiger_Base_Model
 
 	public static function getInstanceFromDb($row, $user)
 	{
-		$map = array();
+		$map = [];
 		foreach ($row as $key => $value) {
 			if ($key == 'content') {
-				$content = array();
+				$content = [];
 				$pairs = explode("&", $value);
 				foreach ($pairs as $pair) {
 					list($mappedName, $sequence) = explode("=", $pair);
@@ -44,8 +44,10 @@ class Import_Map_Model extends Vtiger_Base_Model
 
 	public static function markAsDeleted($mapId)
 	{
-		$db = PearDatabase::getInstance();
-		$db->pquery('UPDATE vtiger_import_maps SET deleted=1 WHERE id=?', array($mapId));
+		\App\Db::getInstance()
+			->createCommand()
+			->update('vtiger_import_maps', ['date_modified' => date('Y-m-d H:i:s'), 'deleted' => 1], ['id' => $mapId])
+			->execute();
 	}
 
 	public function getId()
@@ -70,7 +72,7 @@ class Import_Map_Model extends Vtiger_Base_Model
 		if (empty($this->map['content']))
 			return;
 		$content = $this->map['content'];
-		$keyValueStrings = array();
+		$keyValueStrings = [];
 		foreach ($content as $key => $value) {
 			$key = str_replace('=', '/eq/', $key);
 			$key = str_replace('&', '/amp/', $key);
@@ -86,6 +88,7 @@ class Import_Map_Model extends Vtiger_Base_Model
 
 		$map = $this->getAllValues();
 		$map['content'] = "" . $db->getEmptyBlob() . "";
+		$map['date_entered'] = date('Y-m-d H:i:s');
 		$columnNames = array_keys($map);
 		$columnValues = array_values($map);
 		if (count($map) > 0) {
@@ -95,7 +98,7 @@ class Import_Map_Model extends Vtiger_Base_Model
 			$table = self::$tableName;
 			$column = 'content';
 			$val = $this->getStringifiedContent();
-			$where = 'name=' . $db->sql_escape_string($this->getValue('name')) . ' && module=' . $db->sql_escape_string($this->getValue('module'));
+			$where = 'name=' . $db->sqlEscapeString($this->getValue('name')) . ' && module=' . $db->sqlEscapeString($this->getValue('module'));
 			$db->updateBlob($table, $column, $val, $where);
 		}
 	}
@@ -103,17 +106,14 @@ class Import_Map_Model extends Vtiger_Base_Model
 	public static function getAllByModule($moduleName)
 	{
 		$current_user = vglobal('current_user');
-		$db = PearDatabase::getInstance();
-		$query = sprintf('SELECT * FROM %s WHERE deleted=0 && module=?', self::$tableName);
-		$result = $db->pquery($query, [$moduleName]);
-		$noOfMaps = $db->num_rows($result);
-
-		$savedMaps = array();
-		for ($i = 0; $i < $noOfMaps; ++$i) {
-			$importMap = Import_Map_Model::getInstanceFromDb($db->query_result_rowdata($result, $i), $current_user);
+		$dataReader = (new App\Db\Query())->from(self::$tableName)
+				->where(['deleted' => 0, 'module' => $moduleName])
+				->createCommand()->query();
+		$savedMaps = [];
+		while ($row = $dataReader->read()) {
+			$importMap = Import_Map_Model::getInstanceFromDb($row, $current_user);
 			$savedMaps[$importMap->getId()] = $importMap;
 		}
-
 		return $savedMaps;
 	}
 }

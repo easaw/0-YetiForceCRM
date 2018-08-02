@@ -41,14 +41,11 @@ class PackageImport extends PackageExport
 
 	/**
 	 * Parse the manifest file
-	 * @access private
+	 * @param \App\Zip $zip
 	 */
-	public function __parseManifestFile($unzip)
+	public function __parseManifestFile(\App\Zip $zip)
 	{
-		$manifestfile = $this->__getManifestFilePath();
-		$unzip->unzip('manifest.xml', $manifestfile);
-		$this->_modulexml = simplexml_load_file($manifestfile);
-		unlink($manifestfile);
+		$this->_modulexml = simplexml_load_string($zip->getFromName('manifest.xml'));
 	}
 
 	/**
@@ -94,20 +91,6 @@ class PackageImport extends PackageExport
 	}
 
 	/**
-	 * Get the value of matching path (instead of complete xpath result)
-	 * @param String Path expression for which value is required
-	 */
-	public function xpath_value($path)
-	{
-		$xpathres = $this->xpath($path);
-		foreach ($xpathres as $pathkey => $pathvalue) {
-			if ($pathkey == $path)
-				return $pathvalue;
-		}
-		return false;
-	}
-
-	/**
 	 * Are we trying to import language package?
 	 */
 	public function isLanguageType($zipfile = null)
@@ -146,7 +129,7 @@ class PackageImport extends PackageExport
 
 		if ($packagetype) {
 			$lcasetype = strtolower($packagetype);
-			if ($lcasetype == 'extension')
+			if ($lcasetype === 'extension')
 				return true;
 		}
 		return false;
@@ -163,7 +146,7 @@ class PackageImport extends PackageExport
 
 		if ($packagetype) {
 			$lcasetype = strtolower($packagetype);
-			if ($lcasetype == 'update')
+			if ($lcasetype === 'update')
 				return true;
 		}
 		return false;
@@ -183,7 +166,7 @@ class PackageImport extends PackageExport
 
 		if ($packagetype) {
 			$lcasetype = strtolower($packagetype);
-			if ($lcasetype == 'layout')
+			if ($lcasetype === 'layout')
 				return true;
 		}
 		return false;
@@ -235,7 +218,7 @@ class PackageImport extends PackageExport
 		return $parameters;
 	}
 
-	public function initParameters(\Vtiger_Request $request)
+	public function initParameters(\App\Request $request)
 	{
 		$data = [];
 		foreach ($request->getAll() as $name => $value) {
@@ -253,9 +236,6 @@ class PackageImport extends PackageExport
 	 */
 	public function checkZip($zipfile)
 	{
-		$unzip = new Unzip($zipfile);
-		$filelist = $unzip->getList();
-
 		$manifestxml_found = false;
 		$languagefile_found = false;
 		$layoutfile_found = false;
@@ -265,12 +245,13 @@ class PackageImport extends PackageExport
 		$modulename = null;
 		$language_modulename = null;
 
-		foreach ($filelist as $filename => $fileinfo) {
+		$zip = new \App\Zip($zipfile, ['checkFiles' => false]);
+		$this->__parseManifestFile($zip);
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$fileName = $zip->getNameIndex($i);
 			$matches = [];
-			preg_match('/manifest.xml/', $filename, $matches);
-			if (count($matches)) {
+			if ($fileName === 'manifest.xml') {
 				$manifestxml_found = true;
-				$this->__parseManifestFile($unzip);
 				$modulename = (string) $this->_modulexml->name;
 				$isModuleBundle = (string) $this->_modulexml->modulebundle;
 
@@ -299,15 +280,15 @@ class PackageImport extends PackageExport
 				}
 			}
 			// Language file present in en_us folder
-			$pattern = '/languages\/' . vglobal('default_language') . '\/([^\/]+).php/';
-			preg_match($pattern, $filename, $matches);
+			$pattern = '/languages\/' . vglobal('default_language') . '\/([^\/]+)\.php/';
+			preg_match($pattern, $fileName, $matches);
 			if (count($matches)) {
 				$language_modulename = $matches[1];
 			}
 
 			// or Language file may be present in en_us/Settings folder
-			$settingsPattern = '/languages\/' . vglobal('default_language') . '\/Settings\/([^\/]+).php/';
-			preg_match($settingsPattern, $filename, $matches);
+			$settingsPattern = '/languages\/' . vglobal('default_language') . '\/Settings\/([^\/]+)\.php/';
+			preg_match($settingsPattern, $fileName, $matches);
 			if (count($matches)) {
 				$language_modulename = $matches[1];
 			}
@@ -317,7 +298,7 @@ class PackageImport extends PackageExport
 		if (!empty($language_modulename) && $language_modulename == $modulename) {
 			$languagefile_found = true;
 		} elseif (!$updatefile_found && !$layoutfile_found && !$languagefile_found) {
-			$_errorText = vtranslate('LBL_ERROR_NO_DEFAULT_LANGUAGE', 'Settings:ModuleManager');
+			$_errorText = \App\Language::translate('LBL_ERROR_NO_DEFAULT_LANGUAGE', 'Settings:ModuleManager');
 			$_errorText = str_replace('__DEFAULTLANGUAGE__', vglobal('default_language'), $_errorText);
 			$this->_errorText = $_errorText;
 		}
@@ -330,7 +311,7 @@ class PackageImport extends PackageExport
 			if (\App\Version::check($moduleVersion) === true) {
 				$moduleVersionFound = true;
 			} else {
-				$_errorText = vtranslate('LBL_ERROR_VERSION', 'Settings:ModuleManager');
+				$_errorText = \App\Language::translate('LBL_ERROR_VERSION', 'Settings:ModuleManager');
 				$_errorText = str_replace('__MODULEVERSION__', $moduleVersion, $_errorText);
 				$_errorText = str_replace('__CRMVERSION__', \App\Version::get(), $_errorText);
 				$this->_errorText = $_errorText;
@@ -338,35 +319,40 @@ class PackageImport extends PackageExport
 		}
 
 		$validzip = false;
-		if ($manifestxml_found && $languagefile_found && $moduleVersionFound)
+		if ($manifestxml_found && $languagefile_found && $moduleVersionFound) {
 			$validzip = true;
-
-		if ($manifestxml_found && $layoutfile_found && $moduleVersionFound)
+		}
+		if ($manifestxml_found && $layoutfile_found && $moduleVersionFound) {
 			$validzip = true;
-
-		if ($manifestxml_found && $languagefile_found && $extensionfile_found && $moduleVersionFound)
+		}
+		if ($manifestxml_found && $languagefile_found && $extensionfile_found && $moduleVersionFound) {
 			$validzip = true;
-
-		if ($manifestxml_found && $updatefile_found && $moduleVersionFound)
+		}
+		if ($manifestxml_found && $updatefile_found && $moduleVersionFound) {
 			$validzip = true;
+		}
+		if ($this->isLanguageType() && $manifestxml_found && strpos($this->_modulexml->prefix, '/') !== false) {
+			$validzip = false;
+			$this->_errorText = \App\Language::translate('LBL_ERROR_NO_VALID_PREFIX', 'Settings:ModuleManager');
+		}
 
 		if ($validzip) {
 			if (!empty($this->_modulexml->license)) {
 				if (!empty($this->_modulexml->license->inline)) {
-					$this->_licensetext = $this->_modulexml->license->inline;
+					$this->_licensetext = (string) $this->_modulexml->license->inline;
 				} else if (!empty($this->_modulexml->license->file)) {
-					$licensefile = $this->_modulexml->license->file;
-					$licensefile = "$licensefile";
-					if (!empty($filelist[$licensefile])) {
-						$this->_licensetext = $unzip->unzip($licensefile);
+					$licensefile = (string) $this->_modulexml->license->file;
+					if ($licenseContent = $zip->getFromName($licensefile)) {
+						$this->_licensetext = $licenseContent;
 					} else {
 						$this->_licensetext = "Missing $licensefile!";
 					}
 				}
 			}
 		}
-		if ($unzip)
-			$unzip->close();
+		if ($zip) {
+			$zip->close();
+		}
 		return $validzip;
 	}
 
@@ -415,46 +401,34 @@ class PackageImport extends PackageExport
 	public function initImport($zipfile, $overwrite = true)
 	{
 		$module = $this->getModuleNameFromZip($zipfile);
-		if ($module != null) {
-			$unzip = new Unzip($zipfile, $overwrite);
-			// Unzip selectively
-			$unzip->unzipAllEx(".", [
-				// Include only file/folders that need to be extracted
-				'include' => Array('templates', "modules/$module", 'cron', 'config', 'languages',
-					'settings/actions', 'settings/views', 'settings/models', 'settings/templates', 'settings/connectors', 'settings/libraries',
-					"$module.png", 'updates', 'layouts'),
-				// NOTE: If excludes is not given then by those not mentioned in include are ignored.
-				],
-				// What files needs to be renamed?
-				[
+		if ($module !== null) {
+			$defaultLayout = \Vtiger_Viewer::getDefaultLayoutName();
+			$zip = new \App\Zip($zipfile, ['checkFiles' => false]);
+			if ($zip->statName("$module.png")) {
+				$zip->unzipFile("$module.png", "layouts/$defaultLayout/skins/images/$module.png");
+			}
+			$zip->unzip([
 				// Templates folder
-				'templates' => 'layouts/' . \Vtiger_Viewer::getDefaultLayoutName() . "/modules/$module",
+				'templates/resources' => "public_html/layouts/$defaultLayout/modules/$module/resources",
+				'templates' => "layouts/$defaultLayout/modules/$module",
 				// Cron folder
 				'cron' => "cron/modules/$module",
 				// Config
 				'config' => 'config/modules',
+				// Modules folder
+				'modules' => 'modules',
 				// Settings folder
 				'settings/actions' => "modules/Settings/$module/actions",
 				'settings/views' => "modules/Settings/$module/views",
 				'settings/models' => "modules/Settings/$module/models",
-				'settings/connectors' => "modules/Settings/$module/connectors",
-				'settings/libraries' => "modules/Settings/$module/libraries",
 				// Settings templates folder
-				'settings/templates' => 'layouts/' . \Vtiger_Viewer::getDefaultLayoutName() . "/modules/Settings/$module",
+				'settings/templates' => "layouts/$defaultLayout/modules/Settings/$module",
 				//module images
-				'images' => 'layouts/' . \Vtiger_Viewer::getDefaultLayoutName() . "/skins/images/$module",
-				'settings' => 'modules/Settings',
+				'images' => "layouts/$defaultLayout/skins/images/$module",
 				'updates' => 'cache/updates',
-				'layouts' => 'layouts'
-				]
-			);
-
-			if ($unzip->checkFileExistsInRootFolder("$module.png")) {
-				$unzip->unzip("$module.png", 'layouts/' . \Vtiger_Viewer::getDefaultLayoutName() . "/skins/images/$module.png");
-			}
-
-			if ($unzip)
-				$unzip->close();
+				'layouts' => 'layouts',
+				'languages' => 'languages'
+			]);
 		}
 		return $module;
 	}
@@ -539,18 +513,16 @@ class PackageImport extends PackageExport
 	 * Import Module from zip file
 	 * @param String Zip file name
 	 * @param Boolean True for overwriting existing module
-	 *
-	 * @todo overwrite feature is not functionally currently.
 	 */
 	public function import($zipfile, $overwrite = false)
 	{
 		$module = $this->getModuleNameFromZip($zipfile);
-		if ($module != null) {
+		if ($module !== null) {
+			$zip = new \App\Zip($zipfile, ['checkFiles' => false]);
 			// If data is not yet available
 			if (empty($this->_modulexml)) {
-				$this->__parseManifestFile($unzip);
+				$this->__parseManifestFile($zip);
 			}
-
 			$buildModuleArray = [];
 			$installSequenceArray = [];
 			$moduleBundle = (boolean) $this->_modulexml->modulebundle;
@@ -564,8 +536,7 @@ class PackageImport extends PackageExport
 					}
 				}
 				sort($installSequenceArray);
-				$unzip = new Unzip($zipfile);
-				$unzip->unzipAllEx($this->getTemporaryFilePath());
+				$zip->unzip($this->getTemporaryFilePath());
 				foreach ($installSequenceArray as $sequence) {
 					foreach ($buildModuleArray as $moduleInfo) {
 						if ($moduleInfo['install_sequence'] == $sequence) {
@@ -574,9 +545,9 @@ class PackageImport extends PackageExport
 					}
 				}
 			} else {
-				$module = $this->initImport($zipfile, $overwrite);
+				$this->initImport($zipfile, $overwrite);
 				// Call module import function
-				$this->import_Module();
+				$this->importModule();
 			}
 		}
 	}
@@ -585,7 +556,7 @@ class PackageImport extends PackageExport
 	 * Import Module
 	 * @access private
 	 */
-	public function import_Module()
+	public function importModule()
 	{
 		$tabname = $this->_modulexml->name;
 		$tabLabel = $this->_modulexml->label;
@@ -609,7 +580,7 @@ class PackageImport extends PackageExport
 		$moduleInstance = new Module();
 		$moduleInstance->name = $tabname;
 		$moduleInstance->label = $tabLabel;
-		$moduleInstance->isentitytype = ($isextension != true);
+		$moduleInstance->isentitytype = ($isextension !== true);
 		$moduleInstance->version = (!$tabVersion) ? 0 : $tabVersion;
 		$moduleInstance->minversion = (!$vtigerMinVersion) ? false : $vtigerMinVersion;
 		$moduleInstance->maxversion = (!$vtigerMaxVersion) ? false : $vtigerMaxVersion;
@@ -620,19 +591,19 @@ class PackageImport extends PackageExport
 			$moduleInstance->initWebservice();
 			$this->moduleInstance = $moduleInstance;
 
-			$this->import_Tables($this->_modulexml);
-			$this->import_Blocks($this->_modulexml, $moduleInstance);
+			$this->importTables($this->_modulexml);
+			$this->importBlocks($this->_modulexml, $moduleInstance);
 			$this->importInventory();
-			$this->import_CustomViews($this->_modulexml, $moduleInstance);
-			$this->import_SharingAccess($this->_modulexml, $moduleInstance);
-			$this->import_Events($this->_modulexml, $moduleInstance);
-			$this->import_Actions($this->_modulexml, $moduleInstance);
-			$this->import_RelatedLists($this->_modulexml, $moduleInstance);
-			$this->import_CustomLinks($this->_modulexml, $moduleInstance);
-			$this->import_CronTasks($this->_modulexml);
+			$this->importCustomViews($this->_modulexml, $moduleInstance);
+			$this->importSharingAccess($this->_modulexml, $moduleInstance);
+			$this->importEvents($this->_modulexml, $moduleInstance);
+			$this->importActions($this->_modulexml, $moduleInstance);
+			$this->importRelatedLists($this->_modulexml, $moduleInstance);
+			$this->importCustomLinks($this->_modulexml, $moduleInstance);
+			$this->importCronTasks($this->_modulexml);
 			Module::fireEvent($moduleInstance->name, Module::EVENT_MODULE_POSTINSTALL);
 		} else {
-			$this->import_update($this->_modulexml);
+			$this->importUpdate($this->_modulexml);
 		}
 	}
 
@@ -640,7 +611,7 @@ class PackageImport extends PackageExport
 	 * Import Tables of the module
 	 * @access private
 	 */
-	public function import_Tables($modulenode)
+	public function importTables($modulenode)
 	{
 		if (empty($modulenode->tables) || empty($modulenode->tables->table))
 			return;
@@ -652,19 +623,19 @@ class PackageImport extends PackageExport
 			$tableName = $tablenode->name;
 			$sql = (string) $tablenode->sql; // Convert to string format
 			// Avoid executing SQL that will DELETE or DROP table data
-			if (Utils::IsCreateSql($sql)) {
+			if (Utils::isCreateSql($sql)) {
 				if (!Utils::checkTable($tableName)) {
 					self::log("SQL: $sql ... ", false);
-					Utils::ExecuteQuery($sql);
-					self::log("DONE");
+					Utils::executeQuery($sql);
+					self::log('DONE');
 				}
 			} else {
-				if (Utils::IsDestructiveSql($sql)) {
+				if (Utils::isDestructiveSql($sql)) {
 					self::log("SQL: $sql ... SKIPPED");
 				} else {
 					self::log("SQL: $sql ... ", false);
-					Utils::ExecuteQuery($sql);
-					self::log("DONE");
+					Utils::executeQuery($sql);
+					self::log('DONE');
 				}
 			}
 		}
@@ -675,13 +646,13 @@ class PackageImport extends PackageExport
 	 * Import Blocks of the module
 	 * @access private
 	 */
-	public function import_Blocks($modulenode, $moduleInstance)
+	public function importBlocks($modulenode, $moduleInstance)
 	{
 		if (empty($modulenode->blocks) || empty($modulenode->blocks->block))
 			return;
 		foreach ($modulenode->blocks->block as $blocknode) {
-			$blockInstance = $this->import_Block($modulenode, $moduleInstance, $blocknode);
-			$this->import_Fields($blocknode, $blockInstance, $moduleInstance);
+			$blockInstance = $this->importBlock($modulenode, $moduleInstance, $blocknode);
+			$this->importFields($blocknode, $blockInstance, $moduleInstance);
 		}
 	}
 
@@ -689,7 +660,7 @@ class PackageImport extends PackageExport
 	 * Import Block of the module
 	 * @access private
 	 */
-	public function import_Block($modulenode, $moduleInstance, $blocknode)
+	public function importBlock($modulenode, $moduleInstance, $blocknode)
 	{
 		$blocklabel = $blocknode->label;
 
@@ -718,13 +689,13 @@ class PackageImport extends PackageExport
 	 * Import Fields of the module
 	 * @access private
 	 */
-	public function import_Fields($blocknode, $blockInstance, $moduleInstance)
+	public function importFields($blocknode, $blockInstance, $moduleInstance)
 	{
 		if (empty($blocknode->fields) || empty($blocknode->fields->field))
 			return;
 
 		foreach ($blocknode->fields->field as $fieldnode) {
-			$fieldInstance = $this->import_Field($blocknode, $blockInstance, $moduleInstance, $fieldnode);
+			$this->importField($blocknode, $blockInstance, $moduleInstance, $fieldnode);
 		}
 	}
 
@@ -732,34 +703,34 @@ class PackageImport extends PackageExport
 	 * Import Field of the module
 	 * @access private
 	 */
-	public function import_Field($blocknode, $blockInstance, $moduleInstance, $fieldnode)
+	public function importField($blocknode, $blockInstance, $moduleInstance, $fieldnode)
 	{
 		$fieldInstance = new Field();
 		$fieldInstance->name = (string) $fieldnode->fieldname;
-		$fieldInstance->label = $fieldnode->fieldlabel;
-		$fieldInstance->table = $fieldnode->tablename;
-		$fieldInstance->column = $fieldnode->columnname;
-		$fieldInstance->uitype = $fieldnode->uitype;
-		$fieldInstance->generatedtype = $fieldnode->generatedtype;
-		$fieldInstance->readonly = $fieldnode->readonly;
-		$fieldInstance->presence = $fieldnode->presence;
-		$fieldInstance->defaultvalue = $fieldnode->defaultvalue;
-		$fieldInstance->maximumlength = $fieldnode->maximumlength;
-		$fieldInstance->sequence = $fieldnode->sequence;
-		$fieldInstance->quickcreate = $fieldnode->quickcreate;
-		$fieldInstance->quicksequence = $fieldnode->quickcreatesequence;
-		$fieldInstance->typeofdata = $fieldnode->typeofdata;
-		$fieldInstance->displaytype = $fieldnode->displaytype;
-		$fieldInstance->info_type = $fieldnode->info_type;
+		$fieldInstance->label = (string) $fieldnode->fieldlabel;
+		$fieldInstance->table = (string) $fieldnode->tablename;
+		$fieldInstance->column = (string) $fieldnode->columnname;
+		$fieldInstance->uitype = (int) $fieldnode->uitype;
+		$fieldInstance->generatedtype = (int) $fieldnode->generatedtype;
+		$fieldInstance->readonly = (int) $fieldnode->readonly;
+		$fieldInstance->presence = (int) $fieldnode->presence;
+		$fieldInstance->defaultvalue = (string) $fieldnode->defaultvalue;
+		$fieldInstance->maximumlength = (int) $fieldnode->maximumlength;
+		$fieldInstance->sequence = (int) $fieldnode->sequence;
+		$fieldInstance->quickcreate = (int) $fieldnode->quickcreate;
+		$fieldInstance->quicksequence = (int) $fieldnode->quickcreatesequence;
+		$fieldInstance->typeofdata = (string) $fieldnode->typeofdata;
+		$fieldInstance->displaytype = (int) $fieldnode->displaytype;
+		$fieldInstance->info_type = (string) $fieldnode->info_type;
 
 		if (!empty($fieldnode->fieldparams))
-			$fieldInstance->fieldparams = $fieldnode->fieldparams;
+			$fieldInstance->fieldparams = (string) $fieldnode->fieldparams;
 
 		if (!empty($fieldnode->helpinfo))
-			$fieldInstance->helpinfo = $fieldnode->helpinfo;
+			$fieldInstance->helpinfo = (string) $fieldnode->helpinfo;
 
 		if (isset($fieldnode->masseditable))
-			$fieldInstance->masseditable = $fieldnode->masseditable;
+			$fieldInstance->masseditable = (int) $fieldnode->masseditable;
 
 		if (isset($fieldnode->columntype) && !empty($fieldnode->columntype))
 			$fieldInstance->columntype = strval($fieldnode->columntype);
@@ -808,12 +779,12 @@ class PackageImport extends PackageExport
 	 * Import Custom views of the module
 	 * @access private
 	 */
-	public function import_CustomViews($modulenode, $moduleInstance)
+	public function importCustomViews($modulenode, $moduleInstance)
 	{
 		if (empty($modulenode->customviews) || empty($modulenode->customviews->customview))
 			return;
 		foreach ($modulenode->customviews->customview as $customviewnode) {
-			$this->import_CustomView($modulenode, $moduleInstance, $customviewnode);
+			$this->importCustomView($modulenode, $moduleInstance, $customviewnode);
 		}
 	}
 
@@ -821,7 +792,7 @@ class PackageImport extends PackageExport
 	 * Import Custom View of the module
 	 * @access private
 	 */
-	public function import_CustomView($modulenode, $moduleInstance, $customviewnode)
+	public function importCustomView($modulenode, $moduleInstance, $customviewnode)
 	{
 		$filterInstance = new Filter();
 		$filterInstance->name = $customviewnode->viewname;
@@ -852,7 +823,7 @@ class PackageImport extends PackageExport
 	 * Import Sharing Access of the module
 	 * @access private
 	 */
-	public function import_SharingAccess($modulenode, $moduleInstance)
+	public function importSharingAccess($modulenode, $moduleInstance)
 	{
 		if (empty($modulenode->sharingaccess))
 			return;
@@ -868,44 +839,27 @@ class PackageImport extends PackageExport
 	 * Import Events of the module
 	 * @access private
 	 */
-	public function import_Events($modulenode, $moduleInstance)
+	public function importEvents($modulenode, $moduleInstance)
 	{
-		if (empty($modulenode->events) || empty($modulenode->events->event))
+		if (empty($modulenode->eventHandlers) || empty($modulenode->eventHandlers->event)) {
 			return;
-
-		if (Event::hasSupport()) {
-			foreach ($modulenode->events->event as $eventnode) {
-				$this->import_Event($modulenode, $moduleInstance, $eventnode);
-			}
 		}
-	}
-
-	/**
-	 * Import Event of the module
-	 * @access private
-	 */
-	public function import_Event($modulenode, $moduleInstance, $eventnode)
-	{
-		$event_condition = '';
-		$event_dependent = '[]';
-		if (!empty($eventnode->condition))
-			$event_condition = "$eventnode->condition";
-		if (!empty($eventnode->dependent))
-			$event_dependent = "$eventnode->dependent";
-		Event::register($moduleInstance, (string) $eventnode->eventname, (string) $eventnode->classname, (string) $eventnode->filename, (string) $event_condition, (string) $event_dependent
-		);
+		$moduleId = \App\Module::getModuleId($moduleInstance->name);
+		foreach ($modulenode->eventHandlers->event as &$eventNode) {
+			\App\EventHandler::registerHandler($eventNode->eventName, $eventNode->className, $eventNode->includeModules, $eventNode->excludeModules, $eventNode->priority, $eventNode->isActive, $moduleId);
+		}
 	}
 
 	/**
 	 * Import actions of the module
 	 * @access private
 	 */
-	public function import_Actions($modulenode, $moduleInstance)
+	public function importActions($modulenode, $moduleInstance)
 	{
 		if (empty($modulenode->actions) || empty($modulenode->actions->action))
 			return;
 		foreach ($modulenode->actions->action as $actionnode) {
-			$this->import_Action($modulenode, $moduleInstance, $actionnode);
+			$this->importAction($modulenode, $moduleInstance, $actionnode);
 		}
 	}
 
@@ -913,29 +867,30 @@ class PackageImport extends PackageExport
 	 * Import action of the module
 	 * @access private
 	 */
-	public function import_Action($modulenode, $moduleInstance, $actionnode)
+	public function importAction($modulenode, $moduleInstance, $actionnode)
 	{
-		$actionstatus = $actionnode->status;
-		if ($actionstatus == 'enabled')
-			$moduleInstance->enableTools($actionnode->name);
-		else
-			$moduleInstance->disableTools($actionnode->name);
+		$actionstatus = (string) $actionnode->status;
+		if ($actionstatus === 'enabled') {
+			$moduleInstance->enableTools((string) $actionnode->name);
+		} else {
+			$moduleInstance->disableTools((string) $actionnode->name);
+		}
 	}
 
 	/**
 	 * Import related lists of the module
 	 * @access private
 	 */
-	public function import_RelatedLists($modulenode, $moduleInstance)
+	public function importRelatedLists($modulenode, $moduleInstance)
 	{
 		if (!empty($modulenode->relatedlists) && !empty($modulenode->relatedlists->relatedlist)) {
 			foreach ($modulenode->relatedlists->relatedlist as $relatedlistnode) {
-				$this->import_Relatedlist($modulenode, $moduleInstance, $relatedlistnode);
+				$this->importRelatedlist($modulenode, $moduleInstance, $relatedlistnode);
 			}
 		}
 		if (!empty($modulenode->inrelatedlists) && !empty($modulenode->inrelatedlists->inrelatedlist)) {
 			foreach ($modulenode->inrelatedlists->inrelatedlist as $inRelatedListNode) {
-				$this->import_InRelatedlist($modulenode, $moduleInstance, $inRelatedListNode);
+				$this->importInRelatedlist($modulenode, $moduleInstance, $inRelatedListNode);
 			}
 		}
 	}
@@ -944,7 +899,7 @@ class PackageImport extends PackageExport
 	 * Import related list of the module.
 	 * @access private
 	 */
-	public function import_Relatedlist($modulenode, $moduleInstance, $relatedlistnode)
+	public function importRelatedlist($modulenode, $moduleInstance, $relatedlistnode)
 	{
 		$relModuleInstance = Module::getInstance($relatedlistnode->relatedmodule);
 		$label = $relatedlistnode->label;
@@ -961,7 +916,7 @@ class PackageImport extends PackageExport
 		return $relModuleInstance;
 	}
 
-	public function import_InRelatedlist($modulenode, $moduleInstance, $inRelatedListNode)
+	public function importInRelatedlist($modulenode, $moduleInstance, $inRelatedListNode)
 	{
 		$inRelModuleInstance = Module::getInstance($inRelatedListNode->inrelatedmodule);
 		$label = $inRelatedListNode->label;
@@ -982,7 +937,7 @@ class PackageImport extends PackageExport
 	 * Import custom links of the module.
 	 * @access private
 	 */
-	public function import_CustomLinks($modulenode, $moduleInstance)
+	public function importCustomLinks($modulenode, $moduleInstance)
 	{
 		if (empty($modulenode->customlinks) || empty($modulenode->customlinks->customlink))
 			return;
@@ -991,9 +946,9 @@ class PackageImport extends PackageExport
 			$handlerInfo = null;
 			if (!empty($customlinknode->handler_path)) {
 				$handlerInfo = [];
-				$handlerInfo = array('path' => "$customlinknode->handler_path",
+				$handlerInfo = ['path' => "$customlinknode->handler_path",
 					'class' => "$customlinknode->handler_class",
-					'method' => "$customlinknode->handler");
+					'method' => "$customlinknode->handler"];
 			}
 			$moduleInstance->addLink(
 				"$customlinknode->linktype", "$customlinknode->linklabel", "$customlinknode->linkurl", "$customlinknode->linkicon", "$customlinknode->sequence", $handlerInfo
@@ -1005,7 +960,7 @@ class PackageImport extends PackageExport
 	 * Import cron jobs of the module.
 	 * @access private
 	 */
-	public function import_CronTasks($modulenode)
+	public function importCronTasks($modulenode)
 	{
 		if (empty($modulenode->crons) || empty($modulenode->crons->cron))
 			return;
@@ -1022,11 +977,12 @@ class PackageImport extends PackageExport
 		}
 	}
 
-	public function import_update($modulenode)
+	public function importUpdate($modulenode)
 	{
 		$dirName = 'cache/updates';
 		$result = false;
 		$adb = \PearDatabase::getInstance();
+		ob_start();
 		if (file_exists($dirName . '/init.php')) {
 			require_once $dirName . '/init.php';
 			$adb->query('SET FOREIGN_KEY_CHECKS = 0;');
@@ -1034,20 +990,31 @@ class PackageImport extends PackageExport
 			$updateInstance = new \YetiForceUpdate($modulenode);
 			$updateInstance->package = $this;
 			$result = $updateInstance->preupdate();
-			if ($result != false) {
+			file_put_contents('cache/logs/update.log', ob_get_clean(), FILE_APPEND);
+			ob_start();
+			if ($result !== false) {
 				$updateInstance->update();
 				if ($updateInstance->filesToDelete) {
 					foreach ($updateInstance->filesToDelete as $path) {
 						Functions::recurseDelete($path);
 					}
 				}
-				Functions::recurseCopy($dirName . '/files', '', true);
+				if (method_exists($updateInstance, 'afterDelete')) {
+					$updateInstance->afterDelete();
+				}
+				Functions::recurseCopy($dirName . '/files', '');
+				if (method_exists($updateInstance, 'afterCopy')) {
+					$updateInstance->afterCopy();
+				}
+				if ($content = ob_get_clean()) {
+					file_put_contents('cache/logs/update.log', $content, FILE_APPEND);
+				}
+				ob_start();
 				$result = $updateInstance->postupdate();
 			}
-
 			$adb->query('SET FOREIGN_KEY_CHECKS = 1;');
 		} else {
-			Functions::recurseCopy($dirName . '/files', '', true);
+			Functions::recurseCopy($dirName . '/files', '');
 		}
 		$adb->insert('yetiforce_updates', [
 			'user' => \Users_Record_Model::getCurrentUserModel()->get('user_name'),
@@ -1055,12 +1022,20 @@ class PackageImport extends PackageExport
 			'from_version' => $modulenode->from_version,
 			'to_version' => $modulenode->to_version,
 			'result' => $result,
+			'time' => date('Y-m-d H:i:s')
 		]);
 		if ($result) {
 			$adb->update('vtiger_version', ['current_version' => $modulenode->to_version]);
 		}
 		Functions::recurseDelete($dirName);
 		Functions::recurseDelete('cache/templates_c');
+
+		\vtlib\Access::syncSharingAccess();
+		\vtlib\Deprecated::createModuleMetaFile();
+		\App\Cache::clear();
+		\App\Cache::clearOpcache();
+		file_put_contents('cache/logs/update.log', ob_get_contents(), FILE_APPEND);
+		ob_end_clean();
 	}
 
 	/**
@@ -1074,7 +1049,7 @@ class PackageImport extends PackageExport
 		$module = (string) $this->moduleInstance->name;
 
 		$inventoryInstance = \Vtiger_Inventory_Model::getInstance($module);
-		$inventoryInstance->setInventoryTable(true);
+		$inventoryInstance->createInventoryTables();
 		$inventoryFieldInstance = \Vtiger_InventoryField_Model::getInstance($module);
 		foreach ($this->_modulexml->inventory->fields->field as $fieldNode) {
 			$this->importInventoryField($inventoryFieldInstance, $fieldNode);
@@ -1087,9 +1062,9 @@ class PackageImport extends PackageExport
 		$table = $inventoryFieldInstance->getTableName();
 
 		if ($instance->isColumnType()) {
-			Utils::AddColumn($table, $fieldNode->columnname, $instance->getDBType());
+			Utils::addColumn($table, $fieldNode->columnname, $instance->getDBType());
 			foreach ($instance->getCustomColumn() as $column => $criteria) {
-				Utils::AddColumn($table, $column, $criteria);
+				Utils::addColumn($table, $column, $criteria);
 			}
 		}
 		$db = \PearDatabase::getInstance();

@@ -16,31 +16,15 @@ class Vtiger_CRMEntity extends CRMEntity
 
 	/** Indicator if this is a custom module or standard module */
 	public $IsCustomModule = true;
-	// Placeholder for sort fields - All the fields will be initialized for Sorting through initSortFields
-	public $sortby_fields = [];
 	// Required Information for enabling Import feature
-	public $required_fields = Array('assigned_user_id' => 1);
+	public $required_fields = ['assigned_user_id' => 1];
 	// Callback function list during Importing
-	public $special_functions = Array('set_import_assigned_user');
+	public $special_functions = ['set_import_assigned_user'];
 
 	public function __construct()
 	{
 		$this->column_fields = getColumnFields(get_class($this));
 		$this->db = PearDatabase::getInstance();
-	}
-
-	public function save_module($module)
-	{
-		// Custom Save for Module
-	}
-
-	/**
-	 * Return query to use based on given modulename, fieldname
-	 * Useful to handle specific case handling for Popup
-	 */
-	public function getQueryByModuleField($module, $fieldname, $srcrecord)
-	{
-		// $srcrecord could be empty
 	}
 
 	/**
@@ -68,13 +52,12 @@ class Vtiger_CRMEntity extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($module));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' AND vtiger_fieldmodulerel.module=?", [$module]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -98,7 +81,7 @@ class Vtiger_CRMEntity extends CRMEntity
 		require('user_privileges/sharing_privileges_' . $current_user->id . '.php');
 
 		$sec_query = '';
-		$tabid = \includes\Modules::getModuleId($module);
+		$tabid = \App\Module::getModuleId($module);
 
 		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[$tabid] == 3) {
 
@@ -136,14 +119,14 @@ class Vtiger_CRMEntity extends CRMEntity
 	/**
 	 * Create query to export the records.
 	 */
-	public function create_export_query($where)
+	public function createExportQuery($where)
 	{
-		global $current_user, $currentModule;
+		$currentUser = vglobal('current_user');
 
-		include("include/utils/ExportUtils.php");
+		include('include/utils/ExportUtils.php');
 
 		//To get the Permitted fields query and the permitted fields list
-		$sql = getPermittedFieldsQuery('ServiceContracts', "detail_view");
+		$sql = getPermittedFieldsQuery('ServiceContracts', 'detail_view');
 
 		$fields_list = getFieldsListFromQuery($sql);
 
@@ -161,13 +144,12 @@ class Vtiger_CRMEntity extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($thismodule));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$thismodule]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -176,8 +158,8 @@ class Vtiger_CRMEntity extends CRMEntity
 				"$this->table_name.$columnname";
 		}
 
-		$query .= $this->getNonAdminAccessControlQuery($thismodule, $current_user);
-		$where_auto = " vtiger_crmentity.deleted=0";
+		$query .= $this->getNonAdminAccessControlQuery($thismodule, $currentUser);
+		$where_auto = ' vtiger_crmentity.deleted=0';
 
 		if ($where != '')
 			$query .= " WHERE ($where) && $where_auto";
@@ -227,7 +209,7 @@ class Vtiger_CRMEntity extends CRMEntity
 
 		$query = $select_clause . $from_clause .
 			" LEFT JOIN vtiger_users_last_import ON vtiger_users_last_import.bean_id=" . $this->table_name . "." . $this->table_index .
-			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values, $ui_type_arr, $module) .
+			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values) .
 			$where_clause .
 			" ORDER BY $table_cols," . $this->table_name . "." . $this->table_index . " ASC";
 

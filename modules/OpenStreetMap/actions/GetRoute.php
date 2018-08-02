@@ -3,15 +3,28 @@
 /**
  * Action to get markers
  * @package YetiForce.Action
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class OpenStreetMap_GetRoute_Action extends Vtiger_BasicAjax_Action
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Function to check permission
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$data = $request->get('coordinates');
+		$currentUserPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserPrivilegesModel->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+	}
+
+	public function process(\App\Request $request)
+	{
 		$flon = $request->get('flon');
 		$flat = $request->get('flat');
 		$tlon = $request->get('tlon');
@@ -22,20 +35,21 @@ class OpenStreetMap_GetRoute_Action extends Vtiger_BasicAjax_Action
 		$track = [];
 		$startLat = $flat;
 		$startLon = $flon;
-		foreach ($ilon as $key => $tempLon) {
-			if(!empty($tempLon)){
-				$endLon = $ilon[$key];
-				$endLat = $ilat[$key];
-				$tracks [] = [
-					'startLat' => $startLat,
-					'startLon' => $startLon,
-					'endLat' => $endLat,
-					'endLon' => $endLon
-				];
-				$startLat = $endLat;
-				$startLon = $endLon;
+		if (!empty($ilon)) {
+			foreach ($ilon as $key => $tempLon) {
+				if (!empty($tempLon)) {
+					$endLon = $ilon[$key];
+					$endLat = $ilat[$key];
+					$tracks [] = [
+						'startLat' => $startLat,
+						'startLon' => $startLon,
+						'endLat' => $endLat,
+						'endLon' => $endLon
+					];
+					$startLat = $endLat;
+					$startLon = $endLon;
+				}
 			}
-			
 		}
 		$tracks [] = [
 			'startLat' => $startLat,
@@ -47,26 +61,15 @@ class OpenStreetMap_GetRoute_Action extends Vtiger_BasicAjax_Action
 		$coordinates = [];
 		$travel = 0;
 		$description = '';
-		$urlToRoute =  AppConfig::module('OpenStreetMap', 'ADDRESS_TO_ROUTE') ;
+		$urlToRoute = AppConfig::module('OpenStreetMap', 'ADDRESS_TO_ROUTE');
 		foreach ($tracks as $track) {
 			$url = $urlToRoute . '?format=geojson&flat=' . $track['startLat'] . '&flon=' . $track['startLon'] . '&tlat=' . $track['endLat'] . '&tlon=' . $track['endLon'] . '&lang=' . $language . '&instructions=1';
-			$curl = curl_init();
-			curl_setopt_array($curl, [
-				CURLOPT_URL => $url,
-				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_ENCODING => "",
-				CURLOPT_MAXREDIRS => 3,
-				CURLOPT_TIMEOUT => 10,
-				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-				CURLOPT_CUSTOMREQUEST => "GET",
-			]);
-			$json = curl_exec($curl);
-			$json = \includes\utils\Json::decode($json);
+			$response = Requests::get($url);
+			$json = \App\Json::decode($response->body);
 			$coordinates = array_merge($coordinates, $json['coordinates']);
 			$description .= $json['properties']['description'];
 			$travel = $travel + $json['properties']['traveltime'];
 			$distance = $distance + $json['properties']['distance'];
-			curl_close($curl);
 		}
 		$result = [
 			'type' => 'LineString',

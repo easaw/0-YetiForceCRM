@@ -12,13 +12,13 @@
  * Settings Module Model Class
  */
 
-class Settings_Vtiger_Module_Model extends Vtiger_Base_Model
+class Settings_Vtiger_Module_Model extends \App\Base
 {
 
 	public $baseTable = 'vtiger_settings_field';
 	public $baseIndex = 'fieldid';
-	public $listFields = array('name' => 'Name', 'description' => 'Description');
-	public $nameFields = array('name');
+	public $listFields = ['name' => 'Name', 'description' => 'Description'];
+	public $nameFields = ['name'];
 	public $name = 'Vtiger';
 
 	public function getName($includeParentIfExists = false)
@@ -54,9 +54,9 @@ class Settings_Vtiger_Module_Model extends Vtiger_Base_Model
 	{
 		if (!isset($this->listFieldModels)) {
 			$fields = $this->listFields;
-			$fieldObjects = array();
+			$fieldObjects = [];
 			foreach ($fields as $fieldName => $fieldLabel) {
-				$fieldObjects[$fieldName] = new Vtiger_Base_Model(array('name' => $fieldName, 'label' => $fieldLabel));
+				$fieldObjects[$fieldName] = new \App\Base(['name' => $fieldName, 'label' => $fieldLabel]);
 			}
 			$this->listFieldModels = $fieldObjects;
 		}
@@ -74,12 +74,12 @@ class Settings_Vtiger_Module_Model extends Vtiger_Base_Model
 
 	/**
 	 * Function to get field using field name
-	 * @param <String> $fieldName
+	 * @param string $fieldName
 	 * @return <Field_Model>
 	 */
 	public function getField($fieldName)
 	{
-		return new Vtiger_Base_Model(array('name' => $fieldName, 'label' => $fieldName));
+		return new \App\Base(['name' => $fieldName, 'label' => $fieldName]);
 	}
 
 	public function hasCreatePermissions()
@@ -126,7 +126,7 @@ class Settings_Vtiger_Module_Model extends Vtiger_Base_Model
 
 	/**
 	 * Function to get Index view Url
-	 * @return <String> URL
+	 * @return string URL
 	 */
 	public function getIndexViewUrl()
 	{
@@ -201,21 +201,27 @@ class Settings_Vtiger_Module_Model extends Vtiger_Base_Model
 
 	public static function addSettingsField($block, $params)
 	{
-		$db = PearDatabase::getInstance();
+		$db = App\Db::getInstance();
 		$blockId = vtlib\Deprecated::getSettingsBlockId($block);
-		$result = $db->pquery('SELECT max(sequence) as sequence FROM vtiger_settings_field WHERE blockid=?', [$blockId]);
-		$sequence = $db->getSingleValue($result);
-		$fieldId = $db->getUniqueId('vtiger_settings_field');
-		$params['fieldid'] = $fieldId;
+		$sequence = (new App\Db\Query())->from('vtiger_settings_field')->where(['blockid' => $blockId])
+			->max('sequence');
 		$params['blockid'] = $blockId;
 		$params['sequence'] = $sequence;
-		$db->insert('vtiger_settings_field', $params);
+		$db->createCommand()->insert('vtiger_settings_field', $params)->execute();
 	}
 
 	public static function deleteSettingsField($block, $name)
 	{
-		$db = PearDatabase::getInstance();
-		$blockId = vtlib\Deprecated::getSettingsBlockId($block);
-		$db->delete('vtiger_settings_field', 'name = ? && blockid=?', [$name, $blockId]);
+		App\Db::getInstance()->createCommand()->delete('vtiger_settings_field', ['name' => $name, 'blockid' => vtlib\Deprecated::getSettingsBlockId($block)])->execute();
+	}
+
+	/**
+	 * Delete settings field by module name
+	 * @param type $moduleName
+	 */
+	public static function deleteSettingsFieldBymodule($moduleName)
+	{
+		$db = App\Db::getInstance();
+		$db->createCommand()->delete('vtiger_settings_field', ['like', 'linkto', "module={$moduleName}&"])->execute();
 	}
 }

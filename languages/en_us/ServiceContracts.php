@@ -1,14 +1,16 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
-
+/**
+ * ServiceContracts english translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_SUMMARY' => 'Work time summary',
 	// Basic Strings
 	'ServiceContracts' => 'Service Contracts',
 	'Service Contracts' => 'Service Contracts',
 	'SINGLE_ServiceContracts' => 'Service Contract',
-	'LBL_ADD_RECORD' => 'Add record',
-	'LBL_RECORDS_LIST' => 'Service Contracts list',
 	// Blocks
 	'LBL_SERVICE_CONTRACT_INFORMATION' => 'Service Contract details',
 	//Field Labels

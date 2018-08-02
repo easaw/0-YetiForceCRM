@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * VERSION YetiForceCRM: 1.1.0 RC
- * *********************************************************************************************************************************** */
+/**
+ * Widgets russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Select button info' => 'Включить видимую кнопку выбора',
 	'Widgets' => 'Модуль - Виджеты',
@@ -54,6 +50,12 @@ $languageStrings = [
 	'Filter info' => 'Включить фильтрацию данных по выбранному Фильтру',
 	'None' => 'Нет',
 	'ProductsServices' => 'Товары и Услуги',
+	'LBL_SELECTING_FIELDS' => 'Selecting fields',
+	'LBL_SELECTING_FIELDS_INFO' => 'Field names from a selected module to be displayed in the view.',
+	'LBL_VIEW_TYPE' => 'View',
+	'LBL_VIEW_TYPE_INFO' => 'Widget display type.',
+	'LBL_LIST' => 'List',
+	'LBL_SUMMARY' => 'Summary',
 	'LBL_SELECT_BUTTON_INFO' => 'Включить видимую кнопку выбора',
 	'LBL_CONDITION' => 'Состояние',
 	'LBL_CONDITION_INFO' => 'Выбор условий для показа записи',

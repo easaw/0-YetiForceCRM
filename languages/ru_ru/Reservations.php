@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Reservations russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'SINGLE_Reservations' => 'Бронирование',
 	'Reservations' => 'Бронирование',
@@ -33,6 +30,8 @@ $languageStrings = [
 	'LBL_MEETING_ROOMS' => 'Конференция',
 	'LBL_EQUIPMENT' => 'Оборудование',
 	'LBL_CARS' => 'Автомобили',
+	'PLL_DRAFT' => 'Драфт',
+	'PLL_CANCELLED' => 'Отменено',
 ];
 $jsLanguageStrings = [
 	'MSG_ERROR_NUMBER' => 'Допустимые символы: [0-9]',
@@ -40,4 +39,14 @@ $jsLanguageStrings = [
 	'JS_HOURS_SHOULD_BE_SMALLER_THAN' => 'Количество часов должно быть меньше, чем 24 часа',
 	'JS_START_DATE' => 'Дата начала',
 	'JS_END_DATE' => 'Дата окончания',
+	'JS_COMPANY' => 'Компания',
+ 	'JS_TOTAL_TIME' => 'Общее время',
+ 	'PLL_ACCEPTED' => 'На утверждение',
+ 	'PLL_TO_APPROVAL' => 'Утверждено',
+ 	'PLL_DRAFT' => 'Драфт',
+ 	'PLL_CANCELLED' => 'Отменено',
+ 	'JS_ASSIGNED_TO' => 'Привязано к',
+ 	'JS_TYPE' => 'Тип',
+ 	'JS_YES' => 'Да',
+ 	'JS_NO' => 'Нет',
 ];

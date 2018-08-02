@@ -12,7 +12,7 @@
 {strip}
 <div class='widget_header row '>
 	<div class="col-xs-12">
-		{include file='BreadCrumbs.tpl'|@vtemplate_path:$MODULE}
+		{include file=\App\Layout::getTemplatePath('BreadCrumbs.tpl', $MODULE)}
 	</div>
 </div>
 <div>
@@ -20,7 +20,7 @@
     <table class="searchUIBasic well col-xs-12 paddingLRZero no-margin">
         <tr>
             <td class="font-x-large" align="left" colspan="2">
-                <strong>{'LBL_IMPORT'|@vtranslate:$MODULE} {$FOR_MODULE|@vtranslate:$FOR_MODULE} - {'LBL_RESULT'|@vtranslate:$MODULE}</strong>
+                <strong>{\App\Language::translate('LBL_IMPORT', $MODULE)} {\App\Language::translate($FOR_MODULE, $MODULE)} - {\App\Language::translate('LBL_RESULT', $MODULE)}</strong>
             </td>
         </tr>
         {if $ERROR_MESSAGE neq ''}
@@ -32,12 +32,12 @@
         {/if}
         <tr>
             <td valign="top">
-                {include file="Import_Result_Details.tpl"|@vtemplate_path:'Import'}
+				{include file=\App\Layout::getTemplatePath('Import_Result_Details.tpl', 'Import')}
             </td>
         </tr>
         <tr>
             <td align="right" colspan="2">
-                {include file='Import_Finish_Buttons.tpl'|@vtemplate_path:'Import'}
+				{include file=\App\Layout::getTemplatePath('Import_Finish_Buttons.tpl', 'Import')}
             </td>
         </tr>
     </table>

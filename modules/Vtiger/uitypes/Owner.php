@@ -12,8 +12,88 @@ class Vtiger_Owner_UIType extends Vtiger_Base_UIType
 {
 
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritDoc}
+	 */
+	public function getDBValue($value, $recordModel = false)
+	{
+		return empty($value) ? \App\User::getCurrentUserId() : (int) $value;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function validate($value, $isUserFormat = false)
+	{
+		if ($this->validate || empty($value)) {
+			return;
+		}
+		if (!is_numeric($value)) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate = true;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		if (empty($value)) {
+			return '';
+		}
+		$ownerName = \App\Fields\Owner::getLabel($value);
+		if (is_int($length)) {
+			$ownerName = \vtlib\Functions::textLength($ownerName, $length);
+		}
+		if ($rawText) {
+			return $ownerName;
+		}
+		switch (\App\Fields\Owner::getType($value)) {
+			case 'Users':
+				$userModel = Users_Privileges_Model::getInstanceById($value);
+				$userModel->setModule('Users');
+				if ($userModel->get('status') === 'Inactive') {
+					$ownerName = '<span class="redColor"><s>' . $ownerName . '</s></span>';
+				}
+				if (App\User::getCurrentUserModel()->isAdmin()) {
+					$detailViewUrl = $userModel->getDetailViewUrl();
+				}
+				break;
+			case 'Groups':
+				if (App\User::getCurrentUserModel()->isAdmin()) {
+					$recordModel = new Settings_Groups_Record_Model();
+					$recordModel->set('groupid', $value);
+					$detailViewUrl = $recordModel->getDetailViewUrl();
+				}
+				break;
+			default:
+				$ownerName = '<span class="redColor">---</span>';
+				break;
+		}
+		if (isset($detailViewUrl)) {
+			return "<a href='" . $detailViewUrl . "'>$ownerName</a>";
+		}
+		return $ownerName;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getRelatedListDisplayValue($value)
+	{
+		return $value;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getListSearchTemplateName()
+	{
+		return 'uitypes/OwnerFieldSearchView.tpl';
+	}
+
+	/**
+	 * {@inheritDoc}
 	 */
 	public function getTemplateName()
 	{
@@ -21,51 +101,8 @@ class Vtiger_Owner_UIType extends Vtiger_Base_UIType
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
-	{
-		$ownerName = \includes\fields\Owner::getLabel($value);
-		if ($rawText) {
-			return $ownerName;
-		}
-		if (\includes\fields\Owner::getType($value) === 'Users') {
-			$userModel = Users_Record_Model::getCleanInstance('Users');
-			$userModel->set('id', $value);
-			$detailViewUrl = $userModel->getDetailViewUrl();
-			$currentUser = Users_Record_Model::getCurrentUserModel();
-			if (!$currentUser->isAdminUser() || $rawText) {
-				return $ownerName;
-			}
-		} else {
-			$currentUser = Users_Record_Model::getCurrentUserModel();
-			if (!$currentUser->isAdminUser() || $rawText) {
-				return $ownerName;
-			}
-			$recordModel = new Settings_Groups_Record_Model();
-			$recordModel->set('groupid', $value);
-			$detailViewUrl = $recordModel->getDetailViewUrl();
-		}
-		return "<a href='" . $detailViewUrl . "'>$ownerName</a>";
-	}
-
-	/**
-	 * Function to get Display value for RelatedList
-	 * @param <String> $value
-	 * @return <String>
-	 */
-	public function getRelatedListDisplayValue($value)
-	{
-		return $value;
-	}
-
-	public function getListSearchTemplateName()
-	{
-		return 'uitypes/OwnerFieldSearchView.tpl';
-	}
-
 	public function isAjaxEditable()
 	{
 		$userPrivModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();

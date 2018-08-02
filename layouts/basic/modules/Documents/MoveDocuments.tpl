@@ -14,24 +14,24 @@
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<button data-dismiss="modal" class="close" type="button" title="{vtranslate('LBL_CLOSE')}">x</button>
-					<h3 class="modal-title">{vtranslate('LBL_MOVE', $MODULE)} {vtranslate($MODULE, $MODULE)}</h3>
+					<button data-dismiss="modal" class="close" type="button" title="{\App\Language::translate('LBL_CLOSE')}">x</button>
+					<h3 class="modal-title">{\App\Language::translate('LBL_MOVE', $MODULE)} {\App\Language::translate($MODULE, $MODULE)}</h3>
 				</div>
 				<form class="form-horizontal contentsBackground" id="moveDocuments" method="post" action="index.php">
 					<input type="hidden" name="module" value="{$MODULE}" />
 					<input type="hidden" name="action" value="MoveDocuments" />
-					<input type="hidden" name="selected_ids" value={\includes\utils\Json::encode($SELECTED_IDS)} />
-					<input type="hidden" name="excluded_ids" value={\includes\utils\Json::encode($EXCLUDED_IDS)} />
+					<input type="hidden" name="selected_ids" value={\App\Json::encode($SELECTED_IDS)} />
+					<input type="hidden" name="excluded_ids" value={\App\Json::encode($EXCLUDED_IDS)} />
 					<input type="hidden" name="viewname" value="{$VIEWNAME}" />
 					<input type="hidden" name="search_key" value= "{$SEARCH_KEY}" />
 					<input type="hidden" name="operator" value="{$OPERATOR}" />
 					<input type="hidden" name="search_value" value="{$ALPHABET_VALUE}" />
 					<div class="modal-body">
 						<div class="row verticalBottomSpacing">
-							<span class="col-md-4">{vtranslate('LBL_FOLDERS_LIST', $MODULE)}<span class="redColor">*</span></span>
+							<span class="col-md-4">{\App\Language::translate('LBL_FOLDERS_LIST', $MODULE)}<span class="redColor">*</span></span>
 							<span class="col-md-8 row">
 								<select class="chzn-select col-md-11 form-control" name="folderid">
-									<optgroup label="{vtranslate('LBL_FOLDERS', $MODULE)}">
+									<optgroup label="{\App\Language::translate('LBL_FOLDERS', $MODULE)}">
 										{foreach item=FOLDERNAME from=$FOLDERS key=FOLDERID}
 											<option value="{$FOLDERID}">{$FOLDERNAME}</option>
 										{/foreach}
@@ -40,7 +40,7 @@
 							</span>
 						</div>
 					</div>
-					{include file='ModalFooter.tpl'|@vtemplate_path:$MODULE}
+					{include file=\App\Layout::getTemplatePath('ModalFooter.tpl', $MODULE)}
 				</form>
 			</div>
 		</div>

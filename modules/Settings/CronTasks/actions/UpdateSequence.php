@@ -11,7 +11,7 @@
 class Settings_CronTasks_UpdateSequence_Action extends Settings_Vtiger_Index_Action
 {
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$qualifiedModuleName = $request->getModule(false);
 		$sequencesList = $request->get('sequencesList');
@@ -21,7 +21,7 @@ class Settings_CronTasks_UpdateSequence_Action extends Settings_Vtiger_Index_Act
 		$response = new Vtiger_Response();
 		if ($sequencesList) {
 			$moduleModel->updateSequence($sequencesList);
-			$response->setResult(array(true));
+			$response->setResult([true]);
 		} else {
 			$response->setError();
 		}

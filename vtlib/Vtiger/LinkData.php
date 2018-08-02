@@ -18,12 +18,11 @@ namespace vtlib;
 class LinkData
 {
 
-	protected $input;
 	protected $link;
 	protected $user;
 	protected $module;
 
-	public function __construct($link, $user, $input = null)
+	public function __construct($link, $user)
 	{
 		$this->link = $link;
 		$this->user = $user;
@@ -32,7 +31,7 @@ class LinkData
 
 	public function getInputParameter($name)
 	{
-		return \AppRequest::get($name);
+		return \App\Request::_get($name);
 	}
 
 	/**

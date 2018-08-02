@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * Contributor(s): YetiForce.com
- * *********************************************************************************************************************************** */
+/**
+ * Documents polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Active' => 'Link aktywny',
 	'Document No' => 'Numer dokumentu',
@@ -42,8 +38,6 @@ $languageStrings = [
 	'LBL_MAX_UPLOAD_SIZE' => 'Maksymalny rozmiar pliku',
 	'LBL_MOVE' => 'Masowa zmiana katalogu',
 	'LBL_NOTE_INFORMATION' => 'Informacje podstawowe',
-	'LBL_RECORDS_LIST' => 'Lista rekordów',
-	'LBL_RECORDS_LIST' => 'Lista rekordów',
 	'MB' => 'MB',
 	'Note' => 'Opis',
 	'SINGLE_Documents' => 'Dokument',
@@ -56,6 +50,7 @@ $languageStrings = [
 	'Default' => 'Domyślny',
 	'LBL_SELECT_Documents' => 'Wybierz dokument',
 	'LBL_RELATIONS' => 'Powiązania',
+	'LBL_MASS_ADD' => 'Masowe dodawanie'
 ];
 
 $jsLanguageStrings = [

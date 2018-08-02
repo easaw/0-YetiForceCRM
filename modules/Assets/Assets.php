@@ -13,8 +13,8 @@ class Assets extends CRMEntity
 
 	public $table_name = 'vtiger_assets';
 	public $table_index = 'assetsid';
-	public $column_fields = Array();
-	protected $lockFields = ['assetstatus' => ['PLL_ACCEPTED', 'PLL_CANCELLED']];
+	public $column_fields = [];
+	protected $lockFields = [];
 
 	/** Indicator if this is a custom module or standard module */
 	public $IsCustomModule = true;
@@ -22,87 +22,76 @@ class Assets extends CRMEntity
 	/**
 	 * Mandatory table for supporting custom fields.
 	 */
-	public $customFieldTable = Array('vtiger_assetscf', 'assetsid');
+	public $customFieldTable = ['vtiger_assetscf', 'assetsid'];
 
 	/**
 	 * Mandatory for Saving, Include tables related to this module.
 	 */
-	public $tab_name = Array('vtiger_crmentity', 'vtiger_assets', 'vtiger_assetscf');
+	public $tab_name = ['vtiger_crmentity', 'vtiger_assets', 'vtiger_assetscf'];
 
 	/**
 	 * Mandatory for Saving, Include tablename and tablekey columnname here.
 	 */
-	public $tab_name_index = Array(
+	public $tab_name_index = [
 		'vtiger_crmentity' => 'crmid',
 		'vtiger_assets' => 'assetsid',
-		'vtiger_assetscf' => 'assetsid');
+		'vtiger_assetscf' => 'assetsid'];
 
 	/**
 	 * Mandatory for Listing (Related listview)
 	 */
-	public $list_fields = Array(
+	public $list_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'Asset No' => Array('assets' => 'asset_no'),
-		'Asset Name' => Array('assets' => 'assetname'),
-		'Customer Name' => Array('account' => 'account'),
-		'Product Name' => Array('products' => 'product'),
-	);
-	public $list_fields_name = Array(
+		'Asset No' => ['assets' => 'asset_no'],
+		'Asset Name' => ['assets' => 'assetname'],
+		'Customer Name' => ['account' => 'account'],
+		'Product Name' => ['products' => 'product'],
+	];
+	public $list_fields_name = [
 		/* Format: Field Label => fieldname */
 		'Asset No' => 'asset_no',
 		'Asset Name' => 'assetname',
 		'Customer Name' => 'account',
 		'Product Name' => 'product',
-	);
+	];
 	// Make the field link to detail view
 	public $list_link_field = 'assetname';
 	// For Popup listview and UI type support
-	public $search_fields = Array(
+	public $search_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'Asset No' => Array('assets' => 'asset_no'),
-		'Asset Name' => Array('assets' => 'assetname'),
-		'Customer Name' => Array('account' => 'account'),
-		'Product Name' => Array('products' => 'product')
-	);
-	public $search_fields_name = Array(
+		'Asset No' => ['assets' => 'asset_no'],
+		'Asset Name' => ['assets' => 'assetname'],
+		'Customer Name' => ['account' => 'account'],
+		'Product Name' => ['products' => 'product']
+	];
+	public $search_fields_name = [
 		/* Format: Field Label => fieldname */
 		'Asset No' => 'asset_no',
 		'Asset Name' => 'assetname',
 		'Customer Name' => 'account',
 		'Product Name' => 'product'
-	);
+	];
+
+	/**
+	 * @var string[] List of fields in the RelationListView
+	 */
+	public $relationFields = ['asset_no', 'assetname', 'product', 'assigned_user_id'];
 	// For Popup window record selection
-	public $popup_fields = Array('assetname', 'account', 'product');
-	// Placeholder for sort fields - All the fields will be initialized for Sorting through initSortFields
-	public $sortby_fields = Array();
+	public $popup_fields = ['assetname', 'account', 'product'];
 	// For Alphabetical search
 	public $def_basicsearch_col = 'assetname';
 	// Required Information for enabling Import feature
-	public $required_fields = Array('assetname' => 1);
+	public $required_fields = ['assetname' => 1];
 	// Used when enabling/disabling the mandatory fields for the module.
 	// Refers to vtiger_field.fieldname values.
-	public $mandatory_fields = Array('assetname', 'product', 'assigned_user_id');
+	public $mandatory_fields = ['assetname', 'product', 'assigned_user_id'];
 	// Callback function list during Importing
-	public $special_functions = Array('set_import_assigned_user');
+	public $special_functions = ['set_import_assigned_user'];
 	public $default_order_by = '';
 	public $default_sort_order = 'ASC';
 	public $unit_price;
-
-	public function save_module($module)
-	{
-		//module specific save
-	}
-
-	/**
-	 * Return query to use based on given modulename, fieldname
-	 * Useful to handle specific case handling for Popup
-	 */
-	public function getQueryByModuleField($module, $fieldname, $srcrecord)
-	{
-		// $srcrecord could be empty
-	}
 
 	/**
 	 * Get list view query.
@@ -130,13 +119,12 @@ class Assets extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($module));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$module]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -160,7 +148,7 @@ class Assets extends CRMEntity
 		require('user_privileges/sharing_privileges_' . $current_user->id . '.php');
 
 		$sec_query = '';
-		$tabid = \includes\Modules::getModuleId($module);
+		$tabid = \App\Module::getModuleId($module);
 
 		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[$tabid] == 3) {
 
@@ -198,7 +186,7 @@ class Assets extends CRMEntity
 	/**
 	 * Create query to export the records.
 	 */
-	public function create_export_query($where)
+	public function createExportQuery($where)
 	{
 		$current_user = vglobal('current_user');
 
@@ -231,7 +219,7 @@ class Assets extends CRMEntity
 		require('user_privileges/sharing_privileges_' . $current_user->id . '.php');
 
 		// Security Check for Field Access
-		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[\includes\Modules::getModuleId('Assets')] == 3) {
+		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[\App\Module::getModuleId('Assets')] == 3) {
 			//Added security check to get the permitted records only
 			$query = $query . " " . getListViewSecurityParameter($thismodule);
 		}
@@ -241,11 +229,11 @@ class Assets extends CRMEntity
 	/**
 	 * Transform the value while exporting
 	 */
-	public function transform_export_value($key, $value)
+	public function transformExportValue($key, $value)
 	{
 		if ($key == 'owner')
-			return \includes\fields\Owner::getLabel($value);
-		return parent::transform_export_value($key, $value);
+			return \App\Fields\Owner::getLabel($value);
+		return parent::transformExportValue($key, $value);
 	}
 
 	/**
@@ -289,73 +277,24 @@ class Assets extends CRMEntity
 
 		$query = $select_clause . $from_clause .
 			" LEFT JOIN vtiger_users_last_import ON vtiger_users_last_import.bean_id=" . $this->table_name . "." . $this->table_index .
-			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values, $ui_type_arr, $module) .
+			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values) .
 			$where_clause .
 			" ORDER BY $table_cols," . $this->table_name . "." . $this->table_index . " ASC";
 
 		return $query;
 	}
-	/**
-	 * Handle saving related module information.
-	 * NOTE: This function has been added to CRMEntity (base class).
-	 * You can override the behavior by re-defining it here.
-	 */
-	// function save_related_module($module, $crmid, $with_module, $with_crmid) { }
-
-	/**
-	 * Handle deleting related module information.
-	 * NOTE: This function has been added to CRMEntity (base class).
-	 * You can override the behavior by re-defining it here.
-	 */
-	//function delete_related_module($module, $crmid, $with_module, $with_crmid) { }
-
-	/**
-	 * Handle getting related list information.
-	 * NOTE: This function has been added to CRMEntity (base class).
-	 * You can override the behavior by re-defining it here.
-	 */
-	//function get_related_list($id, $cur_tab_id, $rel_tab_id, $actions=false) { }
-
-
-	/*
-	 * Function to get the primary query part of a report
-	 * @param - $module primary module name
-	 * returns the query string formed on fetching the related data for report for secondary module
-	 */
-	// function generateReportsQuery($module){ }
-
-	/*
-	 * Function to get the secondary query part of a report
-	 * @param - $module primary module name
-	 * @param - $secmodule secondary module name
-	 * returns the query string formed on fetching the related data for report for secondary module
-	 */
-	// function generateReportsSecQuery($module,$secmodule){ }
-	// Function to unlink all the dependent entities of the given Entity by Id
-	public function unlinkDependencies($module, $id)
-	{
-
-		parent::unlinkDependencies($module, $id);
-	}
 
 	/**
 	 * Invoked when special actions are performed on the module.
-	 * @param String Module name
-	 * @param String Event Type
+	 * @param string Module name
+	 * @param string Event Type
 	 */
-	public function vtlib_handler($moduleName, $eventType)
+	public function moduleHandler($moduleName, $eventType)
 	{
 		require_once('include/utils/utils.php');
-		$adb = PearDatabase::getInstance();
-
-		if ($eventType == 'module.postinstall') {
-			//Add Assets Module to Customer Portal
-			$adb = PearDatabase::getInstance();
-
-			$this->addModuleToCustomerPortal();
-
+		if ($eventType === 'module.postinstall') {
 			// Mark the module as Standard module
-			$adb->pquery('UPDATE vtiger_tab SET customized=0 WHERE name=?', array($moduleName));
+			\App\Db::getInstance()->createCommand()->update('vtiger_tab', ['customized' => 0], ['name' => $moduleName]);
 
 			//adds sharing accsess
 			$AssetsModule = vtlib\Module::getInstance('Assets');
@@ -366,44 +305,13 @@ class Assets extends CRMEntity
 			$assetLabel = 'Assets';
 
 			$accountInstance = vtlib\Module::getInstance('Accounts');
-			$accountInstance->setRelatedlist($assetInstance, $assetLabel, array(ADD), 'get_dependents_list');
-
+			$accountInstance->setRelatedlist($assetInstance, $assetLabel, ['ADD'], 'getDependentsList');
 			$productInstance = vtlib\Module::getInstance('Products');
-			$productInstance->setRelatedlist($assetInstance, $assetLabel, array(ADD), 'get_dependents_list');
+			$productInstance->setRelatedlist($assetInstance, $assetLabel, ['ADD'], 'getDependentsList');
 
-			\includes\fields\RecordNumber::setNumber($moduleName, 'ASSET', 1);
-		} else if ($eventType == 'module.disabled') {
-			
-		} else if ($eventType == 'module.enabled') {
-			
-		} else if ($eventType == 'module.preuninstall') {
-			
-		} else if ($eventType == 'module.preupdate') {
-			
-		} else if ($eventType == 'module.postupdate') {
-			$this->addModuleToCustomerPortal();
-			\includes\fields\RecordNumber::setNumber($moduleName, 'ASSET', 1);
-		}
-	}
-
-	public function addModuleToCustomerPortal()
-	{
-		$adb = PearDatabase::getInstance();
-
-		$assetsResult = $adb->pquery('SELECT tabid FROM vtiger_tab WHERE name=?', array('Assets'));
-		$assetsTabId = $adb->query_result($assetsResult, 0, 'tabid');
-		if (\includes\Modules::getModuleId('CustomerPortal') && $assetsTabId) {
-			$checkAlreadyExists = $adb->pquery('SELECT 1 FROM vtiger_customerportal_tabs WHERE tabid=?', array($assetsTabId));
-			if ($checkAlreadyExists && $adb->num_rows($checkAlreadyExists) < 1) {
-				$maxSequenceQuery = $adb->query("SELECT max(sequence) as maxsequence FROM vtiger_customerportal_tabs");
-				$maxSequence = $adb->query_result($maxSequenceQuery, 0, 'maxsequence');
-				$nextSequence = $maxSequence + 1;
-				$adb->query("INSERT INTO vtiger_customerportal_tabs(tabid,visible,sequence) VALUES ($assetsTabId,1,$nextSequence)");
-			}
-			$checkAlreadyExists = $adb->pquery('SELECT 1 FROM vtiger_customerportal_prefs WHERE tabid=?', array($assetsTabId));
-			if ($checkAlreadyExists && $adb->num_rows($checkAlreadyExists) < 1) {
-				$adb->query("INSERT INTO vtiger_customerportal_prefs(tabid,prefkey,prefvalue) VALUES ($assetsTabId,'showrelatedinfo',1)");
-			}
+			\App\Fields\RecordNumber::setNumber($moduleName, 'ASSET', 1);
+		} else if ($eventType === 'module.postupdate') {
+			\App\Fields\RecordNumber::setNumber($moduleName, 'ASSET', 1);
 		}
 	}
 
@@ -419,11 +327,11 @@ class Assets extends CRMEntity
 
 		\App\Log::trace("Entering function transferRelatedRecords ($module, $transferEntityIds, $entityId)");
 
-		$rel_table_arr = Array("Documents" => "vtiger_senotesrel", "Attachments" => "vtiger_seattachmentsrel");
+		$rel_table_arr = ["Documents" => "vtiger_senotesrel", "Attachments" => "vtiger_seattachmentsrel"];
 
-		$tbl_field_arr = Array("vtiger_senotesrel" => "notesid", "vtiger_seattachmentsrel" => "attachmentsid");
+		$tbl_field_arr = ["vtiger_senotesrel" => "notesid", "vtiger_seattachmentsrel" => "attachmentsid"];
 
-		$entity_tbl_field_arr = Array("vtiger_senotesrel" => "crmid", "vtiger_seattachmentsrel" => "crmid");
+		$entity_tbl_field_arr = ["vtiger_senotesrel" => "crmid", "vtiger_seattachmentsrel" => "crmid"];
 
 		foreach ($transferEntityIds as $transferId) {
 			foreach ($rel_table_arr as $rel_module => $rel_table) {
@@ -431,12 +339,12 @@ class Assets extends CRMEntity
 				$entity_id_field = $entity_tbl_field_arr[$rel_table];
 				// IN clause to avoid duplicate entries
 				$sel_result = $adb->pquery("select $id_field from $rel_table where $entity_id_field=? " .
-					" and $id_field not in (select $id_field from $rel_table where $entity_id_field=?)", array($transferId, $entityId));
-				$res_cnt = $adb->num_rows($sel_result);
+					" and $id_field not in (select $id_field from $rel_table where $entity_id_field=?)", [$transferId, $entityId]);
+				$res_cnt = $adb->numRows($sel_result);
 				if ($res_cnt > 0) {
 					for ($i = 0; $i < $res_cnt; $i++) {
-						$id_field_value = $adb->query_result($sel_result, $i, $id_field);
-						$adb->pquery("update $rel_table set $entity_id_field=? where $entity_id_field=? and $id_field=?", array($entityId, $transferId, $id_field_value));
+						$id_field_value = $adb->queryResult($sel_result, $i, $id_field);
+						$adb->pquery("update $rel_table set $entity_id_field=? where $entity_id_field=? and $id_field=?", [$entityId, $transferId, $id_field_value]);
 					}
 				}
 			}

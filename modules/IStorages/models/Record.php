@@ -3,7 +3,8 @@
 /**
  * Record Class for IStorages
  * @package YetiForce.Model
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class IStorages_Record_Model extends Vtiger_Record_Model
@@ -32,16 +33,14 @@ class IStorages_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to retieve display value for a field
-	 * @param <String> $fieldName - field name for which values need to get
-	 * @return <String>
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($fieldName, $recordId = false, $rawText = false)
+	public function getDisplayValue($fieldName, $record = false, $rawText = false, $length = false)
 	{
 		// This is special field / displayed only in Products module [view=Detail relatedModule=IStorages]
-		if ($fieldName == 'qtyinstock') {
+		if ($fieldName === 'qtyinstock') {
 			return $this->get($fieldName);
 		}
-		return parent::getDisplayValue($fieldName, $recordId, $rawText);
+		return parent::getDisplayValue($fieldName, $record, $rawText, $length);
 	}
 }

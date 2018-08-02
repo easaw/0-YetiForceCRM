@@ -6,6 +6,7 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com.
  * *********************************************************************************** */
 
 class Faq_Record_Model extends Vtiger_Record_Model
@@ -35,12 +36,12 @@ class Faq_Record_Model extends Vtiger_Record_Model
 		//Updating the answer of Faq
 		$answer = $recordModel->get('faq_answer');
 		if ($answer) {
-			$answer = vtranslate('LBL_SOLUTION', 'Faq') . ":\r\n" . $answer;
+			$answer = \App\Language::translate('LBL_SOLUTION', 'Faq') . ":\r\n" . $answer;
 		}
 
 		$commentsList = $parentRecordModel->getCommentsList();
 		if ($commentsList) {
-			$answer .= "\r\n\r\n" . vtranslate('LBL_COMMENTS', 'Faq') . ":";
+			$answer .= "\r\n\r\n" . \App\Language::translate('LBL_COMMENTS', 'Faq') . ":";
 			foreach ($commentsList as $comment) {
 				$answer .= "\r\n$comment";
 			}
@@ -51,16 +52,16 @@ class Faq_Record_Model extends Vtiger_Record_Model
 
 	/**
 	 * Function get List of Fields which are mapping from Truoble Tickets to FAQ
-	 * @return <array>
+	 * @return array
 	 */
 	public static function getTicketToFAQMappingFields()
 	{
-		return array(
-			array('ticketField' => 'ticket_title', 'faqField' => 'question', 'defaultValue' => ''),
-			array('ticketField' => 'product_id', 'faqField' => 'product_id', 'defaultValue' => ''),
-			array('ticketField' => 'solution', 'faqField' => 'faq_answer', 'defaultValue' => ''),
-			array('ticketField' => '', 'faqField' => 'faqcategories', 'defaultValue' => 'General'),
-			array('ticketField' => '', 'faqField' => 'faqstatus', 'defaultValue' => 'Draft')
-		);
+		return [
+			['ticketField' => 'ticket_title', 'faqField' => 'question', 'defaultValue' => ''],
+			['ticketField' => 'product_id', 'faqField' => 'product_id', 'defaultValue' => ''],
+			['ticketField' => 'solution', 'faqField' => 'faq_answer', 'defaultValue' => ''],
+			['ticketField' => '', 'faqField' => 'faqcategories', 'defaultValue' => 'General'],
+			['ticketField' => '', 'faqField' => 'faqstatus', 'defaultValue' => 'Draft']
+		];
 	}
 }

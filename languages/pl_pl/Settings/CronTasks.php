@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * CronTasks polish translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'Recommended frequency for Scheduled Import is 15 mins' => 'Zalecana częstotliwość dla Planowanego Importu to 15 minut.',
 	'Recommended frequency for SendReminder is 15 mins' => 'Zalecana częstotliwość dla wysyłanych Przypomnień to 15 minut',
@@ -33,22 +30,39 @@ $languageStrings = [
 	'MODULE' => 'Moduł',
 	'LBL_NAME' => 'Nazwa',
 	'LBL_PATH_TO_FILE' => 'Ścieżka do pliku',
-	'Workflow' => 'Obieg informacji',
+	'LBL_WORKFLOW' => 'Obieg informacji',
 	'RecurringInvoice' => 'Cykliczna faktura',
-	'MailScannerAction' => 'Akcja skanera poczty',
-	'MailScannerVerification' => 'Weryfikacja skanera poczty',
-	'SendReminder' => 'Wyślij przypomnienie',
-	'Scheduled Import' => 'Zaplanowany import',
-	'ScheduleReports' => 'Zaplanuj raporty',
-	'MailScannerBind' => 'Powiąż skaner poczty',
+	'LBL_MAIL_SCANNER_ACTION' => 'Akcja skanera poczty',
+	'LBL_MAIL_SCANNER_VERIFICATION' => 'Weryfikacja skanera poczty',
+	'LBL_SEND_REMINDER' => 'Wyślij przypomnienie',
+	'LBL_SCHEDULED_IMPORT' => 'Zaplanowany import',
+	'LBL_SCHEDULE_REPORTS' => 'Zaplanuj raporty',
+	'LBL_MAIL_SCANNER_BIND' => 'Powiąż skaner poczty',
 	'LBL_CURRENCY_UPDATE' => 'Aktualizacja kursów walut',
 	'LBL_MULTI_REFERENCE_VALUE' => 'Aktualizacja pól multireferencji',
 	'LBL_CRMACTIVITY_DAYS' => 'Aktualizacja pól aktywności kalendarza w modułach powiązanych',
-	'Activity State' => 'Stan aktywności',
-	'Assets Renewal' => 'Odnowienie produktów sprzedanych',
-	'SoldServices Renewal' => 'Odnowienie usług sprzedanych',
+	'LBL_ACTIVITY_STATE' => 'Stan aktywności',
+	'LBL_ASSETS_RENEWAL' => 'Odnowienie produktów sprzedanych',
+	'LBL_SOLD_SERVICES_RENEWAL' => 'Odnowienie usług sprzedanych',
 	'LBL_SEND_NOTIFICATIONS' => 'Wysyłaj powiadomienia',
 	'LBL_MARK_RECORDS_AS_REVIEWED' => 'Oznaczanie rekordów jako zapoznane ze zmianami',
+	'LBL_ADDRESS_BOOK' => 'Aktualizacja książki adresowej',
+	'LBL_UPDATER_RECORDS_COORDINATES' => 'Pobieranie współrzędnych geograficznych',
+	'LBL_UPDATER_COORDINATES' => 'Aktualizacja współrzędnych geograficznych',
+	'LBL_PRIVILEGES_UPDATER' => 'Aktualizacja uprawnień',
+	'LBL_RECORD_LABEL_UPDATER' => 'Aktualizacja etykiet',
+	'Activity state' => 'Statusy w kalendarzu',
+	'LBL_HANDLER_UPDATER' => 'Szybki zapis',
+	'LBL_MAILER' => 'Wysyłka emaili',
+	'LBL_CARD_DAV' => 'Integracja CardDav',
+	'LBL_CAL_DAV' => 'Integracja CalDav',
+	'LBL_CLEAR_ATTACHMENTS_TABLE' => 'Czyszczenie tablicy załączników',
+	'LBL_SMSNOTIFIER' => 'Wiadomości SMS',
+	'LBL_CACHE' => 'Czyszczenie plików cache',
+	'LBL_NEVER_ENDING_RECURRING_EVENTS' => 'Generowanie wydarzeń cyklicznych',
+	'LBL_BROWSING_HISTORY' => 'Usuwanie historii ostatnio przeglądanych stron',
+	'LBK_SYSTEM_WARNINGS' => 'Powiadomienia z ostrzeżeniami systemowymi',
+	'LBL_BATCH_PROCESSES' => 'Procesy wsadowe do obsługi długo trwających akcji',
 ];
 $jsLanguageStrings = [
 	'Recommended frequency for Scheduled Import is 15 mins' => 'Zalecana częstotliwość dla Planowanego Importu to 15 minut.',

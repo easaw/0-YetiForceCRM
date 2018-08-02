@@ -2,32 +2,42 @@
 
 /**
  * @package YetiForce.Modal
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Users_SwitchUsers_View extends Vtiger_BasicModal_View
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		if (!Users_Module_Model::getSwitchUsers()) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		echo '<div class="modal fade switchUsersContainer"><div class="modal-dialog modal-sm"><div class="modal-content">';
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$users = Users_Module_Model::getSwitchUsers();
-		$userId = $request->get('id');
+		$users = Users_Module_Model::getSwitchUsers(true);
+		$userId = $request->getInteger('id');
 		$baseUserId = $userId;
-		if (Vtiger_Session::has('baseUserId') && Vtiger_Session::get('baseUserId') != '') {
-			$baseUserId = Vtiger_Session::get('baseUserId');
+		if (App\Session::has('baseUserId') && App\Session::get('baseUserId') !== '') {
+			$baseUserId = App\Session::get('baseUserId');
 		}
 		unset($users[$baseUserId]);
 		unset($users[$userId]);

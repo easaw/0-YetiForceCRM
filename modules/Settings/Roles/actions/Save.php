@@ -6,22 +6,18 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Settings_Roles_Save_Action extends Vtiger_Action_Controller
+class Settings_Roles_Save_Action extends Settings_Vtiger_Basic_Action
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Process
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUser->isAdminUser()) {
-			throw new \Exception\AppException('LBL_PERMISSION_DENIED');
-		}
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
 		$recordId = $request->get('record');
 		$roleName = $request->get('rolename');
@@ -46,7 +42,8 @@ class Settings_Roles_Save_Action extends Vtiger_Action_Controller
 				->set('permissionsrelatedfield', $request->get('permissionsRelatedField'))
 				->set('globalsearchadv', $request->get('globalSearchAdvanced'))
 				->set('assignedmultiowner', $request->get('assignedmultiowner'))
-				->set('clendarallorecords', $request->get('clendarallorecords'));
+				->set('clendarallorecords', $request->get('clendarallorecords'))
+				->set('auto_assign', $request->get('auto_assign'));
 			if (!empty($allowassignedrecordsto))
 				$recordModel->set('allowassignedrecordsto', $allowassignedrecordsto); // set the value of assigned records to
 			if ($parentRole && !empty($roleName) && !empty($roleProfiles)) {
@@ -59,7 +56,7 @@ class Settings_Roles_Save_Action extends Vtiger_Action_Controller
 			if ($roleProfiles) {
 				foreach ($roleProfiles as $profileId) {
 					$profileRecordModel = Settings_Profiles_Record_Model::getInstanceById($profileId);
-					$profileRecordModel->recalculate(array($recordId));
+					$profileRecordModel->recalculate([$recordId]);
 				}
 			}
 		}
@@ -68,7 +65,7 @@ class Settings_Roles_Save_Action extends Vtiger_Action_Controller
 		header("Location: $redirectUrl");
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateWriteAccess();
 	}

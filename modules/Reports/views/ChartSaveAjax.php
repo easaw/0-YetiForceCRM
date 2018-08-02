@@ -12,27 +12,26 @@
 class Reports_ChartSaveAjax_View extends Vtiger_IndexAjax_View
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
 	{
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 		if (!$record) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 		$reportModel = Reports_Record_Model::getCleanInstance($record);
 
 		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule()) && !$reportModel->isEditable()) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->getMode();
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 		$reportModel = Reports_Record_Model::getInstanceById($record);
 		$reportModel->setModule('Reports');
 		$reportModel->set('advancedFilter', $request->get('advanced_filter'));
@@ -45,12 +44,12 @@ class Reports_ChartSaveAjax_View extends Vtiger_IndexAjax_View
 
 		$dataFields = $request->get('datafields', 'count(*)');
 		if (is_string($dataFields))
-			$dataFields = array($dataFields);
+			$dataFields = [$dataFields];
 
-		$reportModel->set('reporttypedata', \includes\utils\Json::encode(array(
+		$reportModel->set('reporttypedata', \App\Json::encode([
 				'type' => $request->get('charttype', 'pieChart'),
 				'groupbyfield' => $request->get('groupbyfield'),
-				'datafields' => $dataFields)
+				'datafields' => $dataFields]
 		));
 		$reportModel->set('reporttype', 'chart');
 		$reportModel->save();

@@ -11,32 +11,32 @@
 -->*}
 
 <div class="dashboardWidgetHeader">
-	{include file="dashboards/WidgetHeader.tpl"|@vtemplate_path:$MODULE_NAME SETTING_EXIST=true}
+	{include file=\App\Layout::getTemplatePath('dashboards/WidgetHeader.tpl', $MODULE_NAME) SETTING_EXIST=true}
 	<div class="row filterContainer hide" style="position:absolute;z-index:100001">
 		<div class="row">
 			<span class="col-md-5">
 				<span class="pull-right">
-					{vtranslate('Created Time', $MODULE_NAME)} &nbsp; {vtranslate('LBL_BETWEEN', $MODULE_NAME)}
+					{\App\Language::translate('Created Time', $MODULE_NAME)} &nbsp; {\App\Language::translate('LBL_BETWEEN', $MODULE_NAME)}
 				</span>
 			</span>
 			<span class="col-md-4">
-				<input type="text" name="createdtime" title="{vtranslate('LBL_CHOOSE_DATE')}" class="dateRange widgetFilter" />
+				<input type="text" name="createdtime" title="{\App\Language::translate('LBL_CHOOSE_DATE')}" class="dateRangeField widgetFilter" />
 			</span>
 		</div>
 		<div class="row">
 			<span class="col-md-5">
 				<span class="pull-right">
-					{vtranslate('Assigned To', $MODULE_NAME)}
+					{\App\Language::translate('Assigned To', $MODULE_NAME)}
 				</span>
 			</span>
 			<span class="col-md-4">
 				{assign var=CURRENT_USER_ID value=$CURRENTUSER->getId()}
 				<select class="widgetFilter" name="owner">
-					<option value="">{vtranslate('LBL_ALL', $MODULE_NAME)}</option>
+					<option value="">{\App\Language::translate('LBL_ALL', $MODULE_NAME)}</option>
 					{foreach key=USER_ID item=USER_NAME from=$ACCESSIBLE_USERS}
 					<option value="{$USER_ID}">
 						{if $USER_ID eq $CURRENTUSER->getId()}
-							{vtranslate('LBL_MINE',$MODULE_NAME)}
+							{\App\Language::translate('LBL_MINE',$MODULE_NAME)}
 						{else}
 							{$USER_NAME}
 						{/if}
@@ -48,5 +48,5 @@
 	</div>
 </div>
 <div class="dashboardWidgetContent">
-	{include file="dashboards/DashBoardWidgetContents.tpl"|@vtemplate_path:$MODULE_NAME}
+	{include file=\App\Layout::getTemplatePath('dashboards/DashBoardWidgetContents.tpl', $MODULE_NAME)}
 </div>

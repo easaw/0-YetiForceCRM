@@ -21,35 +21,37 @@ class Vtiger_Loader
 
 	/**
 	 * Static function to resolve the qualified php filename to absolute path
-	 * @param <String> $qualifiedName
-	 * @return <String> Absolute File Name
+	 * @param string $qualifiedName
+	 * @return string Absolute File Name
 	 */
-	static function resolveNameToPath($qualifiedName, $fileExtension = 'php')
+	public static function resolveNameToPath($qualifiedName, $fileExtension = 'php')
 	{
-		$allowedExtensions = array('php', 'js', 'css', 'less');
+		$allowedExtensions = ['php', 'js', 'css', 'less'];
 		$file = '';
 		if (!in_array($fileExtension, $allowedExtensions)) {
 			return '';
 		}
-
+		$prefix = '';
+		if ($fileExtension !== 'php') {
+			$prefix = 'public_html' . DIRECTORY_SEPARATOR;
+		}
 		// TO handle loading vtiger files
 		if (strpos($qualifiedName, '~') === 0) {
 			$file = str_replace('~', '', $qualifiedName);
-			$file = ROOT_DIRECTORY . DIRECTORY_SEPARATOR . $file;
+			$file = ROOT_DIRECTORY . DIRECTORY_SEPARATOR . $prefix . $file;
 		} else {
 			$file = str_replace('.', DIRECTORY_SEPARATOR, $qualifiedName) . '.' . $fileExtension;
-			$file = ROOT_DIRECTORY . DIRECTORY_SEPARATOR . $file;
+			$file = ROOT_DIRECTORY . DIRECTORY_SEPARATOR . $prefix . $file;
 		}
 		return $file;
 	}
 
 	/**
 	 * Function to include a given php file through qualified file name
-	 * @param <String> $qualifiedName
-	 * @param <Boolean> $supressWarning
-	 * @return <Boolean>
+	 * @param string $qualifiedName
+	 * @return boolean
 	 */
-	static function includeOnce($qualifiedName, $supressWarning = false)
+	public static function includeOnce($qualifiedName)
 	{
 
 		if (isset(self::$includeCache[$qualifiedName])) {
@@ -65,12 +67,7 @@ class Vtiger_Loader
 		// Check file inclusion before including it
 		\vtlib\Deprecated::checkFileAccessForInclusion($file);
 
-		$status = -1;
-		if ($supressWarning) {
-			$status = @include_once $file;
-		} else {
-			$status = include_once $file;
-		}
+		$status = include_once $file;
 
 		$success = ($status === 0) ? false : true;
 
@@ -81,7 +78,7 @@ class Vtiger_Loader
 		return $success;
 	}
 
-	static function includePath($qualifiedName)
+	public static function includePath($qualifiedName)
 	{
 		// Already included?
 		if (isset(self::$includePathCache[$qualifiedName])) {
@@ -97,21 +94,19 @@ class Vtiger_Loader
 
 	/**
 	 * Function to get the class name of a given Component, of given Type, for a given Module
-	 * @param <String> $componentType
-	 * @param <String> $componentName
-	 * @param <String> $moduleName
-	 * @return <String> Required Class Name
-	 * @throws \Exception\AppException
+	 * @param string $componentType
+	 * @param string $componentName
+	 * @param string $moduleName
+	 * @return string Required Class Name
+	 * @throws \App\Exceptions\AppException
 	 */
-	public static function getComponentClassName($componentType, $componentName, $moduleName = 'Vtiger')
+	public static function getComponentClassName($componentType, $componentName, $moduleName = 'Vtiger', $throwException = true)
 	{
 		// Change component type from view to views, action to actions to navigate to the right path.
 		$componentTypeDirectory = strtolower($componentType) . 's';
 		// Fall Back Directory & Fall Back Class
 		$fallBackModuleDir = $fallBackModuleClassPath = 'Vtiger';
 		// Intermediate Fall Back Directories & Classes, before relying on final fall back
-		$firstFallBackModuleDir = $firstFallBackModuleClassPath = '';
-		$secondFallBackDir = $secondFallBackClassPath = '';
 		// Default module directory & class name
 		$moduleDir = $moduleClassPath = $moduleName;
 		// Change the Module directory & class, along with intermediate fall back directory and class, if module names has submodule as well
@@ -164,16 +159,17 @@ class Vtiger_Loader
 			return $fallBackComponentClassName;
 		}
 
-		
-		\App\Log::error("Error Vtiger_Loader::getComponentClassName($componentType, $componentName, $moduleName): Handler not found");
-
-		throw new \Exception\AppException('LBL_HANDLER_NOT_FOUND');
+		if ($throwException) {
+			\App\Log::error("Error Vtiger_Loader::getComponentClassName($componentType, $componentName, $moduleName): Handler not found");
+			throw new \App\Exceptions\AppException('LBL_HANDLER_NOT_FOUND');
+		}
+		return false;
 	}
 
 	/**
 	 * Function to auto load the required class files matching the directory pattern modules/xyz/types/Abc.php for class xyz_Abc_Type
-	 * @param <String> $className
-	 * @return <Boolean>
+	 * @param string $className
+	 * @return boolean
 	 */
 	public static function autoLoad($className)
 	{
@@ -199,18 +195,4 @@ class Vtiger_Loader
 	}
 }
 
-function vimport($qualifiedName)
-{
-	return Vtiger_Loader::includeOnce($qualifiedName);
-}
-
-function vimport_try($qualifiedName)
-{
-	return Vtiger_Loader::includeOnce($qualifiedName, true);
-}
-
-function vimport_path($qualifiedName)
-{
-	return Vtiger_Loader::includePath($qualifiedName);
-}
 spl_autoload_register('Vtiger_Loader::autoLoad');

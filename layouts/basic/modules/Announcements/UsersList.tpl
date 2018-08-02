@@ -1,12 +1,12 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 	<div class="">
 		<table class="table table-striped">
 			<thead>
 				<tr> 
-					<th>{vtranslate('LBL_USER',$MODULE_NAME)}</th>
-					<th class="text-center">{vtranslate('LBL_ACCEPT_ANNOUNCEMENT',$MODULE_NAME)}</th>
-					<th class="text-center">{vtranslate('LBL_DATE',$MODULE_NAME)}</th>
+					<th>{\App\Language::translate('LBL_USER',$MODULE_NAME)}</th>
+					<th class="text-center">{\App\Language::translate('LBL_ACCEPT_ANNOUNCEMENT',$MODULE_NAME)}</th>
+					<th class="text-center">{\App\Language::translate('LBL_DATE',$MODULE_NAME)}</th>
 				</tr> 
 			</thead>
 			<tbody>
@@ -23,8 +23,7 @@
 						</td>
 						<td class="text-center">
 							{if isset($USER['date'])}
-								{Vtiger_Util_Helper::formatDateTimeIntoDayString($USER['date'])}&nbsp;
-								- {Vtiger_Util_Helper::formatDateDiffInStrings($USER['date'])}	
+								{\App\Fields\DateTime::formatToViewDate($USER['date'])}	
 							{/if}
 						</td>
 					</tr> 

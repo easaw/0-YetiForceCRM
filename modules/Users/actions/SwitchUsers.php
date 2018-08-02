@@ -3,72 +3,81 @@
 /**
  * Switch Users Action Class
  * @package YetiForce.Action
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Users_SwitchUsers_Action extends Vtiger_Action_Controller
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function checks permissions
+	 * @param \App\Request $request
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$userId = $request->get('id');
+		$userId = $request->getInteger('id');
 		require('user_privileges/switchUsers.php');
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$baseUserId = $currentUserModel->getRealId();
 		if (!key_exists($baseUserId, $switchUsers) || !key_exists($userId, $switchUsers[$baseUserId])) {
-			$dbLog = PearDatabase::getInstance('log');
-			$dbLog->insert('l_yf_switch_users', [
+			$db = \App\Db::getInstance('log');
+			$db->createCommand()->insert('l_#__switch_users', [
 				'baseid' => $baseUserId,
 				'destid' => $userId,
 				'busername' => $currentUserModel->getName(),
 				'dusername' => '',
 				'date' => date('Y-m-d H:i:s'),
-				'ip' => vtlib\Functions::getRemoteIP(),
-				'agent' => $_SERVER['HTTP_USER_AGENT'],
+				'ip' => \App\RequestUtil::getRemoteIP(),
+				'agent' => $request->getServer('HTTP_USER_AGENT'),
 				'status' => 'Failed login - No permission',
-			]);
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			])->execute();
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Function proccess
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$baseUserId = $currentUserModel->getId();
-		$userId = $request->get('id');
+		$userId = $request->getInteger('id');
 		$user = new Users();
 		$currentUser = $user->retrieveCurrentUserInfoFromFile($userId);
 		$name = $currentUserModel->getName();
 		$userName = $currentUser->column_fields['user_name'];
-		Vtiger_Session::set('AUTHUSERID', $userId);
-		Vtiger_Session::set('authenticated_user_id', $userId);
-		Vtiger_Session::set('user_name', $userName);
-		Vtiger_Session::set('full_user_name', $name);
+		App\Session::set('authenticated_user_id', $userId);
+		App\Session::set('user_name', $userName);
+		App\Session::set('full_user_name', $name);
 
 		$status = 'Switched';
-		if (Vtiger_Session::get('baseUserId') == '') {
-			Vtiger_Session::set('baseUserId', $baseUserId);
+		if (empty(App\Session::get('baseUserId'))) {
+			App\Session::set('baseUserId', $baseUserId);
 			$status = 'Signed in';
-		} elseif ($userId == Vtiger_Session::get('baseUserId')) {
+		} elseif ($userId === App\Session::get('baseUserId')) {
 			$baseUserId = $userId;
-			Vtiger_Session::set('baseUserId', '');
+			App\Session::set('baseUserId', '');
 			$status = 'Signed out';
 		} else {
-			$baseUserId = Vtiger_Session::get('baseUserId');
+			$baseUserId = App\Session::get('baseUserId');
 		}
 
-		$dbLog = PearDatabase::getInstance('log');
-		$dbLog->insert('l_yf_switch_users', [
+		$db = \App\Db::getInstance('log');
+		$db->createCommand()->insert('l_#__switch_users', [
 			'baseid' => $baseUserId,
 			'destid' => $userId,
 			'busername' => $currentUserModel->getName(),
 			'dusername' => $name,
 			'date' => date('Y-m-d H:i:s'),
-			'ip' => vtlib\Functions::getRemoteIP(),
-			'agent' => $_SERVER['HTTP_USER_AGENT'],
+			'ip' => \App\RequestUtil::getRemoteIP(),
+			'agent' => $request->getServer('HTTP_USER_AGENT'),
 			'status' => $status,
-		]);
-
+		])->execute();
+		\App\CustomView::resetCurrentView();
 		header('Location: index.php');
 	}
 }

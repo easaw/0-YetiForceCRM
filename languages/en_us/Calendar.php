@@ -9,6 +9,7 @@
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
 $languageStrings = [
+	'Status' => 'Status',
 	'Activity Type' => 'Activity type',
 	'Call' => 'Call',
 	'Completed' => 'Completed',
@@ -52,7 +53,6 @@ $languageStrings = [
 	'LBL_MINUTES' => 'Minutes',
 	'LBL_ON' => 'on',
 	'LBL_OTHER_EVENTS' => 'Other Events',
-	'LBL_RECORDS_LIST' => 'Calendar list', //Duplicated key-value pair
 	'LBL_RESULT' => 'Result',
 	'LBL_SELECT_ACTIVITY_TYPE' => 'Select activity type',
 	'LBL_SELECT_CALENDAR_COLOR' => 'Select Calendar color',
@@ -141,9 +141,17 @@ $languageStrings = [
 	'LBL_CACHE_CLEAR' => 'Clear view',
 	'LBL_PROCESS' => 'Process',
 	'LBL_SAVE_AND_CLOSE' => 'Save and close',
+	'LBL_SHOW_LOCATION' => 'Show location',
+	'FL_RECURRENCE' => 'Repetition',
+	'FL_REAPEAT' => 'Repeat',
 ];
 
 $jsLanguageStrings = [
+	'LBL_CANT_SELECT_CONTACT_FROM_LEADS' => 'Cant select contact from leads',
+	'JS Activity Type' => 'Activity type',
+	'JS_SATATUS' => 'Status',
+	'JS_End Date' => 'End date',
+	'JS_Start Date' => 'Start date',
 	'JS_CALENDAR_VIEW_ADDED_SUCCESSFULLY' => 'Calendar view added successfully',
 	'JS_CALENDAR_VIEW_COLOR_UPDATED_SUCCESSFULLY' => 'Calendar view color updated successfully',
 	'JS_CALENDAR_VIEW_DELETE_CONFIRMATION' => 'Are you sure you want to delete this Calendar view ?',

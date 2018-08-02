@@ -1,13 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * OSSMail polish translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'OSSMail' => 'Moja poczta',
 	'OSSMail_manual' => 'Moduł pocztowy',
@@ -34,7 +31,7 @@ $languageStrings = [
 	'LBL_RC_enable_spellcheck' => 'Moduł sprawdzania pisowni',
 	'LBL_RC_identities_level' => 'Poziom dostępu do tożsamości',
 	'LBL_RC_auto_create_user' => 'Automatyczne tworzenie nowego użytkownika podczas logowania',
-	'LBL_RC_smtp_log' => 'Zapisuj logii dla wysyłanych wiadomości',
+	'LBL_RC_smtp_log' => 'Zapisuj logi dla wysyłanych wiadomości',
 	'LBL_RC_mail_pagesize' => 'Ilość wiadomości w widoku listy',
 	'LBL_RC_addressbook_pagesize' => 'Ilość kontaktów w widoku listy',
 	'LBL_RC_prefer_html' => 'Czy wyświetlać wiadomości w formacie HTML',
@@ -67,11 +64,11 @@ $languageStrings = [
 	'To' => 'Do',
 	'LBL_MAIL_NOT_FOUND_IN_DB' => 'Nie znaleziono maila w bazie.',
 	'LBL_IMPORT_MAIL_MANUALLY' => 'Zaimportuj maila ręcznie',
-	'LBL_RELATIONS' => 'Firmy/Kontakty',
+	'LBL_RELATIONS' => 'Firmy',
+	'LBL_RELATIONS_EXTEND' => 'Kontakty',
 	'LBL_PROCESS' => 'Procesy',
 	'LBL_SUB_PROCESS' => 'Podprocesy',
 	'LBL_REMOVE_RELATION' => 'Usuń powiązanie z',
-	'LBL_ADD_RECORD' => 'Utwórz rekord',
 	'LBL_SELECT_RECORD' => 'Powiąż z istniejącym rekordem',
 	'LBL_ADD_CALENDAR' => 'Dodaj wydarzenie',
 	'LBL_ADD_MODCOMMENTS' => 'Dodaj komentarz',
@@ -82,6 +79,8 @@ $languageStrings = [
 	'LBL_NUMBER_OF_FOUND_MAIL_ADDRESSES' => 'Ilość znalezionych adresów e-mail',
 	'LBL_NUMBER_OF_SELECTED_RECORDS' => 'Ilość zaznaczonych rekordów',
 	'LBL_MINIMIZE_BAR' => 'Zwijanie i rozwijanie paska',
+	//BTN
+	'LBL_CREATEMAIL' => 'Wyślij maila',
 ];
 $jsLanguageStrings = [
 	'NoFindEmailInRecord' => 'Rekord nie posiada adresu email',

@@ -41,7 +41,6 @@ $languageStrings = [
 	'LBL_MAX_UPLOAD_SIZE' => 'Maximum upload size',
 	'LBL_MOVE' => 'Move',
 	'LBL_NOTE_INFORMATION' => 'Basic information',
-	'LBL_RECORDS_LIST' => 'Documents list',
 	'MB' => 'MB',
 	'Note' => 'Note',
 	'SINGLE_Documents' => 'Document',
@@ -54,6 +53,7 @@ $languageStrings = [
 	'Default' => 'Default',
 	'LBL_SELECT_Documents' => 'Select the document',
 	'LBL_RELATIONS' => 'Relations',
+	'LBL_MASS_ADD' => 'Mass add'
 ];
 
 $jsLanguageStrings = [

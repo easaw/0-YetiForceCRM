@@ -9,18 +9,17 @@
  */
 namespace DebugBar\DataCollector;
 
-
 use DebugBar\DataFormatter\DataFormatterInterface;
 
 /**
  * Provides a way to log messages
  */
-class MessagesCollector  implements DataCollectorInterface, MessagesAggregateInterface, Renderable
+class MessagesCollector implements DataCollectorInterface, MessagesAggregateInterface, Renderable
 {
 
 	protected $name;
-	protected $messages = array();
-	protected $aggregates = array();
+	protected $messages = [];
+	protected $aggregates = [];
 	protected $dataFormater;
 
 	/**
@@ -116,7 +115,7 @@ class MessagesCollector  implements DataCollectorInterface, MessagesAggregateInt
 	 * @param $message
 	 * @param array $context
 	 */
-	public function log($level, $message, array $context = array())
+	public function log($level, $message, array $context = [])
 	{
 		$this->addMessage($message, $level);
 	}
@@ -126,7 +125,7 @@ class MessagesCollector  implements DataCollectorInterface, MessagesAggregateInt
 	 */
 	public function clear()
 	{
-		$this->messages = array();
+		$this->messages = [];
 	}
 
 	/**

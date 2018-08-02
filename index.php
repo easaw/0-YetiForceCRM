@@ -8,20 +8,18 @@
  * All Rights Reserved.
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
-
-$startTime = microtime(true);
-
-define('REQUEST_MODE', 'WebUI');
-define('ROOT_DIRECTORY', __DIR__);
+define('ROOT_DIRECTORY', __DIR__ !== DIRECTORY_SEPARATOR ? __DIR__ : '');
 
 require 'include/RequirementsValidation.php';
-require 'include/Webservices/Relation.php';
 require 'include/main/WebUI.php';
 
-if (AppConfig::debug('DISPLAY_DEBUG_CONSOLE')) {
-	\App\Debuger::initConsole();
+$dbconfig = AppConfig::main('dbconfig');
+if (empty($dbconfig) || empty($dbconfig['db_name']) || $dbconfig['db_name'] == '_DBC_TYPE_') {
+	header('Location:install/Install.php');
 }
 
-$webUI = new Vtiger_WebUI();
-$webUI->process(AppRequest::init());
+\App\Config::$startTime = microtime(true);
+\App\Config::$requestMode = 'WebUI';
 
+$webUI = new Vtiger_WebUI();
+$webUI->process(\App\Request::init());

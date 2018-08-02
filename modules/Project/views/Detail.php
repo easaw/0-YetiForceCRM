@@ -11,6 +11,9 @@
 class Project_Detail_View extends Vtiger_Detail_View
 {
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public function __construct()
 	{
 		parent::__construct();
@@ -19,58 +22,43 @@ class Project_Detail_View extends Vtiger_Detail_View
 		$this->exposeMethod('showGantt');
 	}
 
-	public function showCharts(Vtiger_Request $request)
+	public function showCharts(\App\Request $request)
 	{
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 		$moduleName = $request->getModule();
 
 		$viewer = $this->getViewer($request);
 		$moduleModel = Vtiger_Module_Model::getInstance('OSSTimeControl');
-		if ($moduleModel)
+		if ($moduleModel) {
 			$data = $moduleModel->getTimeUsers($recordId, $moduleName);
+		}
 		$viewer->assign('MODULE_NAME', $moduleName);
 		$viewer->assign('DATA', $data);
 		$viewer->view('charts/ShowTimeProjectUsers.tpl', $moduleName);
 	}
 
-	public function showGantt(Vtiger_Request $request)
+	public function showGantt(\App\Request $request)
 	{
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 		$moduleName = $request->getModule();
 
 		$viewer = $this->getViewer($request);
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
 		$data = $moduleModel->getGanttProject($recordId);
 		$viewer->assign('MODULE_NAME', $moduleName);
-		$viewer->assign('DATA', \includes\utils\Json::encode($data));
+		$viewer->assign('DATA', \App\Json::encode($data));
 		$viewer->view('gantt/GanttContents.tpl', $moduleName);
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getHeaderCss(\App\Request $request)
 	{
-		$headerCssInstances = parent::getHeaderCss($request);
-		$cssFileNames = array(
-			'~libraries/dhtmlxGantt/skins/dhtmlxgantt_broadway.css',
-		);
-		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
-		$headerCssInstances = array_merge($headerCssInstances, $cssInstances);
-		return $headerCssInstances;
-	}
-
-	public function getFooterScripts(Vtiger_Request $request)
-	{
-		$headerScriptInstances = parent::getFooterScripts($request);
-		$moduleName = $request->getModule();
-		$jsFileNames = array(
-			'~libraries/dhtmlxGantt/dhtmlxgantt.js',
-			'~libraries/jquery/flot/jquery.flot.min.js',
-			'~libraries/jquery/flot/jquery.flot.resize.js',
-			'~libraries/jquery/flot/jquery.flot.stack.min.js',
-		);
-		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
-		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
-		return $headerScriptInstances;
+		$cssFileNames = [
+			'~libraries/gantt/skins/dhtmlxgantt_broadway.css',
+			'~libraries/jquery/flot/jquery.flot.valuelabels.css',
+		];
+		return array_merge(parent::getHeaderCss($request), $this->checkAndConvertCssStyles($cssFileNames));
 	}
 }
-
-?>

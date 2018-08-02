@@ -1,21 +1,16 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com.
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * LettersOut english translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	// Basic Strings
-	'LettersOut' => 'Letters outgoing',
-	'SINGLE_LettersOut' => 'Letters outgoing',
-	'LBL_ADD_RECORD' => 'Add letters outgoing',
-	'LBL_RECORDS_LIST' => 'Letters outgoing',
+	'LettersOut' => 'Outgoing correspondence',
+	'SINGLE_LettersOut' => 'Outgoing correspondence',
 	// Blocks
-	'LBL_MAIN_INFORMATION' => 'Letters Information',
+	'LBL_MAIN_INFORMATION' => 'Correspondence information',
 	//Field Labels
 	'Number' => 'Number',
 	'Title' => 'Subject',
@@ -25,12 +20,13 @@ $languageStrings = [
 	'Deadline for reply' => 'Deadline for reply',
 	'Document no' => 'Document No.',
 	'No internal' => 'Internal No.',
-	'Parent letters' => 'Letters related to',
+	'Parent letters' => 'Correspondence related to',
 	'Overall dimensions' => 'Dimension',
 	'Notes' => 'Notes',
 	'Related' => 'Account / Opportunity',
 	'Contact' => 'Contact',
 	'Type of document' => 'Document type',
+	'FL_INCOMING_CORRESPONDENCE' => 'Incoming correspondence',
 	// picklist values
 	'PLL_LOCAL_PICKUP' => 'Collection in person',
 	'PLL_POST_OFFICE_PL' => 'Polish Post Office',

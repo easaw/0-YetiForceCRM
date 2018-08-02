@@ -6,14 +6,16 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
- * *********************************************************************************** */
+ * Contributor(s): YetiForce.com
+ * ********************************************************************************** */
 $languageStrings = [
-	'isactive' => 'Aktiv',
-	'password' => 'Passwort',
-	'username' => 'User Name',
-	'LBL_SEREVER_CONFIG' => 'Neue Konfiguration',
-	'LBL_SMS_MAX_CHARACTERS_ALLOWED' => 'SMS max 160 Zeichen erlaubt',
 	'providertype' => 'Provider',
+	'LBL_SMS_MAX_CHARACTERS_ALLOWED' => 'SMS max 160 Zeichen erlaubt',
+	'LBL_SEREVER_CONFIG' => 'New configuration',
+	'username' => 'Benutzername',
+	'password' => 'Passwort',
+	'isactive' => 'Aktiv',
+	'Server configuration' => 'Server Konfiguration',
 	// Basic Strings
 	'LBL_SEND_SMS_TO_SELECTED_NUMBERS' => 'SMS senden an die ausgewählten Nummern',
 	'LBL_STEP_1' => 'Schritt 1',
@@ -23,6 +25,11 @@ $languageStrings = [
 	'LBL_WRITE_YOUR_MESSAGE_HERE' => 'schreiben Sie die Nachricht hier',
 	'LBL_ADD_MORE_FIELDS' => 'Felder hinzufügen',
 	'LBL_SERVER_CONFIG' => 'Server Konfiguration',
+	'FL_STATUS' => 'Status',
+	'PLL_UNDEFINED' => 'Undefiniert',
+	'PLL_DELIVERED' => 'Ausgeliefert',
+	'PLL_FAILED' => 'Fehlgeschlagen',
+	'LBL_MASS_SEND_SMS_INFO' => 'Alle Texmeldungen wurden im CRON versendet',
 	//DetailView Actions
 	'LBL_CHECK_STATUS' => 'Status prüfen',
 	'message' => 'Nachricht',

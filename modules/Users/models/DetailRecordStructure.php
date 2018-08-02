@@ -6,6 +6,7 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce Sp. z o.o.
  * *********************************************************************************** */
 
 class Users_DetailRecordStructure_Model extends Vtiger_DetailRecordStructure_Model
@@ -21,7 +22,7 @@ class Users_DetailRecordStructure_Model extends Vtiger_DetailRecordStructure_Mod
 			return $this->structuredValues;
 		}
 
-		$values = array();
+		$values = [];
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$recordModel = $this->getRecord();
 		$recordId = $recordModel->getId();
@@ -30,10 +31,10 @@ class Users_DetailRecordStructure_Model extends Vtiger_DetailRecordStructure_Mod
 		foreach ($blockModelList as $blockLabel => $blockModel) {
 			$fieldModelList = $blockModel->getFields();
 			if (!empty($fieldModelList)) {
-				$values[$blockLabel] = array();
+				$values[$blockLabel] = [];
 				foreach ($fieldModelList as $fieldName => $fieldModel) {
 					if ($fieldModel->get('uitype') == 156 && $currentUserModel->isAdminUser() === true) {
-						$fieldModel->set('editable', true);
+						$fieldModel->set('editable', $currentUserModel->getId() !== $recordId);
 						$fieldValue = false;
 						if ($recordModel->get($fieldName) === 'on' || $recordModel->get($fieldName) === true) {
 							$fieldValue = true;

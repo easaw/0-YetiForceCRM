@@ -1,19 +1,14 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * Contributor(s): 
- * *********************************************************************************************************************************** */
+/**
+ * OSSMailView english translation
+ * @package YetiForce.Language
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	// Basic Strings
 	'OSSMailView' => 'Corporate emails',
 	'SINGLE_OSSMailView' => 'Corporate email',
-	'LBL_ADD_RECORD' => 'Add record',
 	'LBL_RECORDS_LIST' => 'List of emails',
 	// Blocks
 	'LBL_INFORMATION' => 'General Information',
@@ -61,9 +56,15 @@ $languageStrings = [
 	'RC user' => 'RC user',
 	'FromID' => 'Sender Id',
 	'ToID' => 'Receiver Id',
+	'LBL_SHOW_PREVIEW_EMAIL' => 'Show email preview',
+	'LBL_SHOW_PREVIEW_EMAILS' => 'Show all emails preview',
+	'LBL_CHANGE_FILTER' => 'Change filter',
 	'LBL_FILTER_ALL' => 'All',
 	'LBL_FILTER_ACCOUNTS' => 'All in account',
 	'LBL_FILTER_CONTACTS' => 'All in contact',
+	'LBL_EXPAND_ALL' => 'Expand all',
+	'LBL_COLLAPSE_ALL' => 'Collapse all',
+	'LBL_COUNT_ALL_MAILS' => 'Number of all emails',
 	'LBL_VERIFY' => 'To verification related',
 	'LBL_REL_MOD' => 'Related modules',
 	'LBL_BindMailsOK' => 'Marked emails to bind, the next activation cron messages will be related to record',
@@ -86,6 +87,8 @@ $languageStrings = [
 	'Current month' => 'Current month',
 	'Previous month' => 'Previous month',
 	'LBL_ORGINAL_MAIL_CONTENT' => 'Orginal mail content',
+	'BTN_RESET_RELATED_MAILS' => 'Reset related emails',
+	'LBL_SET_RELOAD_RELATIONS' => 'Marked for relation reload',
 ];
 $jsLanguageStrings = [
 	'From' => 'From',

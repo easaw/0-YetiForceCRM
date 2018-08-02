@@ -1,6 +1,11 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
+/**
+ * Vtiger pagination view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Vtiger_Pagination_View extends Vtiger_IndexAjax_View
 {
 
@@ -11,23 +16,28 @@ class Vtiger_Pagination_View extends Vtiger_IndexAjax_View
 		$this->exposeMethod('getRelationPagination');
 	}
 
-	public function getRelationPagination(Vtiger_Request $request)
+	public function getRelationPagination(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
-		$pageNumber = $request->get('page');
+		$pageNumber = $request->getInteger('page');
 		$moduleName = $request->getModule();
 
 		if (empty($pageNumber)) {
-			$pageNumber = '1';
+			$pageNumber = 1;
 		}
 		$pagingModel = new Vtiger_Paging_Model();
 		$pagingModel->set('page', $pageNumber);
-		$pagingModel->set('noOfEntries', $request->get('noOfEntries'));
-		$relatedModuleName = $request->get('relatedModule');
-		$parentId = $request->get('record');
-
+		$pagingModel->set('noOfEntries', $request->getInteger('noOfEntries'));
+		$relatedModuleName = $request->getByType('relatedModule', 2);
+		$parentId = $request->getInteger('record');
+		if (!$parentId || !\App\Privilege::isPermitted($moduleName, 'DetailView', $parentId)) {
+			throw new \App\Exceptions\NoPermittedToRecord('LBL_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
 		$parentRecordModel = Vtiger_Record_Model::getInstanceById($parentId, $moduleName);
-		$relationListView = Vtiger_RelationListView_Model::getInstance($parentRecordModel, $relatedModuleName, $label);
+		$relationListView = Vtiger_RelationListView_Model::getInstance($parentRecordModel, $relatedModuleName);
+		if ($request->has('entityState')) {
+			$relationListView->set('entityState', $request->getByType('entityState'));
+		}
 		$totalCount = (int) $relationListView->getRelatedEntriesCount();
 		if (!empty($totalCount)) {
 			$pagingModel->set('totalCount', (int) $totalCount);
@@ -43,61 +53,56 @@ class Vtiger_Pagination_View extends Vtiger_IndexAjax_View
 		echo $viewer->view('Pagination.tpl', $moduleName, true);
 	}
 
-	public function getPagination(Vtiger_Request $request)
+	public function getPagination(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
-		$pageNumber = $request->get('page');
-		$searchResult = $request->get('searchResult');
+		$cvId = $request->getByType('viewname', 2);
+		$pageNumber = $request->getInteger('page');
 		$moduleName = $request->getModule();
-
-		if (empty($pageNumber)) {
-			$pageNumber = '1';
+		if (empty($cvId)) {
+			$cvId = App\CustomView::getInstance($moduleName)->getViewId();
 		}
-
+		if (empty($pageNumber)) {
+			$pageNumber = App\CustomView::getCurrentPage($moduleName, $cvId);
+		}
 		$pagingModel = new Vtiger_Paging_Model();
 		$pagingModel->set('page', $pageNumber);
-		$pagingModel->set('viewid', $request->get('viewname'));
-		$pagingModel->set('noOfEntries', $request->get('noOfEntries'));
+		$pagingModel->set('viewid', $cvId);
+		$pagingModel->set('noOfEntries', $request->getInteger('noOfEntries'));
 		$totalCount = (int) $request->get('totalCount');
-		$searchKey = $request->get('search_key');
-		$searchValue = $request->get('search_value');
 		if (AppConfig::performance('LISTVIEW_COMPUTE_PAGE_COUNT') || $totalCount == -1) {
-			$listViewModel = Vtiger_ListView_Model::getInstance($moduleName, $request->get('viewname'));
-			$operator = $request->get('operator');
-			if (!empty($operator)) {
-				$listViewModel->set('operator', $operator);
+			$listViewModel = Vtiger_ListView_Model::getInstance($moduleName, $cvId);
+			if (!$request->isEmpty('operator', true)) {
+				$listViewModel->set('operator', $request->getByType('operator', 1));
 			}
-			if (!empty($searchKey) && !empty($searchValue)) {
-				$listViewModel->set('search_key', $searchKey);
-				$listViewModel->set('search_value', $searchValue);
+			if (!$request->isEmpty('search_key', true) && !$request->isEmpty('search_value', true)) {
+				$listViewModel->set('search_key', $request->getByType('search_key', 1));
+				$listViewModel->set('search_value', $request->get('search_value'));
+			}
+			if ($request->has('entityState')) {
+				$listViewModel->set('entityState', $request->getByType('entityState'));
 			}
 			$searchParmams = $request->get('search_params');
-			if (empty($searchParmams) || !is_array($searchParmams)) {
-				$searchParmams = [];
+			if (!empty($searchParmams) && is_array($searchParmams)) {
+				$transformedSearchParams = $listViewModel->get('query_generator')->parseBaseSearchParamsToCondition($searchParmams);
+				$listViewModel->set('search_params', $transformedSearchParams);
 			}
-			$transformedSearchParams = $this->transferListSearchParamsToFilterCondition($searchParmams, $listViewModel->getModule());
-			$listViewModel->set('search_params', $transformedSearchParams);
 			$totalCount = $listViewModel->getListViewCount();
 		}
 		if (!empty($totalCount)) {
 			$pagingModel->set('totalCount', $totalCount);
-			$viewer->assign('LISTVIEW_COUNT', $totalCount);
-			$viewer->assign('TOTAL_ENTRIES', $totalCount);
+			if ($totalCount === $pageNumber * $pagingModel->getPageLimit()) {
+				$pagingModel->set('nextPageExists', false);
+			}
+		} else {
+			$totalCount = false;
 		}
-
-		$pageCount = $pagingModel->getPageCount();
-		$startPaginFrom = $pagingModel->getStartPagingFrom();
-
-		$viewer->assign('OPERATOR', $operator);
-		$viewer->assign('PAGE_COUNT', $pageCount);
+		$viewer->assign('LISTVIEW_COUNT', $totalCount);
+		$viewer->assign('TOTAL_ENTRIES', $totalCount);
+		$viewer->assign('PAGE_COUNT', $pagingModel->getPageCount());
 		$viewer->assign('PAGE_NUMBER', $pageNumber);
-		$viewer->assign('START_PAGIN_FROM', $startPaginFrom);
+		$viewer->assign('START_PAGIN_FROM', $pagingModel->getStartPagingFrom());
 		$viewer->assign('PAGING_MODEL', $pagingModel);
-		echo $viewer->view('Pagination.tpl', $moduleName, true);
-	}
-
-	public function transferListSearchParamsToFilterCondition($listSearchParams, $moduleModel)
-	{
-		return Vtiger_Util_Helper::transferListSearchParamsToFilterCondition($listSearchParams, $moduleModel);
+		$viewer->view('Pagination.tpl', $moduleName);
 	}
 }

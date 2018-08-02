@@ -1,14 +1,10 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * Contributor(s): 
- * *********************************************************************************************************************************** */
+/**
+ * OSSMailView russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
 	'LBL_COUNT_ALL_MAILS' => 'Всего сообщений',
 	'LBL_COLLAPSE_ALL' => 'Свернуть',
@@ -37,7 +33,6 @@ $languageStrings = [
 	// Basic Strings
 	'OSSMailView' => 'Просмотр Почты',
 	'SINGLE_OSSMailView' => 'Просмотр Почты',
-	'LBL_ADD_RECORD' => 'Написать Письмо',
 	'LBL_RECORDS_LIST' => 'Список Писем',
 	// Blocks
 	'LBL_INFORMATION' => 'Информация',
@@ -98,6 +93,8 @@ $languageStrings = [
 	//dashboards
 	'Graf' => 'Письма по статусу',
 	'LBL_ORGINAL_MAIL_CONTENT' => 'Оригинал сообщения',
+	'BTN_RESET_RELATED_MAILS' => 'Сбросить связанную почту',
+	'LBL_SET_RELOAD_RELATIONS' => 'Помечено на обновление связей',
 ];
 $jsLanguageStrings = [
 	'From' => 'От',

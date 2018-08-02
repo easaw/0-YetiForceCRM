@@ -1,21 +1,17 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * Contributor(s): YetiForce.com.
- * *********************************************************************************************************************************** */
 
+/**
+ * OSSPasswords CRMEntity class
+ * @package YetiForce.CRMEntity
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class OSSPasswords extends CRMEntity
 {
 
 	public $table_name = 'vtiger_osspasswords';
 	public $table_index = 'osspasswordsid';
-	public $column_fields = Array();
+	public $column_fields = [];
 
 	/** Indicator if this is a custom module or standard module */
 	public $IsCustomModule = true;
@@ -23,89 +19,78 @@ class OSSPasswords extends CRMEntity
 	/**
 	 * Mandatory table for supporting custom fields.
 	 */
-	public $customFieldTable = Array('vtiger_osspasswordscf', 'osspasswordsid');
+	public $customFieldTable = ['vtiger_osspasswordscf', 'osspasswordsid'];
 
 	/**
 	 * Mandatory for Saving, Include tables related to this module.
 	 */
-	public $tab_name = Array('vtiger_crmentity', 'vtiger_osspasswords', 'vtiger_osspasswordscf');
+	public $tab_name = ['vtiger_crmentity', 'vtiger_osspasswords', 'vtiger_osspasswordscf'];
 
 	/**
 	 * Mandatory for Saving, Include tablename and tablekey columnname here.
 	 */
-	public $tab_name_index = Array(
+	public $tab_name_index = [
 		'vtiger_crmentity' => 'crmid',
 		'vtiger_osspasswords' => 'osspasswordsid',
-		'vtiger_osspasswordscf' => 'osspasswordsid');
+		'vtiger_osspasswordscf' => 'osspasswordsid'];
 
 	/**
 	 * Mandatory for Listing (Related listview)
 	 */
-	public $list_fields = Array(
+	public $list_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'OSSPassword No' => Array('osspasswords' => 'osspassword_no'),
-		'Key name' => Array('osspasswords' => 'passwordname'),
-		'Username' => Array('osspasswords' => 'username'),
-		'Password' => Array('osspasswords' => 'password'),
-		'WWW page' => Array('osspasswords' => 'link_adres'),
-	);
-	public $list_fields_name = Array(
+		'OSSPassword No' => ['osspasswords' => 'osspassword_no'],
+		'Key name' => ['osspasswords' => 'passwordname'],
+		'Username' => ['osspasswords' => 'username'],
+		'Password' => ['osspasswords' => 'password'],
+		'WWW page' => ['osspasswords' => 'link_adres'],
+	];
+	public $list_fields_name = [
 		/* Format: Field Label => fieldname */
 		'OSSPassword No' => 'osspassword_no',
 		'Key name' => 'passwordname',
 		'Username' => 'username',
 		'Password' => 'password',
 		'WWW page' => 'link_adres',
-	);
+	];
+
+	/**
+	 * @var string[] List of fields in the RelationListView
+	 */
+	public $relationFields = ['osspassword_no', 'passwordname', 'username', 'password', 'link_adres'];
 	// Make the field link to detail view
 	public $list_link_field = 'passwordname';
 	// For Popup listview and UI type support
-	public $search_fields = Array(
+	public $search_fields = [
 		/* Format: Field Label => Array(tablename, columnname) */
 		// tablename should not have prefix 'vtiger_'
-		'OSSPassword No' => Array('osspasswords' => 'osspassword_no'),
-		'Key name' => Array('osspasswords' => 'passwordname'),
-		'Username' => Array('osspasswords' => 'username'),
-		'WWW page' => Array('osspasswords' => 'link_adres'),
-	);
-	public $search_fields_name = Array(
+		'OSSPassword No' => ['osspasswords' => 'osspassword_no'],
+		'Key name' => ['osspasswords' => 'passwordname'],
+		'Username' => ['osspasswords' => 'username'],
+		'WWW page' => ['osspasswords' => 'link_adres'],
+	];
+	public $search_fields_name = [
 		/* Format: Field Label => fieldname */
 		'OSSPassword No' => 'osspassword_no',
 		'Key name' => 'passwordname',
 		'Username' => 'username',
 		'WWW page' => 'link_adres',
-	);
+	];
 	// For Popup window record selection
-	public $popup_fields = Array('username');
-	// Placeholder for sort fields - All the fields will be initialized for Sorting through initSortFields
-	public $sortby_fields = Array();
+	public $popup_fields = ['username'];
 	// For Alphabetical search
 	public $def_basicsearch_col = 'passwordname';
 	// Required Information for enabling Import feature
-	public $required_fields = Array('passwordname' => 1);
+	public $required_fields = ['passwordname' => 1];
 	// Used when enabling/disabling the mandatory fields for the module.
 	// Refers to vtiger_field.fieldname values.
-	public $mandatory_fields = Array('passwordname');
+	public $mandatory_fields = ['passwordname'];
 	// Callback function list during Importing
-	public $special_functions = Array('set_import_assigned_user');
+	public $special_functions = ['set_import_assigned_user'];
 	public $default_order_by = '';
 	public $default_sort_order = 'ASC';
 	public $unit_price;
-
-	public function save_module($module)
-	{
-		//module specific save
-	}
-
-	/**
-	 * Return query to use based on given modulename, fieldname
-	 * Useful to handle specific case handling for Popup
-	 */
-	public function getQueryByModuleField($module, $fieldname, $srcrecord)
-	{
-		// $srcrecord could be empty
-	}
 
 	/**
 	 * Get list view query.
@@ -133,13 +118,12 @@ class OSSPasswords extends CRMEntity
 
 		$linkedModulesQuery = $this->db->pquery("SELECT distinct fieldname, columnname, relmodule FROM vtiger_field" .
 			" INNER JOIN vtiger_fieldmodulerel ON vtiger_fieldmodulerel.fieldid = vtiger_field.fieldid" .
-			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", array($module));
-		$linkedFieldsCount = $this->db->num_rows($linkedModulesQuery);
+			" WHERE uitype='10' && vtiger_fieldmodulerel.module=?", [$module]);
+		$linkedFieldsCount = $this->db->numRows($linkedModulesQuery);
 
 		for ($i = 0; $i < $linkedFieldsCount; $i++) {
-			$related_module = $this->db->query_result($linkedModulesQuery, $i, 'relmodule');
-			$fieldname = $this->db->query_result($linkedModulesQuery, $i, 'fieldname');
-			$columnname = $this->db->query_result($linkedModulesQuery, $i, 'columnname');
+			$related_module = $this->db->queryResult($linkedModulesQuery, $i, 'relmodule');
+			$columnname = $this->db->queryResult($linkedModulesQuery, $i, 'columnname');
 
 			$other = CRMEntity::getInstance($related_module);
 			vtlib_setup_modulevars($related_module, $other);
@@ -162,7 +146,7 @@ class OSSPasswords extends CRMEntity
 		require('user_privileges/sharing_privileges_' . $current_user->id . '.php');
 
 		$sec_query = '';
-		$tabid = \includes\Modules::getModuleId($module);
+		$tabid = \App\Module::getModuleId($module);
 
 		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[$tabid] == 3) {
 
@@ -200,7 +184,7 @@ class OSSPasswords extends CRMEntity
 	/**
 	 * Create query to export the records.
 	 */
-	public function create_export_query($where)
+	public function createExportQuery($where)
 	{
 		$current_user = vglobal('current_user');
 
@@ -233,7 +217,7 @@ class OSSPasswords extends CRMEntity
 		require('user_privileges/sharing_privileges_' . $current_user->id . '.php');
 
 		// Security Check for Field Access
-		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[\includes\Modules::getModuleId('OSSPasswords')] == 3) {
+		if ($is_admin === false && $profileGlobalPermission[1] == 1 && $profileGlobalPermission[2] == 1 && $defaultOrgSharingPermission[\App\Module::getModuleId('OSSPasswords')] == 3) {
 			//Added security check to get the permitted records only
 			$query = $query . " " . getListViewSecurityParameter($thismodule);
 		}
@@ -243,11 +227,11 @@ class OSSPasswords extends CRMEntity
 	/**
 	 * Transform the value while exporting
 	 */
-	public function transform_export_value($key, $value)
+	public function transformExportValue($key, $value)
 	{
 		if ($key == 'owner')
-			return \includes\fields\Owner::getLabel($value);
-		return parent::transform_export_value($key, $value);
+			return \App\Fields\Owner::getLabel($value);
+		return parent::transformExportValue($key, $value);
 	}
 
 	/**
@@ -291,18 +275,11 @@ class OSSPasswords extends CRMEntity
 
 		$query = $select_clause . $from_clause .
 			" LEFT JOIN vtiger_users_last_import ON vtiger_users_last_import.bean_id=" . $this->table_name . "." . $this->table_index .
-			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values, $ui_type_arr, $module) .
+			" INNER JOIN (" . $sub_query . ") AS temp ON " . get_on_clause($field_values) .
 			$where_clause .
 			" ORDER BY $table_cols," . $this->table_name . "." . $this->table_index . " ASC";
 
 		return $query;
-	}
-
-	// Function to unlink all the dependent entities of the given Entity by Id
-	public function unlinkDependencies($module, $id)
-	{
-
-		parent::unlinkDependencies($module, $id);
 	}
 
 	/**
@@ -310,71 +287,42 @@ class OSSPasswords extends CRMEntity
 	 * @param String Module name
 	 * @param String Event Type
 	 */
-	public function vtlib_handler($moduleName, $eventType)
+	public function moduleHandler($moduleName, $eventType)
 	{
-		require_once('include/utils/utils.php');
-		require_once('include/events/include.inc');
-
-		$adb = PearDatabase::getInstance();
+		$db = App\Db::getInstance();
 		$registerLink = false;
 		$addModTracker = false;
-		$handlerClass = 'SECURE';
 
-		if ($eventType == 'module.postinstall') {
-			
-		} else if ($eventType == 'module.disabled') {
+		if ($eventType === 'module.disabled') {
 			$registerLink = false;
-			$em = new VTEventsManager($adb);
-			$em->setHandlerInActive($handlerClass);
-		} else if ($eventType == 'module.enabled') {
+			App\EventHandler::setInActive('OSSPasswords_Secure_Handler');
+		} else if ($eventType === 'module.enabled') {
 			$registerLink = true;
-			$em = new VTEventsManager($adb);
-			$em->setHandlerActive($handlerClass);
-		} else if ($eventType == 'module.preuninstall') {
+			App\EventHandler::setActive('OSSPasswords_Secure_Handler');
+		} else if ($eventType === 'module.preuninstall') {
 			\App\Log::trace('Before starting uninstall script...');
 			require_once( 'modules/Settings/' . $moduleName . '/views/uninstall.php' );
 			\App\Log::trace('After uninstall script.');
 
 			header('Location: index.php?module=Vtiger&parent=Settings&view=Index');
-		} else if ($eventType == 'module.preupdate') {
-			
-		} else if ($eventType == 'module.postupdate') {
-			
 		}
 
 		$displayLabel = 'OSSPassword Configuration';
 
 		if ($registerLink) {
-			$blockid = $adb->query_result(
-				$adb->pquery("SELECT blockid FROM vtiger_settings_blocks WHERE label='LBL_OTHER_SETTINGS'", array()), 0, 'blockid');
-			$sequence = (int) $adb->query_result(
-					$adb->pquery("SELECT max(sequence) as sequence FROM vtiger_settings_field WHERE blockid=?", array($blockid)), 0, 'sequence') + 1;
-			$fieldid = $adb->getUniqueId('vtiger_settings_field');
-			$adb->pquery("INSERT INTO vtiger_settings_field (fieldid,blockid,sequence,name,iconpath,description,linkto)
-				VALUES (?,?,?,?,?,?,?)", array($fieldid, $blockid, $sequence, $displayLabel, 'migrate.gif', 'LBL_OSSPASSWORD_CONFIGURATION_DESCRIPTION',
-				'index.php?module=OSSPasswords&view=ConfigurePass&parent=Settings'));
+			Settings_Vtiger_Module_Model::addSettingsField('LBL_OTHER_SETTINGS', [
+				'name' => $displayLabel,
+				'iconpath' => 'adminIcon-passwords-encryption',
+				'description' => 'LBL_OSSPASSWORD_CONFIGURATION_DESCRIPTION',
+				'linkto' => 'index.php?module=OSSPasswords&view=ConfigurePass&parent=Settings'
+			]);
 		} else {
-			$adb->pquery("DELETE FROM vtiger_settings_field WHERE name=?", array($displayLabel));
+			$db->createCommand()->delete('vtiger_settings_field', ['name' => $displayLabel])->execute();
 		}
 
 		// register modtracker history updates
 		if ($addModTracker) {
-			$tabId = \includes\Modules::getModuleId($moduleName);
-			include_once('modules/ModTracker/ModTracker.php');
-			$moduleModTrackerInstance = new ModTracker();
-			if (!$moduleModTrackerInstance->isModulePresent($tabId)) {
-				$res = $adb->pquery("INSERT INTO vtiger_modtracker_tabs VALUES(?,?)", array($tabId, 1));
-				$moduleModTrackerInstance->updateCache($tabId, 1);
-			} else {
-				$updatevisibility = $adb->pquery("UPDATE vtiger_modtracker_tabs SET visible = 1 WHERE tabid = ?", array($tabId));
-				$moduleModTrackerInstance->updateCache($tabId, 1);
-			}
-			if (!$moduleModTrackerInstance->isModTrackerLinkPresent($tabId)) {
-				$moduleInstance = vtlib\Module::getInstance($tabId);
-				$moduleInstance->addLink(
-					'DETAILVIEWBASIC', 'View History', "javascript:ModTrackerCommon.showhistory('\$RECORD\$')", '', '', array('path' => 'modules/ModTracker/ModTracker.php', 'class' => 'ModTracker', 'method' => 'isViewPermitted')
-				);
-			}
+			CRMEntity::getInstance('ModTracker')->enableTrackingForModule(\App\Module::getModuleId($moduleName));
 		}
 	}
 }

@@ -6,27 +6,62 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Vtiger_Double_UIType extends Vtiger_Base_UIType
 {
 
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritDoc}
 	 */
-	public function getTemplateName()
+	public function getDBValue($value, $recordModel = false)
 	{
-		return 'uitypes/Number.tpl';
+		if ($value === '') {
+			return 0;
+		}
+		return CurrencyField::convertToDBFormat($value);
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritDoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function validate($value, $isUserFormat = false)
 	{
-		return \vtlib\Functions::formatDecimal($value);
+		if ($this->validate || empty($value)) {
+			return;
+		}
+		if ($isUserFormat) {
+			$currentUser = \App\User::getCurrentUserModel();
+			$value = str_replace([$currentUser->getDetail('currency_grouping_separator'), $currentUser->getDetail('currency_decimal_separator'), ' '], ['', '.', ''], $value);
+		}
+		if (!is_numeric($value)) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate = true;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		return CurrencyField::convertToUserFormat($value);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getEditViewDisplayValue($value, $recordModel = false)
+	{
+		return CurrencyField::convertToUserFormat($value);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'uitypes/Double.tpl';
 	}
 }

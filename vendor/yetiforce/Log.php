@@ -1,15 +1,21 @@
-<?php namespace App;
+<?php
+namespace App;
 
 use \yii\log\Logger;
 
 /**
  * Logger class
  * @package YetiForce.App
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Log extends Logger
 {
+
+	public static $logToConsole;
+	public static $logToFile;
+	public static $logToProfile;
 
 	/**
 	 * Logs a message with the given type and category.
@@ -25,10 +31,10 @@ class Log extends Logger
 	public function log($message, $level, $category = '')
 	{
 		$traces = '';
-		if ($this->traceLevel > 0) {
+		if ($this->traceLevel) {
 			$traces = Debuger::getBacktrace(2, $this->traceLevel, ' - ');
 		}
-		if (\AppConfig::debug('LOG_TO_CONSOLE')) {
+		if (static::$logToConsole) {
 			Debuger::addLogs($message, self::getLevelName($level), $traces);
 		}
 		$this->messages[] = [$message, $level, $category, microtime(true), $traces];
@@ -46,7 +52,9 @@ class Log extends Logger
 	 */
 	public static function trace($message, $category = '')
 	{
-		\Yii::getLogger()->log($message, \yii\log\Logger::LEVEL_TRACE, $category);
+		if (static::$logToFile) {
+			\Yii::getLogger()->log($message, Logger::LEVEL_TRACE, $category);
+		}
 	}
 
 	/**
@@ -58,7 +66,9 @@ class Log extends Logger
 	 */
 	public static function info($message, $category = '')
 	{
-		\Yii::getLogger()->log($message, \yii\log\Logger::LEVEL_INFO, $category);
+		if (static::$logToFile) {
+			\Yii::getLogger()->log($message, Logger::LEVEL_INFO, $category);
+		}
 	}
 
 	/**
@@ -70,7 +80,9 @@ class Log extends Logger
 	 */
 	public static function warning($message, $category = '')
 	{
-		\Yii::getLogger()->log($message, \yii\log\Logger::LEVEL_WARNING, $category);
+		if (static::$logToFile) {
+			\Yii::getLogger()->log($message, Logger::LEVEL_WARNING, $category);
+		}
 	}
 
 	/**
@@ -82,7 +94,7 @@ class Log extends Logger
 	 */
 	public static function error($message, $category = '')
 	{
-		\Yii::getLogger()->log($message, \yii\log\Logger::LEVEL_ERROR, $category);
+		\Yii::getLogger()->log($message, Logger::LEVEL_ERROR, $category);
 	}
 
 	/**
@@ -104,7 +116,9 @@ class Log extends Logger
 	 */
 	public static function beginProfile($token, $category = '')
 	{
-		\Yii::getLogger()->log($token, \yii\log\Logger::LEVEL_PROFILE_BEGIN, $category);
+		if (static::$logToProfile) {
+			\Yii::getLogger()->log($token, Logger::LEVEL_PROFILE_BEGIN, $category);
+		}
 	}
 
 	/**
@@ -116,6 +130,56 @@ class Log extends Logger
 	 */
 	public static function endProfile($token, $category = '')
 	{
-		\Yii::getLogger()->log($token, \yii\log\Logger::LEVEL_PROFILE_END, $category);
+		if (static::$logToProfile) {
+			\Yii::getLogger()->log($token, Logger::LEVEL_PROFILE_END, $category);
+		}
+	}
+
+	/**
+	 * Get user action logs
+	 * @param string $type
+	 * @param string $mode
+	 * @param bool $countMode
+	 * @return array
+	 */
+	public static function getLogs($type, $mode, $countMode = false)
+	{
+		$db = \App\Db::getInstance('log');
+		$query = (new \App\Db\Query())->from('o_#__' . $type);
+		switch ($mode) {
+			case 'oneDay':
+				$query->where(['>=', 'date', date('Y-m-d H:i:s', strtotime('-1 day'))]);
+				break;
+			default:
+				$query->limit(100);
+				break;
+		}
+		if ($countMode) {
+			return $query->count('*', $db);
+		} else {
+			$query->orderBy(['id' => SORT_DESC]);
+			return $query->all($db);
+		}
+	}
+
+	/**
+	 * Get last logs
+	 * @return string
+	 */
+	public static function getlastLogs()
+	{
+		$content = '';
+		$i = 0;
+		foreach (\Yii::getLogger()->messages as $message) {
+			$level = \yii\log\Logger::getLevelName($message[1]);
+			$category = $message[2];
+			$content .= "#$i [$level] {$message[0]}";
+			if ($category) {
+				$content .= ' || ' . $category;
+			}
+			$content .= PHP_EOL;
+			$i++;
+		}
+		return $content;
 	}
 }

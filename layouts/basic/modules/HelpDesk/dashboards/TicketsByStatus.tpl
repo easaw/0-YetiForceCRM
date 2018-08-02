@@ -9,9 +9,6 @@
  * Contributor(s): YetiForce.com
  ************************************************************************************/
 -->*}
-<script type="text/javascript">
-	YetiForce_Bar_Widget_Js('YetiForce_Ticketsbystatus_Widget_Js',{},{});
-</script>
 {strip}
 <div class="dashboardWidgetHeader">
 	{foreach key=index item=cssModel from=$STYLES}
@@ -20,9 +17,9 @@
 	{foreach key=index item=jsModel from=$SCRIPTS}
 		<script type="{$jsModel->getType()}" src="{$jsModel->getSrc()}"></script>
 	{/foreach}
-	{include file="dashboards/WidgetHeadeAccessible.tpl"|@vtemplate_path:$MODULE_NAME}
+	{include file=\App\Layout::getTemplatePath('dashboards/WidgetHeadeAccessible.tpl', $MODULE_NAME)}
 </div>
 <div class="dashboardWidgetContent">
-	{include file="dashboards/DashBoardWidgetContents.tpl"|@vtemplate_path:$MODULE_NAME}
+	{include file=\App\Layout::getTemplatePath('dashboards/DashBoardWidgetContents.tpl', $MODULE_NAME)}
 </div>
 {/strip}

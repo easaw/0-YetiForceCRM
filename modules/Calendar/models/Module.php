@@ -17,7 +17,7 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function returns the default view for the Calendar module
-	 * @return <String>
+	 * @return string
 	 */
 	public function getDefaultViewName()
 	{
@@ -26,7 +26,7 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function returns the calendar view name
-	 * @return <String>
+	 * @return string
 	 */
 	public function getCalendarViewName()
 	{
@@ -35,7 +35,7 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 *  Function returns the url for Calendar view
-	 * @return <String>
+	 * @return string
 	 */
 	public function getCalendarViewUrl()
 	{
@@ -44,7 +44,7 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function to check whether the module is summary view supported
-	 * @return <Boolean> - true/false
+	 * @return boolean - true/false
 	 */
 	public function isSummaryViewSupported()
 	{
@@ -53,54 +53,20 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function returns the URL for creating Events
-	 * @return <String>
+	 * @return string
 	 */
 	public function getCreateEventRecordUrl()
 	{
-		return 'index.php?module=' . $this->get('name') . '&view=' . $this->getEditViewName() . '&mode=Events';
+		return 'index.php?module=' . $this->get('name') . '&view=' . $this->getEditViewName() . '&mode=events';
 	}
 
 	/**
 	 * Function returns the URL for creating Task
-	 * @return <String>
+	 * @return string
 	 */
 	public function getCreateTaskRecordUrl()
 	{
-		return 'index.php?module=' . $this->get('name') . '&view=' . $this->getEditViewName() . '&mode=Calendar';
-	}
-
-	/**
-	 * Function that returns related list header fields that will be showed in the Related List View
-	 * @return <Array> returns related fields list.
-	 */
-	public function getRelatedListFields()
-	{
-		$entityInstance = CRMEntity::getInstance($this->getName());
-		$list_fields = $entityInstance->list_fields;
-		$list_fields_name = $entityInstance->list_fields_name;
-		$relatedListFields = [];
-		foreach ($list_fields as $key => $fieldInfo) {
-			foreach ($fieldInfo as $columnName) {
-				if (array_key_exists($key, $list_fields_name)) {
-					if ($columnName == 'lastname' || $columnName == 'activity' || $columnName == 'due_date' || $columnName == 'time_end')
-						continue;
-					if ($columnName == 'status')
-						$relatedListFields[$columnName] = 'activitystatus';
-					else
-						$relatedListFields[$columnName] = $list_fields_name[$key];
-				}
-			}
-		}
-		return $relatedListFields;
-	}
-
-	/**
-	 * Function to get list of field for related list
-	 * @return <Array> empty array
-	 */
-	public function getConfigureRelatedListFields()
-	{
-		return [];
+		return 'index.php?module=' . $this->get('name') . '&view=' . $this->getEditViewName() . '&mode=calendar';
 	}
 
 	/**
@@ -113,101 +79,57 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get the Quick Links for the module
-	 * @param <Array> $linkParams
-	 * @return <Array> List of Vtiger_Link_Model instances
+	 * {@inheritDoc}
 	 */
 	public function getSideBarLinks($linkParams)
 	{
-		$linkTypes = ['SIDEBARLINK', 'SIDEBARWIDGET'];
-		$links = Vtiger_Link_Model::getAllByType($this->getId(), $linkTypes, $linkParams);
-
-		$quickLinks = [
-			[
+		$links = Vtiger_Link_Model::getAllByType($this->getId(), ['SIDEBARLINK', 'SIDEBARWIDGET'], $linkParams);
+		$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues([
 				'linktype' => 'SIDEBARLINK',
 				'linklabel' => 'LBL_CALENDAR_VIEW',
 				'linkurl' => $this->getCalendarViewUrl(),
-				'linkicon' => '',
-			],
-			/*
-			  array(
-			  'linktype' => 'SIDEBARLINK',
-			  'linklabel' => 'LBL_SHARED_CALENDAR',
-			  'linkurl' => $this->getSharedCalendarViewUrl(),
-			  'linkicon' => '',
-			  ), */
-			[
+				'linkicon' => 'fa fa-calendar',
+		]);
+		$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues([
 				'linktype' => 'SIDEBARLINK',
 				'linklabel' => 'LBL_RECORDS_LIST',
 				'linkurl' => $this->getListViewUrl(),
-				'linkicon' => '',
-			],
-		];
-		if ($linkParams['ACTION'] == 'Calendar' && AppConfig::module('Calendar', 'SHOW_LIST_BUTTON')) {
-			$quickLinks[] = [
-				'linktype' => 'SIDEBARLINK',
-				'linklabel' => 'LBL_CALENDAR_LIST',
-				'linkurl' => 'javascript:Calendar_CalendarView_Js.getInstanceByView().goToRecordsList("' . $this->getListViewUrl() . '&viewname=All");',
-				'linkicon' => '',
-			];
+				'linkicon' => 'glyphicon glyphicon-list',
+		]);
+		if (isset($linkParams['ACTION']) && $linkParams['ACTION'] === 'Calendar' && AppConfig::module('Calendar', 'SHOW_LIST_BUTTON')) {
+			$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues([
+					'linktype' => 'SIDEBARLINK',
+					'linklabel' => 'LBL_CALENDAR_LIST',
+					'linkurl' => 'javascript:Calendar_CalendarView_Js.getInstanceByView().goToRecordsList("' . $this->getListViewUrl() . '&viewname=All");',
+					'linkicon' => 'fa fa-calendar-minus-o',
+			]);
 		}
-		foreach ($quickLinks as $quickLink) {
-			$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues($quickLink);
+		if ($linkParams['ACTION'] === 'Calendar') {
+			$links['SIDEBARWIDGETRIGHT'][] = Vtiger_Link_Model::getInstanceFromValues([
+					'linktype' => 'SIDEBARWIDGETRIGHT',
+					'linklabel' => 'Activity Type',
+					'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getActivityType',
+					'linkicon' => ''
+			]);
+			$links['SIDEBARWIDGETRIGHT'][] = Vtiger_Link_Model::getInstanceFromValues([
+					'linktype' => 'SIDEBARWIDGETRIGHT',
+					'linklabel' => 'LBL_USERS',
+					'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getUsersList',
+					'linkicon' => ''
+			]);
+			$links['SIDEBARWIDGETRIGHT'][] = Vtiger_Link_Model::getInstanceFromValues([
+					'linktype' => 'SIDEBARWIDGETRIGHT',
+					'linklabel' => 'LBL_GROUPS',
+					'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getGroupsList',
+					'linkicon' => ''
+			]);
 		}
-
-		$quickWidgets = [];
-		$quickWidgetsRight = [];
-
-		if ($linkParams['ACTION'] == 'Calendar') {
-			$quickWidgetsRight[] = array(
-				'linktype' => 'SIDEBARWIDGET',
-				'linklabel' => 'Activity Type',
-				'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getActivityType',
-				'linkicon' => ''
-			);
-			$quickWidgetsRight[] = array(
-				'linktype' => 'SIDEBARWIDGET',
-				'linklabel' => 'LBL_USERS',
-				'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getUsersList',
-				'linkicon' => ''
-			);
-			$quickWidgetsRight[] = array(
-				'linktype' => 'SIDEBARWIDGET',
-				'linklabel' => 'LBL_GROUPS',
-				'linkurl' => 'module=' . $this->get('name') . '&view=RightPanel&mode=getGroupsList',
-				'linkicon' => ''
-			);
-		}
-
-		if ($linkParams['ACTION'] == 'SharedCalendar') {
-			$quickWidgets[] = array(
-				'linktype' => 'SIDEBARWIDGET',
-				'linklabel' => 'LBL_ADDED_CALENDARS',
-				'linkurl' => 'module=' . $this->get('name') . '&view=ViewTypes&mode=getSharedUsersList',
-				'linkicon' => ''
-			);
-		}
-
-		$quickWidgets[] = array(
-			'linktype' => 'SIDEBARWIDGET',
-			'linklabel' => 'LBL_RECENTLY_MODIFIED',
-			'linkurl' => 'module=' . $this->get('name') . '&view=IndexAjax&mode=showActiveRecords',
-			'linkicon' => ''
-		);
-
-		foreach ($quickWidgets as $quickWidget) {
-			$links['SIDEBARWIDGET'][] = Vtiger_Link_Model::getInstanceFromValues($quickWidget);
-		}
-		foreach ($quickWidgetsRight as $quickWidgetRight) {
-			$links['SIDEBARWIDGETRIGHT'][] = Vtiger_Link_Model::getInstanceFromValues($quickWidgetRight);
-		}
-
 		return $links;
 	}
 
 	/**
 	 * Function returns the url that shows Calendar Import result
-	 * @return <String> url
+	 * @return string url
 	 */
 	public function getImportResultUrl()
 	{
@@ -216,17 +138,15 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function to get export query
-	 * @return <String> query;
+	 * @return string query;
 	 */
 	public function getExportQuery($focus = '', $where = '')
 	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$userId = $currentUserModel->getId();
-		$query = "SELECT vtiger_activity.*, vtiger_crmentity.description,vtiger_crmentity.smownerid as assigned_user_id, vtiger_activity_reminder.reminder_time FROM vtiger_activity
-					INNER JOIN vtiger_crmentity ON vtiger_activity.activityid = vtiger_crmentity.crmid
-					LEFT JOIN vtiger_activity_reminder ON vtiger_activity_reminder.activity_id = vtiger_activity.activityid && vtiger_activity_reminder.recurringid = 0
-					WHERE vtiger_crmentity.deleted = 0 && vtiger_crmentity.smownerid = $userId && vtiger_activity.activitytype NOT IN ('Emails')";
-		return $query;
+		return (new App\Db\Query())->select(['vtiger_activity.*', 'vtiger_crmentity.description', 'assigned_user_id' => 'vtiger_crmentity.smownerid', 'vtiger_activity_reminder.reminder_time'])
+				->from('vtiger_activity')
+				->innerJoin('vtiger_crmentity', 'vtiger_activity.activityid = vtiger_crmentity.crmid')
+				->leftJoin('vtiger_activity_reminder', 'vtiger_activity_reminder.activity_id = vtiger_activity.activityid')
+				->where(['vtiger_crmentity.deleted' => 0, 'vtiger_crmentity.smownerid' => App\User::getCurrentUserId()]);
 	}
 
 	/**
@@ -234,15 +154,10 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 	 */
 	public function setEventFieldsForExport()
 	{
-		$moduleFields = array_flip($this->getColumnFieldMapping());
-		$userModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-
-		$keysToReplace = array('taskpriority');
-		$keysValuesToReplace = array('taskpriority' => 'priority');
-
-		foreach ($moduleFields as $fieldName => $fieldValue) {
-			$fieldModel = Vtiger_Field_Model::getInstance($fieldName, $this);
-			if ($fieldName != 'id' && $fieldModel->getPermissions()) {
+		$keysToReplace = ['taskpriority'];
+		$keysValuesToReplace = ['taskpriority' => 'priority'];
+		foreach ($this->getFields() as $fieldName => $fieldModel) {
+			if ($fieldModel->getPermissions()) {
 				if (!in_array($fieldName, $keysToReplace)) {
 					$eventFields[$fieldName] = 'yes';
 				} else {
@@ -258,15 +173,10 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 	 */
 	public function setTodoFieldsForExport()
 	{
-		$moduleFields = array_flip($this->getColumnFieldMapping());
-		$userModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-
-		$keysToReplace = array('taskpriority', 'activitystatus');
-		$keysValuesToReplace = array('taskpriority' => 'priority', 'activitystatus' => 'status');
-
-		foreach ($moduleFields as $fieldName => $fieldValue) {
-			$fieldModel = Vtiger_Field_Model::getInstance($fieldName, $this);
-			if ($fieldName != 'id' && $fieldModel->getPermissions()) {
+		$keysToReplace = ['taskpriority', 'activitystatus'];
+		$keysValuesToReplace = ['taskpriority' => 'priority', 'activitystatus' => 'status'];
+		foreach ($this->getFields() as $fieldName => $fieldModel) {
+			if ($fieldModel->getPermissions()) {
 				if (!in_array($fieldName, $keysToReplace)) {
 					$todoFields[$fieldName] = 'yes';
 				} else {
@@ -279,164 +189,11 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function to get the url to view Details for the module
-	 * @return <String> - url
+	 * @return string - url
 	 */
 	public function getDetailViewUrl($id)
 	{
 		return 'index.php?module=Calendar&view=' . $this->getDetailViewName() . '&record=' . $id;
-	}
-
-	/**
-	 * To get the lists of sharedids
-	 * @param $id --  user id
-	 * @returns <Array> $sharedids
-	 */
-	public static function getCaledarSharedUsers($id)
-	{
-		$db = PearDatabase::getInstance();
-
-		$query = "SELECT vtiger_users.user_name, vtiger_sharedcalendar.* FROM vtiger_sharedcalendar
-				LEFT JOIN vtiger_users ON vtiger_sharedcalendar.sharedid=vtiger_users.id WHERE userid=?";
-		$result = $db->pquery($query, array($id));
-		$rows = $db->num_rows($result);
-
-		$sharedids = Array();
-		$focus = new Users();
-		for ($i = 0; $i < $rows; $i++) {
-			$sharedid = $db->query_result($result, $i, 'sharedid');
-			$userId = $db->query_result($result, $i, 'userid');
-			$sharedids[$sharedid] = $userId;
-		}
-		return $sharedids;
-	}
-
-	/**
-	 * To get the lists of sharedids
-	 * @param $id --  user id
-	 * @returns <Array> $sharedids
-	 */
-	public static function getSharedUsersOfCurrentUser($id)
-	{
-		$db = PearDatabase::getInstance();
-		$query = "SELECT vtiger_users.first_name,vtiger_users.last_name, vtiger_users.id as userid
-			FROM vtiger_sharedcalendar RIGHT JOIN vtiger_users ON vtiger_sharedcalendar.userid=vtiger_users.id and status= 'Active'
-			WHERE sharedid=? || (vtiger_users.status='Active' && vtiger_users.calendarsharedtype='public' && vtiger_users.id <> ?);";
-		$result = $db->pquery($query, array($id, $id));
-		$rows = $db->num_rows($result);
-
-		$userIds = Array();
-		for ($i = 0; $i < $rows; $i++) {
-			$id = $db->query_result($result, $i, 'userid');
-			$userName = $db->query_result($result, $i, 'first_name') . ' ' . $db->query_result($result, $i, 'last_name');
-			$userIds[$id] = $userName;
-		}
-
-		return $sharedids[$id] = $userIds;
-	}
-
-	/**
-	 * To get the lists of sharedids and colors
-	 * @param $id --  user id
-	 * @returns <Array> $sharedUsers
-	 */
-	public static function getSharedUsersInfoOfCurrentUser($id)
-	{
-		$db = PearDatabase::getInstance();
-
-		$query = "SELECT shareduserid,color,visible FROM vtiger_shareduserinfo where userid = ?";
-		$result = $db->pquery($query, array($id));
-		$rows = $db->num_rows($result);
-
-		$sharedUsers = Array();
-		for ($i = 0; $i < $rows; $i++) {
-			$sharedUserId = $db->query_result($result, $i, 'shareduserid');
-			$color = $db->query_result($result, $i, 'color');
-			$visible = $db->query_result($result, $i, 'visible');
-			$sharedUsers[$sharedUserId] = array('visible' => $visible, 'color' => $color);
-		}
-
-		return $sharedUsers;
-	}
-
-	/**
-	 * To get the lists of sharedids and colors
-	 * @param $id --  user id
-	 * @returns <Array> $sharedUsers
-	 */
-	public static function getCalendarViewTypes($id)
-	{
-		$db = PearDatabase::getInstance();
-
-		$query = "SELECT * FROM vtiger_calendar_user_activitytypes 
-			INNER JOIN vtiger_calendar_default_activitytypes on vtiger_calendar_default_activitytypes.id=vtiger_calendar_user_activitytypes.defaultid 
-			WHERE vtiger_calendar_user_activitytypes.userid=? && vtiger_calendar_default_activitytypes.active = ?";
-		$result = $db->pquery($query, array($id, 1));
-		$rows = $db->num_rows($result);
-
-		$calendarViewTypes = Array();
-		for ($i = 0; $i < $rows; $i++) {
-			$activityTypes = $db->query_result_rowdata($result, $i);
-			$moduleInstance = vtlib\Module::getInstance($activityTypes['module']);
-			$fieldInstance = vtlib\Field::getInstance($activityTypes['fieldname'], $moduleInstance);
-			if ($fieldInstance) {
-				$fieldLabel = $fieldInstance->label;
-			} else {
-				$fieldLabel = $activityTypes['fieldname'];
-			}
-			if ($activityTypes['visible'] == '1') {
-				$calendarViewTypes['visible'][] = array('module' => $activityTypes['module'], 'fieldname' => $activityTypes['fieldname'], 'fieldlabel' => $fieldLabel, 'visible' => $activityTypes['visible'], 'color' => $activityTypes['color']);
-			} else {
-				$calendarViewTypes['invisible'][] = array('module' => $activityTypes['module'], 'fieldname' => $activityTypes['fieldname'], 'fieldlabel' => $fieldLabel, 'visible' => $activityTypes['visible'], 'color' => $activityTypes['color']);
-			}
-		}
-		return $calendarViewTypes;
-	}
-
-	/**
-	 *  Function returns the url for Shared Calendar view
-	 * @return <String>
-	 */
-	public function getSharedCalendarViewUrl()
-	{
-		return 'index.php?module=' . $this->get('name') . '&view=SharedCalendar';
-	}
-
-	/**
-	 * Function to delete shared users
-	 * @param type $currentUserId
-	 */
-	public function deleteSharedUsers($currentUserId)
-	{
-		$db = PearDatabase::getInstance();
-		$delquery = "DELETE FROM vtiger_sharedcalendar WHERE userid=?";
-		$db->pquery($delquery, array($currentUserId));
-	}
-
-	/**
-	 * Function to insert shared users
-	 * @param type $currentUserId
-	 * @param type $sharedIds
-	 */
-	public function insertSharedUsers($currentUserId, $sharedIds, $sharedType = false)
-	{
-		$db = PearDatabase::getInstance();
-		foreach ($sharedIds as $sharedId) {
-			if ($sharedId != $currentUserId) {
-				$sql = "INSERT INTO vtiger_sharedcalendar VALUES (?,?)";
-				$db->pquery($sql, array($currentUserId, $sharedId));
-			}
-		}
-	}
-
-	/**
-	 * Function to get shared type
-	 * @param type $currentUserId
-	 * @param type $sharedIds
-	 */
-	public static function getSharedType($currentUserId)
-	{
-		$userPrivilegesModel = Users_Privileges_Model::getInstanceById($currentUserId);
-		return $userPrivilegesModel->get('calendarsharedtype');
 	}
 
 	/**
@@ -468,10 +225,10 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 		$params = [$this->getName(), $currentUserModel->id, $limit];
 		$query = sprintf($query, $deletedCondition);
 		$result = $db->pquery($query, $params);
-		$noOfRows = $db->num_rows($result);
+		$noOfRows = $db->numRows($result);
 		$recentRecords = [];
 		for ($i = 0; $i < $noOfRows; ++$i) {
-			$row = $db->query_result_rowdata($result, $i);
+			$row = $db->queryResultRowData($result, $i);
 			$row['id'] = $row['crmid'];
 			$recentRecords[$row['id']] = $this->getRecordFromArray($row);
 		}
@@ -480,44 +237,42 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function returns Calendar Reminder record models
-	 * @return <Array of Calendar_Record_Model>
+	 * @return \Calendar_Record_Model[]
 	 */
 	public static function getCalendarReminder($allReminder = false)
 	{
-		$db = PearDatabase::getInstance();
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$activityReminder = $currentUserModel->getCurrentUserActivityReminderInSeconds();
 		$recordModels = [];
 		$userPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		$permission = $userPrivilegesModel->hasModulePermission('Calendar');
-		$permissionToSendEmail = $permission && AppConfig::main('isActiveSendingMails') && Users_Privileges_Model::isPermitted('OSSMail');
-		if ($activityReminder != '') {
+		$permissionToSendEmail = $permission && AppConfig::main('isActiveSendingMails') && \App\Privilege::isPermitted('OSSMail');
+		if (!empty($activityReminder)) {
 			$currentTime = time();
-			$date = date('Y-m-d', strtotime("+$activityReminder seconds", $currentTime));
-			$time = date('H:i', strtotime("+$activityReminder seconds", $currentTime));
-			$reminderActivitiesResult = 'SELECT DISTINCT recordid FROM vtiger_activity_reminder_popup 
-				INNER JOIN vtiger_activity on vtiger_activity.activityid = vtiger_activity_reminder_popup.recordid 
-				INNER JOIN vtiger_crmentity ON vtiger_activity_reminder_popup.recordid = vtiger_crmentity.crmid';
+			$time = date('Y-m-d H:i:s', strtotime("+$activityReminder seconds", $currentTime));
 
+			$query = (new \App\Db\Query())
+				->select(['recordid', 'vtiger_activity_reminder_popup.datetime'])
+				->from('vtiger_activity_reminder_popup')
+				->innerJoin('vtiger_activity', 'vtiger_activity_reminder_popup.recordid = vtiger_activity.activityid')
+				->innerJoin('vtiger_crmentity', 'vtiger_activity_reminder_popup.recordid = vtiger_crmentity.crmid')
+				->distinct()
+				->limit(20);
 			if ($allReminder) {
-				$reminderActivitiesResult .= ' WHERE (vtiger_activity_reminder_popup.status = 0 || vtiger_activity_reminder_popup.status = 2) ';
+				$query->where(['or', ['vtiger_activity_reminder_popup.status' => 0], ['vtiger_activity_reminder_popup.status' => 2]]);
 			} else {
-				$reminderActivitiesResult .= ' WHERE vtiger_activity_reminder_popup.status = 0 ';
+				$query->where(['vtiger_activity_reminder_popup.status' => 0]);
 			}
+			$query->andWhere(['vtiger_crmentity.smownerid' => $currentUserModel->getId(), 'vtiger_crmentity.deleted' => 0, 'vtiger_activity.status' => Calendar_Module_Model::getComponentActivityStateLabel('current')]);
+			$query->andWhere(['<=', 'vtiger_activity_reminder_popup.datetime', $time])->orderBy(['vtiger_activity_reminder_popup.datetime' => SORT_DESC]);
 
-			$reminderActivitiesResult .= " && vtiger_crmentity.smownerid = ? && vtiger_crmentity.deleted = 0 
-				AND ((DATE_FORMAT(vtiger_activity_reminder_popup.date_start,'%Y-%m-%d') <= ?)
-				AND (TIME_FORMAT(vtiger_activity_reminder_popup.time_start,'%H:%i') <= ?))
-				AND vtiger_activity.status IN ('" . implode("','", Calendar_Module_Model::getComponentActivityStateLabel('current')) . "') LIMIT 20";
-
-
-			$result = $db->pquery($reminderActivitiesResult, [$currentUserModel->getId(), $date, $time]);
-			while (($recordId = $db->getSingleValue($result)) !== false) {
+			$dataReader = $query->createCommand()->query();
+			while ($recordId = $dataReader->readColumn(0)) {
 				$recordModel = Vtiger_Record_Model::getInstanceById($recordId, 'Calendar');
 				$link = $recordModel->get('link');
-				if ($link != '' && $link != 0 && $permissionToSendEmail) {
-					$url = "index.php?module=OSSMail&view=compose&mod=" . vtlib\Functions::getCRMRecordType($link) . "&record=$link";
-					$recordModel->set('mailUrl', "<a href='$url' class='btn btn-info' target='_blank'><span class='glyphicon glyphicon-envelope icon-white'></span>&nbsp;&nbsp;" . vtranslate('LBL_SEND_MAIL') . "</a>");
+				if ($link && $permissionToSendEmail) {
+					$url = 'index.php?module=OSSMail&view=Compose&mod=' . \App\Record::getType($link) . "&record=$link";
+					$recordModel->set('mailUrl', "<a href='$url' class='btn btn-info' target='_blank'><span class='glyphicon glyphicon-envelope icon-white'></span>&nbsp;&nbsp;" . \App\Language::translate('LBL_SEND_MAIL') . "</a>");
 				}
 				$recordModels[] = $recordModel;
 			}
@@ -527,15 +282,15 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 
 	/**
 	 * Function gives fields based on the type
-	 * @param <String> $type - field type
+	 * @param string $type - field type
 	 * @return <Array of Vtiger_Field_Model> - list of field models
 	 */
 	public function getFieldsByType($type)
 	{
-		$restrictedField = array('picklist' => array('activitystatus', 'recurringtype', 'visibility', 'duration_minutes'));
+		$restrictedField = ['picklist' => ['activitystatus', 'visibility', 'duration_minutes']];
 
 		if (!is_array($type)) {
-			$type = array($type);
+			$type = [$type];
 		}
 		$fields = $this->getFields();
 		$fieldList = [];
@@ -563,19 +318,19 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 		$settingLinks = [];
 
 		if ($currentUserModel->isAdminUser()) {
-			$settingLinks[] = array(
+			$settingLinks[] = [
 				'linktype' => 'LISTVIEWSETTING',
 				'linklabel' => 'LBL_EDIT_FIELDS',
 				'linkurl' => 'index.php?parent=Settings&module=LayoutEditor&sourceModule=' . $this->getName(),
 				'linkicon' => Vtiger_Theme::getImagePath('LayoutEditor.gif')
-			);
+			];
 
-			$settingLinks[] = array(
+			$settingLinks[] = [
 				'linktype' => 'LISTVIEWSETTING',
 				'linklabel' => 'LBL_EDIT_PICKLIST_VALUES',
 				'linkurl' => 'index.php?parent=Settings&module=Picklist&view=Index&source_module=' . $this->getName(),
 				'linkicon' => ''
-			);
+			];
 		}
 		return $settingLinks;
 	}
@@ -594,7 +349,7 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 	public static function getCalendarTypes()
 	{
 		$calendarConfig = ['Task'];
-		$eventConfig = Vtiger_Util_Helper::getPickListValues('activitytype');
+		$eventConfig = App\Fields\Picklist::getValuesName('activitytype');
 		if (is_array($eventConfig)) {
 			$calendarConfig = array_merge($calendarConfig, $eventConfig);
 		}
@@ -621,13 +376,17 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 				$dates[$key] = strtotime($dBFomatedDate . " " . $timeFormatedString);
 			}
 			$activityStatusLabels = Calendar_Module_Model::getComponentActivityStateLabel();
-			$state = $activityStatusLabels['not_started'];
-			if ($dates['end'] > $dates['current'] && $dates['start'] < $dates['current']) {
-				$state = $activityStatusLabels['in_realization'];
-			} elseif ($dates['end'] > $dates['current']) {
+			if (!empty($data['activitystatus']) && isset($activityStatusLabels[$data['activitystatus']])) {
+				$state = $activityStatusLabels[$data['activitystatus']];
+			} else {
 				$state = $activityStatusLabels['not_started'];
-			} elseif ($dates['end'] < $dates['current']) {
-				$state = $activityStatusLabels['overdue'];
+				if ($dates['end'] > $dates['current'] && $dates['start'] < $dates['current']) {
+					$state = $activityStatusLabels['in_realization'];
+				} elseif ($dates['end'] > $dates['current']) {
+					$state = $activityStatusLabels['not_started'];
+				} elseif ($dates['end'] < $dates['current']) {
+					$state = $activityStatusLabels['overdue'];
+				}
 			}
 			return $state;
 		}
@@ -635,13 +394,13 @@ class Calendar_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * The function gets the labels for a given status field 
+	 * The function gets the labels for a given status field
 	 * @param string $key
-	 * @return <Array> 
+	 * @return <Array>
 	 */
 	public static function getComponentActivityStateLabel($key = '')
 	{
-		$pickListValues = Vtiger_Util_Helper::getPickListValues('activitystatus');
+		$pickListValues = App\Fields\Picklist::getValuesName('activitystatus');
 		if (!is_array($pickListValues)) {
 			return [];
 		}

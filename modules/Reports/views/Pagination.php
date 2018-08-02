@@ -1,16 +1,13 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
+/**
+ * Reports Pagination view class
+ * @package YetiForce.View
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Reports_Pagination_View extends Vtiger_IndexAjax_View
 {
-
-	public function checkPermission(Vtiger_Request $request)
-	{
-		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
-		}
-	}
 
 	public function __construct()
 	{
@@ -18,7 +15,7 @@ class Reports_Pagination_View extends Vtiger_IndexAjax_View
 		$this->exposeMethod('getPagination');
 	}
 
-	public function getPagination(Vtiger_Request $request)
+	public function getPagination(\App\Request $request)
 	{
 		parent::preProcess($request, false);
 
@@ -30,23 +27,23 @@ class Reports_Pagination_View extends Vtiger_IndexAjax_View
 		$listViewModel = new Reports_ListView_Model();
 		$listViewModel->set('module', $moduleModel);
 
-		$folderId = $request->get('viewname');
+		$folderId = $request->getByType('viewname', 2);
 		if (empty($folderId) || $folderId == 'undefined') {
 			$folderId = 'All';
 		}
-		$sortBy = $request->get('sortorder');
-		$orderBy = $request->get('orderby');
+		$sortBy = $request->getForSql('sortorder');
+		$orderBy = $request->getForSql('orderby');
 
 		$listViewModel->set('folderid', $folderId);
 		$listViewModel->set('orderby', $orderBy);
 		$listViewModel->set('sortorder', $sortBy);
 
 		$linkModels = $listViewModel->getListViewLinks(false);
-		$pageNumber = $request->get('page');
+		$pageNumber = $request->getInteger('page');
 		$listViewMassActionModels = $listViewModel->getListViewMassActions(false);
 
 		if (empty($pageNumber)) {
-			$pageNumber = '1';
+			$pageNumber = 1;
 		}
 		$pagingModel = new Vtiger_Paging_Model();
 		$pagingModel->set('page', $pageNumber);
@@ -83,10 +80,5 @@ class Reports_Pagination_View extends Vtiger_IndexAjax_View
 		$viewer->assign('START_PAGIN_FROM', $startPaginFrom);
 		$viewer->assign('PAGING_MODEL', $pagingModel);
 		echo $viewer->view('Pagination.tpl', $moduleName, true);
-	}
-
-	public function transferListSearchParamsToFilterCondition($listSearchParams, $moduleModel)
-	{
-		return Vtiger_Util_Helper::transferListSearchParamsToFilterCondition($listSearchParams, $moduleModel);
 	}
 }

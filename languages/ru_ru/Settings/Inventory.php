@@ -1,9 +1,15 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
+/**
+ * Inventory russian translation
+ * @package YetiForce.Languages
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $languageStrings = [
-	'LBL_CREDITLIMITS' => 'Кредиты',
+	'LBL_CREDITLIMITS' => 'Кредитные лимиты',
 	'LBL_CREDITLIMITS_DESCRIPTION' => ' Кредитование Контрагентов',
-	'LBL_CREDITLIMITS_SINGLE' => 'Кредит',
+	'LBL_CREDITLIMITS_SINGLE' => 'Кредитный лимит',
+	'LBL_CREDITLIMITS_INFO' => 'В YetiForce есть возможность управления кредитными лимитами для компаний. Этот функционал используется для ограничения кредитной задолженности. Кредитные лимиты в основном предоставляются организациям, которые работают с нами длительное время и мы хотим выдать им отсрочку платежа, что означает, что компания не сможет разместить новый заказ, пока не покроет старые долги (текущий баланс должен превысить лимит).',
 	'LBL_ENTER_NAME' => 'Наименование',
 	'LBL_ENTER_VALUE' => 'Значение',
 	'LBL_NAME' => 'Название',
@@ -36,7 +42,7 @@ $languageStrings = [
 	'LBL_NO' => 'Нет',
 	//history
 	'Inventory' => 'Расширенные модули',
-	'LBL_VIEW_CREDITLIMITS' => 'Кредитная лимитная база',
+	'LBL_VIEW_CREDITLIMITS' => 'Базовый кредитный лимит',
 	'LBL_VIEW_TAXES' => 'Базовый налог',
 	'LBL_VIEW_TAXCONFIGURATION' => 'Настройка налога',
 	'LBL_VIEW_DISCOUNTCONFIGURATION' => 'Настройка скидки',

@@ -3,50 +3,49 @@
 /**
  * Configuration notifications
  * @package YetiForce.View
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o.
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
+ * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_Notifications_Configuration_View extends Settings_Vtiger_Index_View
 {
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Function gets module settings
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$qualifiedModuleName = $request->getModule(false);
-		$moduleModel = Settings_Vtiger_Module_Model::getInstance($qualifiedModuleName);
-		$listModules = $moduleModel->getModulesList();
-		$listUsers = Users_Record_Model::getAll();
-		foreach ($listModules as $moduleName => &$module) {
-			$watchdogModule = Vtiger_Watchdog_Model::getInstance($moduleName);
-			$modulesWatchingsByUsers[$moduleName] = $watchdogModule->getWatchingUsers();
+		$srcModule = $request->get('srcModule');
+		$modules = Vtiger_Watchdog_Model::getSupportedModules();
+		if ($request->isEmpty('srcModule')) {
+			reset($modules);
+			$srcModule = key($modules);
 		}
-
 		$viewer = $this->getViewer($request);
-		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
-		$viewer->assign('MODULE_MODEL', $moduleModel);
-		$viewer->assign('LIST_MODULES', $listModules);
-		$viewer->assign('LIST_MODULES_USERS', $modulesWatchingsByUsers);
-		$viewer->assign('LIST_USERS', $listUsers);
-		$viewer->assign('MODULE', $moduleName);
-		$viewer->view('Configuration.tpl', $qualifiedModuleName);
+		$viewer->assign('WATCHDOG_MODULE', Vtiger_Watchdog_Model::getInstance($srcModule));
+		$viewer->assign('SELECTED_MODULE', $srcModule);
+		$viewer->assign('SUPPORTED_MODULES', $modules);
+		$viewer->view('Configuration.tpl', $request->getModule(false));
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	/**
+	 * Function to get the list of Script models to be included
+	 * @param \App\Request $request
+	 * @return array - List of Vtiger_JsScript_Model instances
+	 */
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
-
-		$jsFileNames = array(
+		$jsFileNames = [
 			"modules.Settings.$moduleName.resources.Configuration",
-		);
-
+			'~libraries/jquery/datatables/media/js/jquery.dataTables.min.js',
+			'~libraries/jquery/datatables/plugins/integration/bootstrap/3/dataTables.bootstrap.min.js'
+		];
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
 		return $headerScriptInstances;
-	}
-
-	public function getBreadcrumbTitle(Vtiger_Request $request)
-	{
-		return vtranslate('LBL_NOTIFICATIONS');
 	}
 }
