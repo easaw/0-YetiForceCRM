@@ -1,39 +1,45 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
+/**
+ * Settings OSSMailView index view class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Vtiger_Pagination_View extends Settings_Vtiger_IndexAjax_View
 {
-
 	public function __construct()
 	{
 		parent::__construct();
 		$this->exposeMethod('getPagination');
 	}
 
-	public function getPagination(Vtiger_Request $request)
+	/**
+	 * Pagination.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function getPagination(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
-		$pageNumber = $request->get('page');
+		$pageNumber = $request->getInteger('page');
 		$searchResult = $request->get('searchResult');
 		$qualifiedModuleName = $request->getModule(false);
-		$sourceModule = $request->get('sourceModule');
 		$listViewModel = Settings_Vtiger_ListView_Model::getInstance($qualifiedModuleName);
 		if (empty($pageNumber)) {
-			$pageNumber = '1';
+			$pageNumber = 1;
 		}
-		if (!empty($sourceModule)) {
+		if (!$request->isEmpty('sourceModule')) {
+			$sourceModule = $request->getByType('sourceModule', 2);
 			$listViewModel->set('sourceModule', $sourceModule);
-		}
-		if (!empty($forModule)) {
-			$listViewModel->set('formodule', $forModule);
 		}
 
 		$pagingModel = new Vtiger_Paging_Model();
 		$pagingModel->set('page', $pageNumber);
-		$pagingModel->set('viewid', $request->get('viewname'));
+		$pagingModel->set('viewid', $request->getByType('viewname', 2));
 		$searchKey = $request->get('search_key');
 		$searchValue = $request->get('search_value');
-		$operator = $request->get('operator');
+		$operator = $request->getByType('operator', 1);
 		if (!empty($operator)) {
 			$listViewModel->set('operator', $operator);
 			$viewer->assign('OPERATOR', $operator);
@@ -50,11 +56,13 @@ class Settings_Vtiger_Pagination_View extends Settings_Vtiger_IndexAjax_View
 		}
 		$transformedSearchParams = $this->transferListSearchParamsToFilterCondition($searchParmams, $listViewModel->getModule());
 		$listViewModel->set('search_params', $transformedSearchParams);
-
-		if (!$this->listViewEntries) {
-			$this->listViewEntries = $listViewModel->getListViewEntries($pagingModel, $searchResult);
+		if (!empty($searchResult) && is_array($searchResult)) {
+			$listViewModel->get('query_generator')->addNativeCondition(['vtiger_crmentity.crmid' => $searchResult]);
 		}
-		if (!$this->listViewCount) {
+		if (!property_exists($this, 'listViewEntries') || empty($this->listViewEntries)) {
+			$this->listViewEntries = $listViewModel->getListViewEntries($pagingModel);
+		}
+		if (!property_exists($this, 'listViewCount') || empty($this->listViewCount)) {
 			$this->listViewCount = $listViewModel->getListViewCount();
 		}
 		$noOfEntries = count($this->listViewEntries);

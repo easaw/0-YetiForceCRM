@@ -6,48 +6,75 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Vtiger_UserRole_UIType extends Vtiger_Base_UIType
+class Vtiger_UserRole_UIType extends Vtiger_Picklist_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
+	public function validate($value, $isUserFormat = false)
 	{
-		return 'uitypes/UserRole.tpl';
-	}
-
-	/**
-	 * Function to get the display value in detail view
-	 * @param <Integer> crmid of record
-	 * @return <String>
-	 */
-	public function getEditViewDisplayValue($value, $record = false)
-	{
-		if ($value) {
-			$userName = \App\PrivilegeUtil::getRoleName($value);
-			return $userName;
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
 		}
+		if (substr($value, 0, 1) !== 'H' || !is_numeric(substr($value, 1)) || is_null(\App\PrivilegeUtil::getRoleName($value))) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate[$value] = true;
 	}
 
 	/**
-	 * Function to get display value
-	 * @param <String> $value
-	 * @param <Number> $recordId
-	 * @return <String> display value
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $recordId = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		$displayValue = $this->getEditViewDisplayValue($value);
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		if ($currentUserModel->isAdminUser() && $rawText === false) {
+		$displayValue = \App\TextParser::textTruncate(\App\Language::translate(\App\PrivilegeUtil::getRoleName($value), $this->getFieldModel()->getModuleName()), is_int($length) ? $length : false);
+		if (\App\User::getCurrentUserModel()->isAdmin() && $rawText !== false) {
 			$roleRecordModel = new Settings_Roles_Record_Model();
 			$roleRecordModel->set('roleid', $value);
-			return '<a href="' . $roleRecordModel->getEditViewUrl() . '">' . \vtlib\Functions::textLength($displayValue) . '</a>';
+
+			return '<a href="' . $roleRecordModel->getEditViewUrl() . '">' . \App\Purifier::encodeHtml($displayValue) . '</a>';
 		}
 		return $displayValue;
+	}
+
+	/**
+	 * Function to get all the available picklist values for the current field.
+	 *
+	 * @return string[]
+	 */
+	public function getPicklistValues()
+	{
+		$roleModels = Settings_Roles_Record_Model::getAll();
+		$roles = [];
+		foreach ($roleModels as $roleId => $roleModel) {
+			$roles[$roleId] = \App\Language::translate($roleModel->getName(), $this->getFieldModel()->getModuleName());
+		}
+		return $roles;
+	}
+
+	/**
+	 * Function searches for value data.
+	 *
+	 * @param string $value
+	 *
+	 * @return string[]
+	 */
+	public function getSearchValues($value)
+	{
+		$roles = (new App\Db\Query())->select(['roleid', 'rolename'])->from('vtiger_role')->where(['like', 'rolename', $value])
+			->createCommand()->queryAllByGroup();
+
+		return $roles;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getListSearchTemplateName()
+	{
+		return 'List/Field/UserRole.tpl';
 	}
 }

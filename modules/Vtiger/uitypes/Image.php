@@ -8,24 +8,10 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class Vtiger_Image_UIType extends Vtiger_Base_UIType
+class Vtiger_Image_UIType extends Vtiger_MultiImage_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
-	{
-		return 'uitypes/Image.tpl';
-	}
-
-	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
-	 */
-	public function getDetailViewTemplateName()
-	{
-		return 'uitypes/ImageDetailView.tpl';
-	}
+	public static $defaultLimit = 1;
 }

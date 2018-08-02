@@ -8,30 +8,30 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class Rss_MakeDefaultAjax_Action extends Vtiger_Action_Controller
+class Rss_MakeDefaultAjax_Action extends \App\Controller\Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$record = $request->get('record');
-
-		$currentUserPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		if (!$currentUserPrivilegesModel->isPermitted($moduleName, 'ListView', $record)) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		$currentUserModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserModel->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$recordId = $request->get('record');
-
+		$recordId = $request->getInteger('record');
 		$recordModel = Rss_Record_Model::getInstanceById($recordId, $moduleName);
 		$recordModel->makeDefault();
-
 		$response = new Vtiger_Response();
-		$response->setResult(array('message' => 'JS_RSS_MADE_AS_DEFAULT', 'record' => $recordId, 'module' => $moduleName));
+		$response->setResult(['message' => 'JS_RSS_MADE_AS_DEFAULT', 'record' => $recordId, 'module' => $moduleName]);
 		$response->emit();
 	}
 }

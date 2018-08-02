@@ -6,27 +6,28 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * ********************************************************************************** */
+
 namespace vtlib;
 
 /**
- * Provides API to work with Cron tasks
- * @package vtlib
+ * Provides API to work with Cron tasks.
  */
 class Cron
 {
-
 	protected static $cronAction = false;
+	protected static $baseTable = 'vtiger_cron_task';
 	protected static $schemaInitialized = false;
 	protected static $instanceCache = [];
-	static $STATUS_DISABLED = 0;
-	static $STATUS_ENABLED = 1;
-	static $STATUS_RUNNING = 2;
-	static $STATUS_COMPLETED = 3;
+	public static $STATUS_DISABLED = 0;
+	public static $STATUS_ENABLED = 1;
+	public static $STATUS_RUNNING = 2;
+	public static $STATUS_COMPLETED = 3;
 	protected $data;
 
 	/**
-	 * Constructor
+	 * Constructor.
 	 */
 	protected function __construct($values)
 	{
@@ -35,12 +36,14 @@ class Cron
 	}
 
 	/**
-	 * set the value to the data
+	 * set the value to the data.
+	 *
 	 * @param type $value,$key
 	 */
 	public function set($key, $value)
 	{
 		$this->data[$key] = $value;
+
 		return $this;
 	}
 
@@ -57,7 +60,7 @@ class Cron
 	 */
 	public function getName()
 	{
-		return decode_html($this->data['name']);
+		return \App\Purifier::decodeHtml($this->data['name']);
 	}
 
 	/**
@@ -65,15 +68,15 @@ class Cron
 	 */
 	public function getFrequency()
 	{
-		return intval($this->data['frequency']);
+		return (int) ($this->data['frequency']);
 	}
 
 	/**
-	 * Get the status
+	 * Get the status.
 	 */
 	public function getStatus()
 	{
-		return intval($this->data['status']);
+		return (int) ($this->data['status']);
 	}
 
 	/**
@@ -81,7 +84,7 @@ class Cron
 	 */
 	public function getLastStart()
 	{
-		return intval($this->data['laststart']);
+		return (int) ($this->data['laststart']);
 	}
 
 	/**
@@ -89,16 +92,25 @@ class Cron
 	 */
 	public function getLastEnd()
 	{
-		return intval($this->data['lastend']);
+		return (int) ($this->data['lastend']);
 	}
 
 	/**
-	 * Get the user datetimefeild
+	 * Get the next sequence.
+	 */
+	public static function nextSequence()
+	{
+		return \App\Db::getInstance()->getUniqueID(self::$baseTable, 'sequence', false);
+	}
+
+	/**
+	 * Get the user datetimefeild.
 	 */
 	public function getLastEndDateTime()
 	{
-		if ($this->data['lastend'] != NULL) {
+		if ($this->data['lastend'] !== null) {
 			$lastEndDateTime = new \DateTimeField(date('Y-m-d H:i:s', $this->data['lastend']));
+
 			return $lastEndDateTime->getDisplayDateTimeValue();
 		} else {
 			return '';
@@ -106,13 +118,13 @@ class Cron
 	}
 
 	/**
-	 *
-	 * get the last start datetime field
+	 * get the last start datetime field.
 	 */
 	public function getLastStartDateTime()
 	{
-		if ($this->data['laststart'] != NULL) {
+		if ($this->data['laststart'] !== null) {
 			$lastStartDateTime = new \DateTimeField(date('Y-m-d H:i:s', $this->data['laststart']));
+
 			return $lastStartDateTime->getDisplayDateTimeValue();
 		} else {
 			return '';
@@ -120,13 +132,14 @@ class Cron
 	}
 
 	/**
-	 * Get Time taken to complete task
+	 * Get Time taken to complete task.
 	 */
 	public function getTimeDiff()
 	{
 		$lastStart = $this->getLastStart();
 		$lastEnd = $this->getLastEnd();
 		$timeDiff = $lastEnd - $lastStart;
+
 		return $timeDiff;
 	}
 
@@ -139,16 +152,15 @@ class Cron
 	}
 
 	/**
-	 * Get the Module name
+	 * Get the Module name.
 	 */
 	public function getModule()
 	{
-
 		return $this->data['module'];
 	}
 
 	/**
-	 * get the Sequence
+	 * get the Sequence.
 	 */
 	public function getSequence()
 	{
@@ -156,15 +168,18 @@ class Cron
 	}
 
 	/**
-	 * get the description of cron
+	 * get the description of cron.
 	 */
 	public function getDescription()
 	{
 		return $this->data['description'];
 	}
-	public function getLockStatus(){
+
+	public function getLockStatus()
+	{
 		return isset($this->data['lockStatus']) ? $this->data['lockStatus'] : false;
 	}
+
 	/**
 	 * Check if task is right state for running.
 	 */
@@ -174,7 +189,8 @@ class Cron
 		// Take care to start the cron im
 		$lastTime = ($this->getLastStart() > 0) ? $this->getLastStart() : $this->getLastEnd();
 		$elapsedTime = time() - $lastTime;
-		return ($elapsedTime >= ($this->getFrequency() - 60));
+
+		return $elapsedTime >= ($this->getFrequency() - 60);
 	}
 
 	/**
@@ -182,7 +198,8 @@ class Cron
 	 */
 	public function statusEqual($value)
 	{
-		$status = intval($this->data['status']);
+		$status = (int) ($this->data['status']);
+
 		return $status == $value;
 	}
 
@@ -211,11 +228,15 @@ class Cron
 	}
 
 	/**
-	 * Update status
+	 * Update status.
+	 *
+	 * @param int $status
+	 *
+	 * @throws \Exception
 	 */
 	public function updateStatus($status)
 	{
-		switch (intval($status)) {
+		switch ((int) $status) {
 			case self::$STATUS_DISABLED:
 			case self::$STATUS_ENABLED:
 			case self::$STATUS_RUNNING:
@@ -223,15 +244,17 @@ class Cron
 			default:
 				throw new \Exception('Invalid status');
 		}
-		self::querySilent('UPDATE vtiger_cron_task SET status=? WHERE id=?', array($status, $this->getId()));
+		\App\Db::getInstance()->createCommand()->update(self::$baseTable, ['status' => $status], ['id' => $this->getId()])->execute();
 	}
-	/*
-	 * update frequency
-	 */
 
+	/**
+	 * Update frequency.
+	 *
+	 * @param int $frequency
+	 */
 	public function updateFrequency($frequency)
 	{
-		self::querySilent('UPDATE vtiger_cron_task SET frequency=? WHERE id=?', array($frequency, $this->getId()));
+		\App\Db::getInstance()->createCommand()->update(self::$baseTable, ['frequency' => $frequency], ['id' => $this->getId()])->execute();
 	}
 
 	/**
@@ -240,26 +263,26 @@ class Cron
 	public function markRunning()
 	{
 		$time = time();
-		self::querySilent('UPDATE vtiger_cron_task SET status=?, laststart=? WHERE id=?', array(self::$STATUS_RUNNING, $time, $this->getId()));
+		\App\Db::getInstance()->createCommand()->update(self::$baseTable, ['status' => self::$STATUS_RUNNING, 'laststart' => $time], ['id' => $this->getId()])->execute();
+
 		return $this->set('laststart', $time);
 	}
 
 	/**
 	 * Mark this instance as finished.
+	 *
+	 * @return int
 	 */
 	public function markFinished()
 	{
 		$lock = $this->getLockStatus();
 		$time = time();
-		$query = 'UPDATE vtiger_cron_task SET lastend = ?';
-		$params = [$time];
-		if(!$lock){
-			$query .= ' ,status = ?';
-			$params []= self::$STATUS_ENABLED;
+		$contitions = ['lastend' => $time];
+		if (!$lock) {
+			$contitions['status'] = self::$STATUS_ENABLED;
 		}
-		$query .= ' WHERE id = ?';
-		$params []= $this->getId();
-		self::querySilent($query, $params);
+		\App\Db::getInstance()->createCommand()->update(self::$baseTable, $contitions, ['id' => $this->getId()])->execute();
+
 		return $this->set('lastend', $time);
 	}
 
@@ -271,7 +294,7 @@ class Cron
 		if (!$this->isRunning()) {
 			return false;
 		}
-		$maxExecutionTime = intval(ini_get('max_execution_time'));
+		$maxExecutionTime = (int) (ini_get('max_execution_time'));
 		if ($maxExecutionTime == 0) {
 			$maxExecutionTime = \AppConfig::main('maxExecutionCronTime');
 		}
@@ -286,146 +309,120 @@ class Cron
 	}
 
 	/**
-	 * Execute SQL query silently (even when table doesn't exist)
-	 */
-	protected static function querySilent($sql, $params = false)
-	{
-		$adb = \PearDatabase::getInstance();
-		$old_dieOnError = $adb->dieOnError;
-
-		$adb->dieOnError = false;
-		$result = $adb->pquery($sql, $params);
-		$adb->dieOnError = $old_dieOnError;
-		return $result;
-	}
-
-	/**
-	 * Initialize the schema.
-	 */
-	protected static function initializeSchema()
-	{
-		if (!self::$schemaInitialized) {
-			if (!Utils::CheckTable('vtiger_cron_task')) {
-				Utils::CreateTable('vtiger_cron_task', '(id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-					name VARCHAR(100) UNIQUE KEY, handler_file VARCHAR(100) UNIQUE KEY,
-					frequency int, laststart int(11) unsigned, lastend int(11) unsigned, status int,module VARCHAR(100),
-                                        sequence int,description TEXT )', true);
-			}
-			self::$schemaInitialized = true;
-		}
-	}
-
-	static function nextSequence()
-	{
-		$adb = \PearDatabase::getInstance();
-		$result = self::querySilent('SELECT MAX(sequence) as sequence FROM vtiger_cron_task ORDER BY SEQUENCE');
-		if ($result && $adb->getRowCount($result)) {
-			$sequence = $adb->getSingleValue($result);
-		}
-		if ($sequence === null) {
-			$sequence = 1;
-		}
-		return $sequence + 1;
-	}
-
-	/**
 	 * Register cron task.
+	 *
+	 * @param string $name
+	 * @param string $handler_file
+	 * @param int    $frequency
+	 * @param string $module
+	 * @param int    $status
+	 * @param int    $sequence
+	 * @param string $description
 	 */
-	static function register($name, $handler_file, $frequency, $module = 'Home', $status = 1, $sequence = 0, $description = '')
+	public static function register($name, $handler_file, $frequency, $module = 'Home', $status = 1, $sequence = 0, $description = '')
 	{
-		self::initializeSchema();
-		$adb = \PearDatabase::getInstance();
-		$instance = self::getInstance($name);
-		if ($sequence == 0) {
-			$sequence = self::nextSequence();
+		$db = \App\Db::getInstance();
+		if (empty($sequence)) {
+			$sequence = static::nextSequence();
 		}
-		self::querySilent('INSERT INTO vtiger_cron_task (name, handler_file, frequency, status, sequence,module,description) VALUES(?,?,?,?,?,?,?)', array($name, $handler_file, $frequency, $status, $sequence, $module, $description));
+		$db->createCommand()->insert(self::$baseTable, [
+			'name' => $name,
+			'handler_file' => $handler_file,
+			'frequency' => $frequency,
+			'status' => $status,
+			'sequence' => $sequence,
+			'module' => $module,
+			'description' => $description,
+		])->execute();
 	}
 
 	/**
 	 * De-register cron task.
+	 *
+	 * @param string $name
 	 */
-	static function deregister($name)
+	public static function deregister($name)
 	{
-		self::querySilent('DELETE FROM vtiger_cron_task WHERE name=?', array($name));
+		\App\Db::getInstance()->createCommand()->delete(self::$baseTable, ['name' => $name])->execute();
 		if (isset(self::$instanceCache["$name"])) {
 			unset(self::$instanceCache["$name"]);
 		}
 	}
 
 	/**
-	 * Get instances that are active (not disabled)
+	 * Get instances that are active (not disabled).
+	 *
+	 * @return \self[]
 	 */
-	static function listAllActiveInstances($byStatus = 0)
+	public static function listAllActiveInstances()
 	{
-		$adb = \PearDatabase::getInstance();
-
 		$instances = [];
-		if ($byStatus == 0) {
-			$result = self::querySilent('SELECT * FROM vtiger_cron_task WHERE status <> ? ORDER BY SEQUENCE', array(self::$STATUS_DISABLED));
-		} else {
-			$result = self::querySilent('SELECT * FROM vtiger_cron_task  ORDER BY SEQUENCE');
-		}
-		if ($result && $adb->num_rows($result)) {
-			while ($row = $adb->fetch_array($result)) {
-				$instances[] = new self($row);
-			}
+		$query = (new \App\Db\Query())->from(self::$baseTable)->where(['<>', 'status', self::$STATUS_DISABLED])->orderBy(['sequence' => SORT_ASC]);
+		$dataReader = $query->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$instances[] = new self($row);
 		}
 		return $instances;
 	}
 
 	/**
 	 * Get instance of cron task.
+	 *
+	 * @param string $name
+	 *
+	 * @return \self
 	 */
-	static function getInstance($name)
+	public static function getInstance($name)
 	{
-		$adb = \PearDatabase::getInstance();
-
 		$instance = false;
 		if (isset(self::$instanceCache["$name"])) {
 			$instance = self::$instanceCache["$name"];
 		}
 
 		if ($instance === false) {
-			$result = self::querySilent('SELECT * FROM vtiger_cron_task WHERE name=?', array($name));
-			if ($result && $adb->num_rows($result)) {
-				$instance = new self($adb->fetch_array($result));
+			$data = (new \App\Db\Query())->from(self::$baseTable)->where(['name' => $name])->one();
+			if ($data) {
+				$instance = new self($data);
 			}
 		}
 		return $instance;
 	}
 
 	/**
-	 * Get instance of cron job by id
+	 * Get instance of cron job by id.
+	 *
+	 * @param int $id
+	 *
+	 * @return \self
 	 */
-	static function getInstanceById($id)
+	public static function getInstanceById($id)
 	{
-		$adb = \PearDatabase::getInstance();
 		$instance = false;
 		if (isset(self::$instanceCache[$id])) {
 			$instance = self::$instanceCache[$id];
 		}
-
-
 		if ($instance === false) {
-			$result = self::querySilent('SELECT * FROM vtiger_cron_task WHERE id=?', array($id));
-			if ($result && $adb->num_rows($result)) {
-				$instance = new self($adb->fetch_array($result));
+			$data = (new \App\Db\Query())->from(self::$baseTable)->where(['id' => $id])->one();
+			if ($data) {
+				$instance = new self($data);
 			}
 		}
 		return $instance;
 	}
 
-	static function listAllInstancesByModule($module)
+	/**
+	 * Get instance of cron.
+	 *
+	 * @param string $moduleName
+	 *
+	 * @return \self[]
+	 */
+	public static function listAllInstancesByModule($moduleName)
 	{
-		$adb = \PearDatabase::getInstance();
-
 		$instances = [];
-		$result = self::querySilent('SELECT * FROM vtiger_cron_task WHERE module=?', array($module));
-		if ($result && $adb->num_rows($result)) {
-			while ($row = $adb->fetch_array($result)) {
-				$instances[] = new self($row);
-			}
+		$dataReader = (new \App\Db\Query())->from(self::$baseTable)->where(['module' => $moduleName])->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$instances[] = new self($row);
 		}
 		return $instances;
 	}
@@ -436,21 +433,31 @@ class Cron
 	}
 
 	/**
-	 * Delete all cron tasks associated with module
-	 * @param Module Instnace of module to use
+	 * Delete all cron tasks associated with module.
+	 *
+	 * @param ModuleBasic $moduleInstance
 	 */
-	static function deleteForModule($moduleInstance)
+	public static function deleteForModule(ModuleBasic $moduleInstance)
 	{
-		$db = \PearDatabase::getInstance();
-		$db->delete('vtiger_cron_task', 'module = ?', [$moduleInstance->name]);
+		\App\Db::getInstance()->createCommand()->delete(self::$baseTable, ['module' => $moduleInstance->name])->execute();
 	}
 
-	static function setCronAction($status)
+	/**
+	 * Function sets cron status.
+	 *
+	 * @param bool $status
+	 */
+	public static function setCronAction($status)
 	{
 		self::$cronAction = $status;
 	}
 
-	static function isCronAction()
+	/**
+	 * Function checks cron status.
+	 *
+	 * @return bool
+	 */
+	public static function isCronAction()
 	{
 		return self::$cronAction;
 	}

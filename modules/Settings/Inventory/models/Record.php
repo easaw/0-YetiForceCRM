@@ -1,14 +1,13 @@
 <?php
 
 /**
- * @package YetiForce.Model
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-class Settings_Inventory_Record_Model extends Vtiger_Base_Model
+class Settings_Inventory_Record_Model extends \App\Base
 {
-
 	public function __construct($values = [])
 	{
 		parent::__construct($values);
@@ -28,7 +27,7 @@ class Settings_Inventory_Record_Model extends Vtiger_Base_Model
 
 	public function getValue()
 	{
-		return $this->get('value');
+		return CurrencyField::convertToUserFormat($this->get('value'), null, true);
 	}
 
 	public function getStatus()
@@ -36,9 +35,20 @@ class Settings_Inventory_Record_Model extends Vtiger_Base_Model
 		return $this->get('status');
 	}
 
+	/**
+	 * Is default tax value for group.
+	 *
+	 * @return int
+	 */
+	public function getDefault()
+	{
+		return $this->get('default');
+	}
+
 	public function setType($type)
 	{
 		$this->type = $type;
+
 		return $this;
 	}
 
@@ -57,27 +67,45 @@ class Settings_Inventory_Record_Model extends Vtiger_Base_Model
 		return '?module=Inventory&parent=Settings&view=ModalAjax&type=' . $this->getType() . '&id=' . $this->getId();
 	}
 
+	private static $tableName = ['CreditLimits' => 'a_#__inventory_limits', 'Taxes' => 'a_#__taxes_global', 'Discounts' => 'a_#__discounts_global'];
+
 	public static function getTableNameFromType($type)
 	{
-		$tablename = ['CreditLimits' => 'a_yf_inventory_limits', 'Taxes' => 'a_yf_taxes_global', 'Discounts' => 'a_yf_discounts_global'];
-		return $tablename[$type];
+		return static::$tableName[$type];
+	}
+
+	/**
+	 * Function clears cache.
+	 */
+	public function clearCache()
+	{
+		\App\Cache::delete('Inventory', $this->getType());
 	}
 
 	public function save()
 	{
-		$db = PearDatabase::getInstance();
 		$tablename = self::getTableNameFromType($this->getType());
 		$id = $this->getId();
-
 		if (!empty($id) && $tablename) {
-			$columns = ['name' => $this->getName(),
+			$updateRows = [
+				'name' => $this->getName(),
 				'value' => $this->get('value'),
 				'status' => $this->get('status')
 			];
-			$db->update($tablename, $columns, 'id = ?', [$id]);
+			if ($this->getType() === 'Taxes') {
+				if ($this->get('default')) {
+					$this->disableDefaultsTax();
+				}
+				$updateRows['default'] = $this->get('default');
+			}
+			\App\Db::getInstance()->createCommand()
+				->update($tablename, $updateRows, ['id' => $id])
+				->execute();
 		} else {
 			$id = $this->add();
 		}
+		$this->clearCache();
+
 		return $id;
 	}
 
@@ -85,27 +113,56 @@ class Settings_Inventory_Record_Model extends Vtiger_Base_Model
 	 * 	@param string $taxlabel - tax label name to be added
 	 * 	@param string $taxvalue - tax value to be added
 	 *      @param string $sh - sh or empty , if sh passed then the tax will be added in shipping and handling related table
-	 *      @return void
 	 */
 	public function add()
 	{
-		$adb = PearDatabase::getInstance();
 		$tableName = self::getTableNameFromType($this->getType());
 		if ($tableName) {
-			$query = 'INSERT INTO `' . $tableName . '` (`status`,`value`,`name`) values(?,?,?)';
-			$params = [$this->get('status'), $this->get('value'), $this->getName()];
-			$adb->pquery($query, $params);
-			return $adb->getLastInsertID();
+			$insertData = [
+				'status' => $this->get('status'),
+				'value' => $this->get('value'),
+				'name' => $this->getName()
+			];
+
+			if ($this->getType() === 'Taxes') {
+				if ($this->get('default')) {
+					$this->disableDefaultsTax();
+				}
+				$insertData['default'] = $this->get('default');
+			}
+			$db = \App\Db::getInstance();
+			$db->createCommand()
+				->insert($tableName, $insertData)->execute();
+			return $db->getLastInsertID($tableName . '_id_seq');
 		}
 		throw new Error('Error occurred while adding value');
 	}
 
+	/**
+	 * Function used to remove all defaults tax settings.
+	 */
+	public function disableDefaultsTax()
+	{
+		$tablename = self::getTableNameFromType($this->getType());
+		if ($tablename) {
+			\App\Db::getInstance()->createCommand()
+				->update($tablename, [
+					'default' => 0
+				])
+				->execute();
+		}
+		$this->clearCache();
+	}
+
 	public function delete()
 	{
-		$adb = PearDatabase::getInstance();
 		$tableName = self::getTableNameFromType($this->getType());
 		if ($tableName) {
-			$adb->delete($tableName, 'id = ?', [$this->getId()]);
+			\App\Db::getInstance()->createCommand()
+				->delete($tableName, ['id' => $this->getId()])
+				->execute();
+			$this->clearCache();
+
 			return true;
 		}
 		throw new Error('Error occurred while deleting value');
@@ -113,35 +170,33 @@ class Settings_Inventory_Record_Model extends Vtiger_Base_Model
 
 	public static function getDataAll($type)
 	{
-		$db = PearDatabase::getInstance();
 		$recordList = [];
 		$tableName = self::getTableNameFromType($type);
-
 		if (!$tableName) {
 			return $recordList;
 		}
-		$query = sprintf('SELECT * FROM %s', $tableName);
-		$result = $db->query($query);
-		while ($row = $db->fetch_array($result)) {
+		$dataReader = (new \App\Db\Query())->from($tableName)->createCommand()->query();
+		while ($row = $dataReader->read()) {
 			$recordModel = new self();
 			$recordModel->setData($row)->setType($type);
 			$recordList[] = $recordModel;
 		}
+		$dataReader->close();
+
 		return $recordList;
 	}
 
 	public static function getInstanceById($id, $type = '')
 	{
-		$db = PearDatabase::getInstance();
 		$tableName = self::getTableNameFromType($type);
-
 		if (!$tableName) {
 			return false;
 		}
-		$query = sprintf('SELECT * FROM %s WHERE `id` = ?;', $tableName);
-		$result = $db->pquery($query, [$id]);
+		$row = (new \App\Db\Query())->from($tableName)
+			->where(['id' => $id])
+			->createCommand()->queryOne();
 		$recordModel = new self();
-		while ($row = $db->fetch_array($result)) {
+		if ($row !== false) {
 			$recordModel->setData($row)->setType($type);
 		}
 		return $recordModel;
@@ -149,7 +204,6 @@ class Settings_Inventory_Record_Model extends Vtiger_Base_Model
 
 	public static function checkDuplicate($label, $excludedIds = [], $type = '')
 	{
-		$db = PearDatabase::getInstance();
 		if (!is_array($excludedIds)) {
 			if (!empty($excludedIds)) {
 				$excludedIds = [$excludedIds];
@@ -158,15 +212,12 @@ class Settings_Inventory_Record_Model extends Vtiger_Base_Model
 			}
 		}
 		$tableName = self::getTableNameFromType($type);
-		$query = sprintf('SELECT 1 FROM %s WHERE `name` = ?', $tableName);
-		$params = [$label];
-
+		$query = (new \App\Db\Query())
+			->from($tableName)
+			->where(['name' => $label]);
 		if (!empty($excludedIds)) {
-			$query .= " && `id` NOT IN (" . generateQuestionMarks($excludedIds) . ")";
-			$params = array_merge($params, $excludedIds);
+			$query->andWhere(['NOT IN', 'id', $excludedIds]);
 		}
-		$result = $db->pquery($query, $params);
-
-		return ($db->num_rows($result) > 0) ? true : false;
+		return ($query->count() > 0) ? true : false;
 	}
 }

@@ -1,130 +1,137 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
-
+/**
+ * Ideas CRMEntity class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 include_once 'modules/Vtiger/CRMEntity.php';
 
+/**
+ * Class Ideas.
+ */
 class Ideas extends Vtiger_CRMEntity
 {
-
+	/**
+	 * Table name.
+	 *
+	 * @var string
+	 */
 	public $table_name = 'vtiger_ideas';
+
+	/**
+	 * Table index.
+	 *
+	 * @var string
+	 */
 	public $table_index = 'ideasid';
-	public $column_fields = Array();
+
+	/**
+	 * Column fields.
+	 *
+	 * @var array
+	 */
+	public $column_fields = [];
 
 	/**
 	 * Mandatory table for supporting custom fields.
 	 */
-	public $customFieldTable = Array('vtiger_ideascf', 'ideasid');
+	public $customFieldTable = ['vtiger_ideascf', 'ideasid'];
 
 	/**
 	 * Mandatory for Saving, Include tables related to this module.
 	 */
-	public $tab_name = Array('vtiger_crmentity', 'vtiger_ideas', 'vtiger_ideascf');
+	public $tab_name = ['vtiger_crmentity', 'vtiger_ideas', 'vtiger_ideascf'];
 
 	/**
 	 * Mandatory for Saving, Include tablename and tablekey columnname here.
 	 */
-	public $tab_name_index = Array(
+	public $tab_name_index = [
 		'vtiger_crmentity' => 'crmid',
 		'vtiger_ideas' => 'ideasid',
-		'vtiger_ideascf' => 'ideasid');
+		'vtiger_ideascf' => 'ideasid', ];
 
 	/**
-	 * Mandatory for Listing (Related listview)
+	 * Mandatory for Listing (Related listview).
 	 */
-	public $list_fields = Array(
-		/* Format: Field Label => Array(tablename, columnname) */
+	public $list_fields = [
+		// Format: Field Label => Array(tablename, columnname)
 		// tablename should not have prefix 'vtiger_'
-		'LBL_NO' => Array('ideas', 'ideas_no'),
-		'LBL_SUBJECT' => Array('ideas', 'subject'),
-		'Assigned To' => Array('crmentity', 'smownerid')
-	);
-	public $list_fields_name = Array(
-		/* Format: Field Label => fieldname */
+		'LBL_NO' => ['ideas', 'ideas_no'],
+		'LBL_SUBJECT' => ['ideas', 'subject'],
+		'Assigned To' => ['crmentity', 'smownerid'],
+	];
+
+	/**
+	 * List fields name.
+	 *
+	 * @var array
+	 */
+	public $list_fields_name = [
+		// Format: Field Label => fieldname
 		'LBL_NO' => 'ideas_no',
 		'LBL_SUBJECT' => 'subject',
 		'Assigned To' => 'assigned_user_id',
-	);
+	];
+
+	/**
+	 * @var string[] List of fields in the RelationListView
+	 */
+	public $relationFields = ['ideas_no', 'subject', 'assigned_user_id'];
 	// Make the field link to detail view
 	public $list_link_field = 'subject';
 	// For Popup listview and UI type support
-	public $search_fields = Array(
-		/* Format: Field Label => Array(tablename, columnname) */
+	public $search_fields = [
+		// Format: Field Label => Array(tablename, columnname)
 		// tablename should not have prefix 'vtiger_'
-		'LBL_NO' => Array('ideas', 'ideas_no'),
-		'LBL_SUBJECT' => Array('ideas', 'subject'),
-		'Assigned To' => Array('crmentity', 'assigned_user_id'),
-	);
-	public $search_fields_name = Array(
-		/* Format: Field Label => fieldname */
+		'LBL_NO' => ['ideas', 'ideas_no'],
+		'LBL_SUBJECT' => ['ideas', 'subject'],
+		'Assigned To' => ['crmentity', 'assigned_user_id'],
+	];
+
+	/**
+	 * Search fields name.
+	 *
+	 * @var array
+	 */
+	public $search_fields_name = [
+		// Format: Field Label => fieldname
 		'LBL_NO' => 'ideas_no',
 		'LBL_SUBJECT' => 'subject',
 		'Assigned To' => 'assigned_user_id',
-	);
+	];
 	// For Popup window record selection
-	public $popup_fields = Array('subject');
+	public $popup_fields = ['subject'];
 	// For Alphabetical search
 	public $def_basicsearch_col = 'subject';
 	// Column value to use on detail view record text display
 	public $def_detailview_recname = 'subject';
 	// Used when enabling/disabling the mandatory fields for the module.
 	// Refers to vtiger_field.fieldname values.
-	public $mandatory_fields = Array('subject', 'assigned_user_id');
+	public $mandatory_fields = ['subject', 'assigned_user_id'];
 	public $default_order_by = '';
 	public $default_sort_order = 'ASC';
 
 	/**
 	 * Invoked when special actions are performed on the module.
-	 * @param String Module name
-	 * @param String Event Type
+	 *
+	 * @param string $moduleName Module name
+	 * @param string $eventType  Event Type
 	 */
-	public function vtlib_handler($moduleName, $eventType)
+	public function moduleHandler($moduleName, $eventType)
 	{
-		$adb = PearDatabase::getInstance();
-		if ($eventType == 'module.postinstall') {
-
+		if ($eventType === 'module.postinstall') {
 			$ModuleInstance = CRMEntity::getInstance('Ideas');
-			\includes\fields\RecordNumber::setNumber($moduleName, 'ID', '1');
-			$adb->pquery('UPDATE vtiger_tab SET customized=0 WHERE name=?', array('Ideas'));
-
+			\App\Fields\RecordNumber::setNumber($moduleName, 'ID', '1');
+			\App\Db::getInstance()->createCommand()->update('vtiger_tab', ['customized' => 0], ['name' => 'Ideas'])->execute();
 			$modcommentsModuleInstance = vtlib\Module::getInstance('ModComments');
 			if ($modcommentsModuleInstance && file_exists('modules/ModComments/ModComments.php')) {
 				include_once 'modules/ModComments/ModComments.php';
-				if (class_exists('ModComments'))
-					ModComments::addWidgetTo(array('Ideas'));
-			}
-			$modcommentsModuleInstance = vtlib\Module::getInstance('ModTracker');
-			if ($modcommentsModuleInstance && file_exists('modules/ModTracker/ModTracker.php')) {
-				include_once 'modules/ModTracker/ModTracker.php';
-				$tabid = vtlib\Functions::getModuleId('Ideas');
-				$moduleModTrackerInstance = new ModTracker();
-				if (!$moduleModTrackerInstance->isModulePresent($tabid)) {
-					$res = $adb->pquery("INSERT INTO vtiger_modtracker_tabs VALUES(?,?)", array($tabid, 1));
-					$moduleModTrackerInstance->updateCache($tabid, 1);
-				} else {
-					$updatevisibility = $adb->pquery("UPDATE vtiger_modtracker_tabs SET visible = 1 WHERE tabid = ?", array($tabid));
-					$moduleModTrackerInstance->updateCache($tabid, 1);
-				}
-				if (!$moduleModTrackerInstance->isModTrackerLinkPresent($tabid)) {
-					$moduleInstance = vtlib\Module::getInstance($tabid);
-					$moduleInstance->addLink('DETAILVIEWBASIC', 'View History', "javascript:ModTrackerCommon.showhistory('\$RECORD\$')", '', '', array('path' => 'modules/ModTracker/ModTracker.php', 'class' => 'ModTracker', 'method' => 'isViewPermitted'));
+				if (class_exists('ModComments')) {
+					ModComments::addWidgetTo(['Ideas']);
 				}
 			}
-		} else if ($eventType == 'module.disabled') {
-
-		} else if ($eventType == 'module.preuninstall') {
-
-		} else if ($eventType == 'module.preupdate') {
-
-		} else if ($eventType == 'module.postupdate') {
-
+			CRMEntity::getInstance('ModTracker')->enableTrackingForModule(\App\Module::getModuleId($moduleName));
 		}
 	}
 }

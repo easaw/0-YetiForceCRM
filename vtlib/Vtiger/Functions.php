@@ -8,125 +8,40 @@
  * All Rights Reserved.
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
+
 namespace vtlib;
 
 class Functions
 {
-
-	public static function userIsAdministrator($user)
-	{
-		return (isset($user->is_admin) && $user->is_admin == 'on');
-	}
-
-	public static function currentUserJSDateFormat($localformat)
-	{
-		$current_user = vglobal('current_user');
-		switch ($current_user->date_format) {
-			case 'dd-mm-yyyy': $dt_popup_fmt = "%d-%m-%Y";
-				break;
-			case 'mm-dd-yyyy': $dt_popup_fmt = "%m-%d-%Y";
-				break;
-			case 'yyyy-mm-dd': $dt_popup_fmt = "%Y-%m-%d";
-				break;
-			case 'dd.mm.yyyy': $dt_popup_fmt = "%d.%m.%Y";
-				break;
-			case 'mm.dd.yyyy': $dt_popup_fmt = "%m.%d.%Y";
-				break;
-			case 'yyyy.mm.dd': $dt_popup_fmt = "%Y.%m.%d";
-				break;
-			case 'dd/mm/yyyy': $dt_popup_fmt = "%d/%m/%Y";
-				break;
-			case 'mm/dd/yyyy': $dt_popup_fmt = "%m/%d/%Y";
-				break;
-			case 'yyyy/mm/dd': $dt_popup_fmt = "%Y/%m/%d";
-				break;
-		}
-		return $dt_popup_fmt;
-	}
-
-	/**
-	 * This function returns the date in user specified format.
-	 * limitation is that mm-dd-yyyy and dd-mm-yyyy will be considered same by this API.
-	 * As in the date value is on mm-dd-yyyy and user date format is dd-mm-yyyy then the mm-dd-yyyy
-	 * value will be return as the API will be considered as considered as in same format.
-	 * this due to the fact that this API tries to consider the where given date is in user date
-	 * format. we need a better gauge for this case.
-	 * @global Users $current_user
-	 * @param Date $cur_date_val the date which should a changed to user date format.
-	 * @return Date
-	 */
-	public static function currentUserDisplayDate($value)
-	{
-		$current_user = vglobal('current_user');
-		$dat_fmt = $current_user->date_format;
-		if ($dat_fmt == '') {
-			$dat_fmt = 'yyyy-mm-dd';
-		}
-		$date = new \DateTimeField($value);
-		return $date->getDisplayDate();
-	}
-
-	public static function currentUserDisplayDateNew()
-	{
-		$current_user = vglobal('current_user');
-		$date = new \DateTimeField(null);
-		return $date->getDisplayDate($current_user);
-	}
-
-	// i18n
-	public static function getTranslatedString($str, $module = '')
-	{
-		return \Vtiger_Language_Handler::getTranslatedString($str, $module);
-	}
-
-	// CURRENCY
-	protected static $userIdCurrencyIdCache = [];
-
-	public static function userCurrencyId($userid)
-	{
-		$adb = \PearDatabase::getInstance();
-		if (!isset(self::$userIdCurrencyIdCache[$userid])) {
-			$result = $adb->pquery('SELECT id,currency_id FROM vtiger_users', []);
-			while ($row = $adb->fetch_array($result)) {
-				self::$userIdCurrencyIdCache[$row['id']] = $row['currency_id'];
-			}
-		}
-		return self::$userIdCurrencyIdCache[$userid];
-	}
-
-	protected static $currencyInfoCache = [];
-
 	protected static function getCurrencyInfo($currencyid)
 	{
-		if (!isset(self::$currencyInfoCache[$currencyid])) {
-			$db = \PearDatabase::getInstance();
-			$result = $db->query('SELECT * FROM vtiger_currency_info');
-			while ($row = $db->fetch_array($result)) {
-				self::$currencyInfoCache[$row['id']] = $row;
-			}
+		if (\App\Cache::has('AllCurrency', 'All')) {
+			$currencyInfo = \App\Cache::get('AllCurrency', 'All');
+		} else {
+			$currencyInfo = self::getAllCurrency();
 		}
-		return self::$currencyInfoCache[$currencyid];
+		return $currencyInfo[$currencyid];
 	}
 
 	public static function getAllCurrency($onlyActive = false)
 	{
-		if (count(self::$currencyInfoCache) == 0) {
-			$db = \PearDatabase::getInstance();
-			$result = $db->query('SELECT * FROM vtiger_currency_info');
-			while ($row = $db->fetch_array($result)) {
-				self::$currencyInfoCache[$row['id']] = $row;
-			}
+		if (\App\Cache::has('AllCurrency', 'All')) {
+			$currencyInfo = \App\Cache::get('AllCurrency', 'All');
+		} else {
+			$currencyInfo = (new \App\Db\Query())->from('vtiger_currency_info')->indexBy('id')->all();
+			\App\Cache::save('AllCurrency', 'All', $currencyInfo);
 		}
 		if ($onlyActive) {
 			$currencies = [];
-			foreach (self::$currencyInfoCache as $currency) {
-				if ($currency['currency_status'] == 'Active') {
-					$currencies[$currency['id']] = $currency;
+			foreach ($currencyInfo as $currencyId => $currency) {
+				if ($currency['currency_status'] === 'Active') {
+					$currencies[$currencyId] = $currency;
 				}
 			}
+
 			return $currencies;
 		} else {
-			return self::$currencyInfoCache;
+			return $currencyInfo;
 		}
 	}
 
@@ -134,7 +49,7 @@ class Functions
 	{
 		$currencyInfo = self::getCurrencyInfo($currencyid);
 		if ($show_symbol) {
-			return sprintf("%s : %s", \includes\Language::translate($currencyInfo['currency_name'], 'Currency'), $currencyInfo['currency_symbol']);
+			return sprintf('%s : %s', \App\Language::translate($currencyInfo['currency_name'], 'Currency'), $currencyInfo['currency_symbol']);
 		}
 		return $currencyInfo['currency_name'];
 	}
@@ -142,74 +57,55 @@ class Functions
 	public static function getCurrencySymbolandRate($currencyid)
 	{
 		$currencyInfo = self::getCurrencyInfo($currencyid);
-		$currencyRateSymbol = array(
+		$currencyRateSymbol = [
 			'rate' => $currencyInfo['conversion_rate'],
-			'symbol' => $currencyInfo['currency_symbol']
-		);
+			'symbol' => $currencyInfo['currency_symbol'],
+		];
+
 		return $currencyRateSymbol;
-	}
-
-	// MODULE
-	protected static $moduleIdNameCache = [];
-	protected static $moduleNameIdCache = [];
-	protected static $moduleIdDataCache = [];
-
-	protected static function getBasicModuleInfo($mixed)
-	{
-		$id = $name = NULL;
-		if (is_numeric($mixed))
-			$id = $mixed;
-		else
-			$name = $mixed;
-		$reload = false;
-		if ($name) {
-			if (!isset(self::$moduleNameIdCache[$name])) {
-				$reload = true;
-			}
-		} else if ($id) {
-			if (!isset(self::$moduleIdNameCache[$id])) {
-				$reload = true;
-			}
-		}
-		if ($reload) {
-			$adb = \PearDatabase::getInstance();
-			$result = $adb->pquery('SELECT tabid, name, ownedby FROM vtiger_tab', []);
-			while ($row = $adb->fetch_array($result)) {
-				self::$moduleIdNameCache[$row['tabid']] = $row;
-				self::$moduleNameIdCache[$row['name']] = $row;
-			}
-		}
-		return $id ? self::$moduleIdNameCache[$id] : self::$moduleNameIdCache[$name];
 	}
 
 	public static function getAllModules($isEntityType = true, $showRestricted = false, $presence = false, $colorActive = false, $ownedby = false)
 	{
-		$moduleList = self::$moduleIdNameCache;
-		if (empty($moduleList)) {
-			$db = \PearDatabase::getInstance();
-			$result = $db->query('SELECT * FROM vtiger_tab');
-			while ($row = $db->fetch_array($result)) {
-				self::$moduleIdNameCache[$row['tabid']] = $row;
-				self::$moduleNameIdCache[$row['name']] = $row;
-				self::$moduleIdDataCache[$row['tabid']] = $row;
+		if (\App\Cache::has('moduleTabs', 'all')) {
+			$moduleList = \App\Cache::get('moduleTabs', 'all');
+		} else {
+			$moduleList = [];
+			$rows = (new \App\Db\Query())->from('vtiger_tab')->all();
+			foreach ($rows as $row) {
+				if (!\App\Cache::has('moduleTabById', $row['tabid'])) {
+					\App\Cache::save('moduleTabById', $row['tabid'], $row);
+				}
+				if (!\App\Cache::has('moduleTabByName', $row['name'])) {
+					\App\Cache::save('moduleTabByName', $row['name'], $row);
+				}
+				$row['tabid'] = (int) $row['tabid'];
+				$row['presence'] = (int) $row['presence'];
+				$row['tabsequence'] = (int) $row['tabsequence'];
+				$row['customized'] = (int) $row['customized'];
+				$row['ownedby'] = (int) $row['ownedby'];
+				$row['isentitytype'] = (int) $row['isentitytype'];
+				$row['coloractive'] = (int) $row['coloractive'];
+				$row['type'] = (int) $row['type'];
+				$moduleList[$row['tabid']] = $row;
 			}
-			$moduleList = self::$moduleIdNameCache;
+			\App\Cache::save('moduleTabs', 'all', $moduleList);
 		}
-		$restrictedModules = array('SMSNotifier', 'Emails', 'Integration', 'Dashboard', 'ModComments', 'vtmessages', 'vttwitter');
-		foreach ($moduleList as $id => &$module) {
+		$restrictedModules = ['SMSNotifier', 'Dashboard', 'ModComments'];
+		foreach ($moduleList as $id => $module) {
 			if (!$showRestricted && in_array($module['name'], $restrictedModules)) {
 				unset($moduleList[$id]);
 			}
-			if ($isEntityType && $module['isentitytype'] == 0) {
+			if ($isEntityType && $module['isentitytype'] === 0) {
 				unset($moduleList[$id]);
 			}
-			if ($presence !== false && $module['presence'] != $presence) {
+			if ($presence !== false && $module['presence'] !== $presence) {
 				unset($moduleList[$id]);
 			}
-			if ($colorActive !== false && $module['coloractive'] != 1) {
+			if ($colorActive !== false && $module['coloractive'] !== 1) {
 				unset($moduleList[$id]);
 			}
-			if ($ownedby !== false && $module['ownedby'] != $ownedby) {
+			if ($ownedby !== false && $module['ownedby'] !== $ownedby) {
 				unset($moduleList[$id]);
 			}
 		}
@@ -219,76 +115,52 @@ class Functions
 	public static function getModuleData($mixed)
 	{
 		if (empty($mixed)) {
-			\App\Log::error(__CLASS__ . ':' . __FUNCTION__ . ' - Required parameter missing');
+			\App\Log::error(__METHOD__ . ' - Required parameter missing');
+
 			return false;
 		}
-		$id = $name = NULL;
-		if (is_numeric($mixed))
+		$id = $name = null;
+		if (is_numeric($mixed)) {
 			$id = $mixed;
-		else
-			$name = (string) $mixed;
-		$reload = false;
-
-		if ($name && !isset(self::$moduleNameIdCache[$name])) {
-			$reload = true;
-		} else if ($id && !isset(self::$moduleIdNameCache[$id])) {
-			$reload = true;
+			if (\App\Cache::has('moduleTabById', $mixed)) {
+				return \App\Cache::get('moduleTabById', $mixed);
+			}
 		} else {
-			if (!$id) {
-				$id = self::$moduleNameIdCache[$name]['tabid'];
-			}
-			if (!isset(self::$moduleIdDataCache[$id])) {
-				$reload = true;
+			$name = (string) $mixed;
+			if (\App\Cache::has('moduleTabByName', $name)) {
+				return \App\Cache::get('moduleTabByName', $name);
 			}
 		}
-
-		if ($reload) {
-			$adb = \PearDatabase::getInstance();
-			$result = $adb->query('SELECT * FROM vtiger_tab');
-			while ($row = $adb->fetch_array($result)) {
-				self::$moduleIdNameCache[$row['tabid']] = $row;
-				self::$moduleNameIdCache[$row['name']] = $row;
-				self::$moduleIdDataCache[$row['tabid']] = $row;
-			}
-			if ($name && isset(self::$moduleNameIdCache[$name])) {
-				$id = self::$moduleNameIdCache[$name]['tabid'];
-			}
+		$moduleList = [];
+		$rows = (new \App\Db\Query())->from('vtiger_tab')->all();
+		foreach ($rows as $row) {
+			\App\Cache::save('moduleTabById', $row['tabid'], $row);
+			\App\Cache::save('moduleTabByName', $row['name'], $row);
+			$moduleList[$row['tabid']] = $row;
 		}
-		return $id ? self::$moduleIdDataCache[$id] : NULL;
-	}
-
-	public static function getModuleId($name)
-	{
-		$moduleInfo = self::getModuleData($name);
-		return $moduleInfo ? $moduleInfo['tabid'] : NULL;
-	}
-
-	public static function getModuleName($id)
-	{
-		$moduleInfo = self::getModuleData($id);
-		return $moduleInfo ? $moduleInfo['name'] : NULL;
-	}
-
-	public static function getModuleOwner($name)
-	{
-		$moduleInfo = self::getModuleData($name);
-		return $moduleInfo ? $moduleInfo['ownedby'] : NULL;
+		\App\Cache::save('moduleTabs', 'all', $moduleList);
+		if ($name && \App\Cache::has('moduleTabByName', $name)) {
+			return \App\Cache::get('moduleTabByName', $name);
+		}
+		return $id ? \App\Cache::get('moduleTabById', $id) : null;
 	}
 
 	/**
-	 * this function returns the entity field name for a given module; for e.g. for Contacts module it return concat(lastname, ' ', firstname)
+	 * this function returns the entity field name for a given module; for e.g. for Contacts module it return concat(lastname, ' ', firstname).
+	 *
 	 * @param string $mixed - the module name
+	 *
 	 * @return string $fieldsname - the entity field name for the module
 	 */
 	public static function getEntityModuleSQLColumnString($mixed)
 	{
 		$data = [];
-		$info = \includes\Modules::getEntityInfo($mixed);
+		$info = \App\Module::getEntityInfo($mixed);
 		if ($info) {
 			$data['tablename'] = $info['tablename'];
 			$fieldnames = $info['fieldname'];
 			if (strpos(',', $fieldnames) !== false) {
-				$fieldnames = sprintf("concat(%s)", implode(",' ',", $info['fieldnameArr']));
+				$fieldnames = sprintf('concat(%s)', implode(",' ',", $info['fieldnameArr']));
 			}
 			$data['fieldname'] = $fieldnames;
 			$colums = [];
@@ -303,12 +175,30 @@ class Functions
 	// MODULE RECORD
 	protected static $crmRecordIdMetadataCache = [];
 
+	/**
+	 * Clear cache meta data for records.
+	 *
+	 * @param int $id
+	 */
+	public static function clearCacheMetaDataRecord($id)
+	{
+		if (isset(static::$crmRecordIdMetadataCache[$id])) {
+			unset(static::$crmRecordIdMetadataCache[$id]);
+		}
+	}
+
+	/**
+	 * Function gets record metadata.
+	 *
+	 * @param int|array $mixedid
+	 *
+	 * @return array
+	 */
 	public static function getCRMRecordMetadata($mixedid)
 	{
-		$adb = \PearDatabase::getInstance();
 		$multimode = is_array($mixedid);
 
-		$ids = $multimode ? $mixedid : array($mixedid);
+		$ids = $multimode ? $mixedid : [$mixedid];
 		$missing = [];
 		foreach ($ids as $id) {
 			if ($id && !isset(self::$crmRecordIdMetadataCache[$id])) {
@@ -316,116 +206,83 @@ class Functions
 			}
 		}
 		if ($missing) {
-			$sql = sprintf("SELECT crmid, setype, deleted, smcreatorid, smownerid, createdtime 
-				FROM vtiger_crmentity WHERE %s ", implode(' || ', array_fill(0, count($missing), 'vtiger_crmentity.crmid=?')));
-			$result = $adb->pquery($sql, $missing);
-			while ($row = $adb->getRow($result)) {
+			$query = (new \App\Db\Query())
+				->select(['crmid', 'setype', 'deleted', 'smcreatorid', 'smownerid', 'createdtime', 'private'])
+				->from('vtiger_crmentity')
+				->where(['in', 'crmid', $missing]);
+			$dataReader = $query->createCommand()->query();
+			while ($row = $dataReader->read()) {
+				$row['deleted'] = (int) $row['deleted'];
 				self::$crmRecordIdMetadataCache[$row['crmid']] = $row;
 			}
 		}
-
 		$result = [];
 		foreach ($ids as $id) {
 			if (isset(self::$crmRecordIdMetadataCache[$id])) {
 				$result[$id] = self::$crmRecordIdMetadataCache[$id];
 			} else {
-				$result[$id] = NULL;
+				$result[$id] = null;
 			}
 		}
-
 		return $multimode ? $result : array_shift($result);
-	}
-
-	public static function getCRMRecordType($id)
-	{
-		$metadata = self::getCRMRecordMetadata($id);
-		return $metadata ? $metadata['setype'] : NULL;
 	}
 
 	public static function getCRMRecordLabel($id, $default = '')
 	{
-		$label = \includes\Record::getLabel($id);
+		$label = \App\Record::getLabel($id);
+
 		return empty($label) ? $default : $label;
 	}
 
-	public static function getOwnerRecordLabel($id)
+	/**
+	 * Function get module field infos.
+	 *
+	 * @param int|string $mixed
+	 * @param bool       $returnByColumn
+	 *
+	 * @return mixed[]
+	 */
+	public static function getModuleFieldInfos($module, $returnByColumn = false)
 	{
-		return \includes\fields\Owner::getLabel($id);
-	}
-
-	protected static $userIdNameCache = [];
-
-	public static function getUserName($id)
-	{
-		$adb = \PearDatabase::getInstance();
-		if (!self::$userIdNameCache[$id]) {
-			$result = $adb->pquery('SELECT id, user_name FROM vtiger_users');
-			while ($row = $adb->fetch_array($result)) {
-				self::$userIdNameCache[$row['id']] = $row['user_name'];
-			}
+		if (is_numeric($module)) {
+			$module = \App\Module::getModuleName($module);
 		}
-		return (isset(self::$userIdNameCache[$id])) ? self::$userIdNameCache[$id] : NULL;
-	}
-
-	protected static $moduleFieldInfoByNameCache = [];
-
-	public static function getModuleFieldInfos($mixed)
-	{
-		$adb = \PearDatabase::getInstance();
-
-		$moduleInfo = self::getModuleData($mixed);
-		$module = $moduleInfo['name'];
-
-		if ($module && (!isset(self::$moduleFieldInfoByNameCache[$module]))) {
-			$result = ($module == 'Calendar') ?
-				$adb->pquery('SELECT * FROM vtiger_field WHERE tabid=? || tabid=?', array(9, 16)) :
-				$adb->pquery('SELECT * FROM vtiger_field WHERE tabid=?', array(self::getModuleId($module)));
-
-			self::$moduleFieldInfoByNameCache[$module] = [];
-			while ($row = $adb->getRow($result)) {
-				self::$moduleFieldInfoByNameCache[$module][$row['fieldname']] = $row;
+		$cacheName = 'getModuleFieldInfosByName';
+		if (!\App\Cache::has($cacheName, $module)) {
+			$dataReader = (new \App\Db\Query())
+				->from('vtiger_field')
+				->where(['tabid' => $module === 'Calendar' ? [9, 16] : \App\Module::getModuleId($module)])
+				->createCommand()->query();
+			$fieldInfoByName = $fieldInfoByColumn = [];
+			while ($row = $dataReader->read()) {
+				$fieldInfoByName[$row['fieldname']] = $row;
+				$fieldInfoByColumn[$row['columnname']] = $row;
 			}
+			\App\Cache::save($cacheName, $module, $fieldInfoByName);
+			\App\Cache::save('getModuleFieldInfosByColumn', $module, $fieldInfoByColumn);
 		}
-		return isset(self::$moduleFieldInfoByNameCache[$module]) ? self::$moduleFieldInfoByNameCache[$module] : NULL;
-	}
-
-	public static function getModuleFieldInfoWithId($fieldid)
-	{
-		$adb = \PearDatabase::getInstance();
-		$result = $adb->pquery('SELECT * FROM vtiger_field WHERE fieldid=?', array($fieldid));
-		return ($adb->num_rows($result)) ? $adb->fetch_array($result) : NULL;
-	}
-
-	public static function getModuleFieldInfo($moduleid, $mixed)
-	{
-		$field = NULL;
-		if (empty($moduleid) && is_numeric($mixed)) {
-			$field = self::getModuleFieldInfoWithId($mixed);
-		} else {
-			$fieldsInfo = self::getModuleFieldInfos($moduleid);
-			if ($fieldsInfo) {
-				if (is_numeric($mixed)) {
-					foreach ($fieldsInfo as $name => $row) {
-						if ($row['fieldid'] == $mixed) {
-							$field = $row;
-							break;
-						}
-					}
-				} else {
-					$field = isset($fieldsInfo[$mixed]) ? $fieldsInfo[$mixed] : NULL;
-				}
-			}
+		if ($returnByColumn) {
+			return \App\Cache::get('getModuleFieldInfosByColumn', $module);
 		}
-		return $field;
+		return \App\Cache::get($cacheName, $module);
 	}
 
-	public static function getModuleFieldId($moduleid, $mixed, $onlyactive = true)
+	/**
+	 * Function to gets mudule field ID.
+	 *
+	 * @param string|int $moduleId
+	 * @param string|int $mixed
+	 * @param bool       $onlyactive
+	 *
+	 * @return int|bool
+	 */
+	public static function getModuleFieldId($moduleId, $mixed, $onlyactive = true)
 	{
-		$field = self::getModuleFieldInfo($moduleid, $mixed, $onlyactive);
+		$field = \App\Field::getFieldInfo($mixed, $moduleId);
 
 		if ($field) {
 			if ($onlyactive && ($field['presence'] != '0' && $field['presence'] != '2')) {
-				$field = NULL;
+				$field = null;
 			}
 		}
 		return $field ? $field['fieldid'] : false;
@@ -442,23 +299,12 @@ class Functions
 		return $value;
 	}
 
-	public static function fromHTML($string, $encode = true)
+	public static function fromHtmlPopup($string, $encode = true)
 	{
-		if (is_string($string)) {
-			if (preg_match('/(script).*(\/script)/i', $string)) {
-				$string = preg_replace(array('/</', '/>/', '/"/'), array('&lt;', '&gt;', '&quot;'), $string);
-			}
-		}
-		return $string;
-	}
-
-	public static function fromHTML_Popup($string, $encode = true)
-	{
-		$popup_toHtml = array(
+		$popup_toHtml = [
 			'"' => '&quot;',
 			"'" => '&#039;',
-		);
-		//if($encode && is_string($string))$string = html_entity_decode($string, ENT_QUOTES);
+		];
 		if ($encode && is_string($string)) {
 			$string = addslashes(str_replace(array_values($popup_toHtml), array_keys($popup_toHtml), $string));
 		}
@@ -467,245 +313,28 @@ class Functions
 
 	public static function br2nl($str)
 	{
-		$str = preg_replace("/(\r\n)/", "\\r\\n", $str);
-		$str = preg_replace("/'/", " ", $str);
-		$str = preg_replace("/\"/", " ", $str);
+		$str = preg_replace("/(\r\n)/", '\\r\\n', $str);
+		$str = preg_replace("/'/", ' ', $str);
+		$str = preg_replace('/"/', ' ', $str);
+
 		return $str;
 	}
 
 	public static function suppressHTMLTags($string)
 	{
-		return preg_replace(array('/</', '/>/', '/"/'), array('&lt;', '&gt;', '&quot;'), $string);
-	}
-
-	public static function getInventoryTermsAndCondition()
-	{
-		$adb = \PearDatabase::getInstance();
-		$sql = "select tandc from vtiger_inventory_tandc";
-		$result = $adb->pquery($sql, []);
-		$tandc = $adb->query_result($result, 0, "tandc");
-		return $tandc;
-	}
-
-	public static function initStorageFileDirectory($module = false)
-	{
-		$filepath = 'storage/';
-
-		if ($module && in_array($module, array('Users', 'Contacts', 'Products', 'OSSMailView'))) {
-			$filepath .= $module . '/';
-		}
-		if (!is_dir($filepath)) {
-			//create new folder
-			mkdir($filepath);
-		}
-		$year = date('Y');
-		$month = date('F');
-		$day = date('j');
-		$week = '';
-		$filepath .= $year;
-		if (!is_dir($filepath)) {
-			//create new folder
-			mkdir($filepath);
-		}
-		$filepath .= '/' . $month;
-		if (!is_dir($filepath)) {
-			//create new folder
-			mkdir($filepath);
-		}
-
-		if ($day > 0 && $day <= 7)
-			$week = 'week1';
-		elseif ($day > 7 && $day <= 14)
-			$week = 'week2';
-		elseif ($day > 14 && $day <= 21)
-			$week = 'week3';
-		elseif ($day > 21 && $day <= 28)
-			$week = 'week4';
-		else
-			$week = 'week5';
-
-		$filepath .= '/' . $week;
-		if (!is_dir($filepath)) {
-			//create new folder
-			mkdir($filepath);
-		}
-		return $filepath . '/';
-	}
-
-	public static function getMergedDescriptionCustomVars($fields, $description)
-	{
-		foreach ($fields['custom'] as $columnname) {
-			$token_data = '$custom-' . $columnname . '$';
-			$token_value = '';
-			switch ($columnname) {
-				case 'currentdate': $token_value = date("F j, Y");
-					break;
-				case 'currenttime': $token_value = date("G:i:s T");
-					break;
-			}
-			$description = str_replace($token_data, $token_value, $description);
-		}
-		return $description;
+		return preg_replace(['/</', '/>/', '/"/'], ['&lt;', '&gt;', '&quot;'], $string);
 	}
 
 	/** 	Function used to retrieve a single field value from database
-	 * 	@param string $tablename - tablename from which we will retrieve the field value
-	 * 	@param string $fieldname - fieldname to which we want to get the value from database
-	 * 	@param string $idname	 - idname which is the name of the entity id in the table like, inoviceid, etc.,
+	 * 	@param string $tableName - tablename from which we will retrieve the field value
+	 * 	@param string $fieldName - fieldname to which we want to get the value from database
+	 * 	@param string $idName	 - idname which is the name of the entity id in the table like, inoviceid, etc.,
 	 * 	@param int    $id	 - entity id
-	 * 	return string $fieldval  - field value of the needed fieldname from database will be returned
+	 * 	return mixed $fieldval  - field value of the needed fieldname from database will be returned
 	 */
-	public static function getSingleFieldValue($tablename, $fieldname, $idname, $id)
+	public static function getSingleFieldValue($tableName, $fieldName, $idName, $id)
 	{
-		$adb = \PearDatabase::getInstance();
-		$fieldval = $adb->query_result($adb->pquery("select $fieldname from $tablename where $idname = ?", array($id)), 0, $fieldname);
-		return $fieldval;
-	}
-
-	/**
-	 *  Function to get recurring info depending on the recurring type
-	 *  return  $recurObj       - Object of class RecurringType
-	 */
-	public static function getRecurringObjValue()
-	{
-		$recurring_data = [];
-		if (!\AppRequest::isEmpty('recurringtype') && \AppRequest::get('recurringtype') != '--None--') {
-			if (!\AppRequest::isEmpty('date_start')) {
-				$startDate = \AppRequest::get('date_start');
-			}
-			if (!\AppRequest::isEmpty('calendar_repeat_limit_date')) {
-				$endDate = \AppRequest::get('calendar_repeat_limit_date');
-				$recurring_data['recurringenddate'] = $endDate;
-			} elseif (!\AppRequest::isEmpty('due_date')) {
-				$endDate = \AppRequest::get('due_date');
-			}
-			if (!\AppRequest::isEmpty('time_start')) {
-				$startTime = \AppRequest::get('time_start');
-			}
-			if (!\AppRequest::isEmpty('time_end')) {
-				$endTime = \AppRequest::get('time_end');
-			}
-
-			$recurring_data['startdate'] = $startDate;
-			$recurring_data['starttime'] = $startTime;
-			$recurring_data['enddate'] = $endDate;
-			$recurring_data['endtime'] = $endTime;
-
-			$recurring_data['type'] = \AppRequest::get('recurringtype');
-			if (\AppRequest::get('recurringtype') == 'Weekly') {
-				if (!\AppRequest::isEmpty('sun_flag'))
-					$recurring_data['sun_flag'] = true;
-				if (!\AppRequest::isEmpty('mon_flag'))
-					$recurring_data['mon_flag'] = true;
-				if (!\AppRequest::isEmpty('tue_flag'))
-					$recurring_data['tue_flag'] = true;
-				if (!\AppRequest::isEmpty('wed_flag'))
-					$recurring_data['wed_flag'] = true;
-				if (!\AppRequest::isEmpty('thu_flag'))
-					$recurring_data['thu_flag'] = true;
-				if (!\AppRequest::isEmpty('fri_flag'))
-					$recurring_data['fri_flag'] = true;
-				if (!\AppRequest::isEmpty('sat_flag'))
-					$recurring_data['sat_flag'] = true;
-			}
-			elseif (\AppRequest::get('recurringtype') == 'Monthly') {
-				if (!\AppRequest::isEmpty('repeatMonth'))
-					$recurring_data['repeatmonth_type'] = \AppRequest::get('repeatMonth');
-				if ($recurring_data['repeatmonth_type'] == 'date') {
-					if (!\AppRequest::isEmpty('repeatMonth_date'))
-						$recurring_data['repeatmonth_date'] = \AppRequest::get('repeatMonth_date');
-					else
-						$recurring_data['repeatmonth_date'] = 1;
-				}
-				elseif ($recurring_data['repeatmonth_type'] == 'day') {
-					$recurring_data['repeatmonth_daytype'] = \AppRequest::get('repeatMonth_daytype');
-					switch (\AppRequest::get('repeatMonth_day')) {
-						case 0 :
-							$recurring_data['sun_flag'] = true;
-							break;
-						case 1 :
-							$recurring_data['mon_flag'] = true;
-							break;
-						case 2 :
-							$recurring_data['tue_flag'] = true;
-							break;
-						case 3 :
-							$recurring_data['wed_flag'] = true;
-							break;
-						case 4 :
-							$recurring_data['thu_flag'] = true;
-							break;
-						case 5 :
-							$recurring_data['fri_flag'] = true;
-							break;
-						case 6 :
-							$recurring_data['sat_flag'] = true;
-							break;
-					}
-				}
-			}
-			if (!\AppRequest::isEmpty('repeat_frequency'))
-				$recurring_data['repeat_frequency'] = \AppRequest::get('repeat_frequency');
-
-			$recurObj = \RecurringType::fromUserRequest($recurring_data);
-			return $recurObj;
-		}
-	}
-
-	public static function getTicketComments($ticketid)
-	{
-		$adb = \PearDatabase::getInstance();
-		$moduleName = self::getCRMRecordType($ticketid);
-		$commentlist = '';
-		$sql = "SELECT commentcontent FROM vtiger_modcomments WHERE related_to = ?";
-		$result = $adb->pquery($sql, array($ticketid));
-		$countResult = $adb->num_rows($result);
-		for ($i = 0; $i < $countResult; $i++) {
-			$comment = $adb->query_result($result, $i, 'commentcontent');
-			if ($comment != '') {
-				$commentlist .= '<br><br>' . $comment;
-			}
-		}
-		if ($commentlist != '')
-			$commentlist = '<br><br>' . \includes\Language::translate("The comments are", $moduleName) . ' : ' . $commentlist;
-		return $commentlist;
-	}
-
-	public static function generateRandomPassword()
-	{
-		$salt = "abcdefghijklmnopqrstuvwxyz0123456789";
-		srand((double) microtime() * 1000000);
-		$i = 0;
-		while ($i <= 7) {
-			$num = rand() % 33;
-			$tmp = substr($salt, $num, 1);
-			$pass = $pass . $tmp;
-			$i++;
-		}
-		return $pass;
-	}
-
-	/** gives the option  to display  the tagclouds or not for the current user
-	 * * @param $id -- user id:: Type integer
-	 * * @returns true or false in $tag_cloud_view
-	 * * Added to provide User based Tagcloud
-	 * */
-	public static function getTagCloudView($id = "")
-	{
-		$adb = \PearDatabase::getInstance();
-		if ($id == '') {
-			$tag_cloud_status = 1;
-		} else {
-			$query = "select visible from vtiger_homestuff where userid=? and stufftype='Tag Cloud'";
-			$tag_cloud_status = $adb->query_result($adb->pquery($query, array($id)), 0, 'visible');
-		}
-
-		if ($tag_cloud_status == 0) {
-			$tag_cloud_view = 'true';
-		} else {
-			$tag_cloud_view = 'false';
-		}
-		return $tag_cloud_view;
+		return (new \App\Db\Query())->select([$fieldName])->from($tableName)->where([$idName => $id])->scalar();
 	}
 
 	/**     function used to change the Type of Data for advanced filters in custom view and Reports
@@ -734,7 +363,7 @@ class Functions
 		$field = $table_name . ':' . $column_name;
 		//Add the field details in this array if you want to change the advance filter field details
 
-		static $new_field_details = Array(
+		static $new_field_details = [
 			//Contacts Related Fields
 			'vtiger_contactdetails:parentid' => 'V',
 			'vtiger_contactsubdetails:birthday' => 'D',
@@ -749,7 +378,6 @@ class Functions
 			'vtiger_leaddetails:secondaryemail' => 'V',
 			//Documents Related Fields
 			'vtiger_senotesrel:crmid' => 'V',
-			'vtiger_recurringevents:recurringtype' => 'V',
 			//HelpDesk Related Fields
 			'vtiger_troubletickets:parent_id' => 'V',
 			'vtiger_troubletickets:product_id' => 'V',
@@ -779,7 +407,7 @@ class Functions
 			'vtiger_vendorcontactrel:vendorid' => 'V',
 			'vtiger_vendorcontactrel:contactid' => 'V',
 			'vtiger_pricebook:currency_id' => 'V',
-		);
+		];
 
 		//If the Fields details does not match with the array, then we return the same typeofdata
 		if (isset($new_field_details[$field])) {
@@ -788,94 +416,36 @@ class Functions
 		return $type_of_data;
 	}
 
-	public static function getActivityType($id)
-	{
-		$adb = \PearDatabase::getInstance();
-		$query = "select activitytype from vtiger_activity where activityid=?";
-		$res = $adb->pquery($query, array($id));
-		$activity_type = $adb->query_result($res, 0, "activitytype");
-		return $activity_type;
-	}
-
-	public static function mkCountQuery($query)
-	{
-		// Remove all the \n, \r and white spaces to keep the space between the words consistent.
-		// This is required for proper pattern matching for words like ' FROM ', 'ORDER BY', 'GROUP BY' as they depend on the spaces between the words.
-		$query = preg_replace("/[\n\r\s]+/", " ", $query);
-
-		//Strip of the current SELECT fields and replace them by "select count(*) as count"
-		// Space across FROM has to be retained here so that we do not have a clash with string "from" found in select clause
-		$query = sprintf('SELECT count(*) AS count %s', substr($query, stripos($query, ' FROM '), strlen($query)));
-
-		//Strip of any "GROUP BY" clause
-		if (stripos($query, 'GROUP BY') > 0)
-			$query = substr($query, 0, stripos($query, 'GROUP BY'));
-
-		//Strip of any "ORDER BY" clause
-		if (stripos($query, 'ORDER BY') > 0)
-			$query = substr($query, 0, stripos($query, 'ORDER BY'));
-
-		return $query;
-	}
-
-	/** Function to get unitprice for a given product id
-	 * @param $productid -- product id :: Type integer
-	 * @returns $up -- up :: Type string
-	 */
-	public static function getUnitPrice($productid, $module = 'Products')
-	{
-		$adb = \PearDatabase::getInstance();
-		if ($module == 'Services') {
-			$query = "select unit_price from vtiger_service where serviceid=?";
-		} else {
-			$query = "select unit_price from vtiger_products where productid=?";
-		}
-		$result = $adb->pquery($query, array($productid));
-		$unitpice = $adb->query_result($result, 0, 'unit_price');
-		return $unitpice;
-	}
-
-	public static function decimalTimeFormat($decTime)
-	{
-		$hour = floor($decTime);
-		$min = round(60 * ($decTime - $hour));
-		return array(
-			'short' => $hour . vtranslate('LBL_H') . ' ' . $min . vtranslate('LBL_M'),
-			'full' => $hour . vtranslate('LBL_HOURS') . ' ' . $min . vtranslate('LBL_MINUTES'),
-		);
-	}
-
 	public static function getRangeTime($timeMinutesRange, $showEmptyValue = true)
 	{
 		$short = [];
 		$full = [];
-		$years = ($timeMinutesRange) / (60 * 24 * 365);
+		$years = ((int) $timeMinutesRange) / (60 * 24 * 365);
 		$years = floor($years);
 		if (!empty($years)) {
-			$short[] = $years == 1 ? $years . vtranslate('LBL_Y') : $years . vtranslate('LBL_YRS');
-			$full[] = $years == 1 ? $years . vtranslate('LBL_YEAR') : $years . vtranslate('LBL_YEARS');
+			$short[] = $years == 1 ? $years . \App\Language::translate('LBL_Y') : $years . \App\Language::translate('LBL_YRS');
+			$full[] = $years == 1 ? $years . \App\Language::translate('LBL_YEAR') : $years . \App\Language::translate('LBL_YEARS');
 		}
 		$days = self::myBcmod(($timeMinutesRange), (60 * 24 * 365));
 		$days = ($days) / (24 * 60);
 		$days = floor($days);
 		if (!empty($days)) {
-			$short[] = $days . vtranslate('LBL_D');
-			$full[] = $days == 1 ? $days . vtranslate('LBL_DAY') : $days . vtranslate('LBL_DAYS');
+			$short[] = $days . \App\Language::translate('LBL_D');
+			$full[] = $days == 1 ? $days . \App\Language::translate('LBL_DAY') : $days . \App\Language::translate('LBL_DAYS');
 		}
 		$hours = self::myBcmod(($timeMinutesRange), (24 * 60));
 		$hours = ($hours) / (60);
 		$hours = floor($hours);
 		if (!empty($hours)) {
-			$short[] = $hours . vtranslate('LBL_H');
-			$full[] = $hours == 1 ? $hours . vtranslate('LBL_HOUR') : $hours . vtranslate('LBL_HOURS');
+			$short[] = $hours . \App\Language::translate('LBL_H');
+			$full[] = $hours == 1 ? $hours . \App\Language::translate('LBL_HOUR') : $hours . \App\Language::translate('LBL_HOURS');
 		}
 		$minutes = self::myBcmod(($timeMinutesRange), (60));
 		$minutes = floor($minutes);
 		if (!empty($timeMinutesRange) || $showEmptyValue) {
-			$short[] = $minutes . vtranslate('LBL_M');
-			$full[] = $minutes == 1 ? $minutes . vtranslate('LBL_MINUTE') : $minutes . vtranslate('LBL_MINUTES');
+			$short[] = $minutes . \App\Language::translate('LBL_M');
+			$full[] = $minutes == 1 ? $minutes . \App\Language::translate('LBL_MINUTE') : $minutes . \App\Language::translate('LBL_MINUTES');
 		}
-
 		return [
 			'short' => implode(' ', $short),
 			'full' => implode(' ', $full),
@@ -883,14 +453,14 @@ class Functions
 	}
 
 	/**
-	 * myBcmod - get modulus (substitute for bcmod) 
-	 * string my_bcmod ( string left_operand, int modulus ) 
-	 * left_operand can be really big, but be carefull with modulus :( 
-	 * by Andrius Baranauskas and Laurynas Butkus :) Vilnius, Lithuania 
+	 * myBcmod - get modulus (substitute for bcmod)
+	 * string my_bcmod ( string left_operand, int modulus )
+	 * left_operand can be really big, but be carefull with modulus :(
+	 * by Andrius Baranauskas and Laurynas Butkus :) Vilnius, Lithuania.
 	 * */
 	public static function myBcmod($x, $y)
 	{
-		// how many numbers to take at once? carefull not to exceed (int) 
+		// how many numbers to take at once? carefull not to exceed (int)
 		$take = 5;
 		$mod = '';
 
@@ -914,31 +484,38 @@ class Functions
 		if (strpos($values, ',') === false) {
 			$array[] = $values;
 		} else {
-			$array = explode(",", $values);
+			$array = explode(',', $values);
 		}
 		return $array;
 	}
 
-	public static function replaceLinkAddress($string, $pattern, $replace)
+	public static function throwNewException($e, $die = true, $tpl = 'OperationNotPermitted.tpl')
 	{
-		require_once('include/simplehtmldom/simple_html_dom.php');
-		$html = str_get_html($string);
-		foreach ($html->find('a') as $index => &$element) {
-			$element->href = preg_replace($pattern, $replace, $element->href);
+		$message = is_object($e) ? $e->getMessage() : $e;
+		if (!is_array($message)) {
+			if (strpos($message, '||') === false) {
+				$message = \App\Language::translateSingleMod($message, 'Other.Exceptions');
+			} else {
+				$params = explode('||', $message);
+				$message = call_user_func_array('vsprintf', [\App\Language::translateSingleMod(array_shift($params), 'Other.Exceptions'), $params]);
+			}
 		}
-		return $html->__toString();
-	}
-
-	public static function throwNewException($message, $die = true, $tpl = 'OperationNotPermitted.tpl')
-	{
-		if (REQUEST_MODE == 'API') {
+		if (\App\Config::$requestMode === 'API') {
 			throw new \APIException($message, 401);
 		}
-		$request = \AppRequest::init();
-		if ($request->isAjax()) {
+		if (\App\Request::_isAjax()) {
 			$response = new \Vtiger_Response();
 			$response->setEmitType(\Vtiger_Response::$EMIT_JSON);
-			$response->setError($message);
+			$trace = '';
+			if (\AppConfig::debug('DISPLAY_EXCEPTION_BACKTRACE') && is_object($e)) {
+				$trace = str_replace(ROOT_DIRECTORY . DIRECTORY_SEPARATOR, '', $e->getTraceAsString());
+			}
+			if (is_object($e)) {
+				$response->setHeader('HTTP/1.1 ' . $e->getCode() . ' ' . str_ireplace(["\r\n", "\r", "\n"], [' ', ' ', ' '], $e->getMessage()));
+				$response->setError($e->getCode(), $e->getMessage(), $trace);
+			} else {
+				$response->setError('error', $message, $trace);
+			}
 			$response->emit();
 		} else {
 			$viewer = new \Vtiger_Viewer();
@@ -947,52 +524,20 @@ class Functions
 		}
 		if ($die) {
 			trigger_error(print_r($message, true), E_USER_ERROR);
-			throw new \Exception('');
-		}
-	}
-
-	public static function removeHtmlTags(array $tags, $html)
-	{
-		$crmUrl = \AppConfig::main('site_URL');
-
-		$doc = new \DOMDocument('1.0', 'UTF-8');
-		$previousValue = libxml_use_internal_errors(true);
-		$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
-		libxml_clear_errors();
-		libxml_use_internal_errors($previousValue);
-
-		foreach ($tags as $tag) {
-			$xPath = new \DOMXPath($doc);
-			$nodes = $xPath->query('//' . $tag);
-			for ($i = 0; $i < $nodes->length; $i++) {
-				if ('img' === $tag) {
-					$htmlNode = $nodes->item($i)->ownerDocument->saveHTML($nodes->item($i));
-					$imgDom = new \DOMDocument();
-					$imgDom->loadHTML($htmlNode);
-					$xpath = new \DOMXPath($imgDom);
-					$src = $xpath->evaluate("string(//img/@src)");
-					if ($src == '' || 0 !== strpos('index.php', $src) || false === strpos($crmUrl, $src)) {
-						$nodes->item($i)->parentNode->removeChild($nodes->item($i));
-					}
-				} else {
-					$nodes->item($i)->parentNode->removeChild($nodes->item($i));
-				}
+			if (is_object($message)) {
+				throw new $message();
+			} elseif (is_array($message)) {
+				throw new \Exception($message['message']);
+			} else {
+				throw new \Exception($message);
 			}
 		}
-		$savedHTML = $doc->saveHTML();
-		$savedHTML = preg_replace('/<!DOCTYPE[^>]+\>/', '', $savedHTML);
-		$savedHTML = preg_replace('/<html[^>]+\>/', '', $savedHTML);
-		$savedHTML = preg_replace('/<body[^>]+\>/', '', $savedHTML);
-		$savedHTML = preg_replace('#<head(.*?)>(.*?)</head>#is', '', $savedHTML);
-		$savedHTML = preg_replace('/<!--(.*)-->/Uis', '', $savedHTML);
-		$savedHTML = str_replace(['</html>', '</body>', '<?xml encoding="utf-8" ?>'], ['', '', ''], $savedHTML);
-		return trim($savedHTML);
 	}
 
 	public static function getHtmlOrPlainText($content)
 	{
-		if ($content != strip_tags($content)) {
-			$content = decode_html($content);
+		if ($content !== strip_tags($content)) {
+			$content = \App\Purifier::decodeHtml($content);
 		} else {
 			$content = nl2br($content);
 		}
@@ -1000,25 +545,18 @@ class Functions
 	}
 
 	/**
-	 * Function to fetch the list of vtiger_groups from group vtiger_table
-	 * Takes no value as input
-	 * returns the query result set object
+	 * Function to delete files and dirs.
+	 *
+	 * @param string $src
+	 * @param bool   $outsideRoot
 	 */
-	public static function get_group_options()
+	public static function recurseDelete($src, $outsideRoot = false)
 	{
-		$adb = \PearDatabase::getInstance();
-		$sql = "select groupname,groupid from vtiger_groups";
-		$result = $adb->pquery($sql, []);
-		return $result;
-	}
-
-	public static function recurseDelete($src)
-	{
-		$rootDir = ROOT_DIRECTORY . DIRECTORY_SEPARATOR;
-		if (!file_exists($rootDir . $src))
+		$rootDir = ($outsideRoot || strpos($src, ROOT_DIRECTORY) === 0) ? '' : ROOT_DIRECTORY . DIRECTORY_SEPARATOR;
+		if (!file_exists($rootDir . $src)) {
 			return;
+		}
 		$dirs = [];
-		@chmod($root_dir . $src, 0777);
 		$dirs[] = $rootDir . $src;
 		if (is_dir($src)) {
 			foreach ($iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($src, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST) as $item) {
@@ -1037,105 +575,40 @@ class Functions
 		}
 	}
 
-	public function recurseCopy($src, $dest, $delete = false)
+	/**
+	 * The function copies files.
+	 *
+	 * @param string $src
+	 * @param string $dest
+	 *
+	 * @return string
+	 */
+	public static function recurseCopy($src, $dest)
 	{
 		$rootDir = ROOT_DIRECTORY . DIRECTORY_SEPARATOR;
-		if (!file_exists($rootDir . $src))
+		if (!file_exists($rootDir . $src)) {
 			return;
-
+		}
+		if ($dest && substr($dest, -1) !== '/' && substr($dest, -1) !== '\\') {
+			$dest = $dest . DIRECTORY_SEPARATOR;
+		}
+		$dest = $rootDir . $dest;
 		foreach ($iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($src, \RecursiveDirectoryIterator::SKIP_DOTS), \RecursiveIteratorIterator::SELF_FIRST) as $item) {
-			if ($item->isDir() && !file_exists($rootDir . $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName())) {
-				mkdir($rootDir . $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName());
+			if ($item->isDir() && !file_exists($dest . $iterator->getSubPathName())) {
+				mkdir($dest . $iterator->getSubPathName(), 0755);
 			} elseif (!$item->isDir()) {
-				copy($item, $rootDir . $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName());
+				copy($item->getRealPath(), $dest . $iterator->getSubPathName());
 			}
 		}
-	}
-
-	protected static $browerCache = false;
-
-	public static function getBrowserInfo()
-	{
-		if (!self::$browerCache) {
-			$HTTP_USER_AGENT = strtolower($_SERVER['HTTP_USER_AGENT']);
-
-			$browser = new \stdClass;
-			$browser->ver = 0;
-			$browser->https = false;
-			$browser->win = strpos($HTTP_USER_AGENT, 'win') != false;
-			$browser->mac = strpos($HTTP_USER_AGENT, 'mac') != false;
-			$browser->linux = strpos($HTTP_USER_AGENT, 'linux') != false;
-			$browser->unix = strpos($HTTP_USER_AGENT, 'unix') != false;
-
-			$browser->webkit = strpos($HTTP_USER_AGENT, 'applewebkit') !== false;
-			$browser->opera = strpos($HTTP_USER_AGENT, 'opera') !== false || ($browser->webkit && strpos($HTTP_USER_AGENT, 'opr/') !== false);
-			$browser->ns = strpos($HTTP_USER_AGENT, 'netscape') !== false;
-			$browser->chrome = !$browser->opera && strpos($HTTP_USER_AGENT, 'chrome') !== false;
-			$browser->ie = !$browser->opera && (strpos($HTTP_USER_AGENT, 'compatible; msie') !== false || strpos($HTTP_USER_AGENT, 'trident/') !== false);
-			$browser->safari = !$browser->opera && !$browser->chrome && ($browser->webkit || strpos($HTTP_USER_AGENT, 'safari') !== false);
-			$browser->mz = !$browser->ie && !$browser->safari && !$browser->chrome && !$browser->ns && !$browser->opera && strpos($HTTP_USER_AGENT, 'mozilla') !== false;
-
-			if ($browser->opera) {
-				if (preg_match('/(opera|opr)\/([0-9.]+)/', $HTTP_USER_AGENT, $regs)) {
-					$browser->ver = (float) $regs[2];
-				}
-			} else if (preg_match('/(chrome|msie|version|khtml)(\s*|\/)([0-9.]+)/', $HTTP_USER_AGENT, $regs)) {
-				$browser->ver = (float) $regs[3];
-			} else if (preg_match('/rv:([0-9.]+)/', $HTTP_USER_AGENT, $regs)) {
-				$browser->ver = (float) $regs[1];
-			}
-
-			if (preg_match('/ ([a-z]{2})-([a-z]{2})/', $HTTP_USER_AGENT, $regs))
-				$browser->lang = $regs[1];
-			else
-				$browser->lang = 'en';
-
-			if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) != 'off') {
-				$browser->https = true;
-			}
-			if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) == 'https') {
-				$browser->https = true;
-			}
-			$sp = strtolower($_SERVER['SERVER_PROTOCOL']);
-			$protocol = substr($sp, 0, strpos($sp, '/')) . (($browser->https) ? 's' : '');
-			$port = $_SERVER['SERVER_PORT'];
-			$port = ((!$browser->https && $port == '80') || ($browser->https && $port == '443')) ? '' : ':' . $port;
-			$host = isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : null);
-			$host = isset($host) ? $host : $_SERVER['SERVER_NAME'] . $port;
-			$browser->url = $protocol . '://' . $host . $_SERVER['REQUEST_URI'];
-			$browser->requestUri = ltrim($_SERVER['REQUEST_URI'], '/');
-			self::$browerCache = $browser;
-		}
-		return self::$browerCache;
-	}
-
-	public static function getRemoteIP($onlyIP = false)
-	{
-		$address = $_SERVER['REMOTE_ADDR'];
-
-		// append the NGINX X-Real-IP header, if set
-		if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
-			$remote_ip[] = 'X-Real-IP: ' . $_SERVER['HTTP_X_REAL_IP'];
-		}
-		// append the X-Forwarded-For header, if set
-		if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-			$remote_ip[] = 'X-Forwarded-For: ' . $_SERVER['HTTP_X_FORWARDED_FOR'];
-		}
-
-		if (!empty($remote_ip) && $onlyIP === false) {
-			$address .= '(' . implode(',', $remote_ip) . ')';
-		}
-		return $address;
 	}
 
 	public static function parseBytes($str)
 	{
 		if (is_numeric($str)) {
-			return floatval($str);
+			return (float) $str;
 		}
-
 		if (preg_match('/([0-9\.]+)\s*([a-z]*)/i', $str, $regs)) {
-			$bytes = floatval($regs[1]);
+			$bytes = (float) ($regs[1]);
 			switch (strtolower($regs[2])) {
 				case 'g':
 				case 'gb':
@@ -1151,29 +624,27 @@ class Functions
 					break;
 			}
 		}
-
-		return floatval($bytes);
+		return (float) $bytes;
 	}
 
-	public function showBytes($bytes, &$unit = null)
+	public static function showBytes($bytes, &$unit = null)
 	{
 		$bytes = self::parseBytes($bytes);
 		if ($bytes >= 1073741824) {
 			$unit = 'GB';
 			$gb = $bytes / 1073741824;
-			$str = sprintf($gb >= 10 ? "%d " : "%.1f ", $gb) . $unit;
-		} else if ($bytes >= 1048576) {
+			$str = sprintf($gb >= 10 ? '%d ' : '%.2f ', $gb) . $unit;
+		} elseif ($bytes >= 1048576) {
 			$unit = 'MB';
 			$mb = $bytes / 1048576;
-			$str = sprintf($mb >= 10 ? "%d " : "%.1f ", $mb) . $unit;
-		} else if ($bytes >= 1024) {
+			$str = sprintf($mb >= 10 ? '%d ' : '%.2f ', $mb) . $unit;
+		} elseif ($bytes >= 1024) {
 			$unit = 'KB';
-			$str = sprintf("%d ", round($bytes / 1024)) . $unit;
+			$str = sprintf('%d ', round($bytes / 1024)) . $unit;
 		} else {
 			$unit = 'B';
 			$str = sprintf('%d ', $bytes) . $unit;
 		}
-
 		return $str;
 	}
 
@@ -1205,12 +676,13 @@ class Functions
 	public static function getInitials($name)
 	{
 		$initial = '';
-		foreach (explode(' ', $name) as $word)
+		foreach (explode(' ', $name) as $word) {
 			$initial .= strtoupper($word[0]);
+		}
 		return $initial;
 	}
 
-	public function getDiskSpace($dir = '')
+	public static function getDiskSpace($dir = '')
 	{
 		if ($dir == '') {
 			$dir = ROOT_DIRECTORY . DIRECTORY_SEPARATOR;
@@ -1218,41 +690,21 @@ class Functions
 		$total = disk_total_space($dir);
 		$free = disk_free_space($dir);
 		$used = $total - $free;
-		return ['total' => $total, 'free' => $free, 'used' => $used];
-	}
 
-	public static function textLength($text, $length = false, $addDots = true)
-	{
-		if (!$length) {
-			$length = \AppConfig::main('listview_max_textlength');
-		}
-		$newText = preg_replace("/(<\/?)(\w+)([^>]*>)/i", '', $text);
-		if (function_exists('mb_strlen')) {
-			if (mb_strlen(html_entity_decode($newText)) > $length) {
-				$newText = mb_substr(preg_replace('/(<\/?)(\w+)([^>]*>)/i', '', html_entity_decode($newText)), 0, $length, \AppConfig::main('default_charset'));
-				if ($addDots) {
-					$newText .= '...';
-				}
-			}
-		} elseif (strlen(html_entity_decode($text)) > $length) {
-			$newText = substr(preg_replace('/(<\/?)(\w+)([^>]*>)/i', '', html_entity_decode($newText)), 0, $length);
-			if ($addDots) {
-				$newText .= '...';
-			}
-		}
-		return $newText;
+		return ['total' => $total, 'free' => $free, 'used' => $used];
 	}
 
 	public static function getDefaultCurrencyInfo()
 	{
 		$allCurrencies = self::getAllCurrency(true);
 		foreach ($allCurrencies as $currency) {
-			if ($currency['defaultid'] === '-11') {
+			if ((int) $currency['defaultid'] === -11) {
 				return $currency;
 			}
 		}
 		return false;
 	}
+
 	/*
 	 * Checks if given date is working day, if not returns last working day
 	 * @param <Date> $date
@@ -1266,13 +718,12 @@ class Functions
 		}
 		$date = strtotime($date);
 		if (date('D', $date) == 'Sat') { // switch to friday the day before
-			$lastWorkingDay = date('Y-m-d', strtotime("-1 day", $date));
-		} else if (date('D', $date) == 'Sun') { // switch to friday two days before
-			$lastWorkingDay = date('Y-m-d', strtotime("-2 day", $date));
+			$lastWorkingDay = date('Y-m-d', strtotime('-1 day', $date));
+		} elseif (date('D', $date) == 'Sun') { // switch to friday two days before
+			$lastWorkingDay = date('Y-m-d', strtotime('-2 day', $date));
 		} else {
 			$lastWorkingDay = date('Y-m-d', $date);
 		}
-
 		return $lastWorkingDay;
 	}
 
@@ -1280,7 +731,7 @@ class Functions
 	{
 		// Make sure string is in UTF-8 and strip invalid UTF-8 characters
 		$str = mb_convert_encoding((string) $str, 'UTF-8', mb_list_encodings());
-		$char_map = array(
+		$char_map = [
 			// Latin
 			'Ă€' => 'A', 'Ă' => 'A', 'Ă‚' => 'A', 'Ă' => 'A', 'Ă„' => 'A', 'Ă…' => 'A', 'Ă†' => 'AE', 'Ă‡' => 'C',
 			'Ă' => 'E', 'Ă‰' => 'E', 'ĂŠ' => 'E', 'Ă‹' => 'E', 'ĂŚ' => 'I', 'ĂŤ' => 'I', 'ĂŽ' => 'I', 'ĂŹ' => 'I',
@@ -1345,8 +796,8 @@ class Functions
 			'Ä€' => 'A', 'ÄŚ' => 'C', 'Ä’' => 'E', 'Ä˘' => 'G', 'ÄŞ' => 'i', 'Ä¶' => 'k', 'Ä»' => 'L', 'Ĺ…' => 'N',
 			'Ĺ ' => 'S', 'ĹŞ' => 'u', 'Ĺ˝' => 'Z',
 			'Ä' => 'a', 'ÄŤ' => 'c', 'Ä“' => 'e', 'ÄŁ' => 'g', 'Ä«' => 'i', 'Ä·' => 'k', 'ÄĽ' => 'l', 'Ĺ†' => 'n',
-			'Ĺˇ' => 's', 'Ĺ«' => 'u', 'Ĺľ' => 'z'
-		);
+			'Ĺˇ' => 's', 'Ĺ«' => 'u', 'Ĺľ' => 'z',
+		];
 
 		// Transliterate characters to ASCII
 		$str = str_replace(array_keys($char_map), $char_map, $str);
@@ -1354,8 +805,10 @@ class Functions
 		$str = preg_replace('/[^\p{L}\p{Nd}\.]+/u', $delimiter, $str);
 		// Remove delimiter from ends
 		$str = trim($str, $delimiter);
+
 		return $str;
 	}
+
 	/*
 	 * Function that returns conversion info from default system currency to chosen one
 	 * @param <Integer> $currencyId - id of currency for which we want to retrieve conversion rate to default currency
@@ -1386,43 +839,14 @@ class Functions
 			$info['value'] = $value == 0 ? 1.0 : round($value, 5);
 			$info['conversion'] = $value == 0 ? 1.0 : round(1 / $value, 5);
 		}
-
 		return $info;
-	}
-
-	/**
-	 * Function returning difference in minutes between date times
-	 * @param string $startDateTime
-	 * @param string $endDateTime
-	 * @return int difference in minutes
-	 */
-	public static function getDateTimeMinutesDiff($startDateTime, $endDateTime)
-	{
-		$start = new \DateTime($startDateTime);
-		$end = new \DateTime($endDateTime);
-		$interval = $start->diff($end);
-
-		$intervalInSeconds = (new \DateTime())->setTimeStamp(0)->add($interval)->getTimeStamp();
-		$intervalInMinutes = ($intervalInSeconds / 60);
-
-		return $intervalInMinutes;
-	}
-
-	/**
-	 * Function returning difference in hours between date times
-	 * @param string $startDateTime
-	 * @param string $endDateTime
-	 * @return int difference in hours
-	 */
-	public static function getDateTimeHoursDiff($startDateTime, $endDateTime)
-	{
-		return self::getDateTimeMinutesDiff($startDateTime, $endDateTime) / 60;
 	}
 
 	public static function getQueryParams($url)
 	{
 		$queryStr = parse_url(htmlspecialchars_decode($url), PHP_URL_QUERY);
 		parse_str($queryStr, $queryParams);
+
 		return $queryParams;
 	}
 
@@ -1435,27 +859,14 @@ class Functions
 					$difference[$key] = $value;
 				} else {
 					$newDiff = self::arrayDiffAssocRecursive($value, $array2[$key]);
-					if (!empty($newDiff))
+					if (!empty($newDiff)) {
 						$difference[$key] = $newDiff;
+					}
 				}
-			} else if (!array_key_exists($key, $array2) || $array2[$key] !== $value) {
+			} elseif (!array_key_exists($key, $array2) || $array2[$key] !== $value) {
 				$difference[$key] = $value;
 			}
 		}
 		return $difference;
-	}
-
-	public static function varExportMin($var)
-	{
-		if (is_array($var)) {
-			$toImplode = [];
-			foreach ($var as $key => $value) {
-				$toImplode[] = var_export($key, true) . '=>' . self::varExportMin($value);
-			}
-			$code = '[' . implode(',', $toImplode) . ']';
-			return $code;
-		} else {
-			return var_export($var, true);
-		}
 	}
 }

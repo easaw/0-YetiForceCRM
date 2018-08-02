@@ -6,54 +6,51 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Vtiger_MassActionAjax_View extends Vtiger_IndexAjax_View
 {
+	use \App\Controller\ExposeMethod;
 
 	public function __construct()
 	{
 		parent::__construct();
 		$this->exposeMethod('showMassEditForm');
 		$this->exposeMethod('showAddCommentForm');
-		$this->exposeMethod('showComposeEmailForm');
 		$this->exposeMethod('showSendSMSForm');
-		$this->exposeMethod('showDuplicatesSearchForm');
 		$this->exposeMethod('transferOwnership');
 	}
 
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
-		}
-	}
-
 	/**
-	 * Function returns the mass edit form
-	 * @param Vtiger_Request $request
+	 * Function returns the mass edit form.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
 	 */
-	public function showMassEditForm(Vtiger_Request $request)
+	public function showMassEditForm(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$cvId = $request->get('viewname');
+		$cvId = $request->getByType('viewname', 2);
 		$selectedIds = $request->get('selected_ids');
 		$excludedIds = $request->get('excluded_ids');
-
 		$viewer = $this->getViewer($request);
 
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
+		if (!$moduleModel->isPermitted('MassEdit')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+
 		$recordStructureInstance = Vtiger_RecordStructure_Model::getInstanceForModule($moduleModel, Vtiger_RecordStructure_Model::RECORD_STRUCTURE_MODE_MASSEDIT);
 		$fieldInfo = [];
 		$fieldList = $moduleModel->getFields();
 		foreach ($fieldList as $fieldName => $fieldModel) {
 			$fieldInfo[$fieldName] = $fieldModel->getFieldInfo();
 		}
-		$picklistDependencyDatasource = Vtiger_DependencyPicklist::getPicklistDependencyDatasource($moduleName);
+		$picklistDependencyDatasource = \App\Fields\Picklist::getPicklistDependencyDatasource($moduleName);
 
-		$viewer->assign('PICKIST_DEPENDENCY_DATASOURCE', \includes\utils\Json::encode($picklistDependencyDatasource));
+		$viewer->assign('PICKIST_DEPENDENCY_DATASOURCE', \App\Json::encode($picklistDependencyDatasource));
 		$viewer->assign('CURRENTDATE', date('Y-n-j'));
 		$viewer->assign('MODE', 'massedit');
 		$viewer->assign('MODULE', $moduleName);
@@ -66,35 +63,39 @@ class Vtiger_MassActionAjax_View extends Vtiger_IndexAjax_View
 		$viewer->assign('RECORD_STRUCTURE', $recordStructureInstance->getStructure());
 		$viewer->assign('USER_MODEL', Users_Record_Model::getCurrentUserModel());
 		$viewer->assign('MODULE_MODEL', $moduleModel);
-		$viewer->assign('MAPPING_RELATED_FIELD', \includes\utils\Json::encode(Vtiger_ModulesHierarchy_Model::getRelationFieldByHierarchy($moduleName)));
-		$searchKey = $request->get('search_key');
-		$searchValue = $request->get('search_value');
-		$operator = $request->get('operator');
-		if (!empty($operator)) {
-			$viewer->assign('OPERATOR', $operator);
-			$viewer->assign('ALPHABET_VALUE', $searchValue);
-			$viewer->assign('SEARCH_KEY', $searchKey);
+		$viewer->assign('MAPPING_RELATED_FIELD', \App\Json::encode(\App\ModuleHierarchy::getRelationFieldByHierarchy($moduleName)));
+		if (!$request->isEmpty('operator', true)) {
+			$viewer->assign('OPERATOR', $request->getByType('operator', 1));
+			$viewer->assign('ALPHABET_VALUE', $request->get('search_value'));
+			$viewer->assign('SEARCH_KEY', $request->getByType('search_key', 1));
 		}
 		$searchParams = $request->get('search_params');
 		if (!empty($searchParams)) {
 			$viewer->assign('SEARCH_PARAMS', $searchParams);
 		}
-
 		echo $viewer->view('MassEditForm.tpl', $moduleName, true);
 	}
 
 	/**
-	 * Function returns the Add Comment form
-	 * @param Vtiger_Request $request
+	 * Function returns the Add Comment form.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
 	 */
-	public function showAddCommentForm(Vtiger_Request $request)
+	public function showAddCommentForm(\App\Request $request)
 	{
 		$sourceModule = $request->getModule();
 		$moduleName = 'ModComments';
-		$cvId = $request->get('viewname');
+		$cvId = $request->getByType('viewname', 2);
 		$selectedIds = $request->get('selected_ids');
 		$excludedIds = $request->get('excluded_ids');
 
+		$moduleModel = Vtiger_Module_Model::getInstance($sourceModule);
+		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserPriviligesModel->hasModulePermission($sourceModule) || !($moduleModel->isCommentEnabled() && $currentUserPriviligesModel->hasModuleActionPermission($moduleName, 'EditView') && $moduleModel->isPermitted('MassAddComment'))) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
 		$viewer = $this->getViewer($request);
 		$viewer->assign('SOURCE_MODULE', $sourceModule);
 		$viewer->assign('MODULE', $moduleName);
@@ -102,190 +103,44 @@ class Vtiger_MassActionAjax_View extends Vtiger_IndexAjax_View
 		$viewer->assign('SELECTED_IDS', $selectedIds);
 		$viewer->assign('EXCLUDED_IDS', $excludedIds);
 		$viewer->assign('USER_MODEL', Users_Record_Model::getCurrentUserModel());
-
-		$searchKey = $request->get('search_key');
-		$searchValue = $request->get('search_value');
-		$operator = $request->get('operator');
-		if (!empty($operator)) {
-			$viewer->assign('OPERATOR', $operator);
-			$viewer->assign('ALPHABET_VALUE', $searchValue);
-			$viewer->assign('SEARCH_KEY', $searchKey);
+		if (!$request->isEmpty('operator', true)) {
+			$viewer->assign('OPERATOR', $request->getByType('operator', 1));
+			$viewer->assign('ALPHABET_VALUE', $request->get('search_value'));
+			$viewer->assign('SEARCH_KEY', $request->getByType('search_key', 1));
 		}
-
 		$searchParams = $request->get('search_params');
 		if (!empty($searchParams)) {
 			$viewer->assign('SEARCH_PARAMS', $searchParams);
 		}
-
 		echo $viewer->view('AddCommentForm.tpl', $moduleName, true);
 	}
 
 	/**
-	 * Function returns the Compose Email form
-	 * @param Vtiger_Request $request
+	 * Function shows form that will lets you send SMS.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
 	 */
-	public function showComposeEmailForm(Vtiger_Request $request)
+	public function showSendSMSForm(\App\Request $request)
 	{
-		$moduleName = 'Emails';
-		$sourceModule = $request->getModule();
-		$cvId = $request->get('viewname');
-		$selectedIds = $request->get('selected_ids');
-		$excludedIds = $request->get('excluded_ids');
-		$step = $request->get('step');
-		$selectedFields = $request->get('selectedFields');
-		$relatedLoad = $request->get('relatedLoad');
-
-		$moduleModel = Vtiger_Module_Model::getInstance($sourceModule);
-		$emailFields = $moduleModel->getFieldsByType('email');
-		$accesibleEmailFields = [];
-		$emailColumnNames = [];
-		$emailColumnModelMapping = [];
-
-		foreach ($emailFields as $index => $emailField) {
-			$fieldName = $emailField->getName();
-			if ($emailField->isViewable()) {
-				$accesibleEmailFields[] = $emailField;
-				$emailColumnNames[] = $emailField->get('column');
-				$emailColumnModelMapping[$emailField->get('column')] = $emailField;
-			}
-		}
-		$emailFields = $accesibleEmailFields;
-
-		$emailFieldCount = count($emailFields);
-		$tableJoined = [];
-		if ($emailFieldCount > 1) {
-			$recordIds = $this->getRecordsListFromRequest($request);
-
-			$moduleMeta = $moduleModel->getModuleMeta();
-			$wsModuleMeta = $moduleMeta->getMeta();
-			$tabNameIndexList = $wsModuleMeta->getEntityTableIndexList();
-
-			$queryWithFromClause = sprintf('SELECT %s FROM vtiger_crmentity ', implode(',', $emailColumnNames));
-			foreach ($emailFields as $emailFieldModel) {
-				$fieldTableName = $emailFieldModel->table;
-				if (in_array($fieldTableName, $tableJoined)) {
-					continue;
-				}
-
-				$tableJoined[] = $fieldTableName;
-				$queryWithFromClause .= ' INNER JOIN ' . $fieldTableName .
-					' ON ' . $fieldTableName . '.' . $tabNameIndexList[$fieldTableName] . '= vtiger_crmentity.crmid';
-			}
-			$query = $queryWithFromClause . ' WHERE vtiger_crmentity.deleted = 0 && crmid IN (' . generateQuestionMarks($recordIds) . ') && (';
-
-			for ($i = 0; $i < $emailFieldCount; $i++) {
-				for ($j = ($i + 1); $j < $emailFieldCount; $j++) {
-					$query .= ' (' . $emailFields[$i]->getName() . ' != \'\' and ' . $emailFields[$j]->getName() . ' != \'\')';
-					if (!($i == ($emailFieldCount - 2) && $j == ($emailFieldCount - 1))) {
-						$query .= ' or ';
-					}
-				}
-			}
-			$query .=') LIMIT 1';
-
-			$db = PearDatabase::getInstance();
-			$result = $db->pquery($query, $recordIds);
-
-			$num_rows = $db->num_rows($result);
-
-			if ($num_rows == 0) {
-				$query = $queryWithFromClause . ' WHERE vtiger_crmentity.deleted = 0 && crmid IN (' . generateQuestionMarks($recordIds) . ') && (';
-				foreach ($emailColumnNames as $index => $columnName) {
-					$query .= " $columnName != ''";
-					//add glue or untill unless it is the last email field
-					if ($index != ($emailFieldCount - 1 )) {
-						$query .= ' or ';
-					}
-				}
-				$query .= ') LIMIT 1';
-				$result = $db->pquery($query, $recordIds);
-				if ($db->num_rows($result) > 0) {
-					//Expecting there will atleast one row 
-					$row = $db->query_result_rowdata($result, 0);
-
-					foreach ($emailColumnNames as $emailColumnName) {
-						if (!empty($row[$emailColumnName])) {
-							//To send only the single email field since it is only field which has value
-							$emailFields = array($emailColumnModelMapping[$emailColumnName]);
-							break;
-						}
-					}
-				} else {
-					//No Record which has email field value
-					foreach ($emailColumnNames as $emailColumnName) {
-						//To send only the single email field since it has no email value
-						$emailFields = array($emailColumnModelMapping[$emailColumnName]);
-						break;
-					}
-				}
-			}
-		}
-
-		$viewer = $this->getViewer($request);
-		$viewer->assign('MODULE', $moduleName);
-		$viewer->assign('SOURCE_MODULE', $sourceModule);
-		$viewer->assign('VIEWNAME', $cvId);
-		$viewer->assign('SELECTED_IDS', $selectedIds);
-		$viewer->assign('EXCLUDED_IDS', $excludedIds);
-		$viewer->assign('EMAIL_FIELDS', $emailFields);
-		$viewer->assign('USER_MODEL', Users_Record_Model::getCurrentUserModel());
-
-		$searchKey = $request->get('search_key');
-		$searchValue = $request->get('search_value');
-		$operator = $request->get('operator');
-		if (!empty($operator)) {
-			$viewer->assign('OPERATOR', $operator);
-			$viewer->assign('ALPHABET_VALUE', $searchValue);
-			$viewer->assign('SEARCH_KEY', $searchKey);
-		}
-
-		$searchParams = $request->get('search_params');
-		if (!empty($searchParams)) {
-			$viewer->assign('SEARCH_PARAMS', $searchParams);
-		}
-
-		$to = $request->get('to');
-		if (!$to) {
-			$to = [];
-		}
-		$viewer->assign('TO', $to);
-
-		$parentModule = $request->get('sourceModule');
-		$parentRecord = $request->get('sourceRecord');
-		if (!empty($parentModule)) {
-			$viewer->assign('PARENT_MODULE', $parentModule);
-			$viewer->assign('PARENT_RECORD', $parentRecord);
-			$viewer->assign('RELATED_MODULE', $sourceModule);
-		}
-		if ($relatedLoad) {
-			$viewer->assign('RELATED_LOAD', true);
-		}
-
-		if ($step == 'step1') {
-			echo $viewer->view('SelectEmailFields.tpl', $moduleName, true);
-		}
-	}
-
-	/**
-	 * Function shows form that will lets you send SMS
-	 * @param Vtiger_Request $request
-	 */
-	public function showSendSMSForm(Vtiger_Request $request)
-	{
-
 		$sourceModule = $request->getModule();
 		$moduleName = 'SMSNotifier';
-		$selectedIds = $this->getRecordsListFromRequest($request);
+		$selectedIds = $request->get('selected_ids');
 		$excludedIds = $request->get('excluded_ids');
-		$cvId = $request->get('viewname');
+		$cvId = $request->getByType('viewname', 2);
 
-		$user = Users_Record_Model::getCurrentUserModel();
+		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserPriviligesModel->hasModuleActionPermission($moduleName, 'CreateView') || !$currentUserPriviligesModel->hasModuleActionPermission($sourceModule, 'MassSendSMS') || !SMSNotifier_Module_Model::checkServer()) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+
 		$moduleModel = Vtiger_Module_Model::getInstance($sourceModule);
 		$phoneFields = $moduleModel->getFieldsByType('phone');
 		$viewer = $this->getViewer($request);
 
-		if (count($selectedIds) == 1) {
-			$recordId = $selectedIds[0];
+		if (is_array($selectedIds) && count($selectedIds) === 1) {
+			$recordId = current($selectedIds);
 			$selectedRecordModel = Vtiger_Record_Model::getInstanceById($recordId, $sourceModule);
 			$viewer->assign('SINGLE_RECORD', $selectedRecordModel);
 		}
@@ -294,116 +149,40 @@ class Vtiger_MassActionAjax_View extends Vtiger_IndexAjax_View
 		$viewer->assign('SOURCE_MODULE', $sourceModule);
 		$viewer->assign('SELECTED_IDS', $selectedIds);
 		$viewer->assign('EXCLUDED_IDS', $excludedIds);
-		$viewer->assign('USER_MODEL', $user);
 		$viewer->assign('PHONE_FIELDS', $phoneFields);
-
-		$searchKey = $request->get('search_key');
-		$searchValue = $request->get('search_value');
-		$operator = $request->get('operator');
-		if (!empty($operator)) {
-			$viewer->assign('OPERATOR', $operator);
-			$viewer->assign('ALPHABET_VALUE', $searchValue);
-			$viewer->assign('SEARCH_KEY', $searchKey);
+		if (!$request->isEmpty('operator', true)) {
+			$viewer->assign('OPERATOR', $request->getByType('operator', 1));
+			$viewer->assign('ALPHABET_VALUE', $request->get('search_value'));
+			$viewer->assign('SEARCH_KEY', $request->getByType('search_key', 1));
 		}
-
 		$searchParams = $request->get('search_params');
 		if (!empty($searchParams)) {
 			$viewer->assign('SEARCH_PARAMS', $searchParams);
 		}
-
 		echo $viewer->view('SendSMSForm.tpl', $moduleName, true);
 	}
 
 	/**
-	 * Function returns the record Ids selected in the current filter
-	 * @param Vtiger_Request $request
-	 * @return integer
+	 * Rransfer record ownership.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
 	 */
-	public function getRecordsListFromRequest(Vtiger_Request $request, $module = false)
+	public function transferOwnership(\App\Request $request)
 	{
-		$cvId = $request->get('viewname');
-		$selectedIds = $request->get('selected_ids');
-		$excludedIds = $request->get('excluded_ids');
-		if (empty($module)) {
-			$module = $request->getModule();
+		$moduleName = $request->getModule();
+		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserPriviligesModel->hasModuleActionPermission($moduleName, 'MassTransferOwnership')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
-		if (!empty($selectedIds) && $selectedIds != 'all') {
-			if (!empty($selectedIds) && count($selectedIds) > 0) {
-				return $selectedIds;
-			}
-		}
-
-		$sourceRecord = $request->get('sourceRecord');
-		$sourceModule = $request->get('sourceModule');
-		if ($sourceRecord && $sourceModule) {
-			$sourceRecordModel = Vtiger_Record_Model::getInstanceById($sourceRecord, $sourceModule);
-			return $sourceRecordModel->getSelectedIdsList($module, $excludedIds);
-		}
-
-		$customViewModel = CustomView_Record_Model::getInstanceById($cvId);
-		if ($customViewModel) {
-			$searchKey = $request->get('search_key');
-			$searchValue = $request->get('search_value');
-			$operator = $request->get('operator');
-			if (!empty($operator)) {
-				$customViewModel->set('operator', $operator);
-				$customViewModel->set('search_key', $searchKey);
-				$customViewModel->set('search_value', $searchValue);
-			}
-			$customViewModel->set('search_params', $request->get('search_params'));
-			return $customViewModel->getRecordIds($excludedIds, $module);
-		}
-	}
-
-	/**
-	 * Function shows the List of Mail Merge Templates
-	 * @param Vtiger_Request $request
-	 */
-	public function showMailMergeTemplates(Vtiger_Request $request)
-	{
-		$selectedIds = $request->get('selected_ids');
-		$excludedIds = $request->get('excluded_ids');
-		$cvId = $request->get('viewname');
-		$module = $request->getModule();
-		$templates = Settings_MailMerge_Record_Model::getByModule($module);
-
+		$transferModel = Vtiger_TransferOwnership_Model::getInstance($moduleName);
 		$viewer = $this->getViewer($request);
-		$viewer->assign('TEMPLATES', $templates);
-		$viewer->assign('SELECTED_IDS', $selectedIds);
-		$viewer->assign('EXCLUDED_IDS', $excludedIds);
-		$viewer->assign('VIEWNAME', $cvId);
-		$viewer->assign('MODULE', $module);
-
-		return $viewer->view('showMergeTemplates.tpl', $module);
-	}
-
-	/**
-	 * Function shows the duplicate search form
-	 * @param Vtiger_Request $request
-	 */
-	public function showDuplicatesSearchForm(Vtiger_Request $request)
-	{
-		$module = $request->getModule();
-		$moduleModel = Vtiger_Module_Model::getInstance($module);
-		$fields = $moduleModel->getFields();
-
-		$viewer = $this->getViewer($request);
-		$viewer->assign('MODULE', $module);
-		$viewer->assign('FIELDS', $fields);
-		$viewer->view('showDuplicateSearch.tpl', $module);
-	}
-
-	public function transferOwnership(Vtiger_Request $request)
-	{
-		$module = $request->getModule();
-		$transferModel = Vtiger_TransferOwnership_Model::getInstance($module);
-
-		$viewer = $this->getViewer($request);
-		$viewer->assign('MODULE', $module);
+		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('REL_BY_FIELDS', $transferModel->getRelationsByFields());
 		$viewer->assign('REL_BY_RELATEDLIST', $transferModel->getRelationsByRelatedList());
 		$viewer->assign('SKIP_MODULES', $transferModel->getSkipModules());
 		$viewer->assign('USER_MODEL', Users_Record_Model::getCurrentUserModel());
-		$viewer->view('TransferRecordOwnership.tpl', $module);
+		$viewer->view('TransferRecordOwnership.tpl', $moduleName);
 	}
 }

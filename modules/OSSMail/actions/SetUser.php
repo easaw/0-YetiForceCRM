@@ -1,28 +1,38 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
-class OSSMail_SetUser_Action extends Vtiger_Action_Controller
+/**
+ * OSSMail SetUser action class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+class OSSMail_SetUser_Action extends \App\Controller\Action
 {
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		if (!Users_Privileges_Model::isPermitted('OSSMail')) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		$users = OSSMail_Autologin_Model::getAutologinUsers();
+		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule()) || !isset($users[$request->getInteger('user')])) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process.
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
-		$user = $request->get('user');
-		$_SESSION['AutoLoginUser'] = $user;
+		$user = $request->getInteger('user');
+		\App\Session::set('AutoLoginUser', $user);
 		$response = new Vtiger_Response();
 		$response->setResult(true);
 		$response->emit();

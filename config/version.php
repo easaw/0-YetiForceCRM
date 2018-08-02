@@ -1,9 +1,8 @@
 <?php
+
 return [
-	'appVersion' => '3.4.0',
-	'patchVersion' => '2016.10.10',
-	'lib_mPDF' => '0.0.0',
-	'lib_roundcube' => '0.0.2',
-	'lib_PHPExcel' => '0.0.0',
-	'lib_AJAXChat' => '0.0.0',
+	'appVersion' => '4.4.0',
+	'patchVersion' => '2018.08.02',
+	'lib_mPDF' => '0.0.2',
+	'lib_roundcube' => '0.0.48'
 ];

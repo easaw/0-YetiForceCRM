@@ -11,89 +11,75 @@
 
 class Vtiger_BasicAjax_View extends Vtiger_Basic_View
 {
+	use \App\Controller\ExposeMethod,
+	 App\Controller\ClearProcess;
 
 	public function __construct()
 	{
 		parent::__construct();
 		$this->exposeMethod('showAdvancedSearch');
 		$this->exposeMethod('showSearchResults');
+		$this->exposeMethod('performPhoneCall');
 	}
 
-	public function checkPermission()
+	public function checkPermission(\App\Request $request)
 	{
-		
-	}
-
-	public function preProcess(Vtiger_Request $request, $display = true)
-	{
-		return true;
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		return true;
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
+		$currentUserPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserPrivilegesModel->hasModulePermission($request->getModule())) {
+			if ($request->isEmpty('parent', true) || $request->getByType('parent', 2) !== 'Settings' || !$currentUserPrivilegesModel->isAdminUser()) {
+				throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+			}
 		}
-		return;
+		if (!$request->isEmpty('searchModule') && $request->getRaw('searchModule') !== '-' && !$currentUserPrivilegesModel->hasModulePermission($request->getByType('searchModule', 2))) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
 	}
 
 	/**
-	 * Function to display the UI for advance search on any of the module
-	 * @param Vtiger_Request $request
+	 * Function to display the UI for advance search on any of the module.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
 	 */
-	public function showAdvancedSearch(Vtiger_Request $request)
+	public function showAdvancedSearch(\App\Request $request)
 	{
-		//Modules for which search is excluded
-		$excludedModuleForSearch = array('Vtiger', 'Reports');
-
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-
-		if ($request->get('source_module')) {
-			$moduleName = $request->get('source_module');
+		if (!$request->isEmpty('searchModule') && $request->getRaw('searchModule') !== '-') {
+			$moduleName = $request->getByType('searchModule', 2);
+		} elseif (\App\Module::getModuleId($moduleName) === false || (!$request->isEmpty('parent', true) && $request->getByType('parent', 2) === 'Settings')) {
+			//See if it is an excluded module, If so search in home module
+			$moduleName = 'Home';
 		}
-
 		$saveFilterPermitted = true;
-		$saveFilterexcludedModules = array('ModComments', 'RSS', 'Portal', 'Integration', 'PBXManager', 'DashBoard');
-		if (in_array($moduleName, $saveFilterexcludedModules)) {
+		if (in_array($moduleName, ['ModComments', 'RSS', 'Portal', 'Integration', 'PBXManager', 'DashBoard'])) {
 			$saveFilterPermitted = false;
 		}
-
 		//See if it is an excluded module, If so search in home module
-		if (in_array($moduleName, $excludedModuleForSearch)) {
+		if ($moduleName === 'Vtiger') {
 			$moduleName = 'Home';
 		}
 		$module = $request->getModule();
-
 		$customViewModel = new CustomView_Record_Model();
 		$customViewModel->setModule($moduleName);
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
+		if (!Users_Privileges_Model::getCurrentUserPrivilegesModel()->hasModulePermission($moduleName)) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
 		$recordStructureInstance = Vtiger_RecordStructure_Model::getInstanceForModule($moduleModel);
 
 		$viewer->assign('SEARCHABLE_MODULES', Vtiger_Module_Model::getSearchableModules());
 		$viewer->assign('CUSTOMVIEW_MODEL', $customViewModel);
 
-		if ($moduleName == 'Calendar') {
+		if ($moduleName === 'Calendar') {
 			$advanceFilterOpsByFieldType = Calendar_Field_Model::getAdvancedFilterOpsByFieldType();
 		} else {
 			$advanceFilterOpsByFieldType = Vtiger_Field_Model::getAdvancedFilterOpsByFieldType();
 		}
-		$viewer->assign('ADVANCED_FILTER_OPTIONS', Vtiger_Field_Model::getAdvancedFilterOptions());
+		$viewer->assign('ADVANCED_FILTER_OPTIONS', \App\CustomView::ADVANCED_FILTER_OPTIONS);
 		$viewer->assign('ADVANCED_FILTER_OPTIONS_BY_TYPE', $advanceFilterOpsByFieldType);
-		$dateFilters = Vtiger_Field_Model::getDateFilterTypes();
-		foreach ($dateFilters as $comparatorKey => $comparatorInfo) {
-			$comparatorInfo['startdate'] = DateTimeField::convertToUserFormat($comparatorInfo['startdate']);
-			$comparatorInfo['enddate'] = DateTimeField::convertToUserFormat($comparatorInfo['enddate']);
-			$comparatorInfo['label'] = vtranslate($comparatorInfo['label'], $module);
-			$dateFilters[$comparatorKey] = $comparatorInfo;
-		}
-		$viewer->assign('DATE_FILTERS', $dateFilters);
+		$viewer->assign('DATE_FILTERS', Vtiger_AdvancedFilter_Helper::getDateFilter($module));
 		$viewer->assign('RECORD_STRUCTURE', $recordStructureInstance->getStructure());
 		$viewer->assign('SOURCE_MODULE', $moduleName);
 		$viewer->assign('SOURCE_MODULE_MODEL', $moduleModel);
@@ -104,123 +90,81 @@ class Vtiger_BasicAjax_View extends Vtiger_Basic_View
 	}
 
 	/**
-	 * Function to display the Search Results
-	 * @param Vtiger_Request $request
+	 * Function to display the Search Results.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
 	 */
-	public function showSearchResults(Vtiger_Request $request)
+	public function showSearchResults(\App\Request $request)
 	{
-		$db = PearDatabase::getInstance();
-
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		$advFilterList = $request->get('advfilterlist');
-
 		//used to show the save modify filter option
 		$isAdvanceSearch = false;
 		$matchingRecords = [];
-		if (is_array($advFilterList) && count($advFilterList) > 0) {
+		if (is_array($advFilterList) && $advFilterList) {
 			$isAdvanceSearch = true;
-			$user = Users_Record_Model::getCurrentUserModel();
-			$queryGenerator = new QueryGenerator($moduleName, $user);
+			$queryGenerator = new \App\QueryGenerator($moduleName);
 			$queryGenerator->setFields(['id']);
-
-			vimport('~modules/CustomView/CustomView.php');
-			$customView = new CustomView($moduleName);
-			$dateSpecificConditions = $customView->getStdFilterConditions();
-
-			foreach ($advFilterList as $groupindex => $groupcolumns) {
-				$filtercolumns = $groupcolumns['columns'];
-				if (count($filtercolumns) > 0) {
-					$queryGenerator->startGroup('');
-					foreach ($filtercolumns as $index => $filter) {
-						$nameComponents = explode(':', $filter['columnname']);
-						if (empty($nameComponents[2]) && $nameComponents[1] == 'crmid' && $nameComponents[0] == 'vtiger_crmentity') {
-							$name = $queryGenerator->getSQLColumn('id');
-						} else {
-							$name = $nameComponents[2];
-						}
-						if (($nameComponents[4] == 'D' || $nameComponents[4] == 'DT') && in_array($filter['comparator'], $dateSpecificConditions)) {
-							$filter['stdfilter'] = $filter['comparator'];
-							$valueComponents = explode(',', $filter['value']);
-							if ($filter['comparator'] == 'custom') {
-								$filter['startdate'] = DateTimeField::convertToDBFormat($valueComponents[0]);
-								$filter['enddate'] = DateTimeField::convertToDBFormat($valueComponents[1]);
-							}
-							$dateFilterResolvedList = $customView->resolveDateFilterValue($filter);
-							$value[] = $queryGenerator->fixDateTimeValue($name, $dateFilterResolvedList['startdate']);
-							$value[] = $queryGenerator->fixDateTimeValue($name, $dateFilterResolvedList['enddate'], false);
-							$queryGenerator->addCondition($name, $value, 'BETWEEN');
-						} else {
-							$queryGenerator->addCondition($name, $filter['value'], $filter['comparator']);
-						}
-						$columncondition = $filter['column_condition'];
-						if (!empty($columncondition) && array_key_exists($index + 1, $filtercolumns)) {
-							$queryGenerator->addConditionGlue($columncondition);
-						}
-					}
-					$queryGenerator->endGroup();
-					$groupConditionGlue = $groupcolumns['condition'];
-					if (!empty($groupConditionGlue))
-						$queryGenerator->addConditionGlue($groupConditionGlue);
-				}
-			}
-			$query = $queryGenerator->getQuery();
-			//Remove the ordering for now to improve the speed
-			$result = $db->query($query);
-			while ($row = $db->fetch_array($result)) {
-				$recordInstance = Vtiger_Record_Model::getInstanceById(current($row));
-				$moduleName = $recordInstance->getModuleName();
-				$recordInstance->set('permitted', true);
-				$matchingRecords[$moduleName][current($row)] = $recordInstance;
+			$queryGenerator->parseAdvFilter($advFilterList);
+			$query = $queryGenerator->createQuery();
+			$rows = $query->limit(100)->all();
+			foreach ($rows as &$row) {
+				$recordId = current($row);
+				$recordModel = Vtiger_Record_Model::getInstanceById($recordId);
+				$recordModel->set('permitted', true);
+				$matchingRecords[$moduleName][$recordId] = $recordModel;
 			}
 			$viewer->assign('SEARCH_MODULE', $moduleName);
 		} else {
 			$searchKey = $request->get('value');
-			$limit = $request->get('limit') != 'false' ? $request->get('limit') : false;
-			$searchModule = false;
-
-			if ($request->get('searchModule')) {
-				$searchModule = $request->get('searchModule');
+			$limit = false;
+			if (!$request->isEmpty('limit', true) && $request->getBoolean('limit') !== false) {
+				$limit = $request->getInteger('limit');
 			}
-
+			$operator = (!$request->isEmpty('operator')) ? $request->getByType('operator', 1) : false;
+			$searchModule = false;
+			if (!$request->isEmpty('searchModule', true) && $request->getRaw('searchModule') !== '-') {
+				$searchModule = $request->getByType('searchModule', 2);
+			}
 			$viewer->assign('SEARCH_KEY', $searchKey);
 			$viewer->assign('SEARCH_MODULE', $searchModule);
-			$matchingRecords = Vtiger_Record_Model::getSearchResult($searchKey, $searchModule, $limit);
-		}
-
-		if (AppConfig::search('GLOBAL_SEARCH_SORTING_RESULTS') == 1) {
-			$matchingRecordsList = [];
-			foreach (\includes\Modules::getAllEntityModuleInfo(true) as $module) {
-				if (isset($matchingRecords[$module['modulename']]) && $module['turn_off'] == 1) {
-					$matchingRecordsList[$module['modulename']] = $matchingRecords[$module['modulename']];
+			$matchingRecords = Vtiger_Record_Model::getSearchResult($searchKey, $searchModule, $limit, $operator);
+			if (AppConfig::search('GLOBAL_SEARCH_SORTING_RESULTS') === 1) {
+				$matchingRecordsList = [];
+				foreach (\App\Module::getAllEntityModuleInfo(true) as &$module) {
+					if (isset($matchingRecords[$module['modulename']]) && $module['turn_off'] == 1) {
+						$matchingRecordsList[$module['modulename']] = $matchingRecords[$module['modulename']];
+					}
 				}
+				$matchingRecords = $matchingRecordsList;
 			}
-			$matchingRecords = $matchingRecordsList;
 		}
-		$curentModule = $request->get('curentModule');
-		if (AppConfig::search('GLOBAL_SEARCH_CURRENT_MODULE_TO_TOP') && isset($matchingRecords[$curentModule])) {
-			$pushTop = $matchingRecords[$curentModule];
-			unset($matchingRecords[$curentModule]);
-			$matchingRecords = [$curentModule => $pushTop] + $matchingRecords;
+		if (AppConfig::search('GLOBAL_SEARCH_CURRENT_MODULE_TO_TOP') && isset($matchingRecords[$moduleName])) {
+			$pushTop = $matchingRecords[$moduleName];
+			unset($matchingRecords[$moduleName]);
+			$matchingRecords = [$moduleName => $pushTop] + $matchingRecords;
 		}
-		if ($request->get('html') == 'true') {
+		if ($request->getBoolean('html')) {
 			$viewer->assign('MODULE', $moduleName);
 			$viewer->assign('MATCHING_RECORDS', $matchingRecords);
 			$viewer->assign('IS_ADVANCE_SEARCH', $isAdvanceSearch);
 			echo $viewer->view('UnifiedSearchResults.tpl', '', true);
 		} else {
 			$recordsList = [];
-			foreach ($matchingRecords as $module => $modules) {
+			foreach ($matchingRecords as $module => &$modules) {
 				foreach ($modules as $recordID => $recordModel) {
-					$label = decode_html($recordModel->getName());
-					$label.= ' (' . \includes\fields\Owner::getLabel($recordModel->get('smownerid')) . ')';
+					$label = $recordModel->getName();
+					$label .= ' (' . \App\Fields\Owner::getLabel($recordModel->get('smownerid')) . ')';
 					if (!$recordModel->get('permitted')) {
-						$label.= ' <span class="glyphicon glyphicon-warning-sign" aria-hidden="true"></span>';
+						$label .= ' <span class="fas fa-exclamation-circle" aria-hidden="true"></span>';
 					}
 					$recordsList[] = [
 						'id' => $recordID,
 						'module' => $module,
-						'category' => vtranslate($module, $module),
+						'category' => \App\Language::translate($module, $module),
 						'label' => $label,
 						'permitted' => $recordModel->get('permitted'),
 					];
@@ -229,6 +173,25 @@ class Vtiger_BasicAjax_View extends Vtiger_Basic_View
 			$response = new Vtiger_Response();
 			$response->setResult($recordsList);
 			$response->emit();
+		}
+	}
+
+	/**
+	 * Perform phone call.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function performPhoneCall(\App\Request $request)
+	{
+		$pbx = App\Integrations\Pbx::getDefaultInstance();
+		$pbx->loadUserPhone();
+		try {
+			$pbx->performCall($request->get('phoneNumber'));
+			$response = new Vtiger_Response();
+			$response->setResult(\App\Language::translate('LBL_PHONE_CALL_SUCCESS'));
+			$response->emit();
+		} catch (Exception $exc) {
+			\App\Log::error('Error while telephone connections: ' . $exc->getMessage(), 'PBX');
 		}
 	}
 }

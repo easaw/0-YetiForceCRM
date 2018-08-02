@@ -1,18 +1,17 @@
 <?php
 
 /**
- * Import View Class for Workflows Settings
- * @package YetiForce.View
- * @license licenses/License.html
+ * Import View Class for Workflows Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  */
 class Settings_Workflows_Import_View extends Settings_Vtiger_Index_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('Start ' . __METHOD__);
 		$qualifiedModule = $request->getModule(false);
 		$viewer = $this->getViewer($request);
 
@@ -32,26 +31,24 @@ class Settings_Workflows_Import_View extends Settings_Vtiger_Index_View
 						foreach ($fieldValue as $columnKey => $columnValue) {
 							if ($columnKey === 'conditions') {
 								$columnKey = 'test';
-							} else if ($columnKey == 'type' && empty($columnValue)) {
+							} elseif ($columnKey == 'type' && empty($columnValue)) {
 								$columnValue = 'basic';
 							}
 							switch ($fieldKey) {
 								case 'workflow_method':
 									$params[$fieldsKey][$methodIndex][$columnKey] = (string) $columnValue;
 									break;
-
 								case 'workflow_task':
 									$params[$fieldsKey][$taskIndex][$columnKey] = (string) $columnValue;
 									break;
-
 								default:
 									$params[$fieldsKey][$columnKey] = (string) $columnValue;
 							}
 						}
 						if ($fieldKey === 'workflow_task') {
-							$taskIndex++;
+							++$taskIndex;
 						} elseif ($fieldKey === 'workflow_method') {
-							$methodIndex++;
+							++$methodIndex;
 						}
 					}
 				}
@@ -62,17 +59,17 @@ class Settings_Workflows_Import_View extends Settings_Vtiger_Index_View
 				$viewer->assign('UPLOAD', true);
 				$viewer->assign('MESSAGES', $messages);
 			} else {
-				$viewer->assign('UPLOAD_ERROR', vtranslate('LBL_UPLOAD_ERROR', $qualifiedModule));
+				$viewer->assign('UPLOAD_ERROR', \App\Language::translate('LBL_UPLOAD_ERROR', $qualifiedModule));
 				$viewer->assign('UPLOAD', false);
 			}
 		}
 
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModule);
 		$viewer->view('Import.tpl', $qualifiedModule);
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Log::trace('End ' . __METHOD__);
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
 		$moduleName = $request->getModule();
@@ -80,6 +77,7 @@ class Settings_Workflows_Import_View extends Settings_Vtiger_Index_View
 			"modules.Settings.$moduleName.Import",
 		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
+
 		return array_merge($cssInstances, $headerCssInstances);
 	}
 }

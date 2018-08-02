@@ -10,12 +10,11 @@
 
 class Settings_Workflows_Save_Action extends Settings_Vtiger_Basic_Action
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$recordId = $request->get('record');
 		$summary = $request->get('summary');
-		$moduleName = $request->get('module_name');
+		$moduleName = $request->getByType('module_name', 2);
 		$conditions = $request->get('conditions');
 		$filterSavedInNew = $request->get('filtersavedinnew');
 		$executionCondition = $request->get('execution_condition');
@@ -33,11 +32,11 @@ class Settings_Workflows_Save_Action extends Settings_Vtiger_Basic_Action
 		$workflowModel->set('execution_condition', $executionCondition);
 
 		if ($executionCondition == '6') {
-			$schtime = $request->get("schtime");
+			$schtime = $request->get('schtime');
 			if (!preg_match('/^[0-2]\d(:[0-5]\d){1,2}$/', $schtime) || substr($schtime, 0, 2) > 23) {  // invalid time format
 				$schtime = '00:00';
 			}
-			$schtime .=':00';
+			$schtime .= ':00';
 
 			$workflowModel->set('schtime', $schtime);
 
@@ -46,14 +45,13 @@ class Settings_Workflows_Save_Action extends Settings_Vtiger_Basic_Action
 
 			$dayOfMonth = null;
 			$dayOfWeek = null;
-			$month = null;
 			$annualDates = null;
 
 			if ($workflowScheduleType == Workflow::$SCHEDULED_WEEKLY) {
-				$dayOfWeek = \includes\utils\Json::encode($request->get('schdayofweek'));
-			} else if ($workflowScheduleType == Workflow::$SCHEDULED_MONTHLY_BY_DATE) {
-				$dayOfMonth = \includes\utils\Json::encode($request->get('schdayofmonth'));
-			} else if ($workflowScheduleType == Workflow::$SCHEDULED_ON_SPECIFIC_DATE) {
+				$dayOfWeek = \App\Json::encode($request->get('schdayofweek'));
+			} elseif ($workflowScheduleType == Workflow::$SCHEDULED_MONTHLY_BY_DATE) {
+				$dayOfMonth = \App\Json::encode($request->get('schdayofmonth'));
+			} elseif ($workflowScheduleType == Workflow::$SCHEDULED_ON_SPECIFIC_DATE) {
 				$date = $request->get('schdate');
 				$dateDBFormat = DateTimeField::convertToDBFormat($date);
 				$nextTriggerTime = $dateDBFormat . ' ' . $schtime;
@@ -63,9 +61,9 @@ class Settings_Workflows_Save_Action extends Settings_Vtiger_Basic_Action
 				} else {
 					$workflowModel->set('nexttrigger_time', date('Y-m-d H:i:s', strtotime('+10 year')));
 				}
-				$annualDates = \includes\utils\Json::encode(array($dateDBFormat));
-			} else if ($workflowScheduleType == Workflow::$SCHEDULED_ANNUALLY) {
-				$annualDates = \includes\utils\Json::encode($request->get('schannualdates'));
+				$annualDates = \App\Json::encode([$dateDBFormat]);
+			} elseif ($workflowScheduleType == Workflow::$SCHEDULED_ANNUALLY) {
+				$annualDates = \App\Json::encode($request->get('schannualdates'));
 			}
 			$workflowModel->set('schdayofmonth', $dayOfMonth);
 			$workflowModel->set('schdayofweek', $dayOfWeek);
@@ -85,12 +83,7 @@ class Settings_Workflows_Save_Action extends Settings_Vtiger_Basic_Action
 			$workflowModel->updateNextTriggerTime();
 		}
 
-		$response->setResult(array('id' => $workflowModel->get('workflow_id')));
+		$response->setResult(['id' => $workflowModel->get('workflow_id')]);
 		$response->emit();
-	}
-
-	public function validateRequest(Vtiger_Request $request)
-	{
-		$request->validateWriteAccess();
 	}
 }

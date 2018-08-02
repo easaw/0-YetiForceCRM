@@ -10,26 +10,35 @@
 
 class Vtiger_SaveWidgetPositions_Action extends Vtiger_IndexAjax_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
-
-		$positionsMap = $request->get('positionsmap');
+		$positionsMap = $request->get('position');
+		$sizesMap = $request->get('size');
 
 		if ($positionsMap) {
 			foreach ($positionsMap as $id => $position) {
-				list ($linkid, $widgetid) = explode('-', $id);
+				list($linkid, $widgetid) = explode('-', $id);
 				if ($widgetid) {
-					Vtiger_Widget_Model::updateWidgetPosition($position, NULL, $widgetid, $currentUser->getId());
+					Vtiger_Widget_Model::updateWidgetPosition($position, null, (int) $widgetid, $currentUser->getId());
 				} else {
-					Vtiger_Widget_Model::updateWidgetPosition($position, $linkid, NULL, $currentUser->getId());
+					Vtiger_Widget_Model::updateWidgetPosition($position, (int) $linkid, null, $currentUser->getId());
+				}
+			}
+		}
+		if ($sizesMap) {
+			foreach ($sizesMap as $id => $size) {
+				list($linkid, $widgetid) = explode('-', $id);
+				if ($widgetid) {
+					Vtiger_Widget_Model::updateWidgetSize($size, null, (int) $widgetid, $currentUser->getId());
+				} else {
+					Vtiger_Widget_Model::updateWidgetSize($size, (int) $linkid, null, $currentUser->getId());
 				}
 			}
 		}
 
 		$response = new Vtiger_Response();
-		$response->setResult(array('Save' => 'OK'));
+		$response->setResult(['Save' => 'OK']);
 		$response->emit();
 	}
 }

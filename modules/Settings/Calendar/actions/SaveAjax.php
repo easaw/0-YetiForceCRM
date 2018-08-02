@@ -1,91 +1,52 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
-class Settings_Calendar_SaveAjax_Action extends Settings_Vtiger_IndexAjax_View
+/**
+ * Settings calendar SaveAjax action class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+class Settings_Calendar_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 {
-
+	/**
+	 * Constructor.
+	 */
 	public function __construct()
 	{
 		parent::__construct();
-		$this->exposeMethod('UpdateModuleColor');
-		$this->exposeMethod('UpdateModuleActiveType');
-		$this->exposeMethod('UpdateCalendarConfig');
+		$this->exposeMethod('updateCalendarConfig');
 		$this->exposeMethod('updateNotWorkingDays');
-		$this->exposeMethod('generateColor');
 	}
 
-	public function generateColor(Vtiger_Request $request)
+	/**
+	 * Action to update calendar configuration.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function updateCalendarConfig(\App\Request $request)
 	{
-		$params = $request->get('param');
-		$color = Settings_Calendar_Module_Model::generateColor();
-		$params['color'] = $color;
-		if (isset($params['viewtypesid']) && $params['viewtypesid']) {
-			Settings_Calendar_Module_Model::updateModuleColor($params);
-		} else {
-			Settings_Calendar_Module_Model::updateCalendarConfig($params);
-		}
+		Settings_Calendar_Module_Model::updateCalendarConfig($request->getArray('params', 'Alnum'));
 		$response = new Vtiger_Response();
-		$response->setResult(array(
+		$response->setResult([
 			'success' => true,
-			'color' => $color,
-			'message' => vtranslate('LBL_GENERATED_COLOR', $request->getModule(false))
-		));
+			'message' => \App\Language::translate('LBL_SAVE_CHANGES', $request->getModule(false)),
+		]);
 		$response->emit();
 	}
 
-	public function UpdateModuleColor(Vtiger_Request $request)
+	/**
+	 * Action to change not working days.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function updateNotWorkingDays(\App\Request $request)
 	{
-		$params = $request->get('params');
-		Settings_Calendar_Module_Model::updateModuleColor($params);
+		Settings_Calendar_Module_Model::updateNotWorkingDays($request->getArray('param', 'Alnum'));
 		$response = new Vtiger_Response();
-		$response->setResult(array(
+		$response->setResult([
 			'success' => true,
-			'message' => vtranslate('LBL_SAVE_COLOR', $request->getModule(false))
-		));
-		$response->emit();
-	}
-
-	public function UpdateModuleActiveType(Vtiger_Request $request)
-	{
-		$params = $request->get('params');
-		Settings_Calendar_Module_Model::updateModuleActiveType($params);
-		$response = new Vtiger_Response();
-		$response->setResult(array(
-			'success' => true,
-			'message' => vtranslate('LBL_SAVE_ACTIVE_TYPE', $request->getModule(false))
-		));
-		$response->emit();
-	}
-
-	public function UpdateCalendarConfig(Vtiger_Request $request)
-	{
-		$params = $request->get('params');
-		Settings_Calendar_Module_Model::updateCalendarConfig($params);
-		$response = new Vtiger_Response();
-		$response->setResult(array(
-			'success' => true,
-			'message' => vtranslate('LBL_SAVE_CHANGES', $request->getModule(false))
-		));
-		$response->emit();
-	}
-
-	public function updateNotWorkingDays(Vtiger_Request $request)
-	{
-		$params = $request->get('param');
-		Settings_Calendar_Module_Model::updateNotWorkingDays($params);
-		$response = new Vtiger_Response();
-		$response->setResult(array(
-			'success' => true,
-			'message' => vtranslate('LBL_SAVE_ACTIVE_TYPE', $request->getModule(false))
-		));
+			'message' => \App\Language::translate('LBL_SAVE_ACTIVE_TYPE', $request->getModule(false)),
+		]);
 		$response->emit();
 	}
 }

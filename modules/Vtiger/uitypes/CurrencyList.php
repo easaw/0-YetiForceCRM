@@ -6,32 +6,75 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Vtiger_CurrencyList_UIType extends Vtiger_Base_UIType
+class Vtiger_CurrencyList_UIType extends Vtiger_Picklist_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type Object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
+	public function validate($value, $isUserFormat = false)
 	{
-		return 'uitypes/CurrencyList.tpl';
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		if (!is_numeric($value)) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$maximumLength = $this->getFieldModel()->get('maximumlength');
+		if ($maximumLength) {
+			$rangeValues = explode(',', $maximumLength);
+			if (($rangeValues[1] ?? $rangeValues[0]) < $value || (isset($rangeValues[1]) ? $rangeValues[0] : 0) > $value) {
+				throw new \App\Exceptions\Security('ERR_VALUE_IS_TOO_LONG||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+			}
+		}
+
+		$this->validate[$value] = true;
 	}
 
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT currency_name FROM vtiger_currency_info WHERE currency_status = ? && id = ?', array('Active', $value));
-		if ($db->num_rows($result)) {
-			return $db->query_result($result, 0, 'currency_name');
-		}
-		return $value;
+		$currencylist = $this->getPicklistValues();
+
+		return \App\Purifier::encodeHtml($currencylist[$value] ?? $value);
+	}
+
+	/**
+	 * Function to get all the available picklist values for the current field.
+	 *
+	 * @return array List of picklist values if the field
+	 */
+	public function getPicklistValues()
+	{
+		$fieldModel = $this->getFieldModel();
+
+		return $fieldModel->getCurrencyList();
 	}
 
 	public function getCurrenyListReferenceFieldName()
 	{
 		return 'currency_name';
+	}
+
+	/**
+	 * Function defines empty picklist element availability.
+	 *
+	 * @return bool
+	 */
+	public function isEmptyPicklistOptionAllowed()
+	{
+		return false;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getAllowedColumnTypes()
+	{
+		return ['integer', 'smallint'];
 	}
 }

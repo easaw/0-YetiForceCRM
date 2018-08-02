@@ -1,18 +1,12 @@
-{*/*+***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- *************************************************************************************************************************************/*}
-<div class="modal fade" tabindex="-1">
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
+<div class="tpl-Settings-Menu-EditMenu modal fade" tabindex="-1">
 	<div class="modal-dialog">
         <div class="modal-content">
 			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-				<h3 class="modal-title">{vtranslate('LBL_EDITION_MENU', $QUALIFIED_MODULE)}</h3>
+				<h5 class="modal-title"><span class="fas fa-edit u-mr-5px"></span>{\App\Language::translate('LBL_EDITION_MENU', $QUALIFIED_MODULE)}</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="{\App\Language::translate('LBL_CLOSE')}">
+					<span aria-hidden="true" title="{\App\Language::translate('LBL_CLOSE')}">&times;</span>
+				</button>
 			</div>
 			<div class="modal-body">
 				{assign var=MENU_TYPES value=$MODULE_MODEL->getMenuTypes()}
@@ -21,19 +15,21 @@
 					<input type="hidden" id="menuType" value="{$MENU_TYPE}" />
 					<input type="hidden" name="id" value="{$ID}" />
 					<input type="hidden" name="role" value="{$RECORD->get('role')}" />
-					<div class="form-group">
-						<label class="col-md-4 control-label">{vtranslate('LBL_TYPE_OF_MENU', $QUALIFIED_MODULE)}:</label>
-						<div class="col-md-7 form-control-static">
-							{vtranslate('LBL_'|cat:strtoupper($MENU_TYPE), $QUALIFIED_MODULE)}
+					<div class="form-group row">
+						<label class="col-md-4 col-form-label">{\App\Language::translate('LBL_TYPE_OF_MENU', $QUALIFIED_MODULE)}:</label>
+						<div class="col-md-7 form-control-plaintext">
+							{\App\Language::translate('LBL_'|cat:strtoupper($MENU_TYPE), $QUALIFIED_MODULE)}
 						</div>
 					</div>
-					{include file='types/'|cat:$MENU_TYPE|cat:'.tpl'|@vtemplate_path:$QUALIFIED_MODULE}
+					{include file=\App\Layout::getTemplatePath('types/'|cat:$MENU_TYPE|cat:'.tpl', $QUALIFIED_MODULE)}
 				</form>
 			</div>
 			<div class="modal-footer">
-				<div class="pull-right cancelLinkContainer" style="margin-top:0px;">
-					<a class="btn cancelLink btn-warning" type="reset" data-dismiss="modal">{vtranslate('LBL_CANCEL', $QUALIFIED_MODULE)}</a>
-					<a class="btn btn-success saveButton"><strong>{vtranslate('LBL_SAVE_MENU', $QUALIFIED_MODULE)}</strong></a>
+				<div class="float-right cancelLinkContainer" style="margin-top:0px;">
+
+					<button class="btn btn-success saveButton"><span class="fa fa-check u-mr-5px"></span><strong>{\App\Language::translate('LBL_SAVE_MENU', $QUALIFIED_MODULE)}</strong></button>
+					<button class="btn btn-warning" type="reset"
+					   data-dismiss="modal"><span class="fa fa-times u-mr-5px"></span>{\App\Language::translate('LBL_CANCEL', $QUALIFIED_MODULE)}</button>
 				</div>
 			</div>
 		</div>

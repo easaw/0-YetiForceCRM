@@ -6,29 +6,32 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Users_ListView_Model extends Vtiger_ListView_Model
 {
-
 	/**
-	 * Function to get the list of listview links for the module
+	 * Function to get the list of listview links for the module.
+	 *
 	 * @param <Array> $linkParams
+	 *
 	 * @return <Array> - Associate array of Link Type to List of Vtiger_Link_Model instances
 	 */
 	public function getListViewLinks($linkParams)
 	{
-		$linkTypes = array('LISTVIEWBASIC', 'LISTVIEW', 'LISTVIEWSETTING');
+		$linkTypes = ['LISTVIEWBASIC', 'LISTVIEW', 'LISTVIEWSETTING'];
 		$links = Vtiger_Link_Model::getAllByType($this->getModule()->getId(), $linkTypes, $linkParams);
 
-		$basicLinks = array(
-			array(
+		$basicLinks = [
+			[
 				'linktype' => 'LISTVIEWBASIC',
 				'linklabel' => 'LBL_ADD_RECORD',
 				'linkurl' => $this->getModule()->getCreateRecordUrl(),
-				'linkicon' => ''
-			)
-		);
+				'linkicon' => '',
+				'linkclass' => 'btn-light'
+			],
+		];
 		foreach ($basicLinks as $basicLink) {
 			$links['LISTVIEWBASIC'][] = Vtiger_Link_Model::getInstanceFromValues($basicLink);
 		}
@@ -41,113 +44,94 @@ class Users_ListView_Model extends Vtiger_ListView_Model
 	}
 
 	/**
-	 * Function to get the list of Mass actions for the module
+	 * Function to get the list of Mass actions for the module.
+	 *
 	 * @param <Array> $linkParams
+	 *
 	 * @return <Array> - Associative array of Link type to List of  Vtiger_Link_Model instances for Mass Actions
 	 */
 	public function getListViewMassActions($linkParams)
 	{
-		$links = parent::getListViewMassActions($linkParams);
+		$links = [];
 		$privilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-
 		$massActionLinks = [];
-		if ($linkParams['MODULE'] == 'Users' && $linkParams['ACTION'] == 'List' && vtlib\Functions::userIsAdministrator($privilegesModel)) {
-			$massActionLinks[] = array(
+		if ($linkParams['MODULE'] === 'Users' && $linkParams['ACTION'] === 'List' && $privilegesModel->isAdminUser()) {
+			$massActionLinks[] = [
 				'linktype' => 'LISTVIEWMASSACTION',
-				'linklabel' => 'LBL_MASS_PWD_EDIT',
-				'linkurl' => 'javascript:Settings_Users_List_Js.triggerEditPasswords("index.php?module=Users&view=EditAjax&mode=editPasswords", "' . $linkParams['MODULE'] . '")',
-				'linkicon' => ''
-			);
+				'linklabel' => 'LBL_MASS_EDIT',
+				'linkurl' => 'javascript:Vtiger_List_Js.triggerMassEdit("index.php?module=Users&view=MassActionAjax&mode=showMassEditForm");',
+				'linkicon' => 'fas fa-edit'
+			];
+			$massActionLinks[] = [
+				'linktype' => 'LISTVIEWMASSACTION',
+				'linklabel' => 'BTN_MASS_RESET_PASSWORD',
+				'linkurl' => 'index.php?module=Users&view=PasswordModal&mode=massReset',
+				'linkicon' => 'fas fa-redo-alt',
+			];
+			if (AppConfig::security('USER_AUTHY_MODE') !== 'TOTP_OFF') {
+				$massActionLinks[] = [
+					'linktype' => 'LISTVIEWMASSACTION',
+					'linklabel' => 'BTN_MASS_OFF_2FA',
+					'linkurl' => 'javascript:Settings_Users_List_Js.triggerMassOff2FA()',
+					'linkicon' => 'fas fa-key',
+				];
+			}
 		}
 		foreach ($massActionLinks as $massActionLink) {
 			$links['LISTVIEWMASSACTION'][] = Vtiger_Link_Model::getInstanceFromValues($massActionLink);
 		}
-		$countLinks = count($links['LISTVIEWMASSACTION']);
-		for ($i = 0; $i < $countLinks; $i++) {
-			if ($links['LISTVIEWMASSACTION'][$i]->linklabel == 'LBL_MASS_DELETE') {
-				unset($links['LISTVIEWMASSACTION'][$i]);
-			}
-		}
-
 		return $links;
 	}
 
 	/**
-	 * Functions returns the query
-	 * @return string
-	 */
-	public function getQuery()
-	{
-		$listQuery = parent::getQuery();
-		//remove the status active condition since in users list view we need to consider inactive users as well
-		$searchKey = $this->get('search_key');
-		if (!empty($searchKey)) {
-			$listQueryComponents = explode(" WHERE vtiger_users.status='Active' AND", $listQuery);
-			$listQuery = implode(' WHERE ', $listQueryComponents);
-		}
-		return $listQuery;
-	}
-
-	/**
-	 * Function to get the list view entries
+	 * Function to get the list view entries.
+	 *
 	 * @param Vtiger_Paging_Model $pagingModel, $status (Active or Inactive User). Default false
-	 * @return <Array> - Associative array of record id mapped to Vtiger_Record_Model instance.
+	 *
+	 * @return <Array> - Associative array of record id mapped to Vtiger_Record_Model instance
 	 */
-	public function getListViewEntries($pagingModel, $searchResult = false)
+	public function getListViewEntries(Vtiger_Paging_Model $pagingModel)
 	{
 		$queryGenerator = $this->get('query_generator');
-
 		// Added as Users module do not have custom filters and id column is added by querygenerator.
 		$fields = $queryGenerator->getFields();
 		$fields[] = 'id';
+		$fields[] = 'imagename';
+		$fields[] = 'authy_secret_totp';
 		$queryGenerator->setFields($fields);
-
-		$userFieldsFix = $this->get('search_params');
-		$indexKey = '';
-		$indexValue = '';
-		$roleKey = '';
-		$roleValue = '';
-		$roleDataInfo = [];
-		if (empty($userFieldsFix)) {
-			$userFieldsFix = [];
+		$searchParams = $this->get('search_params');
+		if (empty($searchParams)) {
+			$searchParams = [];
 		} else {
-			foreach ($userFieldsFix[0]['columns'] as $key => $column) {
-				if (strpos($column['columnname'], 'is_admin') !== false) {
-					$indexKey = $key;
-					$indexValue = $column['value'] == '0' ? 'off' : 'on';
-				} else if (strpos($column['columnname'], 'roleid') !== false) {
-					$roleKey = $key;
-
-					$db = PearDatabase::getInstance();
-					$sql = "SELECT `roleid`, `rolename` FROM `vtiger_role`;";
-					$result = $db->query($sql, true);
-					$roleNum = $db->num_rows($result);
-
-					if ($roleNum > 0) {
-						for ($i = 0; $i < $roleNum; $i++) {
-							$roleid = $db->query_result($result, $i, 'roleid');
-							$rolename = $db->query_result($result, $i, 'rolename');
-							$translated = vtranslate($rolename);
-
-							if ($translated == $column['value']) {
-								$roleValue = $roleid;
-							}
-						}
+			foreach ($searchParams as &$params) {
+				foreach ($params as &$param) {
+					if (strpos($param['columnname'], 'is_admin') !== false) {
+						$param['value'] = $param['value'] == '0' ? 'off' : 'on';
 					}
 				}
 			}
-
-			if ($indexValue !== '') {
-				$userFieldsFix[0]['columns'][$indexKey]['value'] = $indexValue;
-			}
-
-			if ($roleValue !== '') {
-				$userFieldsFix[0]['columns'][$roleKey]['value'] = $roleValue;
-			}
 		}
-		$this->set('search_params', $userFieldsFix);
+		$this->set('search_params', $searchParams);
 
-		return parent::getListViewEntries($pagingModel, $searchResult);
+		return parent::getListViewEntries($pagingModel);
+	}
+
+	/**
+	 * Function to get the list view header.
+	 *
+	 * @return Vtiger_Field_Model[] - List of Vtiger_Field_Model instances
+	 */
+	public function getListViewHeaders()
+	{
+		$headerFieldModels = [];
+		$headerFields = $this->getQueryGenerator()->getListViewFields();
+		foreach ($headerFields as $fieldName => &$fieldsModel) {
+			if ($fieldsModel && ((!$fieldsModel->isViewable() && $fieldsModel->getUitype() !== 106) || !$fieldsModel->getPermissions())) {
+				continue;
+			}
+			$headerFieldModels[$fieldName] = $fieldsModel;
+		}
+		return $headerFieldModels;
 	}
 
 	public function getListViewCount()
@@ -158,6 +142,7 @@ class Users_ListView_Model extends Vtiger_ListView_Model
 		}
 		return parent::getListViewCount();
 	}
+
 	/*
 	 * Function to give advance links of Users module
 	 * @return array of advanced links
@@ -166,30 +151,23 @@ class Users_ListView_Model extends Vtiger_ListView_Model
 	public function getAdvancedLinks()
 	{
 		$moduleModel = $this->getModule();
-		$createPermission = Users_Privileges_Model::isPermitted($moduleModel->getName(), 'CreateView');
-		$advancedLinks = array();
-		$importPermission = Users_Privileges_Model::isPermitted($moduleModel->getName(), 'Import');
+		$createPermission = \App\Privilege::isPermitted($moduleModel->getName(), 'CreateView');
+		$advancedLinks = [];
+		$importPermission = \App\Privilege::isPermitted($moduleModel->getName(), 'Import');
 		if ($importPermission && $createPermission) {
-			/* $advancedLinks[] = array(
-			  'linktype' => 'LISTVIEW',
-			  'linklabel' => 'LBL_BASIC_EXPORT',
-			  'linkurl' => 'javascript:Settings_Users_List_Js.triggerExportAction()',
-			  'linkicon' => ''
-			  ); */
-			$advancedLinks[] = array(
+			$advancedLinks[] = [
 				'linktype' => 'LISTVIEW',
 				'linklabel' => 'LBL_IMPORT',
 				'linkurl' => $moduleModel->getImportUrl(),
-				'linkicon' => ''
-			);
-			$advancedLinks[] = array(
+				'linkicon' => 'fas fa-download',
+			];
+			$advancedLinks[] = [
 				'linktype' => 'LISTVIEW',
 				'linklabel' => 'LBL_EXPORT',
 				'linkurl' => 'javascript:Vtiger_List_Js.triggerExportAction("' . $moduleModel->getExportUrl() . '")',
-				'linkicon' => ''
-			);
+				'linkicon' => 'fas fa-upload',
+			];
 		}
-
 		return $advancedLinks;
 	}
 }

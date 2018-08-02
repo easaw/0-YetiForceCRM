@@ -1,49 +1,37 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings OSSPasswords ConfigurePass view class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_OSSPasswords_ConfigurePass_View extends Settings_Vtiger_Index_View
 {
-
-	public function checkPermission(Vtiger_Request $request)
-	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUserModel->isAdminUser()) {
-			throw new \Exception\AppException(vtranslate('LBL_PERMISSION_DENIED', 'Vtiger'));
-		}
-	}
-
 	/**
-	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * Function to get the list of Script models to be included.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 
 		$jsFileNames = [
-			'modules.OSSPasswords.resources.general'
+			'modules.OSSPasswords.resources.general',
 		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($jsScriptInstances, $headerScriptInstances);
+
 		return $headerScriptInstances;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		
 		$adb = PearDatabase::getInstance();
-		$current_user = vglobal('current_user');
-
 		// config
 		// check if password encode config exists
 		$config_path = 'modules/OSSPasswords/config.ini.php';
@@ -79,24 +67,29 @@ class Settings_OSSPasswords_ConfigurePass_View extends Settings_Vtiger_Index_Vie
 		$success = '';
 
 		// get min, max, allow_chars from vtiger_passwords_config
-		$result = $adb->query("SELECT * FROM vtiger_passwords_config WHERE 1 LIMIT 1", true);
-		$min = $adb->query_result($result, 0, 'pass_length_min');
-		$max = $adb->query_result($result, 0, 'pass_length_max');
-		$allow_chars = $adb->query_result($result, 0, 'pass_allow_chars');
-		$register = $adb->query_result($result, 0, 'register_changes');
+		$passwordConfig = (new \App\Db\Query())->from('vtiger_passwords_config')->one();
+		$min = $passwordConfig['pass_length_min'];
+		$max = $passwordConfig['pass_length_max'];
+		$allow_chars = $passwordConfig['pass_allow_chars'];
+		$register = $passwordConfig['register_changes'];
 
 		// if password configuration form was sent
 		//if ( isset($_POST['save'],$_POST['pass_length_min'],$_POST['pass_length_max'],$_POST['pass_allow_chars']) ) {
 		if (!empty($save) && !empty($pass_length_min) && !empty($pass_length_max) && !empty($pass_allow_chars)) {
-			$post_min = intval($pass_length_min) > 0 ? intval($pass_length_min) : 0;
-			$post_max = intval($pass_length_max) > 0 ? intval($pass_length_max) : 0;
+			$post_min = (int) $pass_length_min > 0 ? (int) $pass_length_min : 0;
+			$post_max = (int) $pass_length_max > 0 ? (int) $pass_length_max : 0;
 			$aChars = strlen($pass_allow_chars) > 0 ? urldecode($pass_allow_chars) : '';
 			$rChanges = $registerChanges == '' ? 0 : 1;
 
 			// update the configuration data
 			if (strlen($error) == 0 && $post_min > 0 && $post_max > 0 && strlen($aChars) > 0) {
-				$adb->pquery("UPDATE vtiger_passwords_config SET pass_length_min = ?, pass_length_max = ?, pass_allow_chars = ?, register_changes= ?;", array($post_min, $post_max, $adb->sql_escape_string($aChars), $rChanges), true);
-				// uaktualnij zmienne
+				App\Db::getInstance()->createCommand()->update('vtiger_passwords_config', [
+					'pass_length_min' => $post_min,
+					'pass_length_max' => $post_max,
+					'pass_allow_chars' => $adb->sqlEscapeString($aChars),
+					'register_changes' => $rChanges,
+				])->execute();
+				// update variables
 				$min = $post_min;
 				$max = $post_max;
 				$allow_chars = $aChars;
@@ -104,28 +97,28 @@ class Settings_OSSPasswords_ConfigurePass_View extends Settings_Vtiger_Index_Vie
 
 				$success = 'Settings were successfuly saved.';
 			}
-		} else if (!empty($encryption_pass)) {
+		} elseif (!empty($encryption_pass)) {
 			// save new password key
-			if (!empty($encrypt) && !empty($pass_key) && $encrypt == "start") {
+			if (!empty($encrypt) && !empty($pass_key) && $encrypt == 'start') {
 				// save key pass
 				$newPassword = strlen($pass_key) > 0 ? hash('sha256', $pass_key) : false;
 
 				// config already exists, cant create encryption password
-				if ($config != false) {
+				if ($config !== false) {
 					$info = 'Encryption password is already created.';
-				} else if ($newPassword != false) {
+				} elseif ($newPassword !== false) {
 					// create new config
 					$recordModel = Vtiger_Record_Model::getCleanInstance($moduleName);
 
-					$config = array("encode" => array('key' => "$newPassword"));
-					$recordModel->write_php_ini($config, "modules/OSSPasswords/config.ini.php");
+					$config = ['encode' => ['key' => "$newPassword"]];
+					$recordModel->writePhpIni($config, 'modules/OSSPasswords/config.ini.php');
 
 					// start transaction
 					$adb->startTransaction();
 
 					// now encrypt all osspasswords with given key
-					$sql = "UPDATE `vtiger_osspasswords` SET `password` = AES_ENCRYPT( `password`, ? );";
-					$result = $adb->pquery($sql, array($newPassword), true);
+					$sql = 'UPDATE `vtiger_osspasswords` SET `password` = AES_ENCRYPT( `password`, ? );';
+					$result = $adb->pquery($sql, [$newPassword], true);
 
 					$success = 'Encryption password has been successfully saved!';
 
@@ -137,39 +130,39 @@ class Settings_OSSPasswords_ConfigurePass_View extends Settings_Vtiger_Index_Vie
 				}
 			}
 			// change password key
-			else if ($config_exists && $encrypt == "edit") {
-				$configKey = isset($config['key']) ? $config['key'] : false;
+			elseif ($config_exists && $encrypt == 'edit') {
+				$configKey = $config['key'] ?? false;
 
 				// check if given password is correct
 				$pass_ok = true;
 				if (strcmp($config['key'], hash('sha256', $oldKey)) != 0) { // not equal
 					$pass_ok = false;
 					$error = 'Old password key is incorrect!';
-				} else if (strlen($newKey) == 0) {
+				} elseif (strlen($newKey) == 0) {
 					$pass_ok = false;
 					$error = 'New password too short!';
 				}
 
-				if ($pass_ok && $configKey != false) {
+				if ($pass_ok && $configKey !== false) {
 					// start transaction
 					$adb->startTransaction();
 
 					// first we are decrypting all the passwords
-					$sql = "UPDATE `vtiger_osspasswords` SET `password` = AES_DECRYPT(`password`, ?);";
-					$result = $adb->pquery($sql, array($configKey), true);
+					$sql = 'UPDATE `vtiger_osspasswords` SET `password` = AES_DECRYPT(`password`, ?);';
+					$result = $adb->pquery($sql, [$configKey], true);
 					$decrypt_aff_rows = $adb->getAffectedRowCount($result);
 
 					// then we are encrypting passwords using new password key
-					$sql = "UPDATE `vtiger_osspasswords` SET `password` = AES_ENCRYPT(`password`, ?);";
+					$sql = 'UPDATE `vtiger_osspasswords` SET `password` = AES_ENCRYPT(`password`, ?);';
 					$newKey = hash('sha256', $newKey);
-					$result = $adb->pquery($sql, array($newKey), true);
+					$result = $adb->pquery($sql, [$newKey], true);
 					$encrypt_aff_rows = $adb->getAffectedRowCount($result);
 
 					if ($decrypt_aff_rows == $encrypt_aff_rows) {
 						// at end we are saving new password key
 						$recordModel = Vtiger_Record_Model::getCleanInstance($moduleName);
-						$config = array("encode" => array('key' => "$newKey"));
-						$save_ini = $recordModel->write_php_ini($config, "modules/OSSPasswords/config.ini.php");
+						$config = ['encode' => ['key' => "$newKey"]];
+						$recordModel->writePhpIni($config, 'modules/OSSPasswords/config.ini.php');
 						$success = 'Your key has been changed correctly.';
 					} else {
 						\App\Log::error('Changing password encryption keys was unsuccessfull!');
@@ -181,7 +174,7 @@ class Settings_OSSPasswords_ConfigurePass_View extends Settings_Vtiger_Index_Vie
 				}
 			}
 			// stop encrypting passwords
-			else if ($encrypt == "stop") {
+			elseif ($encrypt == 'stop') {
 				// check if the given password is correct
 				$passKey = hash('sha256', $passKey);
 				$configKey = $config['key'];
@@ -197,11 +190,11 @@ class Settings_OSSPasswords_ConfigurePass_View extends Settings_Vtiger_Index_Vie
 					$adb->startTransaction();
 
 					// decrypt all passwords
-					$sql = "UPDATE `vtiger_osspasswords` SET `password` = AES_DECRYPT(`password`, ?);";
-					$result = $adb->pquery($sql, array($passKey), true);
+					$sql = 'UPDATE `vtiger_osspasswords` SET `password` = AES_DECRYPT(`password`, ?);';
+					$result = $adb->pquery($sql, [$passKey], true);
 
 					// delete config file
-					if ($result != false) {
+					if ($result !== false) {
 						@unlink('modules/OSSPasswords/config.ini.php');
 						$success = 'Password encryption is stopped.';
 					} else {
@@ -213,7 +206,7 @@ class Settings_OSSPasswords_ConfigurePass_View extends Settings_Vtiger_Index_Vie
 					$config = false;
 				}
 			}
-		} else if (!empty($uninstall_passwords) && !empty($status)) {
+		} elseif (!empty($uninstall_passwords) && !empty($status)) {
 			\App\Log::trace('Uninstallation started...');
 			$moduleName = $request->getModule();
 			$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
@@ -237,13 +230,14 @@ class Settings_OSSPasswords_ConfigurePass_View extends Settings_Vtiger_Index_Vie
 		$viewer->assign('MODULENAME', $moduleName);
 		$viewer->assign('SAVE', 'Save');
 		$viewer->assign('CANCEL', 'Cancel');
-		if (\vtlib\Functions::userIsAdministrator($current_user))
+		if (\App\User::getCurrentUserModel()->isAdmin()) {
 			$viewer->assign('ISADMIN', 1);
-		else
+		} else {
 			$viewer->assign('ISADMIN', 0);
+		}
 
 		// encryption variables
-		$viewer->assign('CONFIG', (!$config ? false : array('key' => $config['key'])));
+		$viewer->assign('CONFIG', (!$config ? false : ['key' => $config['key']]));
 
 		$viewer->view('ConfigurePass.tpl', $moduleName);
 	}

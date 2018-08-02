@@ -10,19 +10,21 @@
 
 class ModTracker_Field_Model extends Vtiger_Record_Model
 {
-
 	/**
-	 * Function to set parent to this model
+	 * Function to set parent to this model.
+	 *
 	 * @param Vtiger_Record_Model
 	 */
 	public function setParent($parent)
 	{
 		$this->parent = $parent;
+
 		return $this;
 	}
 
 	/**
-	 * Function to get parent
+	 * Function to get parent.
+	 *
 	 * @return Vtiger_Record_Model
 	 */
 	public function getParent()
@@ -31,17 +33,20 @@ class ModTracker_Field_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to set Field instance
+	 * Function to set Field instance.
+	 *
 	 * @param Vtiger_Field_Model
 	 */
 	public function setFieldInstance($fieldModel)
 	{
 		$this->fieldInstance = $fieldModel;
+
 		return $this;
 	}
 
 	/**
-	 * Function to get Field instance
+	 * Function to get Field instance.
+	 *
 	 * @return Vtiger_Field_Model
 	 */
 	public function getFieldInstance()
@@ -50,43 +55,44 @@ class ModTracker_Field_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Old value of this Field
-	 * @return <String>
+	 * Function to get Old value of this Field.
+	 *
+	 * @return string
 	 */
 	public function getOldValue()
 	{
-		$value = $this->getDisplayValue($this->get('prevalue'));
-		if ($this->getFieldInstance()->getFieldDataType() != 'text') {
+		$value = $this->fieldInstance->getUITypeModel()->getHistoryDisplayValue($this->get('prevalue'), $this->parent);
+		if ($this->fieldInstance->getFieldDataType() !== 'text') {
 			return $value;
 		}
-		$teaser = vtlib\Functions::textLength($value, AppConfig::module('ModTracker', 'TEASER_TEXT_LENGTH'));
-		if (substr($teaser, -3) == '...') {
-			$value = App\Purifier::purify(vtlib\Functions::removeHtmlTags(array('br', 'link', 'style', 'a', 'img', 'script', 'base'), $value));
+		$teaser = App\TextParser::textTruncate($value, AppConfig::module('ModTracker', 'TEASER_TEXT_LENGTH'));
+		if (substr($teaser, -3) === '...') {
 			$this->set('fullPreValue', $value);
 		}
 		return $teaser;
 	}
 
 	/**
-	 * Function to get new(updated) value of this Field
-	 * @return <String>
+	 * Function to get new(updated) value of this Field.
+	 *
+	 * @return string
 	 */
 	public function getNewValue()
 	{
-		$value = $this->getDisplayValue($this->get('postvalue'));
-		if ($this->getFieldInstance()->getFieldDataType() != 'text') {
+		$value = $this->fieldInstance->getUITypeModel()->getHistoryDisplayValue($this->get('postvalue'), $this->parent);
+		if ($this->fieldInstance->getFieldDataType() !== 'text') {
 			return $value;
 		}
-		$teaser = vtlib\Functions::textLength($value, AppConfig::module('ModTracker', 'TEASER_TEXT_LENGTH'));
-		if (substr($teaser, -3) == '...') {
-			$value = App\Purifier::purify(vtlib\Functions::removeHtmlTags(array('br', 'link', 'style', 'a', 'img', 'script', 'base'), $value));
+		$teaser = App\TextParser::textTruncate($value, AppConfig::module('ModTracker', 'TEASER_TEXT_LENGTH'));
+		if (substr($teaser, -3) === '...') {
 			$this->set('fullPostValue', $value);
 		}
 		return $teaser;
 	}
 
 	/**
-	 * Function to get name
+	 * Function to get name.
+	 *
 	 * @return <type>
 	 */
 	public function getName()
@@ -95,18 +101,9 @@ class ModTracker_Field_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Display Value
-	 * @param <type> $value
-	 * @return <String>
-	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
-	{
-		return $this->getFieldInstance()->getDisplayValue($value, $record, $recordInstance, $rawText);
-	}
-
-	/**
-	 * Function returns the module name of the field
-	 * @return <String>
+	 * Function returns the module name of the field.
+	 *
+	 * @return string
 	 */
 	public function getModuleName()
 	{

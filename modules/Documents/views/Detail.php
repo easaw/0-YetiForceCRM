@@ -11,19 +11,21 @@
 
 class Documents_Detail_View extends Vtiger_Detail_View
 {
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function __construct()
 	{
 		parent::__construct();
 		$this->exposeMethod('showDocumentRelations');
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function preProcess(\App\Request $request, $display = true)
 	{
-		$recordId = $request->get('record');
-		$recordModel = Vtiger_Record_Model::getInstanceById($recordId);
-		$fileType = $recordModel->get('filetype');
-		$fileIcon = \includes\utils\Icon::getIconByFileType($fileType);
+		$fileIcon = \App\Layout\Icon::getIconByFileType($this->record->getRecord()->get('filetype'));
 
 		$viewer = $this->getViewer($request);
 		$viewer->assign('NO_SUMMARY', true);
@@ -32,9 +34,7 @@ class Documents_Detail_View extends Vtiger_Detail_View
 	}
 
 	/**
-	 * Function to get Ajax is enabled or not
-	 * @param Vtiger_Record_Model record model
-	 * @return <boolean> true/false
+	 * {@inheritdoc}
 	 */
 	public function isAjaxEnabled($recordModel)
 	{
@@ -42,26 +42,25 @@ class Documents_Detail_View extends Vtiger_Detail_View
 	}
 
 	/**
-	 * Function shows basic detail for the record
-	 * @param <type> $request
+	 * {@inheritdoc}
 	 */
-	public function showModuleBasicView($request)
+	public function showModuleBasicView(\App\Request $request)
 	{
 		return $this->showModuleDetailView($request);
 	}
 
-	public function showDocumentRelations(Vtiger_Request $request)
+	public function showDocumentRelations(\App\Request $request)
 	{
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 		$moduleName = $request->getModule();
 
 		$data = Documents_Record_Model::getReferenceModuleByDocId($recordId);
 		$viewer = $this->getViewer($request);
 		$viewer->assign('RECORDID', $recordId);
 		$viewer->assign('MODULE_NAME', $moduleName);
-		$viewer->assign('LIMIT', 'no_limit');
+		$viewer->assign('LIMIT', 0);
 		$viewer->assign('DATA', $data);
 
-		echo $viewer->view('DetailViewDocumentRelations.tpl', $moduleName, true);
+		return $viewer->view('DetailViewDocumentRelations.tpl', $moduleName, true);
 	}
 }

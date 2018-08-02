@@ -6,68 +6,64 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Vtiger_Date_UIType extends Vtiger_Base_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
+	public function getDBValue($value, $recordModel = false)
 	{
-		return 'uitypes/Date.tpl';
+		if (!empty($value)) {
+			return self::getDBInsertedValue($value);
+		}
+		return '';
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function validate($value, $isUserFormat = false)
+	{
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		if ($isUserFormat) {
+			list($y, $m, $d) = App\Fields\Date::explode($value, App\User::getCurrentUserModel()->getDetail('date_format'));
+		} else {
+			list($y, $m, $d) = explode('-', $value);
+		}
+		if (!checkdate($m, $d, $y)) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate[$value] = true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
 		if (empty($value)) {
-			return $value;
+			return '';
 		} else {
-			$dateValue = self::getDisplayDateValue($value);
+			$dateValue = App\Fields\Date::formatToDisplay($value);
 		}
-
-		if ($dateValue == '--') {
-			return "";
+		if ($dateValue === '--') {
+			return '';
 		} else {
 			return $dateValue;
 		}
 	}
 
 	/**
-	 * Function to get the Value of the field in the format, the user provides it on Save
-	 * @param <Object> $value
-	 * @return <Object>
-	 */
-	public function getUserRequestValue($value, $recordId)
-	{
-		return $this->getDisplayValue($value);
-	}
-
-	/**
-	 * Function to get the DB Insert Value, for the current field type with given User Value
-	 * @param <Object> $value
-	 * @return <Object>
-	 */
-	public function getDBInsertValue($value)
-	{
-		if (!empty($value)) {
-			return self::getDBInsertedValue($value);
-		} else {
-			return '';
-		}
-	}
-
-	/**
-	 * Function converts the date to database format
-	 * @param <String> $value
-	 * @return <String>
+	 * Function converts the date to database format.
+	 *
+	 * @param string $value
+	 *
+	 * @return string
 	 */
 	public static function getDBInsertedValue($value)
 	{
@@ -75,66 +71,52 @@ class Vtiger_Date_UIType extends Vtiger_Base_UIType
 	}
 
 	/**
-	 * Function to get the display value in edit view
-	 * @param $value
-	 * @return converted value
+	 * {@inheritdoc}
 	 */
-	public function getEditViewDisplayValue($value, $record = false)
+	public function getEditViewDisplayValue($value, $recordModel = false)
 	{
 		if (empty($value) || $value === ' ') {
 			$value = trim($value);
-			$fieldInstance = $this->get('field')->getWebserviceFieldObject();
-			$moduleName = $this->get('field')->getModule()->getName();
-			$fieldName = $fieldInstance->getFieldName();
-
+			$fieldName = $this->getFieldModel()->getFieldName();
+			$moduleName = $this->getFieldModel()->getModule()->getName();
 			//Restricted Fields for to show Default Value
 			if (($fieldName === 'birthday' && $moduleName === 'Contacts') || $moduleName === 'Products') {
-				return $value;
+				return \App\Purifier::encodeHtml($value);
 			}
 
 			//Special Condition for field 'support_end_date' in Contacts Module
 			if ($fieldName === 'support_end_date' && $moduleName === 'Contacts') {
-				$value = DateTimeField::convertToUserFormat(date('Y-m-d', strtotime("+1 year")));
+				$value = DateTimeField::convertToUserFormat(date('Y-m-d', strtotime('+1 year')));
 			} elseif ($fieldName === 'support_start_date' && $moduleName === 'Contacts') {
 				$value = DateTimeField::convertToUserFormat(date('Y-m-d'));
 			}
 		} else {
 			$value = DateTimeField::convertToUserFormat($value);
 		}
-		return $value;
+		return \App\Purifier::encodeHtml($value);
 	}
 
 	/**
-	 * Function to get Date value for Display
-	 * @param <type> $date
-	 * @return <String>
+	 * {@inheritdoc}
 	 */
-	public static function getDisplayDateValue($date)
-	{
-		$date = new DateTimeField($date);
-		return $date->getDisplayDate();
-	}
-
-	/**
-	 * Function to get DateTime value for Display
-	 * @param <type> $dateTime
-	 * @return <String>
-	 */
-	public static function getDisplayDateTimeValue($dateTime)
-	{
-		// Fix for http://code.vtiger.com/vtiger/vtigercrm/issues/4
-		// Handle (MonthNumber Year) format value conversion.
-		if (preg_match('/([0-9]{1,2}) ([0-9]{1,4})/', $date, $m)) {
-			return date('M Y', strtotime($m[2] . '-' . $m[1] . '-' . '1'));
-		}
-		// End
-
-		$date = new DateTimeField($dateTime);
-		return $date->getDisplayDateTimeValue();
-	}
-
 	public function getListSearchTemplateName()
 	{
-		return 'uitypes/DateFieldSearchView.tpl';
+		return 'List/Field/Date.tpl';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'Edit/Field/Date.tpl';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getAllowedColumnTypes()
+	{
+		return null;
 	}
 }

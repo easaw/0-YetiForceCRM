@@ -9,11 +9,10 @@
  * *********************************************************************************** */
 
 /**
- * Vtiger Action Model Class
+ * Vtiger Action Model Class.
  */
 class Vtiger_Utility_Model extends Vtiger_Action_Model
 {
-
 	public function isUtilityTool()
 	{
 		return true;
@@ -21,18 +20,15 @@ class Vtiger_Utility_Model extends Vtiger_Action_Model
 
 	public function isModuleEnabled($module)
 	{
-		$db = PearDatabase::getInstance();
 		if (!$module->isEntityModule()) {
-			if (!$module->isUtilityActionEnabled())
+			if (!$module->isUtilityActionEnabled()) {
 				return false;
+			}
 		}
 		$tabId = $module->getId();
-		$sql = 'SELECT 1 FROM vtiger_profile2utility WHERE tabid = ? && activityid = ? LIMIT 1';
-		$params = array($tabId, $this->getId());
-		$result = $db->pquery($sql, $params);
-		if ($result && $db->num_rows($result) > 0) {
-			return true;
-		}
-		return false;
+
+		return (new App\Db\Query())->from('vtiger_profile2utility')
+			->where(['tabid' => $tabId, 'activityid' => $this->getId()])
+			->exists();
 	}
 }

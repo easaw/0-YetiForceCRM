@@ -1,52 +1,44 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings ModTracker module model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_ModTracker_Module_Model extends Settings_Vtiger_Module_Model
 {
-
 	public function getModTrackerModules($active = false)
 	{
-		$adb = PearDatabase::getInstance();
-		$restrictedModules = array('Emails', 'Integration', 'Dashboard', 'PBXManager', 'vtmessages', 'vttwitter');
-		$params = Array(0, 2, 1);
-		$params = array_merge($params, $restrictedModules);
-		$sql = 'SELECT vtiger_tab.name,vtiger_tab.tabid, vtiger_modtracker_tabs.visible 
-				FROM vtiger_tab LEFT JOIN vtiger_modtracker_tabs ON vtiger_tab.tabid = vtiger_modtracker_tabs.tabid
-				WHERE vtiger_tab.presence IN (?,?) && vtiger_tab.isentitytype = ? && vtiger_tab.name NOT IN (%s)';
-		$sql = sprintf($sql, generateQuestionMarks($restrictedModules));
+		$restrictedModules = ['Integration', 'Dashboard', 'PBXManager'];
+		$query = (new \App\Db\Query())->select(['vtiger_tab.name', 'vtiger_tab.tabid', 'vtiger_modtracker_tabs.visible'])
+			->from('vtiger_tab')
+			->leftJoin('vtiger_modtracker_tabs', 'vtiger_tab.tabid = vtiger_modtracker_tabs.tabid')
+			->where(['vtiger_tab.presence' => [0, 2], 'vtiger_tab.isentitytype' => 1])
+			->andWhere(['NOT IN', 'vtiger_tab.name', $restrictedModules]);
 		if ($active) {
-			$sql = ' && vtiger_modtracker_tabs.visible = ?';
-			$params[] = 1;
+			$query->andWhere(['tiger_modtracker_tabs.visible' => 1]);
 		}
-		$result = $adb->pquery($sql, $params);
-		$modules = Array();
-		$countResult = $adb->num_rows($result);
-		for ($i = 0; $i < $countResult; $i++) {
-			$row = $adb->query_result_rowdata($result, $i);
-			$modules[] = array(
+		$dataReader = $query->createCommand()->query();
+		$modules = [];
+		while ($row = $dataReader->read()) {
+			$modules[] = [
 				'id' => $row['tabid'],
 				'module' => $row['name'],
 				'active' => $row['visible'] == 1 ? true : false,
-			);
+			];
 		}
+		$dataReader->close();
+
 		return $modules;
 	}
 
 	public function changeActiveStatus($tabid, $status)
 	{
-		include_once('modules/ModTracker/ModTracker.php');
-		$moduleModTrackerInstance = new ModTracker();
-		if ($status)
-			$moduleModTrackerInstance->enableTrackingForModule($tabid);
-		else
-			$moduleModTrackerInstance->disableTrackingForModule($tabid);
+		if ($status) {
+			CRMEntity::getInstance('ModTracker')->enableTrackingForModule($tabid);
+		} else {
+			CRMEntity::getInstance('ModTracker')->disableTrackingForModule($tabid);
+		}
 	}
 }

@@ -1,44 +1,64 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
-
+/**
+ * Debug config.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license   YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 $DEBUG_CONFIG = [
 	/* +***************************************************************
-	 * 	Logger 
+	 * 	Logger
 	 * ************************************************************** */
 	// Enable saving logs to file. Values: false/true
 	'LOG_TO_FILE' => false,
 	// Enable displaying logs in debug console. Values: false/true
 	'LOG_TO_CONSOLE' => false,
+	// Enable saving logs profiling.  Values: false/true
+	'LOG_TO_PROFILE' => false,
 	// Level of saved/displayed logs
-	// Examples: false,3,['error', 'warning', 'info', 'trace', 'profile'], 
+	// Values: false = All / 3 = error and warning / ['error', 'warning', 'info', 'trace', 'profile'],
 	'LOG_LEVELS' => false,
-	// Level of saved/displayed tracerts.
+	// Level of saved/displayed tracerts. // Values: int
 	'LOG_TRACE_LEVEL' => 0,
 	// Display Main Debug Console
 	'DISPLAY_DEBUG_CONSOLE' => false,
+	// List of IP addresses allowed to display debug console
+	// Values: false = All IPS / '192.168.1.10' / ['192.168.1.10','192.168.1.11']
+	'DEBUG_CONSOLE_ALLOWED_IPS' => false,
 	// Stop the running process of the system if there is and error in sql query
 	'SQL_DIE_ON_ERROR' => false,
-	// Displays information about the tracking code when an error occurs. Available only with the active SQL_DIE_ON_ERROR = true
-	'DISPLAY_DEBUG_BACKTRACE' => false,
 	// Debug Viewer => cache/logs/viewer-debug.log
 	'DEBUG_VIEWER' => false,
 	// Display Smarty Debug Console
 	'DISPLAY_DEBUG_VIEWER' => false,
+	// migoi
+	// Don't show Smarty Notice in phpError.log
+	'SMARTY_ERROR_REPORTING' => E_ALL & ~E_NOTICE,
+	// / mogoi
+	/* +***************************************************************
+	 * 	JavaScript
+	 * ************************************************************** */
+	'JS_DEBUG' => true,
 	/* +***************************************************************
 	 * Configure a user-defined error handler function
 	 * ************************************************************** */
+	// Displays information about the tracking code when an error occurs. Available only with the active SQL_DIE_ON_ERROR = true
+	'DISPLAY_EXCEPTION_BACKTRACE' => false,
+	// Display logs when error exception occurs
+	'DISPLAY_EXCEPTION_LOGS' => false,
+	// Turn on the error handler
 	'EXCEPTION_ERROR_HANDLER' => false,
 	// Save logs to file (cache/logs/errors.log)
 	'EXCEPTION_ERROR_TO_FILE' => false,
 	// Display errors
 	'EXCEPTION_ERROR_TO_SHOW' => false,
-	// Set the error reporting level. The parameter is either an integer representing a bit field, or named constants.  
+	// Set the error reporting level. The parameter is either an integer representing a bit field, or named constants.
 	// https://secure.php.net/manual/en/errorfunc.configuration.php#ini.error-reporting
 	// All errors - E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED
 	// Critical errors - E_ERROR | E_WARNING | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR
-	'EXCEPTION_ERROR_LEVEL' => E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED,
+	'EXCEPTION_ERROR_LEVEL' => E_ALL & ~E_NOTICE,
 	/* +***************************************************************
-	 * 	API 
+	 * 	API
 	 * ************************************************************** */
 	// Sabre dav - This is a flag that allow or not showing file, line and code of the exception in the returned XML
 	'DAV_DEBUG_EXCEPTIONS' => false,
@@ -48,6 +68,11 @@ $DEBUG_CONFIG = [
 	'WEBSERVICE_SHOW_ERROR' => false,
 	// web service logs
 	'WEBSERVICE_DEBUG' => false,
+	/* +***************************************************************
+	 * 	Mailer
+	 * ************************************************************** */
+	// Mailer debug
+	'MAILER_DEBUG' => false,
 	/* +***************************************************************
 	 * 	ROUNDCUBE MAIL
 	 * ************************************************************** */

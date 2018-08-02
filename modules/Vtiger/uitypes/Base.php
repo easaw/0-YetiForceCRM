@@ -9,56 +9,209 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Vtiger_Base_UIType extends Vtiger_Base_Model
+class Vtiger_Base_UIType extends \App\Base
 {
+	/**
+	 * Verify the value.
+	 *
+	 * @var mixed[]
+	 */
+	protected $validate = [];
 
-	public function isAjaxEditable()
+	/**
+	 * Function to get the DB Insert Value, for the current field type with given User Value.
+	 *
+	 * @param mixed                $value
+	 * @param \Vtiger_Record_Model $recordModel
+	 *
+	 * @return mixed
+	 */
+	public function getDBValue($value, $recordModel = false)
 	{
-		return true;
+		if ($value === '' && in_array($this->getFieldModel()->getFieldType(), ['I', 'N', 'NN'])) {
+			return 0;
+		}
+		if (is_null($value)) {
+			return '';
+		}
+		return \App\Purifier::decodeHtml($value);
 	}
 
 	/**
-	 * Function to get the Template name for the current UI Type Object
-	 * @return <String> - Template Name
+	 * Set value from request.
+	 *
+	 * @param \App\Request        $request
+	 * @param Vtiger_Record_Model $recordModel
+	 * @param string|bool         $requestFieldName
 	 */
-	public function getTemplateName()
+	public function setValueFromRequest(\App\Request $request, Vtiger_Record_Model $recordModel, $requestFieldName = false)
 	{
-		return 'uitypes/String.tpl';
+		$fieldName = $this->getFieldModel()->getFieldName();
+		if (!$requestFieldName) {
+			$requestFieldName = $fieldName;
+		}
+		$value = $request->get($requestFieldName, '');
+		$this->validate($value, true);
+		$recordModel->set($fieldName, $this->getDBValue($value, $recordModel));
 	}
 
 	/**
-	 * Function to get the DB Insert Value, for the current field type with given User Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * Verification of data.
+	 *
+	 * @param string $value
+	 * @param bool   $isUserFormat
+	 *
+	 * @throws \App\Exceptions\Security
 	 */
-	public function getDBInsertValue($value)
+	public function validate($value, $isUserFormat = false)
+	{
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		if ($isUserFormat) {
+			$value = \App\Purifier::decodeHtml($value);
+		}
+		if (!is_numeric($value) && (is_string($value) && $value !== \App\Purifier::decodeHtml(\App\Purifier::purify($value)))) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$maximumLength = $this->getFieldModel()->get('maximumlength');
+		if ($maximumLength && App\TextParser::getTextLength($value) > $maximumLength) {
+			throw new \App\Exceptions\Security('ERR_VALUE_IS_TOO_LONG||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate[$value] = true;
+	}
+
+	/**
+	 * Convert value before writing to the database.
+	 *
+	 * @param mixed               $value
+	 * @param Vtiger_Record_Model $recordModel
+	 *
+	 * @return mixed
+	 */
+	public function convertToSave($value, Vtiger_Record_Model $recordModel)
 	{
 		return $value;
 	}
 
 	/**
-	 * Function to get the Value of the field in the format, the user provides it on Save
-	 * @param <Object> $value
-	 * @return <Object>
+	 * Function to get the display value, for the current field type with given DB Insert Value.
+	 *
+	 * @param mixed                    $value       Field value
+	 * @param int|bool                 $record      Record Id
+	 * @param Vtiger_Record_Model|bool $recordModel
+	 * @param bool                     $rawText     Return text or html
+	 * @param int|bool                 $length      Length of the text
+	 *
+	 * @return mixed
 	 */
-	public function getUserRequestValue($value, $recordId)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		return $value;
+		if (is_int($length)) {
+			$value = \App\TextParser::textTruncate($value, $length);
+		}
+		return \App\Purifier::encodeHtml($value);
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * Function to get the edit value in display view.
+	 *
+	 * @param mixed               $value
+	 * @param Vtiger_Record_Model $recordModel
+	 *
+	 * @return mixed
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getEditViewDisplayValue($value, $recordModel = false)
 	{
-		return $value;
+		return \App\Purifier::encodeHtml($value);
 	}
 
 	/**
-	 * Static function to get the UIType object from Vtiger Field Model
+	 * Function to get the list value in display view.
+	 *
+	 * @param mixed                    $value       Field value
+	 * @param int                      $record|bool Record Id
+	 * @param Vtiger_Record_Model|bool $recordModel
+	 * @param bool                     $rawText     Return text or html
+	 *
+	 * @return mixed
+	 */
+	public function getListViewDisplayValue($value, $record = false, $recordModel = false, $rawText = false)
+	{
+		return $this->getDisplayValue($value, $record, $recordModel, $rawText, $this->getFieldModel()->get('maxlengthtext'));
+	}
+
+	/**
+	 * Function to get the related list value in display view.
+	 *
+	 * @param mixed                    $value       Field value
+	 * @param int                      $record|bool Record Id
+	 * @param Vtiger_Record_Model|bool $recordModel
+	 * @param bool                     $rawText     Return text or html
+	 *
+	 * @return mixed
+	 */
+	public function getRelatedListViewDisplayValue($value, $record = false, $recordModel = false, $rawText = false)
+	{
+		return $this->getListViewDisplayValue($value, $record, $recordModel, $rawText);
+	}
+
+	/**
+	 * Function to get Display value for RelatedList.
+	 *
+	 * @param string $value
+	 *
+	 * @return string
+	 */
+	public function getRelatedListDisplayValue($value)
+	{
+		return $this->getListViewDisplayValue($value);
+	}
+
+	/**
+	 * Function to get display value for ModTracker.
+	 *
+	 * @param                      $value
+	 * @param \Vtiger_Record_Model $recordModel
+	 *
+	 * @return mixed
+	 */
+	public function getHistoryDisplayValue($value, Vtiger_Record_Model $recordModel)
+	{
+		return $this->getDisplayValue($value, $recordModel->getId(), $recordModel);
+	}
+
+	/**
+	 * Function to get display value for TextParser.
+	 *
+	 * @param mixed                $value
+	 * @param \Vtiger_Record_Model $recordModel
+	 * @param string               $params
+	 *
+	 * @return mixed
+	 */
+	public function getTextParserDisplayValue($value, Vtiger_Record_Model $recordModel, $params)
+	{
+		return $this->getDisplayValue($value, $recordModel->getId(), $recordModel, true);
+	}
+
+	/**
+	 * Duplicate value from record.
+	 *
+	 * @param Vtiger_Record_Model $recordModel
+	 *
+	 * @return mixed
+	 */
+	public function getDuplicateValue(Vtiger_Record_Model $recordModel)
+	{
+		return $recordModel->get($this->getFieldModel()->getFieldName());
+	}
+
+	/**
+	 * Static function to get the UIType object from Vtiger Field Model.
+	 *
 	 * @param Vtiger_Field_Model $fieldModel
+	 *
 	 * @return Vtiger_Base_UIType or UIType specific object instance
 	 */
 	public static function getInstanceFromField($fieldModel)
@@ -69,7 +222,7 @@ class Vtiger_Base_UIType extends Vtiger_Base_Model
 		$moduleSpecificUiTypeClassName = $moduleName . '_' . $uiTypeClassSuffix . '_UIType';
 		$uiTypeClassName = 'Vtiger_' . $uiTypeClassSuffix . '_UIType';
 		$fallBackClassName = 'Vtiger_Base_UIType';
-	
+
 		$moduleSpecificFileName = 'modules.' . $moduleName . '.uitypes.' . $uiTypeClassSuffix;
 		$uiTypeClassFileName = 'modules.Vtiger.uitypes.' . $uiTypeClassSuffix;
 
@@ -78,56 +231,81 @@ class Vtiger_Base_UIType extends Vtiger_Base_Model
 
 		if (file_exists($moduleSpecificFilePath)) {
 			$instance = new $moduleSpecificUiTypeClassName();
-		} else if (file_exists($completeFilePath)) {
+		} elseif (file_exists($completeFilePath)) {
 			$instance = new $uiTypeClassName();
 		} else {
 			$instance = new $fallBackClassName();
 		}
 		$instance->set('field', $fieldModel);
+
 		return $instance;
 	}
 
 	/**
-	 * Function to get the display value in edit view
-	 * @param reference record id
-	 * @return link
+	 * Function to get the Template name for the current UI Type Object.
+	 *
+	 * @return string - Template Name
 	 */
-	public function getEditViewDisplayValue($value, $record = false)
+	public function getTemplateName()
 	{
-		return $value;
-	}
-
-	public function getListViewDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
-	{
-		return $this->getDisplayValue($value, $record, $recordInstance, $rawText);
+		return 'Edit/Field/Base.tpl';
 	}
 
 	/**
-	 * Function to get the Detailview template name for the current UI Type Object
-	 * @return <String> - Template Name
+	 * Function to get the Detailview template name for the current UI Type Object.
+	 *
+	 * @return string - Template Name
 	 */
 	public function getDetailViewTemplateName()
 	{
-		return 'uitypes/StringDetailView.tpl';
+		return 'Detail/Field/Base.tpl';
 	}
 
 	/**
-	 * Function to get Display value for RelatedList
-	 * @param <String> $value
-	 * @return <String>
+	 * Function to get the Template name for the current UI Type object.
+	 *
+	 * @return string - Template Name
 	 */
-	public function getRelatedListDisplayValue($value)
-	{
-		return $this->getDisplayValue($value);
-	}
-
 	public function getListSearchTemplateName()
 	{
-		return 'uitypes/FieldSearchView.tpl';
+		return 'List/Field/Base.tpl';
+	}
+
+	/**
+	 * Get field model instance.
+	 *
+	 * @return Vtiger_Field_Model
+	 */
+	public function getFieldModel()
+	{
+		return $this->get('field');
 	}
 
 	public function isActiveSearchView()
 	{
 		return true;
+	}
+
+	public function isAjaxEditable()
+	{
+		return true;
+	}
+
+	/**
+	 * If the field is sortable in ListView.
+	 */
+	public function isListviewSortable()
+	{
+		return true;
+	}
+
+	/**
+	 * Returns allowed types of columns in database.
+	 *
+	 * @return string[]
+	 */
+	public function getAllowedColumnTypes()
+	{
+		return ['string', 'text', 'binary'];
 	}
 }

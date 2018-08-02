@@ -1,176 +1,225 @@
 <?php
 
 /**
- *
- * @package YetiForce.models
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class OSSMail_Record_Model extends Vtiger_Record_Model
 {
-
-	static function getAccountsList($user = false, $onlyMy = false, $password = false)
+	/**
+	 * Return accounts array.
+	 *
+	 * @param int|bool $user
+	 * @param bool     $onlyMy
+	 * @param bool     $password
+	 *
+	 * @return array
+	 */
+	public static function getAccountsList($user = false, $onlyMy = false, $password = false)
 	{
-		$db = PearDatabase::getInstance();
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$param = $users = [];
-		$sql = 'SELECT * FROM roundcube_users';
-		$where = false;
-		if ($password) {
-			$where .= " && password <> ''";
-		}
+		$users = [];
+		$query = (new \App\Db\Query())->from('roundcube_users');
 		if ($user) {
-			$where .= ' && user_id = ?';
-			$param[] = $user;
+			$query->where(['user_id' => $user]);
 		}
 		if ($onlyMy) {
-			$where .= ' && crm_user_id = ?';
-			$param[] = $currentUserModel->getId();
+			$query->andWhere(['crm_user_id' => \App\User::getCurrentUserId()]);
 		}
-		if ($where) {
-			$sql .= sprintf(' WHERE %s ', substr($where, 4));
+		if ($password) {
+			$query->andWhere(['<>', 'password', '']);
 		}
-		$result = $db->pquery($sql, $param);
-		if ($db->getRowCount($result) == 0) {
-			return [];
-		} else {
-			while ($row = $db->getRow($result)) {
-				$row['actions'] = empty($row['actions']) ? [] : explode(',', $row['actions']);
-				$users[] = $row;
+		$dataReader = $query->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$row['actions'] = empty($row['actions']) ? [] : explode(',', $row['actions']);
+			$users[] = $row;
+		}
+		$dataReader->close();
+
+		return $users;
+	}
+
+	/**
+	 * Returns Roundcube configuration.
+	 *
+	 * @return array
+	 */
+	public static function loadRoundcubeConfig()
+	{
+		if (!defined('RCUBE_INSTALL_PATH')) {
+			define('RCUBE_INSTALL_PATH', realpath(ROOT_DIRECTORY . DIRECTORY_SEPARATOR . 'public_html' . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . 'OSSMail' . DIRECTORY_SEPARATOR . 'roundcube'));
+		}
+		if (!defined('RCMAIL_VERSION') && file_exists(RCUBE_INSTALL_PATH . '/program/include/iniset.php')) {
+			// read rcube version from iniset
+			$iniset = file_get_contents(RCUBE_INSTALL_PATH . '/program/include/iniset.php');
+			if (preg_match('/define\(.RCMAIL_VERSION.,\s*.([0-9.]+[a-z-]*)?/', $iniset, $matches)) {
+				$rcubeVersion = str_replace('-git', '.999', $matches[1]);
+				define('RCMAIL_VERSION', $rcubeVersion);
+			} else {
+				throw new \Exception('Unable to find a Roundcube version');
 			}
-			return $users;
 		}
-	}
+		include 'public_html/modules/OSSMail/roundcube/config/defaults.inc.php';
+		include 'config/modules/OSSMail.php';
 
-	public function ComposeEmail($params, $ModuleName)
-	{
-		header('Location: ' . self::GetSite_URL() . 'index.php?module=OSSMail&view=compose');
-	}
-
-	public static function load_roundcube_config()
-	{
-		global $no_include_config;
-		$no_include_config = true;
-		include 'modules/OSSMail/roundcube/config/defaults.inc.php';
-		include 'modules/OSSMail/roundcube/config/config.inc.php';
 		return $config;
 	}
 
+	/**
+	 * Imap connection cache.
+	 *
+	 * @var array
+	 */
 	protected static $imapConnectCache = [];
 
-	public static function imapConnect($user, $password, $host = false, $folder = 'INBOX', $dieOnError = true)
+	/**
+	 * $imapConnectMailbox.
+	 *
+	 * @var string
+	 */
+	public static $imapConnectMailbox = '';
+
+	/**
+	 * Return imap connection resource.
+	 *
+	 * @param string $user
+	 * @param string $password
+	 * @param string $host
+	 * @param string $folder
+	 * @param bool   $dieOnError
+	 * @param array  $config
+	 *
+	 * @return resource
+	 */
+	public static function imapConnect($user, $password, $host = false, $folder = 'INBOX', $dieOnError = true, $config = false)
 	{
-		
 		\App\Log::trace("Entering OSSMail_Record_Model::imapConnect($user , $password , $folder) method ...");
-		$rcConfig = self::load_roundcube_config();
+		if (!$config) {
+			$config = self::loadRoundcubeConfig();
+		}
 		$cacheName = $user . $host . $folder;
 		if (isset(self::$imapConnectCache[$cacheName])) {
 			return self::$imapConnectCache[$cacheName];
 		}
-
 		if (!$host) {
-			$host = key($rcConfig['default_host']);
+			$host = key($config['default_host']);
 		}
 		$parseHost = parse_url($host);
 		$validatecert = '';
-		if ($parseHost['host']) {
+		if (!empty($parseHost['host'])) {
 			$host = $parseHost['host'];
-			$sslMode = (isset($a_host['scheme']) && in_array($parseHost['scheme'], ['ssl', 'imaps', 'tls'])) ? $parseHost['scheme'] : null;
+			$sslMode = (isset($parseHost['scheme']) && in_array($parseHost['scheme'], ['ssl', 'imaps', 'tls'])) ? $parseHost['scheme'] : null;
 			if (!empty($parseHost['port'])) {
 				$port = $parseHost['port'];
-			} else if ($sslMode && $sslMode != 'tls' && (!$rcConfig['default_port'] || $rcConfig['default_port'] == 143)) {
+			} elseif ($sslMode && $sslMode !== 'tls' && (!$config['default_port'] || $config['default_port'] == 143)) {
 				$port = 993;
 			}
 		} else {
-			if ($rcConfig['default_port'] == 993) {
+			if ($config['default_port'] == 993) {
 				$sslMode = 'ssl';
 			} else {
 				$sslMode = 'tls';
 			}
 		}
 		if (empty($port)) {
-			$port = $rcConfig['default_port'];
+			$port = $config['default_port'];
 		}
-		if (!$rcConfig['validate_cert']) {
+		if (!$config['validate_cert'] && $config['imap_open_add_connection_type']) {
 			$validatecert = '/novalidate-cert';
 		}
-		if ($rcConfig['imap_open_add_connection_type']) {
+		if ($config['imap_open_add_connection_type']) {
 			$sslMode = '/' . $sslMode;
 		} else {
 			$sslMode = '';
 		}
-
 		imap_timeout(IMAP_OPENTIMEOUT, 5);
-		\App\Log::trace("imap_open({" . $host . ":" . $port . "/imap" . $sslMode . $validatecert . "}$folder, $user , $password) method ...");
-		$mbox = @imap_open("{" . $host . ":" . $port . "/imap" . $sslMode . $validatecert . "}$folder", $user, $password);
-		if ($mbox === false && $dieOnError) {
-			self::imapThrowError(imap_last_error());
+		$maxRetries = $options = 0;
+		if (isset($config['imap_max_retries'])) {
+			$maxRetries = $config['imap_max_retries'];
+		}
+		$params = [];
+		if (isset($config['imap_params'])) {
+			$params = $config['imap_params'];
+		}
+		static::$imapConnectMailbox = "{{$host}:{$port}/imap{$sslMode}{$validatecert}}{$folder}";
+		\App\Log::trace('imap_open(({' . static::$imapConnectMailbox . ", $user , $password. $options, $maxRetries, " . var_export($params, true) . ') method ...');
+		$mbox = imap_open(static::$imapConnectMailbox, $user, $password, $options, $maxRetries, $params);
+		if (!$mbox) {
+			\App\Log::error('Error OSSMail_Record_Model::imapConnect(): ' . imap_last_error());
+			if ($dieOnError) {
+				throw new \App\Exceptions\AppException('IMAP_ERROR' . ': ' . imap_last_error());
+			}
 		}
 		self::$imapConnectCache[$cacheName] = $mbox;
 		\App\Log::trace('Exit OSSMail_Record_Model::imapConnect() method ...');
+
 		return $mbox;
 	}
 
-	public static function imapThrowError($error)
-	{
-		
-		\App\Log::error("Error OSSMail_Record_Model::imapConnect(): " . $error);
-		vtlib\Functions::throwNewException(vtranslate('IMAP_ERROR', 'OSSMailScanner') . ': ' . $error);
-	}
-
+	/**
+	 * Update mailbox mesages info for users.
+	 *
+	 * @param array $users
+	 *
+	 * @return bool
+	 */
 	public static function updateMailBoxmsgInfo($users)
 	{
-		
-		\App\Log::trace(__CLASS__ . ':' . __FUNCTION__ . ' - Start');
-		$adb = PearDatabase::getInstance();
+		\App\Log::trace(__METHOD__ . ' - Start');
+		$dbCommand = \App\Db::getInstance()->createCommand();
 		if (count($users) == 0) {
 			return false;
 		}
 		$sUsers = implode(',', $users);
-		$result = $adb->pquery("SELECT count(*) AS num FROM yetiforce_mail_quantities WHERE userid IN (?) && status = 1;", [$sUsers]);
-		if ($adb->query_result_raw($result, 0, 'num') > 0) {
+		$query = (new \App\Db\Query())->from('yetiforce_mail_quantities')->where(['userid' => $sUsers, 'status' => 1]);
+		if ($query->count()) {
 			return false;
 		}
-		$adb->update('yetiforce_mail_quantities', ['status' => 1], 'userid IN (?)', [$sUsers]);
+		$dbCommand->update('yetiforce_mail_quantities', ['status' => 1], ['userid' => $sUsers])->execute();
 		foreach ($users as $user) {
 			$account = self::getMailAccountDetail($user);
 			if ($account !== false) {
-				$result = $adb->pquery("SELECT count(*) AS num FROM yetiforce_mail_quantities WHERE userid = ?;", [$user]);
-				$mbox = self::imapConnect($account['username'], $account['password'], $account['mail_host'], 'INBOX', false);
+				$result = (new \App\Db\Query())->from('yetiforce_mail_quantities')->where(['userid' => $user])->count();
+				$mbox = self::imapConnect($account['username'], \App\Encryption::getInstance()->decrypt($account['password']), $account['mail_host'], 'INBOX', false);
 				if ($mbox) {
-					$info = imap_mailboxmsginfo($mbox);
-					if ($adb->query_result_raw($result, 0, 'num') > 0) {
-						$adb->pquery('UPDATE yetiforce_mail_quantities SET `num` = ?,`status` = ? WHERE `userid` = ?;', [$info->Unread, 0, $user]);
+					$info = imap_status($mbox, static::$imapConnectMailbox, SA_UNSEEN);
+					if ($result > 0) {
+						$dbCommand->update('yetiforce_mail_quantities', ['num' => $info->unseen, 'status' => 0], ['userid' => $user])->execute();
 					} else {
-						$adb->pquery('INSERT INTO yetiforce_mail_quantities (`num`,`userid`) VALUES (?,?);', [$info->Unread, $user]);
+						$dbCommand->insert('yetiforce_mail_quantities', ['num' => $info->unseen, 'userid' => $user])->execute();
 					}
 				}
 			}
 		}
-		\App\Log::trace(__CLASS__ . ':' . __FUNCTION__ . ' - End');
+		\App\Log::trace(__METHOD__ . ' - End');
+
 		return true;
 	}
 
+	/**
+	 * Return users messages count.
+	 *
+	 * @param array $users
+	 *
+	 * @return array
+	 */
 	public static function getMailBoxmsgInfo($users)
 	{
-		
-		\App\Log::trace(__CLASS__ . ':' . __FUNCTION__ . ' - Start');
-		$adb = PearDatabase::getInstance();
-		$query = sprintf('SELECT * FROM yetiforce_mail_quantities WHERE userid IN (%s);', implode(',', $users));
-		$result = $adb->query($query);
-		$account = [];
-		$countResult = $adb->num_rows($result);
-		for ($i = 0; $i < $countResult; $i++) {
-			$account[$adb->query_result_raw($result, $i, 'userid')] = $adb->query_result_raw($result, $i, 'num');
-		}
-		\App\Log::trace(__CLASS__ . ':' . __FUNCTION__ . ' - End');
-		return $account;
+		$query = (new \App\Db\Query())->select(['userid', 'num'])->from('yetiforce_mail_quantities')->where(['userid' => $users]);
+
+		return $query->createCommand()->queryAllByGroup(0);
 	}
 
+	/**
+	 * @param resource $mbox
+	 * @param int      $id
+	 * @param int      $msgno
+	 *
+	 * @return bool|\OSSMail_Mail_Model
+	 */
 	public static function getMail($mbox, $id, $msgno = false)
 	{
-		$return = [];
 		if (!$msgno) {
 			$msgno = imap_msgno($mbox, $id);
 		}
@@ -180,25 +229,29 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		if (!$msgno) {
 			return false;
 		}
-		$header = imap_header($mbox, $msgno);
-		$structure = self::_get_body_attach($mbox, $id, $msgno);
+		$header = imap_headerinfo($mbox, $msgno);
+		$structure = self::getBodyAttach($mbox, $id, $msgno);
 
+		$msgid = '';
+		if (property_exists($header, 'message_id')) {
+			$msgid = $header->message_id;
+		}
 		$mail = new OSSMail_Mail_Model();
 		$mail->set('header', $header);
 		$mail->set('id', $id);
 		$mail->set('Msgno', $header->Msgno);
-		$mail->set('message_id', $header->message_id);
+		$mail->set('message_id', $msgid);
 		$mail->set('toaddress', $mail->getEmail('to'));
 		$mail->set('fromaddress', $mail->getEmail('from'));
 		$mail->set('reply_toaddress', $mail->getEmail('reply_to'));
 		$mail->set('ccaddress', $mail->getEmail('cc'));
 		$mail->set('bccaddress', $mail->getEmail('bcc'));
 		$mail->set('senderaddress', $mail->getEmail('sender'));
-		$mail->set('subject', self::_decode_text($header->subject));
+		$mail->set('subject', self::decodeText($header->subject));
 		$mail->set('MailDate', $header->MailDate);
 		$mail->set('date', $header->date);
 		$mail->set('udate', $header->udate);
-		$mail->set('udate_formated', date("Y-m-d H:i:s", $header->udate));
+		$mail->set('udate_formated', date('Y-m-d H:i:s', $header->udate));
 		$mail->set('Recent', $header->Recent);
 		$mail->set('Unseen', $header->Unseen);
 		$mail->set('Flagged', $header->Flagged);
@@ -215,27 +268,44 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 			$clean .= imap_fetchheader($mbox, $msg->msgno);
 		}
 		$mail->set('clean', $clean);
+
 		return $mail;
 	}
 
+	/**
+	 * Users cache.
+	 *
+	 * @var array
+	 */
 	protected static $usersCache = [];
 
+	/**
+	 * Return user account detal.
+	 *
+	 * @param int $userid
+	 *
+	 * @return array
+	 */
 	public static function getMailAccountDetail($userid)
 	{
 		if (isset(self::$usersCache[$userid])) {
 			return self::$usersCache[$userid];
 		}
-		$user = false;
-		$adb = PearDatabase::getInstance();
-		$result = $adb->pquery('SELECT * FROM roundcube_users where user_id = ?', [$userid]);
-		if ($adb->getRowCount($result)) {
-			$user = $adb->getRow($result);
-		}
+		$user = (new \App\Db\Query())->from('roundcube_users')->where(['user_id' => $userid])->one();
+
 		self::$usersCache[$userid] = $user;
+
 		return $user;
 	}
 
-	public static function _decode_text($text)
+	/**
+	 * Convert text encoding.
+	 *
+	 * @param string $text
+	 *
+	 * @return string
+	 */
+	public static function decodeText($text)
 	{
 		$data = imap_mime_header_decode($text);
 		$text = '';
@@ -250,28 +320,42 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		return $text;
 	}
 
-	public static function get_full_name($text)
+	/**
+	 * Return full name.
+	 *
+	 * @param string $text
+	 *
+	 * @return string
+	 */
+	public static function getFullName($text)
 	{
 		$return = '';
 		foreach ($text as $row) {
 			if ($return != '') {
-				$return.= ',';
+				$return .= ',';
 			}
 			if ($row->personal == '') {
-				$return.= $row->mailbox . '@' . $row->host;
+				$return .= $row->mailbox . '@' . $row->host;
 			} else {
-				$return.= self::_decode_text($row->personal) . ' - ' . $row->mailbox . '@' . $row->host;
+				$return .= self::decodeText($row->personal) . ' - ' . $row->mailbox . '@' . $row->host;
 			}
 		}
 		return $return;
 	}
 
-	public static function _get_body_attach($mbox, $id, $msgno)
+	/**
+	 * Return body and attachments.
+	 *
+	 * @param resource $mbox
+	 * @param int      $id
+	 * @param int      $msgno
+	 *
+	 * @return array
+	 */
+	public static function getBodyAttach($mbox, $id, $msgno)
 	{
 		$struct = imap_fetchstructure($mbox, $id, FT_UID);
-		$parts = $struct->parts;
-		$i = 0;
-		$mail = array('id' => $id);
+		$mail = ['id' => $id];
 		if (empty($struct->parts)) {
 			$mail = self::initMailPart($mbox, $mail, $struct, 0);
 		} else {
@@ -279,12 +363,27 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 				$mail = self::initMailPart($mbox, $mail, $partStructure, $partNum + 1);
 			}
 		}
-		$ret = array();
-		$ret['body'] = $mail['textHtml'] ? $mail['textHtml'] : $mail['textPlain'];
-		$ret['attachment'] = $mail["attachments"];
-		return $ret;
+		$body = '';
+		$body = (!empty($mail['textPlain'])) ? $mail['textPlain'] : $body;
+		$body = (!empty($mail['textHtml'])) ? $mail['textHtml'] : $body;
+		$attachment = (isset($mail['attachments'])) ? $mail['attachments'] : [];
+
+		return [
+			'body' => $body,
+			'attachment' => $attachment,
+		];
 	}
 
+	/**
+	 * Init mail part.
+	 *
+	 * @param resource $mbox
+	 * @param array    $mail
+	 * @param object   $partStructure
+	 * @param int      $partNum
+	 *
+	 * @return array
+	 */
 	protected static function initMailPart($mbox, $mail, $partStructure, $partNum)
 	{
 		$data = $partNum ? imap_fetchbody($mbox, $mail['id'], $partNum, FT_UID | FT_PEEK) : imap_body($mbox, $mail['id'], FT_UID | FT_PEEK);
@@ -297,7 +396,7 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		} elseif ($partStructure->encoding == 4) {
 			$data = imap_qprint($data);
 		}
-		$params = array();
+		$params = [];
 		if (!empty($partStructure->parameters)) {
 			foreach ($partStructure->parameters as $param) {
 				$params[strtolower($param->attribute)] = $param->value;
@@ -313,11 +412,14 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 				}
 			}
 		}
-		if (!empty($params['charset']) && strtolower($params['charset']) != 'utf-8') {
+		if (!empty($params['charset']) && strtolower($params['charset']) !== 'utf-8') {
 			if (function_exists('mb_convert_encoding') && in_array($params['charset'], mb_list_encodings())) {
-				$data = mb_convert_encoding($data, 'utf-8', $params['charset']);
+				$encodedData = mb_convert_encoding($data, 'UTF-8', $params['charset']);
 			} else {
-				$data = iconv($params['charset'], 'utf-8', $data);
+				$encodedData = iconv($params['charset'], 'UTF-8', $data);
+			}
+			if ($encodedData) {
+				$data = $encodedData;
 			}
 		}
 		$attachmentId = $partStructure->ifid ? trim($partStructure->id, ' <>') : (isset($params['filename']) || isset($params['name']) ? mt_rand() . mt_rand() : null);
@@ -326,7 +428,7 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 				$fileName = $attachmentId . '.' . strtolower($partStructure->subtype);
 			} else {
 				$fileName = !empty($params['filename']) ? $params['filename'] : $params['name'];
-				$fileName = self::_decode_text($fileName);
+				$fileName = self::decodeText($fileName);
 				$fileName = self::decodeRFC2231($fileName);
 			}
 			$mail['attachments'][$attachmentId]['filename'] = $fileName;
@@ -340,11 +442,20 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 				if (isset($uuDecode['attachments'])) {
 					$mail['attachments'] = $uuDecode['attachments'];
 				}
+				if (!isset($mail['textPlain'])) {
+					$mail['textPlain'] = '';
+				}
 				$mail['textPlain'] .= $uuDecode['text'];
 			} else {
+				if (!isset($mail['textHtml'])) {
+					$mail['textHtml'] = '';
+				}
 				$mail['textHtml'] .= $data;
 			}
 		} elseif ($partStructure->type == 2 && $data) {
+			if (!isset($mail['textPlain'])) {
+				$mail['textPlain'] = '';
+			}
 			$mail['textPlain'] .= trim($data);
 		}
 		if (!empty($partStructure->parts)) {
@@ -359,11 +470,16 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		return $mail;
 	}
 
+	/**
+	 * Decode string.
+	 *
+	 * @param string $input
+	 *
+	 * @return array
+	 */
 	protected static function uuDecode($input)
 	{
-		$attachments = $parts = [];
-		$pid = 0;
-
+		$attachments = [];
 		$uu_regexp_begin = '/begin [0-7]{3,4} ([^\r\n]+)\r?\n/s';
 		$uu_regexp_end = '/`\r?\nend((\r?\n)|($))/s';
 
@@ -387,20 +503,36 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 			// add attachments to the structure
 			$attachments[] = [
 				'filename' => trim($matches[1][0]),
-				'attachment' => convert_uudecode($filebody)
+				'attachment' => convert_uudecode($filebody),
 			];
 		}
 		return ['attachments' => $attachments, 'text' => $input];
 	}
 
-	public function isUrlEncoded($string)
+	/**
+	 * Check if url is encoded.
+	 *
+	 * @param string $string
+	 *
+	 * @return bool
+	 */
+	public static function isUrlEncoded($string)
 	{
 		$string = str_replace('%20', '+', $string);
 		$decoded = urldecode($string);
+
 		return $decoded != $string && urlencode($decoded) == $string;
 	}
 
-	protected function decodeRFC2231($string, $charset = 'utf-8')
+	/**
+	 * decode RFC2231 formatted string.
+	 *
+	 * @param string $string
+	 * @param string $charset
+	 *
+	 * @return string
+	 */
+	protected static function decodeRFC2231($string, $charset = 'utf-8')
 	{
 		if (preg_match("/^(.*?)'.*?'(.*?)$/", $string, $matches)) {
 			$encoding = $matches[1];
@@ -412,124 +544,19 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		return $string;
 	}
 
-	public function _SaveAttachements($relID, $mail)
-	{
-		$adb = PearDatabase::getInstance();
-		$attachments = $mail->get('attachments');
-		$userid = $mail->getAccountOwner();
-		$usetime = $mail->get('udate_formated');
-		$setype = 'OSSMailView Attachment';
-
-		$IDs = [];
-		if ($attachments) {
-			foreach ($attachments as $attachment) {
-				$filename = $attachment['filename'];
-				$filecontent = $attachment['attachment'];
-				$attachid = $adb->getUniqueId('vtiger_crmentity');
-				$description = $filename;
-				$params = [
-					'crmid' => $attachid,
-					'smcreatorid' => $userid,
-					'smownerid' => $userid,
-					'modifiedby' => $userid,
-					'setype' => $setype,
-					'description' => $description,
-					'attention' => $attention_val,
-					'createdtime' => $usetime,
-					'modifiedtime' => $usetime
-				];
-				$adb->insert('vtiger_crmentity', $params);
-				$issaved = self::_SaveAttachmentFile($attachid, $filename, $filecontent);
-				if ($issaved) {
-					$record = Vtiger_Record_Model::getCleanInstance('Documents');
-					$record->set('assigned_user_id', $userid);
-					$record->set('notes_title', $filename);
-					$record->set('filename', $filename);
-					$record->set('filestatus', 1);
-					$record->set('filelocationtype', 'I');
-					$record->set('folderid', 'T2');
-					$record->set('mode', 'new');
-					$record->set('id', '');
-					$record->save();
-					$IDs[] = $record->getId();
-
-					$adb->insert('vtiger_seattachmentsrel', [
-						'crmid' => $record->getId(),
-						'attachmentsid' => $attachid
-					]);
-					$adb->update('vtiger_crmentity', [
-						'createdtime' => $usetime,
-						'smcreatorid' => $userid,
-						'modifiedby' => $userid,
-						], 'crmid = ?', [$record->getId()]
-					);
-					if ($relID && $relID != 0 && $relID != '') {
-						$dirname = vtlib\Functions::initStorageFileDirectory('OSSMailView');
-						$url_to_image = $dirname . $attachid . '_' . $filename;
-						$adb->insert('vtiger_ossmailview_files', [
-							'ossmailviewid' => $relID,
-							'documentsid' => $record->getId(),
-							'attachmentsid' => $attachid
-						]);
-						$result = $adb->pquery('SELECT content FROM vtiger_ossmailview where ossmailviewid = ?', [$relID]);
-						$content = $adb->getSingleValue($result);
-						preg_match_all('/src="cid:(.*)"/Uims', $content, $matches);
-						if (count($matches)) {
-							$search = array();
-							$replace = array();
-							foreach ($matches[1] as $match) {
-								if (strpos($filename, $match) !== false || strpos($match, $filename) !== false) {
-									$search[] = "src=\"cid:$match\"";
-									$replace[] = "src=\"$url_to_image\"";
-								}
-							}
-							$content = str_replace($search, $replace, $content);
-						}
-						$adb->update('vtiger_ossmailview', [
-							'content' => $content
-							], 'ossmailviewid = ?', [$relID]
-						);
-					}
-				}
-			}
-		}
-		return $IDs;
-	}
-
-	public function _SaveAttachmentFile($attachid, $filename, $filecontent)
-	{
-		require_once 'modules/OSSMail/MailAttachmentMIME.php';
-		$adb = PearDatabase::getInstance();
-		$dirname = vtlib\Functions::initStorageFileDirectory('OSSMailView');
-		if (!is_dir($dirname))
-			mkdir($dirname);
-		$filename = str_replace(' ', '-', $filename);
-		$filename = str_replace(':', '-', $filename);
-		$filename = str_replace('/', '-', $filename);
-		$saveasfile = "$dirname$attachid" . "_$filename";
-		if (!file_exists($saveasfile)) {
-			$fh = fopen($saveasfile, 'wb');
-			fwrite($fh, $filecontent);
-			fclose($fh);
-		}
-		$mimetype = MailAttachmentMIME::detect($saveasfile);
-		$params = [
-			'attachmentsid' => $attachid,
-			'name' => $filename,
-			'description' => $description,
-			'type' => $mimetype,
-			'path' => $dirname
-		];
-		$adb->insert('vtiger_attachments', $params);
-		return true;
-	}
-
+	/**
+	 * Return user folders.
+	 *
+	 * @param int $user
+	 *
+	 * @return array
+	 */
 	public static function getFolders($user)
 	{
 		$account = self::getAccountsList($user);
 		$account = reset($account);
 		$folders = false;
-		$mbox = self::imapConnect($account['username'], $account['password'], $account['mail_host'], 'INBOX', false);
+		$mbox = self::imapConnect($account['username'], \App\Encryption::getInstance()->decrypt($account['password']), $account['mail_host'], 'INBOX', false);
 		if ($mbox) {
 			$folders = [];
 			$ref = '{' . $account['mail_host'] . '}';
@@ -542,7 +569,16 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		return $folders;
 	}
 
-	public function convertCharacterEncoding($value, $toCharset, $fromCharset)
+	/**
+	 * Convert string from encoding to encoding.
+	 *
+	 * @param string $value
+	 * @param string $toCharset
+	 * @param string $fromCharset
+	 *
+	 * @return string
+	 */
+	public static function convertCharacterEncoding($value, $toCharset, $fromCharset)
 	{
 		if (function_exists('mb_convert_encoding')) {
 			$value = mb_convert_encoding($value, $toCharset, $fromCharset);
@@ -552,85 +588,12 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		return $value;
 	}
 
-	public static function getViewableData()
-	{
-		global $no_include_config;
-		$no_include_config = true;
-		$return = array();
-		include 'modules/OSSMail/roundcube/config/config.inc.php';
-		foreach ($config as $key => $value) {
-			if ($key == 'skin_logo') {
-				$return[$key] = $value['*'];
-			} else {
-				$return[$key] = $value;
-			}
-		}
-		return $return;
-	}
-
-	public static function setConfigData($param, $dbupdate = true)
-	{
-		$fileName = 'modules/OSSMail/roundcube/config/config.inc.php';
-		$fileContent = file_get_contents($fileName);
-		$Fields = self::getEditableFields();
-
-		foreach ($param as $fieldName => $fieldValue) {
-			$type = $Fields[$fieldName]['fieldType'];
-			$pattern = '/(\$config\[\'' . $fieldName . '\'\])[\s]+=([^;]+);/';
-			if ($type == 'checkbox' || $type == 'int') {
-				$patternString = "\$config['%s'] = %s;";
-			} elseif ($type == 'multipicklist') {
-				if (!is_array($fieldValue)) {
-					$fieldValue = [$fieldValue];
-				}
-				$saveValue = '[';
-				foreach ($fieldValue as $value) {
-					$saveValue .= "'$value' => '$value',";
-				}
-				$saveValue .= ']';
-				$fieldValue = $saveValue;
-				$patternString = "\$config['%s'] = %s;";
-			} elseif ($fieldName == 'skin_logo') {
-				$patternString = "\$config['%s'] = array(\"*\" => \"%s\");";
-			} else {
-				$patternString = "\$config['%s'] = '%s';";
-			}
-			$replacement = sprintf($patternString, $fieldName, $fieldValue);
-			$fileContent = preg_replace($pattern, $replacement, $fileContent);
-		}
-		$filePointer = fopen($fileName, 'w');
-		fwrite($filePointer, $fileContent);
-		fclose($filePointer);
-		if ($dbupdate) {
-			$adb = PearDatabase::getInstance();
-			$adb->pquery("update roundcube_users set language=?", array($param['language']));
-		}
-		return vtranslate('JS_save_config_info', 'OSSMailScanner');
-	}
-
-	public function getEditableFields()
-	{
-		return array(
-			'product_name' => array('label' => 'LBL_RC_product_name', 'fieldType' => 'text', 'required' => 1),
-			'validate_cert' => array('label' => 'LBL_RC_validate_cert', 'fieldType' => 'checkbox', 'required' => 0),
-			'imap_open_add_connection_type' => array('label' => 'LBL_RC_imap_open_add_connection_type', 'fieldType' => 'checkbox', 'required' => 0),
-			'default_host' => array('label' => 'LBL_RC_default_host', 'fieldType' => 'multipicklist', 'required' => 1),
-			'default_port' => array('label' => 'LBL_RC_default_port', 'fieldType' => 'int', 'required' => 1),
-			'smtp_server' => array('label' => 'LBL_RC_smtp_server', 'fieldType' => 'text', 'required' => 1),
-			'smtp_user' => array('label' => 'LBL_RC_smtp_user', 'fieldType' => 'text', 'required' => 1),
-			'smtp_pass' => array('label' => 'LBL_RC_smtp_pass', 'fieldType' => 'text', 'required' => 1),
-			'smtp_port' => array('label' => 'LBL_RC_smtp_port', 'fieldType' => 'int', 'required' => 1),
-			'language' => array('label' => 'LBL_RC_language', 'fieldType' => 'picklist', 'required' => 1, 'value' => array('ar_SA', 'az_AZ', 'be_BE', 'bg_BG', 'bn_BD', 'bs_BA', 'ca_ES', 'cs_CZ', 'cy_GB', 'da_DK', 'de_CH', 'de_DE', 'el_GR', 'en_CA', 'en_GB', 'en_US', 'es_419', 'es_AR', 'es_ES', 'et_EE', 'eu_ES', 'fa_AF', 'fa_IR', 'fi_FI', 'fr_FR', 'fy_NL', 'ga_IE', 'gl_ES', 'he_IL', 'hi_IN', 'hr_HR', 'hu_HU', 'hy_AM', 'id_ID', 'is_IS', 'it_IT', 'ja_JP', 'ka_GE', 'km_KH', 'ko_KR', 'lb_LU', 'lt_LT', 'lv_LV', 'mk_MK', 'ml_IN', 'mr_IN', 'ms_MY', 'nb_NO', 'ne_NP', 'nl_BE', 'nl_NL', 'nn_NO', 'pl_PL', 'pt_BR', 'pt_PT', 'ro_RO', 'ru_RU', 'si_LK', 'sk_SK', 'sl_SI', 'sq_AL', 'sr_CS', 'sv_SE', 'ta_IN', 'th_TH', 'tr_TR', 'uk_UA', 'ur_PK', 'vi_VN', 'zh_CN', 'zh_TW')),
-			'username_domain' => array('label' => 'LBL_RC_username_domain', 'fieldType' => 'text', 'required' => 0),
-			'skin_logo' => array('label' => 'LBL_RC_skin_logo', 'fieldType' => 'text', 'required' => 1),
-			'ip_check' => array('label' => 'LBL_RC_ip_check', 'fieldType' => 'checkbox', 'required' => 0),
-			'enable_spellcheck' => array('label' => 'LBL_RC_enable_spellcheck', 'fieldType' => 'checkbox', 'required' => 0),
-			'identities_level' => array('label' => 'LBL_RC_identities_level', 'fieldType' => 'picklist', 'required' => 1, 'value' => array(0, 1, 2, 3, 4)),
-			'session_lifetime' => array('label' => 'LBL_RC_session_lifetime', 'fieldType' => 'int', 'required' => 1),
-		);
-	}
-
-	public function GetSite_URL()
+	/**
+	 * Return site URL.
+	 *
+	 * @return string
+	 */
+	public static function getSiteUrl()
 	{
 		$site_URL = AppConfig::main('site_URL');
 		if (substr($site_URL, -1) != '/') {
@@ -639,19 +602,25 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		return $site_URL;
 	}
 
-	static function getMailsFromIMAP($user = false)
+	/**
+	 * Fetch mails from IMAP.
+	 *
+	 * @param int $user
+	 *
+	 * @return array
+	 */
+	public static function getMailsFromIMAP($user = false)
 	{
 		$account = self::getAccountsList($user, true);
 		$mails = [];
 		$mailLimit = 5;
 		if ($account) {
-			$imap = self::imapConnect($account[0]['username'], $account[0]['password'], $account[0]['mail_host']);
+			$imap = self::imapConnect($account[0]['username'], \App\Encryption::getInstance()->decrypt($account[0]['password']), $account[0]['mail_host']);
 			$numMessages = imap_num_msg($imap);
 			if ($numMessages < $mailLimit) {
 				$mailLimit = $numMessages;
 			}
-			for ($i = $numMessages; $i > ($numMessages - $mailLimit); $i--) {
-				$header = imap_headerinfo($imap, $i);
+			for ($i = $numMessages; $i > ($numMessages - $mailLimit); --$i) {
 				$mail = self::getMail($imap, false, $i);
 				$mails[] = $mail;
 			}
@@ -660,15 +629,24 @@ class OSSMail_Record_Model extends Vtiger_Record_Model
 		return $mails;
 	}
 
+	/**
+	 * Get mail account detail by hash ID.
+	 *
+	 * @param string $hash
+	 *
+	 * @return bool|array
+	 */
 	public static function getAccountByHash($hash)
 	{
-		$db = PearDatabase::getInstance();
-		$query = sprintf('SELECT * FROM roundcube_users WHERE preferences LIKE \'%s\'', "%:\"$hash\";%");
-		$result = $db->query($query);
-		if ($db->getRowCount($result) > 0) {
-			return $db->getRow($result);
-		} else {
-			return false;
+		if (preg_match('/^[_a-zA-Z0-9.,]+$/', $hash)) {
+			$result = (new \App\Db\Query())
+				->from('roundcube_users')
+				->where(['like', 'preferences', "%:\"$hash\";%", false])
+				->one();
+			if ($result) {
+				return $result;
+			}
 		}
+		return false;
 	}
 }

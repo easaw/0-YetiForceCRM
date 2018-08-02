@@ -10,12 +10,12 @@
 ********************************************************************************/
 -->*}
 {strip}
-	<div id="listPriceUpdateContainer">
+	<div class="tpl-PriceBooks-ListPriceUpdate" id="listPriceUpdateContainer">
 		<div class="modal-header">
-			<button class="btn btn-warning pull-right" data-dismiss="modal" class="pull-right">
-				<span class="glyphicon glyphicon-remove alignMiddle"></span>
+			<h5 class="modal-title">{\App\Language::translate('LBL_EDIT_LIST_PRICE', $MODULE)}</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
 			</button>
-			<h3 class="modal-title">{vtranslate('LBL_EDIT_LIST_PRICE', $MODULE)}</h3>
 		</div>	
 		<form class="form-horizontal" id="listPriceUpdate" method="post" action="index.php">
 			<input type="hidden" name="module" value="{$MODULE}" />
@@ -24,13 +24,13 @@
 			<input type="hidden" name="relid" value="{$REL_ID}" />
 			<div class="modal-body">
 				<div>
-					<span><strong>{vtranslate('LBL_EDIT_LIST_PRICE',$MODULE)}</strong></span>
+					<span><strong>{\App\Language::translate('LBL_EDIT_LIST_PRICE',$MODULE)}</strong></span>
 					&nbsp;:&nbsp;
 					<input type="text" class="form-control" name="currentPrice" value="{$CURRENT_PRICE}" data-validation-engine="validate[required,funcCall[Vtiger_Currency_Validator_Js.invokeValidation]]" 
-						   data-decimal-seperator='{$USER_MODEL->get('currency_decimal_separator')}' data-group-seperator='{$USER_MODEL->get('currency_grouping_separator')}' />
+						   data-decimal-separator='{$USER_MODEL->get('currency_decimal_separator')}' data-group-separator='{$USER_MODEL->get('currency_grouping_separator')}' />
 				</div>
 			</div>
-			{include file='ModalFooter.tpl'|@vtemplate_path:$MODULE}
+			{include file=\App\Layout::getTemplatePath('Modals/Footer.tpl', $MODULE) BTN_SUCCESS='LBL_SAVE' BTN_DANGER='LBL_CANCEL'}
 		</form>	
 	</div>
 {/strip}	

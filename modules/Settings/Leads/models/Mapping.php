@@ -11,12 +11,12 @@
 
 class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 {
-
 	public $name = 'Leads';
 
 	/**
-	 * Function to get detail view url of this model
-	 * @return <String> url
+	 * Function to get detail view url of this model.
+	 *
+	 * @return string url
 	 */
 	public function getDetailViewUrl()
 	{
@@ -24,8 +24,9 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get edit view url of this model
-	 * @return <String> url
+	 * Function to get edit view url of this model.
+	 *
+	 * @return string url
 	 */
 	public function getEditViewUrl()
 	{
@@ -33,8 +34,9 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get delete url of this mapping model
-	 * @return <String> url
+	 * Function to get delete url of this mapping model.
+	 *
+	 * @return string url
 	 */
 	public function getMappingDeleteUrl()
 	{
@@ -42,64 +44,63 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get headers for detail view
+	 * Function to get headers for detail view.
+	 *
 	 * @return <Array> headers list
 	 */
 	public function getHeaders()
 	{
-		return array('Leads' => 'Leads', 'Type' => 'Type', 'Accounts' => 'Accounts');
+		return ['Leads' => 'Leads', 'Type' => 'Type', 'Accounts' => 'Accounts'];
 	}
 
 	/**
-	 * Function to get list of detail view link models
+	 * Function to get list of detail view link models.
+	 *
 	 * @return <Array> list of detail view link models <Vtiger_Link_Model>
 	 */
 	public function getDetailViewLinks()
 	{
-		return array(Vtiger_Link_Model::getInstanceFromValues(array(
-				'linktype' => 'DETAILVIEW',
+		return [Vtiger_Link_Model::getInstanceFromValues([
+				'linktype' => 'DETAIL_VIEW_BASIC',
 				'linklabel' => 'LBL_EDIT',
 				'linkurl' => 'javascript:Settings_LeadMapping_Js.triggerEdit("' . $this->getEditViewUrl() . '")',
-				'linkicon' => ''
-		)));
+				'linkicon' => '',
+		])];
 	}
 
 	/**
-	 * Function to get list of mapping link models
+	 * Function to get list of mapping link models.
+	 *
 	 * @return <Array> list of mapping link models <Vtiger_Link_Model>
 	 */
 	public function getMappingLinks()
 	{
-		return array(Vtiger_Link_Model::getInstanceFromValues(array(
-				'linktype' => 'DETAILVIEW',
+		return [Vtiger_Link_Model::getInstanceFromValues([
+				'linktype' => 'DETAIL_VIEW_BASIC',
 				'linklabel' => 'LBL_DELETE',
 				'linkurl' => 'javascript:Settings_LeadMapping_Js.triggerDelete(event,"' . $this->getMappingDeleteUrl() . '")',
-				'linkicon' => ''
-		)));
+				'linkicon' => '',
+		])];
 	}
 
 	/**
-	 * Function to get mapping details
+	 * Function to get mapping details.
+	 *
 	 * @return <Array> list of mapping details
 	 */
 	public function getMapping($editable = false)
 	{
 		if (empty($this->mapping)) {
-			$db = PearDatabase::getInstance();
-			$query = 'SELECT * FROM vtiger_convertleadmapping';
+			$query = (new \App\Db\Query())->from('vtiger_convertleadmapping');
 			if ($editable) {
-				$query .= ' WHERE editable = 1';
+				$query->where(['editable' => 1]);
 			}
-
-			$result = $db->pquery($query, array());
-			$numOfRows = $db->num_rows($result);
-			$mapping = array();
-			for ($i = 0; $i < $numOfRows; $i++) {
-				$rowData = $db->query_result_rowdata($result, $i);
-				$mapping[$rowData['cfmid']] = $rowData;
+			$dataReader = $query->createCommand()->query();
+			while ($row = $dataReader->read()) {
+				$mapping[$row['cfmid']] = $row;
 			}
-
-			$finalMapping = $fieldIdsList = array();
+			$dataReader->close();
+			$finalMapping = $fieldIdsList = [];
 			foreach ($mapping as $mappingDetails) {
 				array_push($fieldIdsList, $mappingDetails['leadfid'], $mappingDetails['accountfid']);
 			}
@@ -108,11 +109,11 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 				$fieldLabelsList = $this->getFieldsInfo(array_unique($fieldIdsList));
 			}
 			foreach ($mapping as $mappingId => $mappingDetails) {
-				$finalMapping[$mappingId] = array(
+				$finalMapping[$mappingId] = [
 					'editable' => $mappingDetails['editable'],
 					'Leads' => $fieldLabelsList[$mappingDetails['leadfid']],
-					'Accounts' => $fieldLabelsList[$mappingDetails['accountfid']]
-				);
+					'Accounts' => $fieldLabelsList[$mappingDetails['accountfid']],
+				];
 			}
 
 			$this->mapping = $finalMapping;
@@ -121,21 +122,22 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get fields info
+	 * Function to get fields info.
+	 *
 	 * @param <Array> list of field ids
+	 *
 	 * @return <Array> list of field info
 	 */
 	public function getFieldsInfo($fieldIdsList)
 	{
 		$leadModel = Vtiger_Module_Model::getInstance($this->getName());
 		$leadId = $leadModel->getId();
-
-		$db = PearDatabase::getInstance();
-		$sql = sprintf('SELECT fieldid, fieldlabel, uitype, typeofdata, fieldname, tablename, tabid FROM vtiger_field WHERE fieldid IN (%s)', $db->generateQuestionMarks($fieldIdsList));
-		$result = $db->pquery($sql, $fieldIdsList);
-
+		$dataReader = (new App\Db\Query())->select(['fieldid', 'fieldlabel', 'uitype', 'typeofdata', 'fieldname', 'tablename', 'tabid'])
+			->from('vtiger_field')
+			->where(['fieldid' => $fieldIdsList])
+			->createCommand()->query();
 		$fieldLabelsList = [];
-		while ($rowData = $db->getRow($result)) {
+		while ($rowData = $dataReader->read()) {
 			$fieldInfo = ['id' => $rowData['fieldid'], 'label' => $rowData['fieldlabel']];
 			if ($rowData['tabid'] === $leadId) {
 				$fieldModel = Settings_Leads_Field_Model::getCleanInstance();
@@ -148,24 +150,25 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 			}
 			$fieldLabelsList[$rowData['fieldid']] = $fieldInfo;
 		}
+		$dataReader->close();
+
 		return $fieldLabelsList;
 	}
 
 	/**
-	 * Function to save the mapping info
-	 * @param <Array> $mapping info
+	 * Function to save the mapping info.
+	 *
+	 * @param array $mapping info
 	 */
 	public function save($mapping)
 	{
-		$db = PearDatabase::getInstance();
-		$deleteMappingsList = $updateMappingsList = $createMappingsList = array();
+		$db = \App\Db::getInstance();
+		$deleteMappingsList = $updateMappingsList = $createMappingsList = [];
 		foreach ($mapping as $mappingDetails) {
-
 			if (is_array($mappingDetails)) {
 				$mappingId = $mappingDetails['mappingId'];
 				if ($mappingDetails['lead']) {
 					if ($mappingId) {
-//                    var_dump($mappingDetails);
 						if ((array_key_exists('deletable', $mappingDetails)) || !$mappingDetails['account']) {
 							$deleteMappingsList[] = $mappingId;
 						} else {
@@ -181,64 +184,59 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 				}
 			}
 		}
-
 		if ($deleteMappingsList) {
-			self::deleteMapping($deleteMappingsList, ' && editable = 1');
+			self::deleteMapping($deleteMappingsList, true);
 		}
-
 		if ($createMappingsList) {
-			$insertQuery = 'INSERT INTO vtiger_convertleadmapping(leadfid, accountfid) VALUES ';
-
 			$count = count($createMappingsList);
-			for ($i = 0; $i < $count; $i++) {
+			$insertedData = [];
+			for ($i = 0; $i < $count; ++$i) {
 				$mappingDetails = $createMappingsList[$i];
-				$insertQuery .= '(' . $mappingDetails['lead'] . ', ' . $mappingDetails['account'] . ')';
-				if ($i !== $count - 1) {
-					$insertQuery .= ', ';
-				}
+				$insertedData[] = [$mappingDetails['lead'], $mappingDetails['account']];
 			}
-			$db->pquery($insertQuery, array());
+			$db->createCommand()->batchInsert('vtiger_convertleadmapping', ['leadfid', 'accountfid'], $insertedData)
+				->execute();
 		}
-
 		if ($updateMappingsList) {
-			$leadQuery = ' SET leadfid = CASE ';
-			$accountQuery = ' accountfid = CASE ';
+			$leadExpression = 'CASE ';
+			$accountExpression = 'CASE ';
 
 			foreach ($updateMappingsList as $mappingDetails) {
 				$mappingId = $mappingDetails['mappingId'];
-				$leadQuery .= " WHEN cfmid = $mappingId THEN " . $mappingDetails['lead'];
-				$accountQuery .= " WHEN cfmid = $mappingId THEN " . $mappingDetails['account'];
+				$leadExpression .= " WHEN cfmid = {$db->quoteValue($mappingId)} THEN {$db->quoteValue($mappingDetails['lead'])}";
+				$accountExpression .= " WHEN cfmid = {$db->quoteValue($mappingId)} THEN {$db->quoteValue($mappingDetails['account'])}";
 			}
-			$leadQuery .= ' ELSE leadfid END ';
-			$accountQuery .= ' ELSE accountfid END ';
-
-			$db->pquery("UPDATE vtiger_convertleadmapping $leadQuery, $accountQuery WHERE editable = ?", array(1));
+			$leadExpression .= ' ELSE leadfid END';
+			$accountExpression .= ' ELSE accountfid END';
+			$db->createCommand()->update('vtiger_convertleadmapping', ['leadfid' => new yii\db\Expression($leadExpression), 'accountfid' => new yii\db\Expression($accountExpression)], ['editable' => 1])->execute();
 		}
 	}
 
 	/**
-	 * Function to get restricted field ids list
-	 * @return <Array> list of field ids
+	 * Function to get restricted field ids list.
+	 *
+	 * @return array list of field ids
 	 */
 	public static function getRestrictedFieldIdsList()
 	{
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT * FROM vtiger_convertleadmapping WHERE editable = ?', array(0));
-		$numOfRows = $db->num_rows($result);
-
-		$restrictedIdsList = array();
-		for ($i = 0; $i < $numOfRows; $i++) {
-			$rowData = $db->query_result_rowdata($result, $i);
-			if ($rowData['accountfid']) {
-				$restrictedIdsList[] = $rowData['accountfid'];
+		$dataReader = (new \App\Db\Query())->select(['accountfid'])->from('vtiger_convertleadmapping')
+			->where(['editable' => 0])
+			->createCommand()->query();
+		$restrictedIdsList = [];
+		while ($accountfId = $dataReader->readColumn(0)) {
+			if ($accountfId) {
+				$restrictedIdsList[] = $accountfId;
 			}
 		}
+		$dataReader->close();
+
 		return $restrictedIdsList;
 	}
 
 	/**
-	 * Function to get mapping supported modules list
-	 * @return <Array>
+	 * Function to get mapping supported modules list.
+	 *
+	 * @return array
 	 */
 	public static function getSupportedModulesList()
 	{
@@ -246,19 +244,23 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get instance
-	 * @param <Boolean> true/false
+	 * Function to get instance.
+	 *
+	 * @param bool true/false
+	 *
 	 * @return <Settings_Leads_Mapping_Model>
 	 */
 	public static function getInstance($editable = false)
 	{
 		$instance = new self();
 		$instance->getMapping($editable);
+
 		return $instance;
 	}
 
 	/**
-	 * Function to get instance
+	 * Function to get instance.
+	 *
 	 * @return <Settings_Leads_Mapping_Model>
 	 */
 	public static function getCleanInstance()
@@ -267,16 +269,18 @@ class Settings_Leads_Mapping_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to delate the mapping
-	 * @param <Array> $mappingIdsList
+	 * Function to delate the mapping.
+	 *
+	 * @param array $mappingIdsList
+	 * @param bool  $editableParam
 	 */
-	public static function deleteMapping($mappingIdsList, $conditions = false)
+	public static function deleteMapping($mappingIdsList, $editableParam = false)
 	{
-		$db = PearDatabase::getInstance();
-		$sql = sprintf('DELETE FROM vtiger_convertleadmapping WHERE cfmid IN (%s) ', generateQuestionMarks($mappingIdsList));
 		if ($conditions) {
-			$sql .= $conditions;
+			$params = ['cfmid' => $mappingIdsList, 'editable' => 1];
+		} else {
+			$params = ['cfmid' => $mappingIdsList];
 		}
-		$db->pquery($sql, $mappingIdsList);
+		\App\Db::getInstance()->createCommand()->delete('vtiger_convertleadmapping', $params)->execute();
 	}
 }

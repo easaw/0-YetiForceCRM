@@ -1,14 +1,24 @@
 <?php
+/**
+ * Mail scanner action bind ServiceContracts.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ */
 
 /**
- * Mail scanner action bind ServiceContracts
- * @package YetiForce.MailScanner
- * @license licenses/License.html
- * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ * Mail scanner action bind ServiceContracts.
  */
 class OSSMailScanner_BindServiceContracts_ScannerAction
 {
-
+	/**
+	 * Process.
+	 *
+	 * @param OSSMail_Mail_Model $mail
+	 *
+	 * @return array
+	 */
 	public function process(OSSMail_Mail_Model $mail)
 	{
 		$mailId = $mail->getMailCrmId();
@@ -17,19 +27,22 @@ class OSSMailScanner_BindServiceContracts_ScannerAction
 			return $returnIds;
 		}
 
+		$accountNumbers = [];
 		$accounts = $mail->getActionResult('Accounts');
-		if (!empty($accounts)) {
-			$db = PearDatabase::getInstance();
+		if ($accounts) {
+			$keys = ['BindAccounts', 'BindContacts', 'BindLeads', 'BindHelpDesk'];
+			foreach ($keys as $key) {
+				if (isset($accounts[$key]) && is_array($accounts[$key])) {
+					$accountNumbers = array_merge($accountNumbers, $accounts[$key]);
+				}
+			}
+		}
 
-			$query = 'SELECT servicecontractsid FROM vtiger_servicecontracts '
-				. 'INNER JOIN vtiger_crmentity ON vtiger_crmentity.crmid = vtiger_servicecontracts.servicecontractsid '
-				. 'WHERE vtiger_crmentity.deleted = 0 && sc_related_to IN (' . implode(',', $accounts) . ') && contract_status = ?';
-
-			$result = $db->pquery($query, ['In Progress']);
-			if ($db->getRowCount($result)) {
-				$serviceContractsId = $db->getSingleValue($result);
-
-				$status = OSSMailView_Relation_Model::addRelation($mailId, $serviceContractsId, $mail->get('udate_formated'));
+		if ($accountNumbers) {
+			$result = (new App\Db\Query())->select(['servicecontractsid'])->from('vtiger_servicecontracts')->innerJoin('vtiger_crmentity', 'vtiger_servicecontracts.servicecontractsid = vtiger_crmentity.crmid')->where(['vtiger_crmentity.deleted' => 0, 'sc_related_to' => $accountNumbers, 'contract_status' => 'In Progress'])->scalar();
+			if ($result) {
+				$serviceContractsId = $result;
+				$status = (new OSSMailView_Relation_Model())->addRelation($mailId, $serviceContractsId, $mail->get('udate_formated'));
 				if ($status) {
 					$returnIds[] = $serviceContractsId;
 				}

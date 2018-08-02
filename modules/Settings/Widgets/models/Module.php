@@ -1,72 +1,91 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings Widgets Module Model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Widgets_Module_Model extends Settings_Vtiger_Module_Model
 {
-
-	public static function getWidgets($module = false, $record = false)
+	/**
+	 * Function to get widgets.
+	 *
+	 * @param int|string $module
+	 *
+	 * @return array
+	 */
+	public static function getWidgets($module = false)
 	{
-		$db = PearDatabase::getInstance();
-		$sql = 'SELECT * FROM vtiger_widgets';
-		$params = [];
+		if ($module && !is_numeric($module)) {
+			$module = \App\Module::getModuleId($module);
+		}
+		if (\App\Cache::has('ModuleWidgets', $module)) {
+			return \App\Cache::get('ModuleWidgets', $module);
+		}
+		$query = (new App\Db\Query())->from('vtiger_widgets');
 		if ($module) {
-			if (!is_numeric($module)) {
-				$module = vtlib\Functions::getModuleId($module);
-			}
-			$sql .= ' WHERE tabid = ? ';
-			$params[] = $module;
+			$query->where(['tabid' => $module]);
 		}
-		$sql .= ' ORDER BY tabid,sequence ASC';
-		$result = $db->pquery($sql, $params, true);
-		$widgets = array(1 => array(), 2 => array(), 3 => array());
-		while ($row = $db->getRow($result)) {
-			$row['data'] = \includes\utils\Json::decode($row['data']);
-			$widgets[$row["wcol"]][$row["id"]] = $row;
+		$dataReader = $query->orderBy(['tabid' => SORT_ASC, 'sequence' => SORT_ASC])
+			->createCommand()->query();
+		$widgets = [1 => [], 2 => [], 3 => []];
+		while ($row = $dataReader->read()) {
+			$row['data'] = \App\Json::decode($row['data']);
+			$widgets[$row['wcol']][$row['id']] = $row;
 		}
+		$dataReader->close();
+		App\Cache::save('ModuleWidgets', $module, $widgets);
+
 		return $widgets;
 	}
 
+	/**
+	 * Return list of modules which have summary view.
+	 *
+	 * @return array
+	 */
 	public function getModulesList()
 	{
-		$adb = PearDatabase::getInstance();
-		$restrictedModules = ['Emails', 'Integration', 'Dashboard', 'ModComments', 'SMSNotifier'];
-		$sql = sprintf('SELECT * FROM vtiger_tab WHERE isentitytype = ? && name NOT IN (%s)', generateQuestionMarks($restrictedModules));
-		$params = [1, $restrictedModules];
-		$result = $adb->pquery($sql, $params);
-		$modules = [];
-		while ($row = $adb->fetch_array($result)) {
-			$moduleModel = Vtiger_Module_Model::getInstance($row['name']);
-			if ($moduleModel->isSummaryViewSupported())
-				$modules[$row['tabid']] = $row;
+		$modules = \vtlib\Functions::getAllModules();
+		foreach ($modules as $id => $module) {
+			$moduleModel = Vtiger_Module_Model::getInstance($module['name']);
+			if (!$moduleModel->isSummaryViewSupported()) {
+				unset($modules[$id]);
+			}
 		}
 		return $modules;
 	}
 
+	/**
+	 * Return available sizes of widgets.
+	 *
+	 * @return int[]
+	 */
 	public function getSize()
 	{
 		return [1, 2, 3];
 	}
 
+	/**
+	 * Function to get types.
+	 *
+	 * @param int $module
+	 *
+	 * @return array
+	 */
 	public function getType($module = false)
 	{
-		$moduleName = vtlib\Functions::getModuleName($module);
+		$moduleName = \App\Module::getModuleName($module);
 
 		$dir = 'modules/Vtiger/widgets/';
 		$moduleModel = Vtiger_Module_Model::getInstance($module);
 		$ffs = scandir($dir);
 		foreach ($ffs as $ff) {
-			$action = str_replace('.php', "", $ff);
+			$action = str_replace('.php', '', $ff);
 			if ($ff != '.' && $ff != '..' && !is_dir($dir . '/' . $ff) && $action != 'Basic') {
 				$folderFiles[$action] = $action;
-				vimport('~~' . $dir . $ff);
+				Vtiger_Loader::includeOnce('~~' . $dir . $ff);
 				$modelClassName = Vtiger_Loader::getComponentClassName('Widget', $action, 'Vtiger');
 				$instance = new $modelClassName();
 				if ($instance->allowedModules && !in_array($moduleName, $instance->allowedModules) || ($action == 'Comments' && !$moduleModel->isCommentEnabled())) {
@@ -77,82 +96,123 @@ class Settings_Widgets_Module_Model extends Settings_Vtiger_Module_Model
 		return $folderFiles;
 	}
 
+	/**
+	 * Return available columns of widgets.
+	 *
+	 * @return int[]
+	 */
 	public function getColumns()
 	{
 		return [1, 2, 3, 4, 5, 6];
 	}
 
+	/**
+	 * Function to get related modules for module.
+	 *
+	 * @param int $tabid
+	 *
+	 * @return array
+	 */
 	public function getRelatedModule($tabid)
 	{
-		$adb = PearDatabase::getInstance();
-		$sql = 'SELECT vtiger_relatedlists.*,vtiger_tab.name FROM vtiger_relatedlists
-				LEFT JOIN vtiger_tab ON vtiger_tab.tabid=vtiger_relatedlists.related_tabid WHERE vtiger_relatedlists.tabid = ? && vtiger_relatedlists.related_tabid != 0';
-		$result = $adb->pquery($sql, array($tabid));
-		$relation = array();
-		while ($row = $adb->fetch_array($result)) {
-			$relation[$row['relation_id']] = $row;
-		}
-		return $relation;
+		return (new \App\Db\Query())->select(['vtiger_relatedlists.*', 'vtiger_tab.name'])
+			->from('vtiger_relatedlists')
+			->leftJoin('vtiger_tab', 'vtiger_tab.tabid = vtiger_relatedlists.related_tabid')
+			->where(['and', ['vtiger_relatedlists.tabid' => $tabid], ['<>', 'vtiger_relatedlists.related_tabid', '0']])
+			->indexBy('relation_id')->all();
 	}
 
+	/**
+	 * Function to get filters.
+	 *
+	 * @param array $modules
+	 *
+	 * @return array
+	 */
 	public function getFiletrs($modules)
 	{
-		$adb = PearDatabase::getInstance();
 		$filetrs = [];
 		$tabid = [];
-		foreach ($modules as $key => $value) {
+		foreach ($modules as $value) {
 			if (!in_array($value['related_tabid'], $tabid)) {
-				$sql = "SELECT columnname,tablename,fieldlabel,fieldname FROM vtiger_field WHERE tabid = ? && uitype in ('15','16');";
-				$result = $adb->pquery($sql, [$value['related_tabid']]);
-				while ($row = $adb->getRow($result)) {
-					$filetrs[$value['related_tabid']][$row['fieldname']] = vtranslate($row['fieldlabel'], $value['name']);
+				$dataReader = (new \App\Db\Query())->select('columnname,tablename,fieldlabel,fieldname')
+					->from('vtiger_field')
+					->where(['tabid' => $value['related_tabid'], 'uitype' => [15, 16]])
+					->createCommand()->query();
+				while ($row = $dataReader->read()) {
+					$filetrs[$value['related_tabid']][$row['fieldname']] = \App\Language::translate($row['fieldlabel'], $value['name']);
 				}
+				$dataReader->close();
 				$tabid[] = $value['related_tabid'];
 			}
 		}
 		return $filetrs;
 	}
 
+	/**
+	 * Function to get checkboxes.
+	 *
+	 * @param array $modules
+	 *
+	 * @return array
+	 */
 	public function getCheckboxs($modules)
 	{
-		$db = PearDatabase::getInstance();
 		$checkboxs = [];
 		$tabid = [];
-		foreach ($modules as $key => $value) {
+		foreach ($modules as $value) {
 			if (!in_array($value['related_tabid'], $tabid)) {
-				$sql = "SELECT columnname,tablename,fieldlabel,fieldname FROM vtiger_field WHERE tabid = ? && uitype = ? && columnname NOT IN ('was_read');";
-				$result = $db->pquery($sql, [$value['related_tabid'], 56]);
-				while ($row = $db->getRow($result)) {
-					$checkboxs[$value['related_tabid']][$row['tablename'] . '.' . $row['fieldname']] = vtranslate($row['fieldlabel'], $value['name']);
+				$dataReader = (new \App\Db\Query())->select('columnname,tablename,fieldlabel,fieldname')
+					->from('vtiger_field')
+					->where(['tabid' => $value['related_tabid'], 'uitype' => [56]])
+					->andWhere(['<>', 'columnname', 'was_read'])
+					->createCommand()->query();
+				while ($row = $dataReader->read()) {
+					$checkboxs[$value['related_tabid']][$row['tablename'] . '.' . $row['fieldname']] = \App\Language::translate($row['fieldlabel'], $value['name']);
 				}
+				$dataReader->close();
 				$tabid[] = $value['related_tabid'];
 			}
 		}
 		return $checkboxs;
 	}
 
+	/**
+	 * Return list of fields for module and uitypes.
+	 *
+	 * @param int        $tabid
+	 * @param int[]|bool $uitype
+	 *
+	 * @return array
+	 */
 	public function getFields($tabid, $uitype = false)
 	{
-		$adb = PearDatabase::getInstance();
-		$fieldlabel = $fieldsList = array();
-		$params = array($tabid);
-		$sql = "SELECT fieldid,columnname,tablename,fieldlabel,fieldname FROM vtiger_field WHERE tabid = ? && displaytype <> '2' && vtiger_field.presence in (0,2)";
+		$fieldlabel = $fieldsList = [];
+		$query = (new \App\Db\Query())->select(['fieldid', 'columnname', 'tablename', 'fieldname', 'fieldlabel'])
+			->from('vtiger_field')
+			->where(['and', ['tabid' => $tabid], ['<>', 'displaytype', 2], ['presence' => [0, 2]]]);
 		if ($uitype) {
-			$uitype = implode("','", $uitype);
-			$sql .= " && uitype in ('$uitype')";
+			$query->andWhere(['uitype' => $uitype]);
 		}
-		$result = $adb->pquery($sql, $params, true);
-		$Num = $adb->num_rows($result);
-		while ($row = $adb->fetch_array($result)) {
-			$fieldlabel[$row['fieldid']] = vtranslate($row['fieldlabel'], $value['name']);
-			$fieldsList[$value['related_tabid']][$row['tablename'] . '::' . $row['columnname'] . '::' . $row['fieldname']] = vtranslate($row['fieldlabel'], $value['name']);
+		$dataReader = $query->createCommand()->query();
+		$moduleName = App\Module::getModuleName($tabid);
+		while ($row = $dataReader->read()) {
+			$fieldlabel[$row['fieldid']] = \App\Language::translate($row['fieldlabel'], $moduleName);
+			$fieldsList[$tabid][$row['tablename'] . '::' . $row['columnname'] . '::' . $row['fieldname']] = \App\Language::translate($row['fieldlabel'], $moduleName);
 		}
-		return array('labels' => $fieldlabel, 'table' => $fieldsList);
+		$dataReader->close();
+
+		return ['labels' => $fieldlabel, 'table' => $fieldsList];
 	}
 
+	/**
+	 * Save widget.
+	 *
+	 * @param array $params
+	 */
 	public static function saveWidget($params)
 	{
-		$adb = PearDatabase::getInstance();
+		$db = App\Db::getInstance();
 		$tabid = $params['tabid'];
 		$data = $params['data'];
 		$wid = $data['wid'];
@@ -167,84 +227,131 @@ class Settings_Widgets_Module_Model extends Settings_Vtiger_Module_Model
 		$type = $data['type'];
 		unset($data['type']);
 		if (isset($data['FastEdit'])) {
-			$FastEdit = array();
+			$FastEdit = [];
 			if (!is_array($data['FastEdit'])) {
 				$FastEdit[] = $data['FastEdit'];
 				$data['FastEdit'] = $FastEdit;
 			}
 		}
-		unset($data['filter_selected']);
-		unset($data['wid']);
-		$nomargin = isset($data['nomargin']) ? $data['nomargin'] : 0;
-		unset($data['nomargin']);
-		$serializeData = \includes\utils\Json::encode($data);
+		unset($data['filter_selected'], $data['wid']);
+
+		$serializeData = \App\Json::encode($data);
 		$sequence = self::getLastSequence($tabid) + 1;
 		if ($wid) {
-			$sql = "UPDATE vtiger_widgets SET label = ?, nomargin = ?, `data` = ? WHERE id = ?;";
-			$adb->pquery($sql, array($label, $nomargin, $serializeData, $wid));
+			$db->createCommand()->update('vtiger_widgets', [
+				'label' => $label,
+				'data' => $serializeData,
+				], ['id' => $wid])->execute();
 		} else {
-			$sql = "INSERT INTO vtiger_widgets (tabid, type, label, nomargin, sequence ,data) VALUES (?, ?, ?, ?, ?, ?);";
-			$adb->pquery($sql, array($tabid, $type, $label, $nomargin, $sequence, $serializeData));
+			$db->createCommand()->insert('vtiger_widgets', [
+				'tabid' => $tabid,
+				'type' => $type,
+				'label' => $label,
+				'sequence' => $sequence,
+				'data' => $serializeData,
+			])->execute();
 		}
+		\App\Cache::delete('ModuleWidgets', $tabid);
 	}
 
+	/**
+	 * Remove widget.
+	 *
+	 * @param int $wid
+	 */
 	public static function removeWidget($wid)
 	{
-		$adb = PearDatabase::getInstance();
-		$adb->pquery('DELETE FROM vtiger_widgets WHERE id = ?;', array($wid));
+		\App\Db::getInstance()->createCommand()->delete('vtiger_widgets', ['id' => $wid])->execute();
+		\App\Cache::clear();
 	}
 
+	/**
+	 * Return information about widget.
+	 *
+	 * @param int $wid
+	 *
+	 * @return type
+	 */
 	public function getWidgetInfo($wid)
 	{
-		$adb = PearDatabase::getInstance();
-		$sql = 'SELECT * FROM vtiger_widgets WHERE id = ?';
-		$result = $adb->pquery($sql, array($wid));
-		$resultrow = $adb->raw_query_result_rowdata($result);
-		$resultrow['data'] = \includes\utils\Json::decode($resultrow['data']);
+		$resultrow = (new \App\Db\Query())->from('vtiger_widgets')
+			->where(['id' => $wid])
+			->one();
+		$resultrow['data'] = \App\Json::decode($resultrow['data']);
+
 		return $resultrow;
 	}
 
+	/**
+	 * Function to get last sequence number.
+	 *
+	 * @param int $tabid
+	 *
+	 * @return int
+	 */
 	public static function getLastSequence($tabid)
 	{
-		$adb = PearDatabase::getInstance();
-		$sql = 'SELECT MAX(sequence) as max FROM vtiger_widgets WHERE tabid = ?';
-		$result = $adb->pquery($sql, array($tabid));
-		return $adb->query_result($result, 0, 'max');
+		return (new \App\Db\Query())->from('vtiger_widgets')->where(['tabid' => $tabid])->max('sequence');
 	}
 
+	/**
+	 * Update sequence number.
+	 *
+	 * @param array $params
+	 */
 	public static function updateSequence($params)
 	{
-		$adb = PearDatabase::getInstance();
+		$db = App\Db::getInstance();
 		$tabid = $params['tabid'];
 		$data = $params['data'];
 		foreach ($data as $key => $value) {
-			$sql = 'UPDATE vtiger_widgets SET sequence = ?, wcol = ? WHERE tabid = ? && id = ?;';
-			$adb->pquery($sql, array($value['index'], $value['column'], $tabid, $key));
+			$db->createCommand()
+				->update('vtiger_widgets', ['sequence' => $value['index'], 'wcol' => $value['column']], ['tabid' => $tabid, 'id' => $key])
+				->execute();
 		}
+		\App\Cache::delete('ModuleWidgets', $tabid);
 	}
 
+	/**
+	 * Return available fields with WYSIWYG.
+	 *
+	 * @param int    $tabid
+	 * @param string $module
+	 *
+	 * @return array
+	 */
 	public function getWYSIWYGFields($tabid, $module)
 	{
-		$field = array();
-		$adb = PearDatabase::getInstance();
-		$sql = "SELECT fieldlabel,fieldname FROM vtiger_field WHERE tabid = ? && uitype = ?;";
-		$result = $adb->pquery($sql, array($tabid, '300'));
-		while ($row = $adb->fetch_array($result)) {
-			$field[$row['fieldname']] = vtranslate($row['fieldlabel'], $module);
+		$field = [];
+		$dataReader = (new \App\Db\Query())->select(['fieldlabel', 'fieldname'])
+			->from('vtiger_field')
+			->where(['tabid' => $tabid, 'uitype' => 300])
+			->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$field[$row['fieldname']] = \App\Language::translate($row['fieldlabel'], $module);
 		}
+		$dataReader->close();
+
 		return $field;
 	}
 
+	/**
+	 * Function to get switch buttons for widget.
+	 *
+	 * @param int $index
+	 *
+	 * @return array
+	 */
 	public static function getHeaderSwitch($index = [])
 	{
 		$data = [
-			\includes\Modules::getModuleId('SSalesProcesses') => [ 0 =>
+			\App\Module::getModuleId('SSalesProcesses') => [
 				[
 					'type' => 1,
-					'label' => vtranslate('LBL_HEADERSWITCH_OPEN_CLOSED', 'SSalesProcesses'), // used only in configuration
-					'value' => ['ssalesprocesses_status' => ['PLL_SALE_COMPLETED', 'PLL_SALE_FAILED', 'PLL_SALE_CANCELLED']]
-				]
-			]
+					'label' => \App\Language::translate('LBL_HEADERSWITCH_OPEN_CLOSED', 'SSalesProcesses'), // used only in configuration
+					'value' => ['ssalesprocesses_status' => ['PLL_SALE_COMPLETED', 'PLL_SALE_FAILED', 'PLL_SALE_CANCELLED']],
+				],
+			],
 		];
 		if (empty($index)) {
 			return $data;
@@ -253,5 +360,31 @@ class Settings_Widgets_Module_Model extends Settings_Vtiger_Module_Model
 		} else {
 			return [];
 		}
+	}
+
+	/**
+	 * Function to get buttons which visible in header widget.
+	 *
+	 * @param int $moduleId Number id module
+	 *
+	 * @return Vtiger_Link_Model[]
+	 */
+	public static function getHeaderButtons($moduleId)
+	{
+		$linkList = [];
+		$moduleName = \App\Module::getModuleName($moduleId);
+		if ($moduleName === 'Documents') {
+			$linkList[] = [
+				'linklabel' => App\Language::translate('LBL_MASS_ADD', $moduleName),
+				'linkurl' => 'javascript:Vtiger_Index_Js.massAddDocuments("index.php?module=Documents&view=MassAddDocuments")',
+				'linkicon' => 'fas fa-plus',
+				'linkclass' => 'btn-sm btn-primary',
+			];
+		}
+		$buttons = [];
+		foreach ($linkList as &$link) {
+			$buttons[] = Vtiger_Link_Model::getInstanceFromValues($link);
+		}
+		return $buttons;
 	}
 }

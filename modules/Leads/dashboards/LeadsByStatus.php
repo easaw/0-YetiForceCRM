@@ -11,134 +11,118 @@
 
 class Leads_LeadsByStatus_Dashboard extends Vtiger_IndexAjax_View
 {
-
 	private $conditions = false;
 
 	public function getSearchParams($value, $assignedto, $dates)
 	{
 		$listSearchParams = [];
-		$conditions = array(array('leadstatus', 'e', $value));
-		if ($assignedto != '')
-			array_push($conditions, array('assigned_user_id', 'e', $assignedto));
+		$conditions = [['leadstatus', 'e', $value]];
+		if ($assignedto != '') {
+			array_push($conditions, ['assigned_user_id', 'e', $assignedto]);
+		}
 		if (!empty($dates)) {
-			array_push($conditions, array('createdtime', 'bw', $dates['start'] . ' 00:00:00,' . $dates['end'] . ' 23:59:59'));
+			array_push($conditions, ['createdtime', 'bw', $dates[0] . ' 00:00:00,' . $dates[1] . ' 23:59:59']);
 		}
 		$listSearchParams[] = $conditions;
+
 		return '&search_params=' . json_encode($listSearchParams);
 	}
 
 	/**
-	 * Function returns Leads grouped by Status
-	 * @param type $data
-	 * @return <Array>
+	 * Function returns Leads grouped by Status.
+	 *
+	 * @param int   $owner
+	 * @param array $dateFilter
+	 *
+	 * @return array
 	 */
 	public function getLeadsByStatus($owner, $dateFilter)
 	{
-		$db = PearDatabase::getInstance();
-		$module = 'Leads';
 		$leadsClosed = Settings_MarketingProcesses_Module_Model::getConfig('lead');
-
-		$dateFilterSql = $ownerSql = '';
+		$query = new \App\Db\Query();
+		$query->select([
+				'leadstatusid' => 'vtiger_leadstatus.leadstatusid',
+				'count' => new \yii\db\Expression('COUNT(*)'),
+				'leadstatusvalue' => new \yii\db\Expression("CASE WHEN vtiger_leadstatus.leadstatus IS NULL OR vtiger_leadstatus.leadstatus = '' THEN '' ELSE vtiger_leadstatus.leadstatus END"), ])
+				->from('vtiger_leaddetails')
+				->innerJoin('vtiger_crmentity', 'vtiger_leaddetails.leadid = vtiger_crmentity.crmid')
+				->innerJoin('vtiger_leadstatus', 'vtiger_leaddetails.leadstatus = vtiger_leadstatus.leadstatus')
+				->where(['deleted' => 0, 'converted' => 0]);
 		if (!empty($owner)) {
-			$ownerSql = ' && smownerid = ' . $owner;
+			$query->andWhere(['smownerid' => $owner]);
 		}
-
-		$params = $response = [];
 		if (!empty($dateFilter)) {
-			$dateFilterSql = ' && createdtime BETWEEN ? AND ? ';
-			//client is not giving time frame so we are appending it
-			$params[] = $dateFilter['start'] . ' 00:00:00';
-			$params[] = $dateFilter['end'] . ' 23:59:59';
+			$query->andWhere(['between', 'createdtime', $dateFilter[0] . ' 00:00:00', $dateFilter[1] . ' 23:59:59']);
 		}
-
-		$sql = sprintf('SELECT COUNT(*) as count, CASE WHEN vtiger_leadstatus.leadstatus IS NULL || vtiger_leadstatus.leadstatus = "" THEN "" ELSE 
-						vtiger_leadstatus.leadstatus END AS leadstatusvalue
-				FROM vtiger_leaddetails 
-				INNER JOIN vtiger_crmentity
-					ON vtiger_leaddetails.leadid = vtiger_crmentity.crmid
-					AND deleted=0 && converted = 0 %s %s
-			INNER JOIN vtiger_leadstatus ON vtiger_leaddetails.leadstatus = vtiger_leadstatus.leadstatus ', $ownerSql, $dateFilterSql);
-		$sql .= \App\PrivilegeQuery::getAccessConditions($module);
-
+		\App\PrivilegeQuery::getConditions($query, 'Leads');
 		if (!empty($leadsClosed['status'])) {
-			$leadStatusSearch = implode("','", $leadsClosed['status']);
-			$sql .= " && vtiger_leaddetails.leadstatus NOT IN ('$leadStatusSearch')";
-			$this->conditions = ['vtiger_leaddetails.leadstatus', "'$leadStatusSearch'", 'nin', QueryGenerator::$AND];
+			$query->andWhere(['not in', 'vtiger_leaddetails.leadstatus', $leadsClosed['status']]);
+			$this->conditions = [
+				'condition' => ['not in', 'vtiger_leaddetails.leadstatus', $leadsClosed['status']],
+			];
 		}
-
-		$sql .= ' GROUP BY leadstatusvalue ORDER BY vtiger_leadstatus.sortorderid ';
-		$result = $db->pquery($sql, $params);
-
-		$response = [];
-		$i = 0;
-		if ($db->getRowCount($result) > 0) {
-			while ($row = $db->getRow($result)) {
-				$data[$i]['label'] = vtranslate($row['leadstatusvalue'], 'Leads');
-				$ticks[$i][0] = $i;
-				$ticks[$i][1] = vtranslate($row['leadstatusvalue'], 'Leads');
-				$data[$i]['data'][0][0] = $i;
-				$data[$i]['data'][0][1] = $row['count'];
-				$name[] = $row['leadstatusvalue'];
-				$i++;
-			}
-			$response['chart'] = $data;
-			$response['ticks'] = $ticks;
-			$response['name'] = $name;
+		$query->groupBy(['leadstatusvalue', 'vtiger_leadstatus.leadstatusid', 'vtiger_leadstatus.sortorderid'])->orderBy('vtiger_leadstatus.sortorderid');
+		$dataReader = $query->createCommand()->query();
+		$chartData = [
+			'labels' => [],
+			'datasets' => [
+				[
+					'data' => [],
+					'backgroundColor' => [],
+					'names' => [], // names for link generation
+					'links' => [], // links generated in proccess method
+				],
+			],
+			'show_chart' => false,
+		];
+		$colors = \App\Fields\Picklist::getColors('leadstatus');
+		while ($row = $dataReader->read()) {
+			$chartData['labels'][] = \App\Language::translate($row['leadstatusvalue'], 'Leads');
+			$chartData['datasets'][0]['data'][] = (int) $row['count'];
+			$chartData['datasets'][0]['names'][] = $row['leadstatusvalue'];
+			$chartData['datasets'][0]['backgroundColor'][] = $colors[$row['leadstatusid']];
+			$chartData['show_chart'] = true;
 		}
-		return $response;
+		$dataReader->close();
+		return $chartData;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
+		$currentUserId = \App\User::getCurrentUserId();
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-
-		$linkId = $request->get('linkid');
-		$data = $request->get('data');
-
-		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
-		if (!$request->has('owner'))
+		$widget = Vtiger_Widget_Model::getInstance($request->getInteger('linkid'), $currentUserId);
+		if (!$request->has('owner')) {
 			$owner = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget, 'Leads');
-		else
-			$owner = $request->get('owner');
+		} else {
+			$owner = $request->getByType('owner', 2);
+		}
 		$ownerForwarded = $owner;
-		if ($owner == 'all')
+		if ($owner == 'all') {
 			$owner = '';
-
-		$createdTime = $request->get('createdtime');
-
-		//Date conversion from user to database format
-		if (!empty($createdTime)) {
-			$dates['start'] = Vtiger_Date_UIType::getDBInsertedValue($createdTime['start']);
-			$dates['end'] = Vtiger_Date_UIType::getDBInsertedValue($createdTime['end']);
 		}
-
-		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-		$data = ($owner === false) ? [] : $this->getLeadsByStatus($owner, $dates);
-		$listViewUrl = $moduleModel->getListViewUrl();
-		$leadStatusAmount = count($data['name']);
-		for ($i = 0; $i < $leadStatusAmount; $i++) {
-			$data['links'][$i][0] = $i;
-			$data['links'][$i][1] = $listViewUrl . $this->getSearchParams($data['name'][$i], $owner, $dates);
+		$createdTime = $request->getDateRange('createdtime');
+		if (empty($createdTime)) {
+			$createdTime = Settings_WidgetsManagement_Module_Model::getDefaultDateRange($widget);
 		}
-
+		$data = ($owner === false) ? [] : $this->getLeadsByStatus($owner, $createdTime);
+		$createdTime = \App\Fields\Date::formatRangeToDisplay($createdTime);
+		$listViewUrl = Vtiger_Module_Model::getInstance($moduleName)->getListViewUrl();
+		$leadStatusAmount = count($data['datasets'][0]['names']);
+		for ($i = 0; $i < $leadStatusAmount; ++$i) {
+			$data['datasets'][0]['links'][$i] = $listViewUrl . $this->getSearchParams($data['datasets'][0]['names'][$i], $owner, $createdTime);
+		}
 		//Include special script and css needed for this widget
-
 		$viewer->assign('WIDGET', $widget);
 		$viewer->assign('MODULE_NAME', $moduleName);
 		$viewer->assign('DATA', $data);
-		$viewer->assign('CURRENTUSER', $currentUser);
-
-		$accessibleUsers = \includes\fields\Owner::getInstance('Leads', $currentUser)->getAccessibleUsersForModule();
-		$accessibleGroups = \includes\fields\Owner::getInstance('Leads', $currentUser)->getAccessibleGroupForModule();
-		$viewer->assign('ACCESSIBLE_USERS', $accessibleUsers);
-		$viewer->assign('ACCESSIBLE_GROUPS', $accessibleGroups);
+		$viewer->assign('DTIME', $createdTime);
+		$viewer->assign('ACCESSIBLE_USERS', \App\Fields\Owner::getInstance('Leads', $currentUserId)->getAccessibleUsersForModule());
+		$viewer->assign('ACCESSIBLE_GROUPS', \App\Fields\Owner::getInstance('Leads', $currentUserId)->getAccessibleGroupForModule());
 		$viewer->assign('OWNER', $ownerForwarded);
 		$viewer->assign('USER_CONDITIONS', $this->conditions);
-
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/DashBoardWidgetContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/LeadsByStatus.tpl', $moduleName);

@@ -1,45 +1,35 @@
 <?php
 
 /**
- * Save Application
- * @package YetiForce.Action
- * @license licenses/License.html
+ * Save Application.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Settings_WebserviceApps_SaveAjax_Action extends Settings_Vtiger_Index_Action
 {
-
-	public function process(Vtiger_Request $request)
+	/**
+	 * Main process.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
-		$keyLength = 32;
-		$id = $request->get('id');
-		$status = $request->get('status');
-		$nameServer = $request->get('name');
-		$url = $request->get('url');
-		$db = PearDatabase::getInstance();
-		$pass = $request->get('pass');
-		$accounts = $request->get('accounts');
-		if (empty($id)) {
-			$type = $request->get('type');
-			$key = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0, $keyLength);
-			$db->insert('w_yf_servers', [
-				'name' => $nameServer,
-				'acceptable_url' => $url,
-				'api_key' => $key,
-				'status' => $status == 'true' ? 1 : 0,
-				'type' => $type,
-				'pass' => $pass,
-				'accounts_id' => $accounts,
-			]);
+		if ($request->isEmpty('id')) {
+			$recordModel = Settings_WebserviceApps_Record_Model::getCleanInstance();
+			$recordModel->set('type', $request->getByType('type'));
 		} else {
-			$updates = [
-				'status' => $status == 'true' ? 1 : 0,
-				'name' => $nameServer,
-				'acceptable_url' => $url,
-				'pass' => $pass,
-				'accounts_id' => $accounts,
-			];
-			$db->update('w_yf_servers', $updates, 'id = ?', [$id]);
+			$recordModel = Settings_WebserviceApps_Record_Model::getInstanceById($request->getInteger('id'));
 		}
+		$recordModel->set('status', $request->getBoolean('status'));
+		$recordModel->set('name', $request->get('name'));
+		$recordModel->set('acceptable_url', $request->get('url'));
+		$recordModel->set('pass', $request->getRaw('pass'));
+		$recordModel->set('accounts_id', $request->isEmpty('accounts') ? 0 : $request->getInteger('accounts'));
+		$recordModel->save();
+		$responce = new Vtiger_Response();
+		$responce->setResult(true);
+		$responce->emit();
 	}
 }

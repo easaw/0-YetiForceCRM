@@ -1,81 +1,62 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 	<div class="row padding-bottom1per">
-		<span class="col-md-3">{vtranslate('LBL_SELECT_ACTION_TYPE', $QUALIFIED_MODULE)}</span>
+		<span class="col-md-3">{\App\Language::translate('LBL_SELECT_ACTION_TYPE', $QUALIFIED_MODULE)}</span>
 		<div class="col-md-9">
 			<select class="chzn-select form-control" name="type" data-validation-engine="validate[required]">
-				{foreach from=$TASK_OBJECT->getAllTypes() key=KEY item=ITEM}
-					<option {if $TASK_OBJECT->type eq $ITEM['notification_type']}selected{/if} value="{$ITEM['notification_type']}">{vtranslate($ITEM['notification_type'], $QUALIFIED_MODULE)}</option>
+				{foreach from=\App\Fields\Picklist::getValuesName('notification_type') key=KEY item=ITEM}
+					<option {if $TASK_OBJECT->type eq $ITEM}selected{/if} value="{$ITEM}">{\App\Language::translate($ITEM, $TASK_OBJECT->srcWatchdogModule)}</option>
 				{/foreach}
 			</select>
 		</div>
 	</div>
 	<div class="row padding-bottom1per">
-		<span class="col-md-3">{vtranslate('LBL_SELECT_RECIPIENTS', $QUALIFIED_MODULE)}</span>
+		<span class="col-md-3">{\App\Language::translate('LBL_SELECT_RECIPIENTS', $QUALIFIED_MODULE)}</span>
 		<div class="col-md-9">
 			<select class="chzn-select form-control" name="recipients" data-validation-engine="validate[required]">
 				<option {if $TASK_OBJECT->recipients eq 'watchdog'}selected{/if} value="watchdog">
-					{vtranslate('LBL_WATCHING_USERS', $QUALIFIED_MODULE)}
+					{\App\Language::translate('LBL_WATCHING_USERS', $QUALIFIED_MODULE)}
 				</option>
-				<optgroup label="{vtranslate('LBL_USERS')}">
-					{foreach key=OWNER_ID item=OWNER_NAME from=$ASSIGNED_TO[vtranslate('LBL_USERS')]}
-						<option value="{$OWNER_ID}" {if $TASK_OBJECT->recipients eq $OWNER_ID}selected{/if}>
-							{$OWNER_NAME}
-						</option>
-					{/foreach}
-				</optgroup>
+				<option {if $TASK_OBJECT->recipients eq 'owner'}selected{/if} value="owner">
+					{\App\Language::translate('LBL_OWNER_REKORD', $QUALIFIED_MODULE)}
+				</option>
+				{foreach from=\App\PrivilegeUtil::getMembers() key=GROUP_LABEL item=ALL_GROUP_MEMBERS}
+					<optgroup label="{\App\Language::translate($GROUP_LABEL)}">
+						{foreach from=$ALL_GROUP_MEMBERS key=MEMBER_ID item=MEMBER}
+							<option class="{$MEMBER['type']}" value="{$MEMBER_ID}" {if $TASK_OBJECT->recipients eq $MEMBER_ID}selected{/if}>{\App\Language::translate($MEMBER['name'])}</option>
+						{/foreach}
+					</optgroup>
+				{/foreach}
 			</select>
 		</div>
 	</div>
 	<div class="row padding-bottom1per checkbox">
-		<span class="col-md-3">{vtranslate('LBL_SKIP_CURRENT_USER', $QUALIFIED_MODULE)}</span>
+		<span class="col-md-3">{\App\Language::translate('LBL_SKIP_CURRENT_USER', $QUALIFIED_MODULE)}</span>
 		<div class="col-md-9">
 			<input name="skipCurrentUser" type="checkbox" value="1" {if $TASK_OBJECT->skipCurrentUser}checked{/if}>
 		</div>
 	</div>
-	<hr />
+	<hr/>
+	<div class="row">
+		{include file=\App\Layout::getTemplatePath('VariablePanel.tpl') SELECTED_MODULE=$SOURCE_MODULE PARSER_TYPE='mail' GRAY=true}
+	</div>
+	<hr/>
 	<div class="row padding-bottom1per">
-		<span class="col-md-3">{vtranslate('LBL_TITLE', $QUALIFIED_MODULE)}</span>
+		<span class="col-md-3">{\App\Language::translate('LBL_TITLE', $QUALIFIED_MODULE)}</span>
 		<div class="col-md-9">
 			<input name="title" class="form-control" type="text" value="{$TASK_OBJECT->title}">
 		</div>
 	</div>
 	<div class="row padding-bottom1per">
-		<span class="col-md-3"> </span>
+		<span class="col-md-3">{\App\Language::translate('LBL_MESSAGE', $QUALIFIED_MODULE)}</span>
 		<div class="col-md-9">
-			{assign var=FIELDS value=$MODULE_MODEL->getFields()}
-			<select class="chzn-select form-control variables" onchange="$('.messageContent').val($('.messageContent').val() + ' ' + $(this).val())">
-				<option value="">{vtranslate('LBL_SELECT_VARIABLES', $QUALIFIED_MODULE)}</option>
-				<optgroup label="{vtranslate('LBL_VALUE_FROM_FIELD', $QUALIFIED_MODULE)}">
-					{foreach key=FIELD_NAME item=FIELD from=$FIELDS}
-						<option value="${$FIELD_NAME}$">{vtranslate($FIELD->getFieldLabel(),$SOURCE_MODULE)}</option>
-					{/foreach}
-				</optgroup>
-				<optgroup label="{vtranslate('LBL_FIELDS_LABELS', $QUALIFIED_MODULE)}">
-					{foreach key=FIELD_NAME item=FIELD from=$FIELDS}
-						<option value="%{$FIELD_NAME}%">{vtranslate($FIELD->getFieldLabel(),$SOURCE_MODULE)}</option>
-					{/foreach}
-				</optgroup>
-			</select>
-		</div>
-		<span class="col-md-3">{vtranslate('LBL_MESSAGE', $QUALIFIED_MODULE)}</span>
-		<div class="col-md-9">
-			{assign var=POPOVER value=vtranslate('LBL_MESSAGE_INFO', $QUALIFIED_MODULE)}
-			{foreach from=Vtiger_TextParser_Helper::getFunctionVariables() key=KEY item=ITEM}
-				{assign var=POPOVER value=$POPOVER|cat:'<br><strong>'|cat:$ITEM|cat:'</strong> - '|cat:vtranslate($KEY, $QUALIFIED_MODULE)}
-			{/foreach}
-			<div class="input-group popoverTooltip" data-content="{Vtiger_Util_Helper::toSafeHTML($POPOVER)}" data-placement="right">
-				<textarea class="form-control messageContent" name="message" rows="3" aria-describedby="messageaddon">
-					{if $TASK_OBJECT->message}
-						{$TASK_OBJECT->message}
-					{else} 
+			<textarea class="form-control messageContent" name="message" rows="3">
+				{if $TASK_OBJECT->message}
+					{$TASK_OBJECT->message}
+				{else} 
 						 
-					{/if} 
-				</textarea>
-				<span class="input-group-addon" id="messageaddon">
-					<span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
-				</span>
-			</div>
+				{/if} 
+			</textarea>
 		</div>
 	</div>
 {/strip}	

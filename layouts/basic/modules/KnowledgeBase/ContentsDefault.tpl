@@ -1,7 +1,7 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
-	<div class="col-xs-12 paddingLRZero">
-		<h4>{vtranslate('LBL_LIST_RECORDS',$MODULE_NAME)}</h4>
+	<div class="col-12 paddingLRZero">
+		<h4>{\App\Language::translate('LBL_LIST_RECORDS',$MODULE_NAME)}</h4>
 		<hr>
 	</div>
 	{if $ENTRIES}
@@ -10,7 +10,7 @@
 				<tr>
 					{foreach item=HEADER from=$HEADERS}
 						<th>
-							{vtranslate($HEADER->get('label'), $MODULE_NAME)}
+							{\App\Language::translate($HEADER->get('label'), $MODULE_NAME)}
 						</th>
 					{/foreach}
 					<th></th>
@@ -22,17 +22,13 @@
 						{foreach item=HEADER from=$HEADERS}
 							{assign var=HEADERNAME value=$HEADER->get('name')}
 							<td>
-								{if $HEADER->getFieldDataType() eq 'sharedOwner' ||  $HEADER->getFieldDataType() eq 'tree'}
-									{$ENTRY->getDisplayValue($HEADERNAME)}
-								{else}
-									{$ENTRY->get($HEADERNAME)}
-								{/if}
+								{$ENTRY->getDisplayValue($HEADERNAME)}
 							</td>
 						{/foreach}
 						<td>
-							<div class="actions pull-right">
+							<div class="actions float-right">
 								<a href="{$ENTRY->getDetailViewUrl()}">
-									<span class="glyphicon glyphicon-th-list alignMiddle" title="{vtranslate('LBL_RECORD_DETAILS', $MODULE_NAME)}"></span>
+									<span class="fas fa-th-list alignMiddle" title="{\App\Language::translate('LBL_RECORD_DETAILS', $MODULE_NAME)}"></span>
 								</a>
 							</div>
 						</td>
@@ -41,9 +37,9 @@
 			</tbody>
 		</table>
 	{else}
-		<div class="col-xs-12 paddingLRZero">
+		<div class="col-12 paddingLRZero">
 			<div class="alert alert-info">
-				{vtranslate('LBL_RECORDS_NO_FOUND',$MODULE_NAME)}
+				{\App\Language::translate('LBL_RECORDS_NO_FOUND',$MODULE_NAME)}
 			</div>
 		</div>
 	{/if}

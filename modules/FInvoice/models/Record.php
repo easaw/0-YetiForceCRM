@@ -1,30 +1,28 @@
 <?php
 
 /**
- * FInvoice Record Model Class
- * @package YetiForce.Model
- * @license licenses/License.html
+ * FInvoice Record Model Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class FInvoice_Record_Model extends Vtiger_Record_Model
 {
-
-	public function save()
+	public function saveToDb()
 	{
-		parent::save();
+		parent::saveToDb();
 
 		if (AppConfig::module('FInvoice', 'UPDATE_LAST_INVOICE_DATE') && !$this->isEmpty('accountid')) {
-			$db = PearDatabase::getInstance();
-			$query = 'SELECT MAX(saledate) FROM u_yf_finvoice
-				LEFT JOIN vtiger_crmentity ON vtiger_crmentity.crmid = u_yf_finvoice.finvoiceid
-				WHERE vtiger_crmentity.deleted = 0 && accountid = ?';
-			$result = $db->pquery($query, [$this->get('accountid')]);
-			$date = $db->getSingleValue($result);
+			$date = (new \App\Db\Query())->from('u_#__finvoice')
+				->leftJoin('vtiger_crmentity', 'vtiger_crmentity.crmid = u_#__finvoice.finvoiceid')
+				->where(['vtiger_crmentity.deleted' => 0, 'accountid' => $this->get('accountid')])
+				->max('saledate');
 			if (!empty($date)) {
-				$db->update('vtiger_account', [
-					'last_invoice_date' => $date
-					], 'accountid = ?', [$this->get('accountid')]
-				);
+				App\Db::getInstance()->createCommand()->update('vtiger_account', [
+					'last_invoice_date' => $date,
+					], ['accountid' => $this->get('accountid')]
+				)->execute();
 			}
 		}
 	}

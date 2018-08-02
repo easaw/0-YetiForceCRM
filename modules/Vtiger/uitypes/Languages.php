@@ -6,41 +6,42 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Vtiger_Languages_UIType extends Vtiger_Base_UIType
+class Vtiger_Languages_UIType extends Vtiger_Picklist_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
+	public function validate($value, $isUserFormat = false)
 	{
-		return 'uitypes/Languages.tpl';
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		parent::validate($value, $isUserFormat);
+		$this->validate = false;
+		if (\App\Language::getLanguageLabel($value) === false) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$this->validate[$value] = true;
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		return Vtiger_Language_Handler::getLanguageLabel($value);
-	}
-
-	public function getListSearchTemplateName()
-	{
-		return 'uitypes/LanguagesFieldSearchView.tpl';
+		return \App\Purifier::encodeHtml(\App\Language::getLanguageLabel($value));
 	}
 
 	/**
-	 * Function to get all the available picklist values for the current field
-	 * @return <Array> List of picklist values if the field is of type Languages.
+	 * Function to get all the available picklist values for the current field.
+	 *
+	 * @return array List of picklist values if the field
 	 */
 	public function getPicklistValues()
 	{
-		return Vtiger_Language_Handler::getAllLanguages();
+		return \App\Language::getAll();
 	}
 }

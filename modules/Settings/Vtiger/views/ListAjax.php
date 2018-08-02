@@ -10,28 +10,6 @@
 
 class Settings_Vtiger_ListAjax_View extends Settings_Vtiger_List_View
 {
-
-	public function __construct()
-	{
-		parent::__construct();
-	}
-
-	public function preProcess(Vtiger_Request $request, $display = true)
-	{
-		return true;
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		return true;
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
-		}
-	}
+	use \App\Controller\ExposeMethod,
+	 App\Controller\ClearProcess;
 }

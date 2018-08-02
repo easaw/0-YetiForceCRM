@@ -11,29 +11,36 @@
 
 class Settings_Users_Detail_View extends Users_PreferenceDetail_View
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$record = $request->get('record');
-		if ($currentUserModel->isAdminUser() === true || $currentUserModel->get('id') == $record) {
+		$currentUserModel = \App\User::getCurrentUserModel();
+		if ($currentUserModel->isAdmin() || ($currentUserModel->getId() === $request->getInteger('record') && AppConfig::security('SHOW_MY_PREFERENCES'))) {
 			return true;
 		} else {
-			throw new \Exception\AppException('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\AppException('LBL_PERMISSION_DENIED');
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request, false);
 		$this->preProcessSettings($request);
 	}
 
-	public function preProcessSettings(Vtiger_Request $request)
+	/**
+	 * Pre process settings.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function preProcessSettings(\App\Request $request)
 	{
-
 		$viewer = $this->getViewer($request);
-
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
 		$selectedMenuId = $request->get('block');
@@ -41,56 +48,60 @@ class Settings_Users_Detail_View extends Users_PreferenceDetail_View
 		$settingsModel = Settings_Vtiger_Module_Model::getInstance();
 		$menuModels = $settingsModel->getMenus();
 		$menu = $settingsModel->prepareMenuToDisplay($menuModels, $moduleName, $selectedMenuId, $fieldId);
-
-		$viewer->assign('SELECTED_FIELDID', $fieldId);  // used only in old layout 
-		$viewer->assign('SELECTED_MENU', $selectedMenu); // used only in old layout 
-		$viewer->assign('SETTINGS_MENUS', $menuModels); // used only in old layout 
-
 		$viewer->assign('MENUS', $menu);
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
 		$viewer->view('SettingsMenuStart.tpl', $qualifiedModuleName);
 	}
 
-	public function postProcessSettings(Vtiger_Request $request)
+	public function postProcessSettings(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$qualifiedModuleName = $request->getModule(false);
 		$viewer->view('SettingsMenuEnd.tpl', $qualifiedModuleName);
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function postProcess(\App\Request $request, $display = true)
 	{
 		$this->postProcessSettings($request);
 		parent::postProcess($request);
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
-
-		$viewer->assign('CURRENT_USER_MODEL', Users_Record_Model::getCurrentUserModel());
 		$viewer->view('UserViewHeader.tpl', $request->getModule());
 		parent::process($request);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
-		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
-			'modules.Settings.Vtiger.resources.Index'
-		);
+		$jsFileNames = [
+			'modules.Settings.Vtiger.resources.Index',
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 
 	/**
-	 * Function to get Ajax is enabled or not
+	 * Function to get Ajax is enabled or not.
+	 *
 	 * @param Vtiger_Record_Model record model
+	 *
 	 * @return <boolean> true/false
 	 */
 	public function isAjaxEnabled($recordModel)

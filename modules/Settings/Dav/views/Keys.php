@@ -1,18 +1,17 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings dav keys view class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Dav_Keys_View extends Settings_Vtiger_Index_View
 {
-
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		include 'config/api.php';
 		$moduleName = $request->getModule();
@@ -25,5 +24,15 @@ class Settings_Dav_Keys_View extends Settings_Vtiger_Index_View
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('ENABLEDAV', !in_array('dav', $enabledServices));
 		$viewer->view('Keys.tpl', $qualifiedModuleName);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getFooterScripts(\App\Request $request)
+	{
+		return array_merge(parent::getFooterScripts($request), $this->checkAndConvertJsScripts([
+				'libraries.clipboard.dist.clipboard'
+		]));
 	}
 }

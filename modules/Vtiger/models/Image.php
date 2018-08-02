@@ -9,14 +9,14 @@
  * *********************************************************************************** */
 
 /**
- * Vtiger Image Model Class
+ * Vtiger Image Model Class.
  */
-class Vtiger_Image_Model extends Vtiger_Base_Model
+class Vtiger_Image_Model extends \App\Base
 {
-
 	/**
-	 * Function to get the title of the Image
-	 * @return <String>
+	 * Function to get the title of the Image.
+	 *
+	 * @return string
 	 */
 	public function getTitle()
 	{
@@ -24,8 +24,9 @@ class Vtiger_Image_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to get the alternative text for the Image
-	 * @return <String>
+	 * Function to get the alternative text for the Image.
+	 *
+	 * @return string
 	 */
 	public function getAltText()
 	{
@@ -33,8 +34,9 @@ class Vtiger_Image_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to get the Image file path
-	 * @return <String>
+	 * Function to get the Image file path.
+	 *
+	 * @return string
 	 */
 	public function getImagePath()
 	{
@@ -42,8 +44,9 @@ class Vtiger_Image_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to get the Image file name
-	 * @return <String>
+	 * Function to get the Image file name.
+	 *
+	 * @return string
 	 */
 	public function getImageFileName()
 	{

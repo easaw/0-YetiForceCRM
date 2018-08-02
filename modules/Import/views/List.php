@@ -9,8 +9,9 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Import_List_View extends Vtiger_Popup_View
+class Import_List_View extends \App\Controller\View
 {
+	use \App\Controller\ExposeMethod;
 
 	protected $listViewEntries = false;
 	protected $listViewHeaders = false;
@@ -20,49 +21,57 @@ class Import_List_View extends Vtiger_Popup_View
 		$this->exposeMethod('getImportDetails');
 	}
 
-	public function process(Vtiger_Request $request)
+	public function checkPermission(\App\Request $request)
+	{
+		$currentUserPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$currentUserPrivilegesModel->hasModulePermission($request->getByType('forModule'))) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+	}
+
+	/**
+	 * Process.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
-		$mode = $request->get('mode');
+		$mode = $request->getMode();
 		if (!empty($mode)) {
 			$this->invokeExposedMethod($mode, $request);
 		} else {
 			$this->initializeListViewContents($request, $viewer);
-			$moduleName = $request->get('for_module');
-
-			$companyDetails = Vtiger_CompanyDetails_Model::getInstanceById();
-			$companyLogo = $companyDetails->getLogo();
-			$viewer->assign('COMPANY_LOGO', $companyLogo);
-
-			$viewer->view('Popup.tpl', $moduleName);
+			$moduleName = $request->getByType('forModule');
+			$viewer->assign('MODULE_NAME', $moduleName);
+			$viewer->view('ImportPreview.tpl', 'Import');
 		}
 	}
-	/*
-	 * Function to initialize the required data in smarty to display the List View Contents
-	 */
 
-	public function initializeListViewContents(Vtiger_Request $request, Vtiger_Viewer $viewer)
+	// Function to initialize the required data in smarty to display the List View Contents
+
+	public function initializeListViewContents(\App\Request $request, Vtiger_Viewer $viewer)
 	{
-		$moduleName = $request->get('for_module');
-		$cvId = $request->get('viewname');
-		$pageNumber = $request->get('page');
-		$orderBy = $request->get('orderby');
-		$sortOrder = $request->get('sortorder');
+		$moduleName = $request->getByType('forModule');
+		$cvId = $request->getByType('viewname', 2);
+		$pageNumber = $request->getInteger('page');
+		$orderBy = $request->getForSql('orderby');
+		$sortOrder = $request->getForSql('sortorder');
 		if (empty($orderBy) && empty($sortOrder)) {
 			$moduleInstance = CRMEntity::getInstance($moduleName);
 			$orderBy = $moduleInstance->default_order_by;
 			$sortOrder = $moduleInstance->default_sort_order;
 		}
-		if ($sortOrder == "ASC") {
-			$nextSortOrder = "DESC";
-			$sortImage = "downArrowSmall.png";
+		if ($sortOrder == 'ASC') {
+			$nextSortOrder = 'DESC';
+			$sortImage = 'downArrowSmall.png';
 		} else {
-			$nextSortOrder = "ASC";
-			$sortImage = "upArrowSmall.png";
+			$nextSortOrder = 'ASC';
+			$sortImage = 'upArrowSmall.png';
 		}
 
 		if (empty($pageNumber)) {
-			$pageNumber = '1';
+			$pageNumber = 1;
 		}
 
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
@@ -85,7 +94,6 @@ class Import_List_View extends Vtiger_Popup_View
 		$noOfEntries = count($this->listViewEntries);
 		$viewer->assign('MODULE', $moduleName);
 
-
 		$viewer->assign('PAGING_MODEL', $pagingModel);
 		$viewer->assign('PAGE_NUMBER', $pageNumber);
 
@@ -104,13 +112,12 @@ class Import_List_View extends Vtiger_Popup_View
 		$viewer->assign('CURRENT_USER_MODEL', Users_Record_Model::getCurrentUserModel());
 	}
 
-	public function getImportDetails(Vtiger_Request $request)
+	public function getImportDetails(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$forModule = $request->get('forModule');
-		$user = Users_Record_Model::getCurrentUserModel();
-		$importRecords = Import_Data_Action::getImportDetails($user, $forModule);
+		$forModule = $request->getByType('forModule');
+		$importRecords = Import_Data_Action::getImportDetails(\App\User::getCurrentUserModel(), $forModule);
 		$viewer->assign('IMPORT_RECORDS', $importRecords);
 		$viewer->assign('TYPE', $request->get('type'));
 		$viewer->assign('MODULE', $moduleName);

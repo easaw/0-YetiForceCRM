@@ -10,10 +10,10 @@
 
 class Settings_Vtiger_CustomRecordNumberingModule_Model extends Vtiger_Module_Model
 {
-
 	/**
-	 * Function to get focus of this object
-	 * @return <type>
+	 * Function to get focus of this object.
+	 *
+	 * @return CRMEntity
 	 */
 	public function getFocus()
 	{
@@ -24,9 +24,11 @@ class Settings_Vtiger_CustomRecordNumberingModule_Model extends Vtiger_Module_Mo
 	}
 
 	/**
-	 * Function to get Instance of this module
-	 * @param <String> $moduleName
-	 * @return <Settings_Vtiger_CustomRecordNumberingModule_Model> $moduleModel
+	 * Function to get Instance of this module.
+	 *
+	 * @param string $moduleName
+	 *
+	 * @return Settings_Vtiger_CustomRecordNumberingModule_Model $moduleModel
 	 */
 	public static function getInstance($moduleName, $tabId = false)
 	{
@@ -39,52 +41,47 @@ class Settings_Vtiger_CustomRecordNumberingModule_Model extends Vtiger_Module_Mo
 	}
 
 	/**
-	 * Function to ger Supported modules for Custom record numbering
-	 * @return <Array> list of supported modules <Vtiger_Module_Model>
+	 * Function to ger Supported modules for Custom record numbering.
+	 *
+	 * @return array list of supported modules Vtiger_Module_Model
 	 */
 	public static function getSupportedModules()
 	{
-		$db = PearDatabase::getInstance();
-
-		$sql = 'SELECT tabid, name FROM vtiger_tab WHERE isentitytype = ? && presence = ? && tabid IN (SELECT DISTINCT tabid FROM vtiger_field WHERE uitype = ?);';
-		$result = $db->pquery($sql, [1, 0, 4]);
-		$numOfRows = $db->num_rows($result);
-
-		for ($i = 0; $i < $numOfRows; $i++) {
-			$tabId = $db->query_result($result, $i, 'tabid');
-			$modulesModels[$tabId] = Settings_Vtiger_CustomRecordNumberingModule_Model::getInstance($db->query_result($result, $i, 'name'), $tabId);
+		$subQuery = (new \App\Db\Query())->select('tabid')->from('vtiger_field')->where(['uitype' => 4])->distinct('tabid');
+		$dataReader = (new App\Db\Query())->select(['tabid', 'name'])->from('vtiger_tab')->where(['isentitytype' => 1, 'presence' => 0, 'tabid' => $subQuery])->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$modulesModels[$row['tabid']] = self::getInstance($row['name'], $row['tabid']);
 		}
+		$dataReader->close();
 
 		return $modulesModels;
 	}
 
 	/**
-	 * Function to set Module sequence
-	 * @return <Array> result of success
+	 * Function to set Module sequence.
+	 *
+	 * @return array result of success
 	 */
 	public function setModuleSequence()
 	{
-		$moduleName = $this->getName();
 		$prefix = $this->get('prefix');
 		$postfix = $this->get('postfix');
-		$sequenceNumber = $this->get('sequenceNumber');
-
-		$tabId = \includes\Modules::getModuleId($moduleName);
-		$status = \includes\fields\RecordNumber::setNumber($tabId, $prefix, $sequenceNumber, $postfix);
-
-		$success = array('success' => $status);
+		$tabId = \App\Module::getModuleId($this->getName());
+		$status = \App\Fields\RecordNumber::setNumber($tabId, $prefix, $this->get('sequenceNumber'), $postfix);
+		$success = ['success' => $status];
 		if (!$status) {
-			$db = PearDatabase::getInstance();
-			$result = $db->pquery('SELECT cur_id FROM vtiger_modentity_num WHERE tabid = ? && prefix = ? && postfix = ?;', [$tabId, $prefix, $postfix]);
-			$success['sequenceNumber'] = $db->query_result($result, 0, 'cur_id');
+			$success['sequenceNumber'] = (new App\Db\Query())->select(['cur_id'])
+				->from('vtiger_modentity_num')
+				->where(['tabid' => $tabId, 'prefix' => $prefix, 'postfix' => $postfix])
+				->scalar();
 		}
-
 		return $success;
 	}
 
 	/**
-	 * Function to update record sequences which are under this module
-	 * @return <Array> result of success
+	 * Function to update record sequences which are under this module.
+	 *
+	 * @return array result of success
 	 */
 	public function updateRecordsWithSequence()
 	{

@@ -10,19 +10,20 @@
 
 class Install_Utils_Model
 {
-
 	/**
-	 * Function that provides default configuration based on installer setup
+	 * Function that provides default configuration based on installer setup.
+	 *
 	 * @return <Array>
 	 */
-	public function getDefaultPreInstallParameters()
+	public static function getDefaultPreInstallParameters()
 	{
 		return [
 			'db_hostname' => 'localhost',
 			'db_username' => '',
 			'db_password' => '',
-			'db_name' => '',
-			'admin_name' => 'admin',
+			'db_name' => 'yetiforce',
+			'admin_name' => 'admin' . rand(100, 999),
+			'admin_firstname' => 'Yeti',
 			'admin_lastname' => 'Administrator',
 			'admin_password' => '',
 			'admin_email' => '',
@@ -30,41 +31,77 @@ class Install_Utils_Model
 	}
 
 	/**
-	 * Returns list of currencies
+	 * Returns list of currencies.
+	 *
 	 * @return <Array>
 	 */
 	public static function getCurrencyList()
 	{
 		require_once 'install/models/Currencies.php';
+
 		return $currencies;
 	}
 
 	/**
-	 * Function checks if its mysql type
-	 * @param type $dbType
-	 * @return type
+	 * Returns list of industry.
+	 *
+	 * @return array
 	 */
-	static function isMySQL($dbType)
+	public static function getIndustryList()
 	{
-		return (stripos($dbType, 'mysql') === 0);
+		return require 'install/models/Industry.php';
 	}
 
 	/**
-	 * Function checks the database connection
-	 * @param <String> $db_type
-	 * @param <String> $db_hostname
-	 * @param <String> $db_username
-	 * @param <String> $db_password
-	 * @param <String> $db_name
-	 * @param <String> $create_db
-	 * @param <String> $create_utf8_db
-	 * @param <String> $root_user
-	 * @param <String> $root_password
+	 * Returns list of countries.
+	 *
+	 * @return array
+	 */
+	public static function getCountryList()
+	{
+		return require 'install/models/Country.php';
+	}
+
+	/**
+	 * Function checks if its mysql type.
+	 *
+	 * @param type $dbType
+	 *
+	 * @return type
+	 */
+	public static function isMySQL($dbType)
+	{
+		return stripos($dbType, 'mysql') === 0;
+	}
+
+	/**
+	 * Function checks the database connection.
+	 *
+	 * @param string $db_type
+	 * @param string $db_hostname
+	 * @param string $db_username
+	 * @param string $db_password
+	 * @param string $db_name
+	 * @param string $create_db
+	 * @param string $create_utf8_db
+	 * @param string $root_user
+	 * @param string $root_password
+	 *
 	 * @return <Array>
 	 */
-	public static function checkDbConnection($db_type, $db_hostname, $db_username, $db_password, $db_name, $create_db = false, $create_utf8_db = true, $root_user = '', $root_password = '')
+	public static function checkDbConnection(\App\Request $request)
 	{
-		$dbCheckResult = array();
+		$create_db = false;
+		$createDB = $request->get('create_db');
+		if ($createDB == 'on') {
+			$create_db = true;
+		}
+		$db_type = $request->get('db_type');
+		$db_hostname = $request->get('db_hostname');
+		$db_username = $request->get('db_username');
+		$db_password = $request->getRaw('db_password');
+		$db_name = $request->get('db_name');
+		$create_utf8_db = true;
 
 		$db_type_status = false; // is there a db type?
 		$db_server_status = false; // does the db server connection exist?
@@ -74,11 +111,12 @@ class Install_Utils_Model
 		//Checking for database connection parameters
 		if ($db_type) {
 			$conn = false;
+			$pdoException = '';
 			try {
-				$dsn = $db_type . ':host=' . $db_hostname . ';charset=utf8' . ';port=' . $dbconfig['db_port'];
-				$conn = new PDO($dsn, $db_username, $db_password);
+				$dsn = $db_type . ':host=' . $db_hostname . ';charset=utf8;port=' . $request->get('db_port');
+				$conn = new PDO($dsn, $db_username, $db_password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 			} catch (PDOException $e) {
-				//echo $e->getMessage();
+				$pdoException = $e->getMessage();
 			}
 			$db_type_status = true;
 			if ($conn) {
@@ -98,10 +136,11 @@ class Install_Utils_Model
 					// create the new database
 					$db_creation_failed = true;
 
-					$query = "CREATE DATABASE " . $db_name;
+					$query = "CREATE DATABASE `$db_name`";
 					if ($create_utf8_db == 'true') {
-						if (self::isMySQL($db_type))
+						if (self::isMySQL($db_type)) {
 							$query .= ' DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci';
+						}
 						$db_utf8_support = true;
 					}
 					if ($conn->query($query)) {
@@ -114,30 +153,34 @@ class Install_Utils_Model
 				}
 			}
 		}
+		$dbCheckResult = [];
 		$dbCheckResult['db_utf8_support'] = $db_utf8_support;
 
 		$error_msg = '';
 		$error_msg_info = '';
 
 		if (!$db_type_status || !$db_server_status) {
-			$error_msg = \includes\Language::translate('ERR_DATABASE_CONNECTION_FAILED', 'Install') . '. ' . \includes\Language::translate('ERR_INVALID_MYSQL_PARAMETERS', 'Install');
-			$error_msg_info = \includes\Language::translate('MSG_LIST_REASONS', 'Install') . ':<br>
-					-  ' . \includes\Language::translate('MSG_DB_PARAMETERS_INVALID', 'Install') . '
-					-  ' . \includes\Language::translate('MSG_DB_USER_NOT_AUTHORIZED', 'Install');
+			$error_msg = \App\Language::translate('ERR_DATABASE_CONNECTION_FAILED', 'Install') . '. ' . \App\Language::translate('ERR_INVALID_MYSQL_PARAMETERS', 'Install');
+			$error_msg_info = \App\Language::translate('MSG_LIST_REASONS', 'Install') . ':<br />
+					-  ' . \App\Language::translate('MSG_DB_PARAMETERS_INVALID', 'Install') . '
+					<br />-  ' . \App\Language::translate('MSG_DB_USER_NOT_AUTHORIZED', 'Install');
+			$error_msg_info .= "<br /><br />$pdoException";
 		} elseif (self::isMySQL($db_type) && $mysql_server_version < 4.1) {
-			$error_msg = $mysql_server_version . ' -> ' . \includes\Language::translate('ERR_INVALID_MYSQL_VERSION', 'Install');
+			$error_msg = $mysql_server_version . ' -> ' . \App\Language::translate('ERR_INVALID_MYSQL_VERSION', 'Install');
 		} elseif ($db_creation_failed) {
-			$error_msg = \includes\Language::translate('ERR_UNABLE_CREATE_DATABASE', 'Install') . ' ' . $db_name;
-			$error_msg_info = \includes\Language::translate('MSG_DB_ROOT_USER_NOT_AUTHORIZED', 'Install');
+			$error_msg = \App\Language::translate('ERR_UNABLE_CREATE_DATABASE', 'Install') . ' ' . $db_name;
+			$error_msg_info = \App\Language::translate('MSG_DB_ROOT_USER_NOT_AUTHORIZED', 'Install');
 		} elseif (!$db_exist_status) {
-			$error_msg = $db_name . ' -> ' . \includes\Language::translate('ERR_DB_NOT_FOUND', 'Install');
+			$error_msg = $db_name . ' -> ' . \App\Language::translate('ERR_DB_NOT_FOUND', 'Install');
 		} else {
 			$dbCheckResult['flag'] = true;
+
 			return $dbCheckResult;
 		}
 		$dbCheckResult['flag'] = false;
 		$dbCheckResult['error_msg'] = $error_msg;
 		$dbCheckResult['error_msg_info'] = $error_msg_info;
+
 		return $dbCheckResult;
 	}
 
@@ -145,11 +188,11 @@ class Install_Utils_Model
 	{
 		$dir = 'languages/';
 		$ffs = scandir($dir);
-		$langs = array();
+		$langs = [];
 		foreach ($ffs as $ff) {
 			if ($ff != '.' && $ff != '..') {
-				if (file_exists($dir . $ff . '/Install.php')) {
-					$langs[$ff] = \includes\Language::translateArgs('LANGNAME', 'Install', $ff);
+				if (file_exists($dir . $ff . '/Install.json')) {
+					$langs[$ff] = \App\Language::translate('LANGNAME', 'Install', $ff);
 				}
 			}
 		}

@@ -1,6 +1,6 @@
 {*<!--
 /*+***********************************************************************************************************************************
-* The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
+* The contents of this file are subject to the YetiForce Public License Version 2.0 (the "License"); you may not use this file except
 * in compliance with the License.
 * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
 * See the License for the specific language governing rights and limitations under the License.
@@ -9,63 +9,65 @@
 * All Rights Reserved.
 *************************************************************************************************************************************/
 -->*}
-<div id="menuEditorContainer">
+<div id="tpl-Settings-ApiAddress-Configuration menuEditorContainer">
     <div class="widget_header row">
         <div class="col-md-12">
-			{include file='BreadCrumbs.tpl'|@vtemplate_path:$MODULE}
-			{vtranslate('LBL_API_ADDRESS_DESCRIPTION', $MODULENAME)}
+			{include file=\App\Layout::getTemplatePath('BreadCrumbs.tpl', $MODULE)}
 		</div>
     </div>
+	<div class="badge badge-info my-2">
+		{\App\Language::translate('LBL_API_ADDRESS_DESCRIPTION', $MODULENAME)}
+	</div>
     <hr>
 	<div class="main_content">
 		<form>
-			<div class="col-xs-12 row">
-				<div class="col-xs-12 row">
-					<h4>{vtranslate('LBL_GLOBAL_CONFIG', $MODULENAME)} </h4>
+			<div class="col-12 form-row m-0">
+				<div class="col-12 form-row">
+					<h4>{\App\Language::translate('LBL_GLOBAL_CONFIG', $MODULENAME)} </h4>
 				</div>
-				<div class="col-xs-12 row marginBottom5px">
-					<div class="col-sm-6 col-md-4 row">
+				<div class="col-12 form-row mb-2">
+					<div class="col-sm-6 col-md-4">
 						<div >
-							{vtranslate('LBL_MIN_LOOKUP_LENGHT', $MODULENAME)}: 
+							{\App\Language::translate('LBL_MIN_LOOKUP_LENGTH', $MODULENAME)}: 
 						</div>
 					</div>
 					<div class="col-sm-6 col-md-4">
-						<div style="text-align:center" >
-							<input name="min_lenght" type="text" class="api form-control" value="{$CONFIG['global']['min_lenght']}" style="margin:0 auto;">
+						<div class="text-center">
+							<input name="min_length" type="text" class="api form-control m-0" value="{$CONFIG['global']['min_length']}">
 						</div>
 					</div>
 				</div>
 				<div class="clearfix"></div>
-				<div class="col-xs-12 row  marginBottom5px">
-					<div class='col-sm-6 col-md-4 row'>
+				<div class="col-12 form-row  mb-2">
+					<div class='col-sm-6 col-md-4'>
 						<div>
-							{vtranslate('LBL_NUMBER_SEARCH_RESULTS', $MODULENAME)}: 
+							{\App\Language::translate('LBL_NUMBER_SEARCH_RESULTS', $MODULENAME)}: 
 						</div>
 					</div>
 					<div class="col-sm-6 col-md-4">
-						<div style="text-align:center" >
-							<input name="result_num" type="text" class="api form-control" value="{$CONFIG['global']['result_num']}" style="margin:0 auto;">
+						<div class="text-center">
+							<input name="result_num" type="text" class="api form-control m-0" value="{$CONFIG['global']['result_num']}">
 						</div>
 					</div>
 				</div>
-				<div class="col-xs-12 row marginBottom5px">
+				<div class="col-12 form-row mb-2">
 					<div>
-						<button type="button" class="btn btn-success saveGlobal">{vtranslate('LBL_SAVE_GLOBAL_SETTINGS', $MODULENAME)}</button>
+						<button type="button" class="btn btn-success saveGlobal"><span class="fa fa-check u-mr-5px"></span>{\App\Language::translate('LBL_SAVE_GLOBAL_SETTINGS', $MODULENAME)}</button>
 					</div>
 				</div>
-				<div class="col-xs-12 row marginBottom5px">
+				<div class="col-12">
 					<hr>
 				</div>
-				<div class="col-xs-12 row marginBottom5px">
-					<div class=' row col-md-4 col-sm-6'>
-						{vtranslate('LBL_CHOOSE_API', $MODULENAME)}
+				<div class="col-12 form-row mb-2">
+					<div class='col-md-4 col-sm-6'>
+						{\App\Language::translate('LBL_CHOOSE_API', $MODULENAME)}
 					</div>
 					<div class='col-sm-6 col-md-4'>
-						<select class="select2" id="change_api" class="form-control" style="width: 200px;">
-							<option>{vtranslate('LBL_SELECT_OPTION')}</option>
+						<select class="select2" id="change_api" class="form-control">
+							<option>{\App\Language::translate('LBL_SELECT_OPTION')}</option>
 							{foreach from=$CONFIG item=item key=key}
 								{if $key neq 'global'}
-									<option value="{$key}">{vtranslate($key, $MODULENAME)}</option>
+									<option value="{$key}">{\App\Language::translate($key, $MODULENAME)}</option>
 								{/if}
 
 							{/foreach}
@@ -74,13 +76,12 @@
 				</div>
 				{foreach from=$CONFIG item=item key=key}
 					{if $key neq 'global'}
-						<div class="apiContainer col-xs-12 paddingLRZero {if !$item["key"]}hide{/if} api_row {$key}">
-							{include file=vtemplate_path($key|cat:'.tpl', $MODULENAME) API_INFO=$item API_NAME=$key}
+						<div class="apiContainer col-12 form-row px-3 pr-0 {if !$item["key"]}d-none{/if} api_row {$key}">
+							{include file=\App\Layout::getTemplatePath($key|cat:'.tpl', $MODULENAME) API_INFO=$item API_NAME=$key}
 						{/if}
 					</div>
 				{/foreach}
-
-			</div> 
+			</div>
 		</form>	
 	</div>
 </div>

@@ -11,62 +11,43 @@
 
 class Vtiger_Index_View extends Vtiger_Basic_View
 {
-
-	public function __construct()
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		parent::__construct();
-	}
-
-	public function checkPermission(Vtiger_Request $request)
-	{
-		$moduleName = $request->getModule();
-		if (!empty($moduleName)) {
-			$userPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-			$permission = $userPrivilegesModel->hasModulePermission($moduleName);
-
-			if (!$permission) {
-				throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
-			}
+		if (!Users_Privileges_Model::getCurrentUserPrivilegesModel()->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request, false);
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		if (!empty($moduleName)) {
 			$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-			$currentUser = Users_Record_Model::getCurrentUserModel();
-			$userPrivilegesModel = Users_Privileges_Model::getInstanceById($currentUser->getId());
-			$permission = $userPrivilegesModel->hasModulePermission($moduleModel->getId());
-			if (!$permission) {
-				throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
-			}
-
-			$linkParams = array('MODULE' => $moduleName, 'ACTION' => $request->get('view'));
+			$linkParams = ['MODULE' => $moduleName, 'ACTION' => $request->getByType('view', 1)];
 			$linkModels = $moduleModel->getSideBarLinks($linkParams);
-
 			$viewer->assign('QUICK_LINKS', $linkModels);
 		}
-		$viewer->assign('CURRENT_VIEW', $request->get('view'));
+		$viewer->assign('CURRENT_VIEW', $request->getByType('view', 1));
 		if ($display) {
 			$this->preProcessDisplay($request);
 		}
 	}
 
-	protected function preProcessTplName(Vtiger_Request $request)
+	protected function preProcessTplName(\App\Request $request)
 	{
 		return 'IndexViewPreProcess.tpl';
 	}
 
-	//Note : To get the right hook for immediate parent in PHP,
-	// specially in case of deep hierarchy
-	/* function preProcessParentTplName(Vtiger_Request $request) {
-	  return parent::preProcessTplName($request);
-	  } */
-
-	public function postProcess(Vtiger_Request $request)
+	public function postProcess(\App\Request $request, $display = true)
 	{
 		$moduleName = $request->getModule();
 		$viewer = $this->getViewer($request);
@@ -75,7 +56,7 @@ class Vtiger_Index_View extends Vtiger_Basic_View
 		parent::postProcess($request);
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$viewer = $this->getViewer($request);
@@ -83,32 +64,29 @@ class Vtiger_Index_View extends Vtiger_Basic_View
 	}
 
 	/**
-	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
-	 * @return <Array> - List of Vtiger_JsScript_Model instances
+	 * Function to get the list of Script models to be included.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @return Vtiger_JsScript_Model[]
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
-		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
-		$view = $request->get('view');
-
-		$jsFileNames = array(
+		$view = $request->getByType('view', 1);
+		$jsFileNames = [
 			'modules.Vtiger.resources.Vtiger',
 			'modules.Vtiger.resources.' . $view,
 			"modules.$moduleName.resources.$moduleName",
 			"modules.$moduleName.resources.$view",
-			'libraries.jquery.ckeditor.ckeditor',
-			'libraries.jquery.ckeditor.adapters.jquery',
-			'modules.Vtiger.resources.CkEditor',
-		);
+			'~vendor/ckeditor/ckeditor/ckeditor.js',
+			'~vendor/ckeditor/ckeditor/adapters/jquery.js',
+		];
 
-		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
-		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
-		return $headerScriptInstances;
+		return array_merge(parent::getFooterScripts($request), $this->checkAndConvertJsScripts($jsFileNames));
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateReadAccess();
 	}

@@ -1,44 +1,37 @@
 <?php
 
 /**
- * Field Class for MappedFields Settings
- * @package YetiForce.Field
- * @license licenses/License.html
+ * Field Class for MappedFields Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_MappedFields_Field_Model extends Vtiger_Field_Model
 {
-
 	public $inventoryField = false;
 
 	/**
-	 * Function to get field uitype
-	 * @return <String> uitype
+	 * Function to get field uitype.
+	 *
+	 * @return string uitype
 	 */
 	public function getUIType()
 	{
 		if (!$this->get('uitype')) {
-			$this->uitype = $this->getWebserviceFieldObject()->getUIType();
+			$this->uitype = parent::getUIType();
 		}
 		return $this->uitype;
 	}
 
 	/**
-	 * Function to get field picklist
-	 * @return <Array> picklist
-	 */
-	public function getPicklistDetails()
-	{
-		return $this->getWebserviceFieldObject()->getPicklistDetails();
-	}
-
-	/**
-	 * Function to get field data type
-	 * @return <String> data type
+	 * Function to get field data type.
+	 *
+	 * @return string data type
 	 */
 	public function getFieldDataType()
 	{
-		if (!$this->fieldDataType && $this->getFieldType() == 'INVENTORY') {
+		if (!$this->fieldDataType && $this->get('typeofdata') == 'INVENTORY') {
 			$this->fieldDataType = 'inventory';
 		} elseif (!$this->fieldDataType) {
 			$this->fieldDataType = parent::getFieldDataType();
@@ -50,7 +43,21 @@ class Settings_MappedFields_Field_Model extends Vtiger_Field_Model
 	}
 
 	/**
-	 * Function to get clean instance
+	 * Function to get the field type.
+	 *
+	 * @return string type of the field
+	 */
+	public function getFieldType()
+	{
+		if ($this->get('name') === 'id') {
+			return 'SELF';
+		}
+		return parent::getFieldType();
+	}
+
+	/**
+	 * Function to get clean instance.
+	 *
 	 * @return <Settings_MappedFields_Field_Model>
 	 */
 	public static function getCleanInstance()
@@ -59,7 +66,8 @@ class Settings_MappedFields_Field_Model extends Vtiger_Field_Model
 	}
 
 	/**
-	 * Function to get Field instance from array
+	 * Function to get Field instance from array.
+	 *
 	 * @return <Settings_MappedFields_Field_Model>
 	 */
 	public static function fromArray($row = [])
@@ -72,34 +80,39 @@ class Settings_MappedFields_Field_Model extends Vtiger_Field_Model
 	}
 
 	/**
-	 * Function to get field instance from WebserviceFieldObject
-	 * @return <Settings_MappedFields_Field_Model>
+	 * Function to get field instance from WebserviceFieldObject.
+	 *
+	 * @param Vtiger_Field_Model $fieldModel
+	 *
+	 * @return Settings_MappedFields_Field_Model
 	 */
-	public static function getInstanceFromWebserviceFieldObject($webserviceField)
+	public static function getInstanceFromWebserviceFieldObject($fieldModel)
 	{
 		$row = [];
-		$row['uitype'] = $webserviceField->getUIType();
-		$row['table'] = $webserviceField->getTableName();
-		$row['column'] = $webserviceField->getColumnName();
-		$row['name'] = $webserviceField->getFieldName();
-		$row['label'] = $webserviceField->getFieldLabelKey();
-		$row['displaytype'] = $webserviceField->getDisplayType();
-		$row['masseditable'] = $webserviceField->getMassEditable();
-		$row['typeofdata'] = $webserviceField->getTypeOfData();
-		$row['presence'] = $webserviceField->getPresence();
-		$row['id'] = $webserviceField->getFieldId();
-		$row['defaultvalue'] = $webserviceField->getDefault();
-		$row['mandatory'] = $webserviceField->isMandatory();
-		$row['fieldparams'] = $webserviceField->getFieldParams();
+		$row['uitype'] = $fieldModel->getUIType();
+		$row['table'] = $fieldModel->getTableName();
+		$row['column'] = $fieldModel->getColumnName();
+		$row['name'] = $fieldModel->getFieldName();
+		$row['label'] = $fieldModel->getFieldLabel();
+		$row['displaytype'] = $fieldModel->getDisplayType();
+		$row['masseditable'] = (bool) $fieldModel->get('masseditable');
+		$row['typeofdata'] = $fieldModel->get('typeofdata');
+		$row['presence'] = $fieldModel->get('presence');
+		$row['id'] = $fieldModel->getId();
+		$row['defaultvalue'] = $fieldModel->getDefaultFieldValue();
+		$row['mandatory'] = $fieldModel->isMandatory();
+		$row['fieldparams'] = $fieldModel->getFieldParams();
 
 		$instance = self::fromArray($row);
-		$instance->webserviceField == $webserviceField;
+		$instance->fieldModel == $fieldModel;
+
 		return $instance;
 	}
 
 	/**
-	 * Function to check if the current field is mandatory or not
-	 * @return <Boolean> - true/false
+	 * Function to check if the current field is mandatory or not.
+	 *
+	 * @return bool - true/false
 	 */
 	public function isMandatory()
 	{
@@ -110,8 +123,9 @@ class Settings_MappedFields_Field_Model extends Vtiger_Field_Model
 	}
 
 	/**
-	 * Function to get field label
-	 * @return <String> label
+	 * Function to get field label.
+	 *
+	 * @return string label
 	 */
 	public function getFieldLabelKey()
 	{
@@ -119,7 +133,8 @@ class Settings_MappedFields_Field_Model extends Vtiger_Field_Model
 	}
 
 	/**
-	 * Function to get field instance from InventoryFieldObject
+	 * Function to get field instance from InventoryFieldObject.
+	 *
 	 * @return <Settings_MappedFields_Field_Model>
 	 */
 	public static function getInstanceFromInventoryFieldObject($inventoryField)
@@ -135,14 +150,17 @@ class Settings_MappedFields_Field_Model extends Vtiger_Field_Model
 
 		$instance = self::fromArray($row);
 		$instance->inventoryField == $inventoryField;
+
 		return $instance;
 	}
 
 	/**
-	 * Function to get instance
+	 * Function to get instance.
+	 *
 	 * @param <String/Integer> $value
-	 * @param <String> $module
-	 * @param <String> $type
+	 * @param string           $module
+	 * @param string           $type
+	 *
 	 * @return <Settings_MappedFields_Field_Model> field model
 	 */
 	public static function getInstance($value, $module = false, $type = '')
@@ -158,6 +176,7 @@ class Settings_MappedFields_Field_Model extends Vtiger_Field_Model
 			case 'INVENTORY':
 				$inventoryFieldModel = Vtiger_InventoryField_Model::getInstance($module->getName());
 				$inventoryFields = $inventoryFieldModel->getFields();
+
 				return self::getInstanceFromInventoryFieldObject($inventoryFields[$value]);
 			default:
 				$fieldModel = parent::getInstance($value, $module);

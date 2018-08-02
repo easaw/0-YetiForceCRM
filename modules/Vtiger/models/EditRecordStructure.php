@@ -9,13 +9,13 @@
  * *********************************************************************************** */
 
 /**
- * Vtiger Edit View Record Structure Model
+ * Vtiger Edit View Record Structure Model.
  */
 class Vtiger_EditRecordStructure_Model extends Vtiger_RecordStructure_Model
 {
-
 	/**
-	 * Function to get the values in stuctured format
+	 * Function to get the values in stuctured format.
+	 *
 	 * @return <array> - values in structure array('block'=>array(fieldinfo));
 	 */
 	public function getStructure()
@@ -35,12 +35,13 @@ class Vtiger_EditRecordStructure_Model extends Vtiger_RecordStructure_Model
 				$values[$blockLabel] = [];
 				foreach ($fieldModelList as $fieldName => $fieldModel) {
 					if ($fieldModel->isEditable()) {
-						if ($recordModel->get($fieldName) != '') {
+						if ($recordModel->get($fieldName) !== '') {
 							$fieldModel->set('fieldvalue', $recordModel->get($fieldName));
 						} else {
 							$defaultValue = $fieldModel->getDefaultFieldValue();
-							if (!empty($defaultValue) && !$recordId)
+							if ($defaultValue !== '' && !$recordId) {
 								$fieldModel->set('fieldvalue', $defaultValue);
+							}
 						}
 						$values[$blockLabel][$fieldName] = $fieldModel;
 					}
@@ -48,6 +49,7 @@ class Vtiger_EditRecordStructure_Model extends Vtiger_RecordStructure_Model
 			}
 		}
 		$this->structuredValues = $values;
+
 		return $values;
 	}
 }

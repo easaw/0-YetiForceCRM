@@ -1,40 +1,57 @@
 <?php
 
 /**
- * Mail scanner action creating mail
- * @package YetiForce.View
- * @license licenses/License.html
+ * Mail scanner action creating mail.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_OSSMailScanner_Folders_View extends Vtiger_BasicModal_View
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Check permission to view.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedForAdmin
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUserModel->isAdminUser() || !$request->has('record')) {
-			throw new \Exception\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
+		if (!\App\User::getCurrentUserModel()->isAdmin() || !$request->has('record')) {
+			throw new \App\Exceptions\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
 		}
 	}
 
-	public function getSize(Vtiger_Request $request)
+	public function getSize(\App\Request $request)
 	{
 		return 'modal-lg';
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
-		$record = $request->get('record');
-		$mailModuleActive = vtlib\Functions::getModuleId('OSSMail');
+		$record = $request->getInteger('record');
+		$mailDetail = OSSMail_Record_Model::getMailAccountDetail($record);
+		$mailModuleActive = \App\Module::getModuleId('OSSMail');
 		$folders = [];
 		if ($mailModuleActive) {
 			$mailRecordModel = Vtiger_Record_Model::getCleanInstance('OSSMail');
 			$folders = $mailRecordModel->getFolders($record);
 			$mailScannerRecordModel = Vtiger_Record_Model::getCleanInstance('OSSMailScanner');
+			$mailScannerFolders = $mailScannerRecordModel->getFolders($record);
 			$selectedFolders = [];
-			foreach ($mailScannerRecordModel->getFolders($record) as &$folder) {
+			$missingFolders = [];
+			foreach ($mailScannerFolders as &$folder) {
+				if (!isset($folders[$folder['folder']])) {
+					$missingFolders[] = $folder['folder'];
+				}
 				$selectedFolders[$folder['type']][] = $folder['folder'];
 			}
 		}
@@ -46,6 +63,8 @@ class Settings_OSSMailScanner_Folders_View extends Vtiger_BasicModal_View
 		$viewer->assign('SELECTED', $selectedFolders);
 		$viewer->assign('MODULE_NAME', $moduleName);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
+		$viewer->assign('ADDRESS_EMAIL', $mailDetail['username']);
+		$viewer->assign('MISSING_FOLDERS', $missingFolders);
 		$viewer->view('Folders.tpl', $qualifiedModuleName);
 		$this->postProcess($request);
 	}

@@ -10,52 +10,12 @@
 
 class Vtiger_IndexAjax_View extends Vtiger_Index_View
 {
+	use \App\Controller\ExposeMethod,
+	 App\Controller\ClearProcess;
 
-	public function __construct()
+	public function getRecordsListFromRequest(\App\Request $request)
 	{
-		parent::__construct();
-		$this->exposeMethod('showActiveRecords');
-	}
-
-	public function preProcess(Vtiger_Request $request, $display = true)
-	{
-		return true;
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		return true;
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
-		}
-	}
-	/*
-	 * Function to show the recently modified or active records for the given module
-	 */
-
-	public function showActiveRecords(Vtiger_Request $request)
-	{
-		$viewer = $this->getViewer($request);
-		$moduleName = $request->getModule();
-
-		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-		$recentRecords = $moduleModel->getRecentRecords();
-
-		$viewer->assign('MODULE', $moduleName);
-		$viewer->assign('RECORDS', $recentRecords);
-
-		echo $viewer->view('RecordNamesList.tpl', $moduleName, true);
-	}
-
-	public function getRecordsListFromRequest(Vtiger_Request $request)
-	{
-		$cvId = $request->get('cvid');
+		$cvId = $request->getByType('cvid', 2);
 		$selectedIds = $request->get('selected_ids');
 		$excludedIds = $request->get('excluded_ids');
 
@@ -65,23 +25,21 @@ class Vtiger_IndexAjax_View extends Vtiger_Index_View
 			}
 		}
 		if (!empty($cvId) && $cvId == 'undefined') {
-			$sourceModule = $request->get('sourceModule');
+			$sourceModule = $request->getByType('sourceModule', 2);
 			$cvId = CustomView_Record_Model::getAllFilterByModule($sourceModule)->getId();
 		}
 
 		$customViewModel = CustomView_Record_Model::getInstanceById($cvId);
 		if ($customViewModel) {
-			$searchKey = $request->get('search_key');
-			$searchValue = $request->get('search_value');
-			$operator = $request->get('operator');
-			if (!empty($operator)) {
-				$customViewModel->set('operator', $operator);
-				$customViewModel->set('search_key', $searchKey);
-				$customViewModel->set('search_value', $searchValue);
+			if (!$request->isEmpty('operator', true)) {
+				$customViewModel->set('operator', $request->getByType('operator', 1));
+				$customViewModel->set('search_key', $request->getByType('search_key', 1));
+				$customViewModel->set('search_value', $request->get('search_value'));
 			}
 			if ($request->has('search_params')) {
 				$customViewModel->set('search_params', $request->get('search_params'));
 			}
+
 			return $customViewModel->getRecordIds($excludedIds);
 		}
 	}

@@ -11,10 +11,9 @@
 
 class Import_VCardReader_Reader extends Import_FileReader_Reader
 {
-
 	protected $vCardPattern = '/BEGIN:VCARD.*?END:VCARD/si';
-	protected $skipLabels = array('BEGIN', 'END', 'VERSION');
-	static $fileContents = null;
+	protected $skipLabels = ['BEGIN', 'END', 'VERSION'];
+	public static $fileContents = null;
 
 	public function hasHeader()
 	{
@@ -32,12 +31,12 @@ class Import_VCardReader_Reader extends Import_FileReader_Reader
 		$fileContents = self::$fileContents;
 
 		$data = null;
-		$matches = array();
+		$matches = [];
 		preg_match_all($this->vCardPattern, $fileContents, $matches);
 
 		$row = $matches[0][0];
 		$fieldValueMappings = explode("\r\n", $row);
-		$data = array();
+		$data = [];
 		foreach ($fieldValueMappings as $fieldValueMapping) {
 			list($label, $value) = explode(':', $fieldValueMapping, 2);
 			$value = str_replace(';', ' ', $value);
@@ -48,15 +47,15 @@ class Import_VCardReader_Reader extends Import_FileReader_Reader
 		return $data;
 	}
 
+	/**
+	 * Function creates tables for import in database.
+	 */
 	public function read()
 	{
-		$default_charset = AppConfig::main('default_charset');
+		$defaultCharset = AppConfig::main('default_charset');
 
 		$filePath = $this->getFilePath();
-		$temp_status = $this->createTable();
-		if (!$temp_status) {
-			return false;
-		}
+		$this->createTable();
 
 		$fieldMapping = $this->request->get('field_mapping');
 
@@ -65,13 +64,13 @@ class Import_VCardReader_Reader extends Import_FileReader_Reader
 		}
 		$fileContents = self::$fileContents;
 
-		$matches = array();
+		$matches = [];
 		preg_match_all($this->vCardPattern, $fileContents, $matches);
 		$countMatches = count($matches[0]);
 		for ($i = 0; $i < $countMatches; ++$i) {
 			$row = $matches[0][$i];
 			$fieldValueMappings = explode("\r\n", $row);
-			$data = array();
+			$data = [];
 			$valueCounter = 0;
 			foreach ($fieldValueMappings as $fieldValueMapping) {
 				list($label, $value) = explode(':', $fieldValueMapping, 2);
@@ -80,19 +79,21 @@ class Import_VCardReader_Reader extends Import_FileReader_Reader
 					$data[$valueCounter++] = $value;
 				}
 			}
-			$mappedData = array();
+			$mappedData = [];
 			$allValuesEmpty = true;
 			foreach ($fieldMapping as $fieldName => $index) {
 				$fieldValue = $data[$index];
 				$mappedData[$fieldName] = $fieldValue;
-				if ($this->request->get('file_encoding') != $default_charset) {
-					$mappedData[$fieldName] = $this->convertCharacterEncoding($fieldValue, $this->request->get('file_encoding'), $default_charset);
+				if ($this->request->get('file_encoding') !== $defaultCharset) {
+					$mappedData[$fieldName] = $this->convertCharacterEncoding($fieldValue, $this->request->get('file_encoding'), $defaultCharset);
 				}
-				if (!empty($fieldValue))
+				if (!empty($fieldValue)) {
 					$allValuesEmpty = false;
+				}
 			}
-			if ($allValuesEmpty)
+			if ($allValuesEmpty) {
 				continue;
+			}
 			$fieldNames = array_keys($mappedData);
 			$fieldValues = array_values($mappedData);
 			$this->addRecordToDB($fieldNames, $fieldValues);

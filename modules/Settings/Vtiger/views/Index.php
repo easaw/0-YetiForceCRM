@@ -6,43 +6,63 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * ********************************************************************************** */
 
 class Settings_Vtiger_Index_View extends Vtiger_Basic_View
 {
+	use \App\Controller\ExposeMethod;
+
+	/**
+	 * Page title.
+	 *
+	 * @var type
+	 */
+	protected $pageTitle = 'LBL_SYSTEM_SETTINGS';
 
 	public function __construct()
 	{
 		Settings_Vtiger_Tracker_Model::addBasic('view');
 		parent::__construct();
-		$this->exposeMethod('DonateUs');
-		$this->exposeMethod('Index');
-		$this->exposeMethod('Github');
+		$this->exposeMethod('index');
+		$this->exposeMethod('github');
 		$this->exposeMethod('systemWarnings');
 		$this->exposeMethod('getWarningsList');
+		$this->exposeMethod('security');
 	}
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Checking permissions.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedForAdmin
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		if (!$currentUserModel->isAdminUser()) {
-			throw new \Exception\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
+		if (!\App\User::getCurrentUserModel()->isAdmin()) {
+			throw new \App\Exceptions\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
 		}
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request, false);
 		$this->preProcessSettings($request);
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	public function postProcess(\App\Request $request, $display = true)
 	{
 		$this->postProcessSettings($request);
 		parent::postProcess($request);
 	}
 
-	public function preProcessSettings(Vtiger_Request $request)
+	/**
+	 * Pre process settings.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function preProcessSettings(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
@@ -52,37 +72,35 @@ class Settings_Vtiger_Index_View extends Vtiger_Basic_View
 		$settingsModel = Settings_Vtiger_Module_Model::getInstance();
 		$menuModels = $settingsModel->getMenus();
 		$menu = $settingsModel->prepareMenuToDisplay($menuModels, $moduleName, $selectedMenuId, $fieldId);
-
 		if ($settingsModel->has('selected')) {
 			$viewer->assign('SELECTED_PAGE', $settingsModel->get('selected'));
 		}
-		$viewer->assign('SELECTED_MENU', $selectedMenuId);
-		$viewer->assign('SETTINGS_MENUS', $menuModels); // used only in old layout 
 		$viewer->assign('MENUS', $menu);
 		$viewer->view('SettingsMenuStart.tpl', $qualifiedModuleName);
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if (!empty($mode)) {
 			echo $this->invokeExposedMethod($mode, $request);
+
 			return;
 		}
-		$viewer = $this->getViewer($request);
-		$qualifiedModuleName = $request->getModule(false);
-		$viewer->view('SettingsIndexHeader.tpl', $qualifiedModuleName);
+		$this->getViewer($request)->view('SettingsIndexHeader.tpl', $request->getModule(false));
 	}
 
-	public function postProcessSettings(Vtiger_Request $request)
+	public function postProcessSettings(\App\Request $request)
 	{
-
-		$viewer = $this->getViewer($request);
-		$qualifiedModuleName = $request->getModule(false);
-		$viewer->view('SettingsMenuEnd.tpl', $qualifiedModuleName);
+		$this->getViewer($request)->view('SettingsMenuEnd.tpl', $request->getModule(false));
 	}
 
-	public function Index(Vtiger_Request $request)
+	/**
+	 * Index.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function index(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$qualifiedModuleName = $request->getModule(false);
@@ -90,24 +108,26 @@ class Settings_Vtiger_Index_View extends Vtiger_Basic_View
 		$allWorkflows = Settings_Workflows_Record_Model::getAllAmountWorkflowsAmount();
 		$activeModules = Settings_ModuleManager_Module_Model::getModulesCount(true);
 		$pinnedSettingsShortcuts = Settings_Vtiger_MenuItem_Model::getPinnedItems();
-		$warningsCount = includes\SystemWarnings::getWarningsCount();
+		$warnings = \App\SystemWarnings::getWarnings('all');
 
-		$viewer->assign('WARNINGS_COUNT', $warningsCount);
+		$viewer->assign('WARNINGS_COUNT', count($warnings));
+		$viewer->assign('WARNINGS', !App\Session::has('SystemWarnings') ? $warnings : []);
 		$viewer->assign('USERS_COUNT', $usersCount);
+		$viewer->assign('SECURITY_COUNT', $this->getSecurityCount());
 		$viewer->assign('ALL_WORKFLOWS', $allWorkflows);
 		$viewer->assign('ACTIVE_MODULES', $activeModules);
 		$viewer->assign('SETTINGS_SHORTCUTS', $pinnedSettingsShortcuts);
 		$viewer->view('Index.tpl', $qualifiedModuleName);
 	}
 
-	public function Github(Vtiger_Request $request)
+	public function github(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$qualifiedModuleName = 'Settings:Github';
 		$clientModel = Settings_Github_Client_Model::getInstance();
 		$isAuthor = $request->get('author');
 		$isAuthor = $isAuthor == 'true' ? true : false;
-		$pageNumber = $request->get('page');
+		$pageNumber = $request->getInteger('page');
 		if (empty($pageNumber)) {
 			$pageNumber = 1;
 		}
@@ -136,45 +156,78 @@ class Settings_Vtiger_Index_View extends Vtiger_Basic_View
 		$viewer->view('Github.tpl', $qualifiedModuleName);
 	}
 
-	public function DonateUs(Vtiger_Request $request)
-	{
-		$viewer = $this->getViewer($request);
-		$qualifiedModuleName = $request->getModule(false);
-		$viewer->view('DonateUs.tpl', $qualifiedModuleName);
-	}
-
 	/**
-	 * Displays warnings system
-	 * 
-	 * @param Vtiger_Request $request
+	 * Displays warnings system.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function systemWarnings(Vtiger_Request $request)
+	public function systemWarnings(\App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$qualifiedModuleName = $request->getModule(false);
 
-		$folders = array_values(\includes\SystemWarnings::getFolders());
+		$folders = array_values(\App\SystemWarnings::getFolders());
 		$viewer->assign('MODULE', $qualifiedModuleName);
-		$viewer->assign('FOLDERS', \includes\utils\Json::encode($folders));
+		$viewer->assign('FOLDERS', \App\Json::encode($folders));
 		$viewer->view('SystemWarnings.tpl', $qualifiedModuleName);
 	}
 
 	/**
-	 * Displays a list of system warnings
-	 * 
-	 * @param Vtiger_Request $request
+	 * Displays security information.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function getWarningsList(Vtiger_Request $request)
+	public function security(\App\Request $request)
+	{
+		$viewer = $this->getViewer($request);
+		$qualifiedModuleName = $request->getModule(false);
+
+		$folders = array_values(\App\SystemWarnings::getFolders());
+		$checker = new SensioLabs\Security\SecurityChecker();
+		$viewer->assign('MODULE', $qualifiedModuleName);
+		$viewer->assign('FOLDERS', \App\Json::encode($folders));
+		try {
+			$viewer->assign('SENSIOLABS', $checker->check(ROOT_DIRECTORY));
+		} catch (RuntimeException $exc) {
+		}
+		$viewer->view('Security.tpl', $qualifiedModuleName);
+	}
+
+	/**
+	 * Displays a list of system warnings.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function getWarningsList(\App\Request $request)
 	{
 		$folder = $request->get('folder');
 		$active = $request->getBoolean('active');
 		$viewer = $this->getViewer($request);
 		$qualifiedModuleName = $request->getModule(false);
 
-		$list = \includes\SystemWarnings::getWarnings($folder, $active);
+		$list = \App\SystemWarnings::getWarnings($folder, $active);
 		$viewer->assign('MODULE', $qualifiedModuleName);
 		$viewer->assign('WARNINGS_LIST', $list);
 		$viewer->view('SystemWarningsList.tpl', $qualifiedModuleName);
+	}
+
+	/**
+	 * Get security alerts count.
+	 *
+	 * @return int
+	 */
+	protected function getSecurityCount()
+	{
+		$count = 0;
+		foreach (Settings_ConfReport_Module_Model::getSecurityConf(false, true) as $value) {
+			++$count;
+		}
+		$count += App\Log::getLogs('access_for_admin', 'oneDay', true);
+		$count += App\Log::getLogs('access_to_record', 'oneDay', true);
+		$count += App\Log::getLogs('access_for_api', 'oneDay', true);
+		$count += App\Log::getLogs('access_for_user', 'oneDay', true);
+
+		return $count;
 	}
 
 	protected function getMenu()
@@ -183,48 +236,47 @@ class Settings_Vtiger_Index_View extends Vtiger_Basic_View
 	}
 
 	/**
-	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
-	 * @return <Array> - List of Vtiger_JsScript_Model instances
+	 * {@inheritdoc}
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
-		$jsFileNames = array(
+		$jsFileNames = [
 			'modules.Vtiger.resources.Vtiger',
-			'libraries.jquery.ckeditor.ckeditor',
-			'libraries.jquery.ckeditor.adapters.jquery',
-			'libraries.jquery.jstree.jstree',
-			'~libraries/jquery/datatables/media/js/jquery.dataTables.js',
-			'~libraries/jquery/datatables/plugins/integration/bootstrap/3/dataTables.bootstrap.js',
-			'modules.Vtiger.resources.CkEditor',
+			'~vendor/ckeditor/ckeditor/ckeditor.js',
+			'~vendor/ckeditor/ckeditor/adapters/jquery.js',
+			'~libraries/jstree/dist/jstree.js',
+			'~libraries/datatables.net/js/jquery.dataTables.js',
+			'~libraries/datatables.net-bs4/js/dataTables.bootstrap4.js',
+			'~libraries/datatables.net-responsive/js/dataTables.responsive.js',
+			'~libraries/datatables.net-responsive-bs4/js/responsive.bootstrap4.js',
 			'modules.Settings.Vtiger.resources.Vtiger',
 			'modules.Settings.Vtiger.resources.Edit',
 			"modules.Settings.$moduleName.resources.$moduleName",
 			'modules.Settings.Vtiger.resources.Index',
-			"modules.Settings.$moduleName.resources.Index",
-		);
+			"modules.Settings.$moduleName.resources.Index"
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
+
 		return array_merge($headerScriptInstances, $jsScriptInstances);
 	}
 
 	/**
-	 * Retrieves css styles that need to loaded in the page
-	 * @param Vtiger_Request $request - request model
-	 * @return <array> - array of Vtiger_CssScript_Model
+	 * {@inheritdoc}
 	 */
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
-		$cssFileNames = array(
-			'libraries.jquery.jstree.themes.proton.style',
-			'~libraries/jquery/datatables/media/css/jquery.dataTables_themeroller.css',
-			'~libraries/jquery/datatables/plugins/integration/bootstrap/3/dataTables.bootstrap.css',
-		);
+		$cssFileNames = [
+			'~libraries/jstree-bootstrap-theme/dist/themes/proton/style.css',
+			'~libraries/datatables.net-bs4/css/dataTables.bootstrap4.css',
+			'~libraries/datatables.net-responsive-bs4/css/responsive.bootstrap4.css'
+		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
+
 		return array_merge($cssInstances, $headerCssInstances);
 	}
 
@@ -244,7 +296,7 @@ class Settings_Vtiger_Index_View extends Vtiger_Basic_View
 		return false;
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		$request->validateReadAccess();
 	}

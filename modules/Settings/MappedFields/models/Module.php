@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Module Class for MappedFields Settings
- * @package YetiForce.Model
- * @license licenses/License.html
+ * Module Class for MappedFields Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 {
-
 	protected $record = false;
 	public $baseTable = 'a_yf_mapped_config';
 	public $mappingTable = 'a_yf_mapped_fields';
@@ -17,7 +17,7 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 	public $listFields = [
 		'tabid' => 'LBL_MODULE',
 		'reltabid' => 'LBL_REL_MODULE',
-		'status' => 'LBL_STATUS'
+		'status' => 'LBL_STATUS',
 	];
 	public static $allFields = [
 		'tabid',
@@ -25,11 +25,11 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 		'status',
 		'conditions',
 		'permissions',
-		'params'
+		'params',
 	];
 	public static $step1Fields = ['status', 'tabid', 'reltabid'];
 	public static $step2Fields = ['source', 'target', 'default', 'type'];
-	public static $step3Fields = ['conditions',];
+	public static $step3Fields = ['conditions'];
 	public static $step4Fields = ['permissions'];
 	public $name = 'MappedFields';
 	public $parent = 'Settings';
@@ -50,12 +50,13 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get the Module/Tab id
+	 * Function to get the Module/Tab id.
+	 *
 	 * @return <Number>
 	 */
 	public function getId()
 	{
-		return vtlib\Functions::getModuleId($this->getName());
+		return \App\Module::getModuleId($this->getName());
 	}
 
 	public static function getFieldsByStep($step = 1)
@@ -74,7 +75,8 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get the Restricted Ui Types
+	 * Function to get the Restricted Ui Types.
+	 *
 	 * @return <array> Restricted ui types
 	 */
 	public function getRestrictedUitypes()
@@ -83,7 +85,8 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get the Restricted Ui Types
+	 * Function to get the Restricted Ui Types.
+	 *
 	 * @return <array> Restricted ui types
 	 */
 	public function getRecordId()
@@ -105,13 +108,13 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get instance
+	 * Function to get instance.
+	 *
 	 * @return <Settings_MappedFields_Module_Model>
 	 */
 	public static function getCleanInstance($moduleName = 'Vtiger')
 	{
-		
-		\App\Log::trace('Entering ' . __CLASS__ . '::' . __METHOD__ . '(' . $moduleName . ') method ...');
+		\App\Log::trace('Entering ' . __METHOD__ . '(' . $moduleName . ') method ...');
 		$handlerClass = Vtiger_Loader::getComponentClassName('Model', 'MappedFields', $moduleName);
 		$mf = new $handlerClass();
 		$data = [];
@@ -122,13 +125,16 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 		$mf->setData($data);
 		$instance = new self();
 		$instance->record = $mf;
-		\App\Log::trace('Exiting ' . __CLASS__ . '::' . __METHOD__ . ' method ...');
+		\App\Log::trace('Exiting ' . __METHOD__ . ' method ...');
+
 		return $instance;
 	}
 
 	/**
-	 * Function to get the value for a given key
+	 * Function to get the value for a given key.
+	 *
 	 * @param $key
+	 *
 	 * @return Value for the given key
 	 */
 	public function get($key)
@@ -137,14 +143,15 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get instance of module
-	 * @param <String> $moduleName
+	 * Function to get instance of module.
+	 *
+	 * @param string $moduleName
+	 *
 	 * @return <Settings_MappedFields_Module_Model>
 	 */
 	public static function getInstance($moduleName = 'Settings:Vtiger')
 	{
-		
-		\App\Log::trace('Entering ' . __CLASS__ . '::' . __METHOD__ . '(' . $moduleName . ') method ...');
+		\App\Log::trace('Entering ' . __METHOD__ . '(' . $moduleName . ') method ...');
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
 		if ($moduleModel) {
 			$objectProperties = get_object_vars($moduleModel);
@@ -153,22 +160,24 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 				$moduleModel->$properName = $propertyValue;
 			}
 		}
-		\App\Log::trace('Exiting ' . __CLASS__ . '::' . __METHOD__ . ' method ...');
+		\App\Log::trace('Exiting ' . __METHOD__ . ' method ...');
+
 		return $moduleModel;
 	}
 
 	public static function getInstanceById($recordId, $moduleName = 'Vtiger')
 	{
-		
-		\App\Log::trace('Entering ' . __CLASS__ . '::' . __METHOD__ . '(' . $recordId . ',' . $moduleName . ') method ...');
+		\App\Log::trace('Entering ' . __METHOD__ . '(' . $recordId . ',' . $moduleName . ') method ...');
 		$instance = new self();
 		$instance->record = Vtiger_MappedFields_Model::getInstanceById($recordId, $moduleName);
-		\App\Log::trace('Exiting ' . __CLASS__ . '::' . __METHOD__ . ' method ...');
+		\App\Log::trace('Exiting ' . __METHOD__ . ' method ...');
+
 		return $instance;
 	}
 
 	/**
-	 * Function to get mapping details
+	 * Function to get mapping details.
+	 *
 	 * @return <Array> list of mapping details
 	 */
 	public function getMapping()
@@ -177,22 +186,24 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to set mapping details
+	 * Function to set mapping details.
+	 *
 	 * @return instance
 	 */
 	public function setMapping($mapp = [])
 	{
 		$this->record->setMapping($mapp);
+
 		return $this;
 	}
 
 	/**
-	 * Function to set mapping details
+	 * Function to set mapping details.
+	 *
 	 * @return instance
 	 */
 	public static function getSpecialFields()
 	{
-		$db = PearDatabase::getInstance();
 		$fields = ['id' => ['name' => 'id', 'id' => 'id', 'fieldDataType' => 'reference', 'label' => 'LBL_SELF_ID', 'typeofdata' => 'SELF']];
 		$models = [];
 		foreach ($fields as $fieldName => $data) {
@@ -203,24 +214,22 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 	}
 
 	/**
-	 * Function returns fields of module
+	 * Function returns fields of module.
+	 *
 	 * @return <Array of vtlib\Field>
 	 */
 	public function getFields($source = false)
 	{
-		
-		\App\Log::trace('Entering ' . __CLASS__ . '::' . __METHOD__ . '() method ...');
+		\App\Log::trace('Entering ' . __METHOD__ . '() method ...');
 		$moduleModel = Vtiger_Module_Model::getInstance($this->getName());
-		$moduleMeta = $moduleModel->getModuleMeta();
-		$moduleFields = $moduleMeta->getAccessibleFields();
 		$fields = [];
-		foreach ($moduleFields as $fieldName => $fieldInstance) {
-			if ($moduleMeta->isEditableField($fieldInstance) && !in_array($fieldInstance->getUIType(), $this->getRestrictedUitypes())) {
-				$blockName = $fieldInstance->getBlockName();
+		foreach ($moduleModel->getFields() as $fieldName => $fieldModel) {
+			if ($fieldModel->isActiveField() && $fieldModel->isEditable() && !in_array($fieldModel->getUIType(), $this->getRestrictedUitypes())) {
+				$blockName = $fieldModel->getBlockName();
 				if (!$blockName) {
 					$blockName = 'LBL_NOT_ASSIGNET_TO_BLOCK';
 				}
-				$fields[$blockName][$fieldInstance->getFieldId()] = Settings_MappedFields_Field_Model::getInstanceFromWebserviceFieldObject($fieldInstance);
+				$fields[$blockName][$fieldModel->getId()] = Settings_MappedFields_Field_Model::getInstanceFromWebserviceFieldObject($fieldModel);
 			}
 		}
 		if ($source) {
@@ -238,47 +247,45 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 				$fields[$blockName][$field->get('columnname')] = Settings_MappedFields_Field_Model::getInstanceFromInventoryFieldObject($field);
 			}
 		}
-		\App\Log::trace('Exiting ' . __CLASS__ . '::' . __METHOD__ . ' method ...');
+		\App\Log::trace('Exiting ' . __METHOD__ . ' method ...');
+
 		return $fields;
 	}
 
 	public function deleteMapping($mappedIds)
 	{
-		
-		\App\Log::trace('Entering ' . __CLASS__ . '::' . __METHOD__ . '() method ...');
-		$db = PearDatabase::getInstance();
+		\App\Log::trace('Entering ' . __METHOD__ . '() method ...');
 		if (!is_array($mappedIds)) {
 			$mappedIds = [$mappedIds];
 		}
-		$db->delete($this->mappingTable, $this->mappingIndex . ' IN (' . generateQuestionMarks($mappedIds) . ');', $mappedIds);
-		\App\Log::trace('Exiting ' . __CLASS__ . '::' . __METHOD__ . ' method ...');
+		\App\Db::getInstance()->createCommand()->delete($this->mappingTable, [$this->mappingIndex => $mappedIds])
+			->execute();
+		\App\Log::trace('Exiting ' . __METHOD__ . ' method ...');
 	}
 
 	public function delete()
 	{
-		$db = PearDatabase::getInstance();
-		return $db->delete($this->baseTable, '`' . $this->baseIndex . '` = ?', [$this->getRecordId()]);
+		return \App\Db::getInstance()->createCommand()->delete($this->baseTable, [$this->baseIndex => $this->getRecordId()])
+			->execute();
 	}
 
 	public function importsAllowed()
 	{
-		$db = PearDatabase::getInstance();
-		$query = sprintf('SELECT 1 FROM `%s` WHERE `tabid` = ? && `reltabid` = ? ;', $this->baseTable);
-		$result = $db->pquery($query, [$this->get('tabid'), $this->get('reltabid')]);
-		return $result->rowCount();
+		return (new \App\Db\Query())->from($this->baseTable)
+			->where(['tabid' => $this->get('tabid'), 'reltabid' => $this->get('reltabid')])
+			->count();
 	}
 
 	public function save($saveMapping = false)
 	{
-		
-		\App\Log::trace('Entering ' . __CLASS__ . '::' . __METHOD__ . '(' . $saveMapping . ') method ...');
-		$db = PearDatabase::getInstance();
+		\App\Log::trace('Entering ' . __METHOD__ . '(' . $saveMapping . ') method ...');
+		$db = \App\Db::getInstance();
 		$fields = self::$allFields;
 		$params = [];
 		foreach ($fields as $field) {
 			$value = $this->record->get($field);
 			if (in_array($field, ['conditions', 'params'])) {
-				$params[$field] = \includes\utils\Json::encode($value);
+				$params[$field] = \App\Json::encode($value);
 			} elseif (is_array($value)) {
 				$params[$field] = implode(',', $value);
 			} else {
@@ -286,13 +293,13 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 			}
 		}
 		if (!$this->getRecordId()) {
-			$db->insert($this->baseTable, $params);
-			$this->record->set('id', $db->getLastInsertID());
+			$db->createCommand()->insert($this->baseTable, $params)->execute();
+			$this->record->set('id', $db->getLastInsertID($this->baseTable . '_id_seq'));
 		} else {
-			$db->update($this->baseTable, $params, '`' . $this->baseIndex . '` = ?', [$this->getRecordId()]);
+			$db->createCommand()->update($this->baseTable, $params, [$this->baseIndex => $this->getRecordId()])->execute();
 		}
 		if ($saveMapping) {
-			$stepFields = Settings_MappedFields_Module_Model::getFieldsByStep(2);
+			$stepFields = self::getFieldsByStep(2);
 			$this->deleteMapping($this->getRecordId());
 			foreach ($this->getMapping() as $mapp) {
 				$params = [];
@@ -301,59 +308,53 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 					$params[$name] = $mapp[$name];
 				}
 				if ($params['source'] && $params['target']) {
-					$db->insert($this->mappingTable, $params);
+					$db->createCommand()->insert($this->mappingTable, $params)->execute();
 				}
 			}
 		}
-		\App\Log::trace('Exiting ' . __CLASS__ . '::' . __METHOD__ . ' method ...');
+		\App\Log::trace('Exiting ' . __METHOD__ . ' method ...');
+
 		return $this->getRecordId();
 	}
 
 	/**
-	 * Function transforms Advance filter to workflow conditions
+	 * Function transforms Advance filter to workflow conditions.
 	 */
 	public function transformAdvanceFilterToWorkFlowFilter()
 	{
-		
-		\App\Log::trace('Entering ' . __CLASS__ . '::' . __METHOD__ . '() method ...');
+		\App\Log::trace('Entering ' . __METHOD__ . '() method ...');
 		$conditions = $this->get('conditions');
 		$wfCondition = [];
 		if (!empty($conditions)) {
 			foreach ($conditions as $index => $condition) {
 				$columns = $condition['columns'];
 				if ($index == '1' && empty($columns)) {
-					$wfCondition[] = array('fieldname' => '', 'operation' => '', 'value' => '', 'valuetype' => '',
-						'joincondition' => '', 'groupid' => '0');
+					$wfCondition[] = ['fieldname' => '', 'operation' => '', 'value' => '', 'valuetype' => '',
+						'joincondition' => '', 'groupid' => '0', ];
 				}
 				if (!empty($columns) && is_array($columns)) {
 					foreach ($columns as $column) {
-						$wfCondition[] = array('fieldname' => $column['columnname'], 'operation' => $column['comparator'],
+						$wfCondition[] = ['fieldname' => $column['columnname'], 'operation' => $column['comparator'],
 							'value' => $column['value'], 'valuetype' => $column['valuetype'], 'joincondition' => $column['column_condition'],
-							'groupjoin' => $condition['condition'], 'groupid' => $column['groupid']);
+							'groupjoin' => $condition['condition'], 'groupid' => $column['groupid'], ];
 					}
 				}
 			}
 		}
 		$this->getRecord()->set('conditions', $wfCondition);
-		\App\Log::trace('Exiting ' . __CLASS__ . '::' . __METHOD__ . ' method ...');
+		\App\Log::trace('Exiting ' . __METHOD__ . ' method ...');
 	}
 
 	public function import($qualifiedModuleName = false)
 	{
 		$id = '';
-		if (is_array($_FILES) && $_FILES['imported_xml']['name'] != '') {
-			$xmlName = $_FILES['imported_xml']['name'];
-			$uploadedXml = $_FILES['imported_xml']['tmp_name'];
-			$xmlError = $_FILES['imported_xml']['error'];
-			$extension = end(explode('.', $xmlName));
-			$message = false;
-			if ($xmlError == UPLOAD_ERR_OK && $extension === 'xml') {
-				list($id, $message) = $this->importDataFromXML($uploadedXml);
-			} else {
-				$message = 'LBL_UPLOAD_ERROR';
-			}
+		$fileInstance = \App\Fields\File::loadFromRequest($_FILES['imported_xml']);
+		if (!$fileInstance->validate() || $fileInstance->getExtension(true) !== 'xml') {
+			$message = 'LBL_UPLOAD_ERROR';
+		} else {
+			list($id, $message) = $this->importDataFromXML($fileInstance->getPath());
 		}
-		return ['id' => $id, 'message' => vtranslate($message, $qualifiedModuleName)];
+		return ['id' => $id, 'message' => \App\Language::translate($message, $qualifiedModuleName)];
 	}
 
 	public function importDataFromXML($uploadedXml)
@@ -365,18 +366,18 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 		$xml = simplexml_load_file($uploadedXml);
 		foreach ($xml as $fieldsKey => $fieldsValue) {
 			if (array_key_exists($fieldsKey, $combine)) {
-				$value = (int) vtlib\Functions::getModuleId((string) $fieldsValue);
+				$value = (int) \App\Module::getModuleId((string) $fieldsValue);
 				if (empty($value)) {
 					break;
 				}
 				$instances[$combine[$fieldsKey]] = Vtiger_Module_Model::getInstance((string) $fieldsValue);
-			} elseif ($fieldsKey == 'fields') {
+			} elseif ($fieldsKey === 'fields') {
 				foreach ($fieldsValue as $fieldKey => $fieldValue) {
 					foreach ($fieldValue as $columnKey => $columnValue) {
 						settype($columnKey, 'string');
 						settype($columnValue, 'string');
 						if (in_array($columnKey, ['default', 'type'])) {
-							$mapping[$i][$columnKey] = $columnValue;
+							$mapping[$i][$columnKey] = $columnKey === 'default' ? \App\Purifier::purify($columnValue) : $columnValue;
 							continue;
 						}
 						$fieldObject = Settings_MappedFields_Field_Model::getInstance($columnValue, $instances[$columnKey], $mapping[$i]['type']);
@@ -385,7 +386,7 @@ class Settings_MappedFields_Module_Model extends Settings_Vtiger_Module_Model
 						}
 						$mapping[$i][$columnKey] = $fieldObject->getId();
 					}
-					$i++;
+					++$i;
 				}
 				continue;
 			} else {

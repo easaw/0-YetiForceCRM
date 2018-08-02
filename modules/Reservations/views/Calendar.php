@@ -1,20 +1,33 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
 
+/**
+ * Reservations calendar view class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Reservations_Calendar_View extends Vtiger_Index_View
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$userPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		$permission = $userPrivilegesModel->hasModulePermission($request->getModule());
-
-		if (!$permission) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if (!Users_Privileges_Model::getCurrentUserPrivilegesModel()->hasModulePermission($request->getModule())) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function postProcess(Vtiger_Request $request)
+	protected function preProcessTplName(\App\Request $request)
+	{
+		return 'CalendarViewPreProcess.tpl';
+	}
+
+	public function postProcess(\App\Request $request, $display = true)
 	{
 		$moduleName = $request->getModule();
 		$viewer = $this->getViewer($request);
@@ -22,9 +35,8 @@ class Reservations_Calendar_View extends Vtiger_Index_View
 		parent::postProcess($request);
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$mode = $request->getMode();
 		$viewer = $this->getViewer($request);
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
 		$viewer->assign('CURRENT_USER', $currentUserModel);
@@ -34,28 +46,29 @@ class Reservations_Calendar_View extends Vtiger_Index_View
 		$viewer->view('CalendarView.tpl', $request->getModule());
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
-		$jsFileNames = array(
-			'~libraries/fullcalendar/moment.min.js',
-			'~libraries/fullcalendar/fullcalendar.js',
+		$jsFileNames = [
+			'~libraries/fullcalendar/dist/fullcalendar.js',
+			'~libraries/css-element-queries/src/ResizeSensor.js',
+			'~libraries/css-element-queries/src/ElementQueries.js',
 			'modules.' . $moduleName . '.resources.Calendar',
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
-		$cssFileNames = array(
-			'~libraries/fullcalendar/fullcalendar.min.css',
-			'~libraries/fullcalendar/fullcalendarCRM.css',
-		);
+		$cssFileNames = [
+			'~libraries/fullcalendar/dist/fullcalendar.css',
+		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
 		$headerCssInstances = array_merge($headerCssInstances, $cssInstances);
 

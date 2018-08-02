@@ -1,29 +1,25 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
+/**
+ * Settings SharingAccess module model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 
 /**
- * Sharng Access Vtiger Module Model Class
+ * Sharng Access Vtiger Module Model Class.
  */
 class Settings_SharingAccess_Module_Model extends Vtiger_Module_Model
 {
-
 	/**
-	 * Constants for mapping module's Sharing Access permissions editable
+	 * Constants for mapping module's Sharing Access permissions editable.
 	 */
 	const EDITABLE = 0;
 	const READONLY = 1;
 	const HIDDEN = 2;
 
 	/**
-	 * Constants used for mapping module's Sharing Access Permission
+	 * Constants used for mapping module's Sharing Access Permission.
 	 */
 	const SHARING_ACCESS_READ_ONLY = 0;
 	const SHARING_ACCESS_READ_CREATE = 1;
@@ -36,30 +32,33 @@ class Settings_SharingAccess_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function checks if the sharing access for the module is enabled or not
-	 * @return <Boolean>
+	 * Function checks if the sharing access for the module is enabled or not.
+	 *
+	 * @return bool
 	 */
 	public function isSharingEditable()
 	{
-		return ($this->get('editstatus') == self::EDITABLE);
+		return $this->get('editstatus') == self::EDITABLE;
 	}
 
 	/**
-	 * Function checks if the module is Private
-	 * @return Boolean
+	 * Function checks if the module is Private.
+	 *
+	 * @return bool
 	 */
 	public function isPrivate()
 	{
-		return ((int) $this->get('permission') == self::SHARING_ACCESS_PRIVATE);
+		return (int) $this->get('permission') == self::SHARING_ACCESS_PRIVATE;
 	}
 
 	/**
-	 * Function checks if the module is Public
-	 * @return Boolean
+	 * Function checks if the module is Public.
+	 *
+	 * @return bool
 	 */
 	public function isPublic()
 	{
-		return ($this->get('editstatus') == self::SHARING_ACCESS_PUBLIC);
+		return $this->get('editstatus') == self::SHARING_ACCESS_PUBLIC;
 	}
 
 	public function getRulesListUrl()
@@ -82,32 +81,34 @@ class Settings_SharingAccess_Module_Model extends Vtiger_Module_Model
 		return Settings_SharingAccess_Rule_Model::getAllByModule($this);
 	}
 
+	/**
+	 * Save permission.
+	 */
 	public function save()
 	{
-		$db = PearDatabase::getInstance();
-		$sql = 'UPDATE vtiger_def_org_share SET permission = ? WHERE tabid = ?';
-		$params = [$this->get('permission'), $this->getId()];
-		$db->pquery($sql, $params);
+		App\Db::getInstance()->createCommand()
+			->update('vtiger_def_org_share', ['permission' => $this->get('permission')], ['tabid' => $this->getId()])
+			->execute();
 	}
 
 	/**
-	 * Static Function to get the instance of Vtiger Module Model for the given id or name
+	 * Static Function to get the instance of Vtiger Module Model for the given id or name.
+	 *
 	 * @param mixed id or name of the module
 	 */
 	public static function getInstance($value)
 	{
-		$db = PearDatabase::getInstance();
 		$instance = false;
-		$query = false;
+		$query = (new App\Db\Query())->from('vtiger_def_org_share')
+			->innerJoin('vtiger_tab', 'vtiger_tab.tabid = vtiger_def_org_share.tabid');
 		if (vtlib\Utils::isNumber($value)) {
-			$query = 'SELECT * FROM vtiger_def_org_share INNER JOIN vtiger_tab ON vtiger_tab.tabid = vtiger_def_org_share.tabid WHERE vtiger_tab.tabid=?';
+			$query->where(['vtiger_tab.tabid' => $value]);
 		} else {
-			$query = 'SELECT * FROM vtiger_def_org_share INNER JOIN vtiger_tab ON vtiger_tab.tabid = vtiger_def_org_share.tabid WHERE name=?';
+			$query->where(['name' => $value]);
 		}
-		$result = $db->pquery($query, [$value]);
-		if ($db->num_rows($result)) {
-			$row = $db->getRow($result);
-			$instance = new Settings_SharingAccess_Module_Model();
+		$row = $query->one();
+		if ($row) {
+			$instance = new self();
 			$instance->initialize($row);
 			$instance->set('permission', $row['permission']);
 			$instance->set('editstatus', $row['editstatus']);
@@ -116,33 +117,36 @@ class Settings_SharingAccess_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Static Function to get the instance of Vtiger Module Model for all the modules
+	 * Static Function to get the instance of Vtiger Module Model for all the modules.
+	 *
 	 * @return <Array> - List of Vtiger Module Model or sub class instances
 	 */
 	public static function getAll($editable = false, $restrictedModulesList = [], $isEntityType = false)
 	{
-		$db = PearDatabase::getInstance();
 		$moduleModels = [];
-		$query = 'SELECT * FROM vtiger_def_org_share INNER JOIN vtiger_tab ON vtiger_tab.tabid = vtiger_def_org_share.tabid WHERE vtiger_tab.presence IN (0,2)';
-		$params = [];
+		$query = (new \App\Db\Query())->from('vtiger_def_org_share')
+			->innerJoin('vtiger_tab', 'vtiger_tab.tabid = vtiger_def_org_share.tabid')
+			->where(['vtiger_tab.presence' => [0, 2]]);
 		if ($editable) {
-			$query .= ' && editstatus = ?';
-			array_push($params, self::EDITABLE);
+			$query->andWhere(['editstatus' => self::EDITABLE]);
 		}
-		$query .= ' ORDER BY vtiger_def_org_share.tabid ASC';
-		$result = $db->pquery($query, $params);
-		while ($row = $db->getRow($result)) {
-			$instance = new Settings_SharingAccess_Module_Model();
+		$query->orderBy(['vtiger_def_org_share.tabid' => SORT_ASC]);
+		$dataReader = $query->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$instance = new self();
 			$instance->initialize($row);
 			$instance->set('permission', $row['permission']);
 			$instance->set('editstatus', $row['editstatus']);
 			$moduleModels[$row['tabid']] = $instance;
 		}
+		$dataReader->close();
+
 		return $moduleModels;
 	}
 
 	/**
-	 * Static Function to get the instance of Vtiger Module Model for all the modules
+	 * Static Function to get the instance of Vtiger Module Model for all the modules.
+	 *
 	 * @return <Array> - List of Vtiger Module Model or sub class instances
 	 */
 	public static function getDependentModules()
@@ -154,19 +158,18 @@ class Settings_SharingAccess_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function recalculate the sharing rules
+	 * Function recalculate the sharing rules.
 	 */
 	public static function recalculateSharingRules()
 	{
-		$phpMaxExecutionTime = vglobal('php_max_execution_time');
+		$phpMaxExecutionTime = AppConfig::main('php_max_execution_time');
 		set_time_limit($phpMaxExecutionTime);
-		$db = PearDatabase::getInstance();
-
-		require_once('modules/Users/CreateUserPrivilegeFile.php');
-		$result = $db->pquery('SELECT id FROM vtiger_users WHERE deleted = ?', [0]);
-
-		while (($id = $db->getSingleValue($result)) !== false) {
-			createUserSharingPrivilegesfile($id);
+		$userIds = (new App\Db\Query())->select(['id'])
+			->from('vtiger_users')
+			->where(['deleted' => 0])
+			->column();
+		foreach ($userIds as $id) {
+			\App\UserPrivilegesFile::createUserSharingPrivilegesfile($id);
 		}
 	}
 }

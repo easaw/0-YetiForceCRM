@@ -11,293 +11,265 @@
 
 class Settings_Picklist_Module_Model extends Vtiger_Module_Model
 {
-
 	public function getPickListTableName($fieldName)
 	{
+		if (empty($fieldName) || !preg_match('/^[_a-zA-Z0-9]+$/', $fieldName)) {
+			throw new \App\Exceptions\AppException('Incorrect picklist name');
+		}
 		return 'vtiger_' . $fieldName;
 	}
 
+	/**
+	 * Function gives fields based on the type.
+	 *
+	 * @param string|string[] $type - field type
+	 *
+	 * @return Settings_Picklist_Field_Model[] - list of field models
+	 */
 	public function getFieldsByType($type)
 	{
-		$presence = array('0', '2');
-
 		$fieldModels = parent::getFieldsByType($type);
-		$fields = array();
+		$fields = [];
 		foreach ($fieldModels as $fieldName => $fieldModel) {
-			if ((!in_array($fieldModel->get('displaytype'), [1, 10]) && $fieldName != 'salutationtype') || !in_array($fieldModel->get('presence'), $presence)) {
-				continue;
+			$field = Settings_Picklist_Field_Model::getInstanceFromFieldObject($fieldModel);
+			if ($field->isEditable()) {
+				$fields[$fieldName] = $field;
 			}
-			$fields[$fieldName] = Settings_Picklist_Field_Model::getInstanceFromFieldObject($fieldModel);
 		}
 		return $fields;
 	}
 
+	/**
+	 * Add value to picklist.
+	 *
+	 * @param Vtiger_Field_Model $fieldModel
+	 * @param string             $newValue
+	 * @param int[]              $rolesSelected
+	 *
+	 * @return int[]
+	 */
 	public function addPickListValues($fieldModel, $newValue, $rolesSelected = [])
 	{
-		$db = PearDatabase::getInstance();
+		$db = App\Db::getInstance();
 		$pickListFieldName = $fieldModel->getName();
-		$id = $db->getUniqueID("vtiger_$pickListFieldName");
-		$picklistValueId = $db->getUniqueID('vtiger_picklistvalues');
-		$tableName = 'vtiger_' . $pickListFieldName;
-		$maxSeqQuery = sprintf('SELECT max(sortorderid) as maxsequence FROM %s', $tableName);
-		$result = $db->query($maxSeqQuery);
-		$sequence = $db->getSingleValue($result);
-		$columnNames = $db->getColumnNames($tableName);
-
-		if ($fieldModel->isRoleBased()) {
-			if (in_array('color', $columnNames)) {
-				$sql = 'INSERT INTO ' . $tableName . ' VALUES (?,?,?,?,?,?)';
-				$result = $db->pquery($sql, [$id, $newValue, 1, $picklistValueId, ++$sequence, '#E6FAD8']);
-			} else {
-				$sql = 'INSERT INTO ' . $tableName . ' VALUES (?,?,?,?,?)';
-				$result = $db->pquery($sql, [$id, $newValue, 1, $picklistValueId, ++$sequence]);
-			}
+		$primaryKey = App\Fields\Picklist::getPickListId($pickListFieldName);
+		$tableName = $this->getPickListTableName($pickListFieldName);
+		if ($db->isTableExists($tableName . '_seq')) {
+			$id = $db->getUniqueID($tableName);
 		} else {
-			if (in_array('color', $columnNames)) {
-				$sql = 'INSERT INTO ' . $tableName . ' VALUES (?,?,?,?,?)';
-				$db->pquery($sql, [$id, $newValue, ++$sequence, 1, '#E6FAD8']);
-			} else {
-				$sql = 'INSERT INTO ' . $tableName . ' VALUES (?,?,?,?)';
-				$db->pquery($sql, [$id, $newValue, ++$sequence, 1]);
-			}
+			$id = $db->getUniqueID($tableName, $primaryKey, false);
 		}
-
+		$picklistValueId = $db->getUniqueID('vtiger_picklistvalues');
+		$sequence = (new \App\Db\Query())->from($tableName)->max('sortorderid');
+		$row = [
+			$primaryKey => $id,
+			$pickListFieldName => $newValue,
+			'sortorderid' => ++$sequence,
+			'presence' => 1,
+		];
+		if ($fieldModel->isRoleBased()) {
+			$row = array_merge($row, ['picklist_valueid' => $picklistValueId]);
+		}
+		if (in_array('color', $db->getTableSchema($tableName)->getColumnNames())) {
+			$row = array_merge($row, ['color' => '#E6FAD8']);
+		}
+		$db->createCommand()->insert($tableName, $row)->execute();
 		if ($fieldModel->isRoleBased() && !empty($rolesSelected)) {
-			$sql = 'SELECT picklistid FROM vtiger_picklist WHERE `name` = ?;';
-			$result = $db->pquery($sql, [$pickListFieldName]);
-			$picklistid = $db->getSingleValue($result);
+			$picklistid = (new \App\Db\Query())->select(['picklistid'])
+				->from('vtiger_picklist')
+				->where(['name' => $pickListFieldName])
+				->scalar();
 			//add the picklist values to the selected roles
-			$countRolesSelected = count($rolesSelected);
-			for ($j = 0; $j < $countRolesSelected; $j++) {
-				$roleid = $rolesSelected[$j];
-
-				$sql = "SELECT max(sortid)+1 as sortid
-                       FROM vtiger_role2picklist left join vtiger_$pickListFieldName
-                           on vtiger_$pickListFieldName.picklist_valueid=vtiger_role2picklist.picklistvalueid
-                       WHERE roleid=? and picklistid=?";
-				$sortid = $db->getSingleValue($db->pquery($sql, [$roleid, $picklistid]));
-
-				$db->insert('vtiger_role2picklist', [
+			foreach ($rolesSelected as $roleid) {
+				$sortid = (new \App\Db\Query())->from('vtiger_role2picklist')
+					->leftJoin("vtiger_$pickListFieldName", "vtiger_$pickListFieldName.picklist_valueid = vtiger_role2picklist.picklistvalueid")
+					->where(['roleid' => $roleid, 'picklistid' => $picklistid])
+					->max('sortid') + 1;
+				$db->createCommand()->insert('vtiger_role2picklist', [
 					'roleid' => $roleid,
 					'picklistvalueid' => $picklistValueId,
 					'picklistid' => $picklistid,
-					'sortid' => $sortid
-				]);
+					'sortid' => $sortid,
+				])->execute();
 			}
 		}
+		$this->clearPicklistCache($pickListFieldName);
 		return ['picklistValueId' => $picklistValueId, 'id' => $id];
 	}
 
-	public function renamePickListValues($pickListFieldName, $oldValue, $newValue, $moduleName, $id)
+	/**
+	 * Rename picklist value.
+	 *
+	 * @param Settings_Picklist_Field_Model $fieldModel
+	 * @param string                        $oldValue
+	 * @param string                        $newValue
+	 * @param int                           $id
+	 *
+	 * @return bool
+	 */
+	public function renamePickListValues($fieldModel, $oldValue, $newValue, $id)
 	{
-		$db = PearDatabase::getInstance();
-
-		$query = 'SELECT tablename,columnname FROM vtiger_field WHERE fieldname=? and presence IN (0,2)';
-		$result = $db->pquery($query, array($pickListFieldName));
-		$num_rows = $db->num_rows($result);
-
-		//As older look utf8 characters are pushed as html-entities,and in new utf8 characters are pushed to database
-		//so we are checking for both the values
-		$primaryKey = Vtiger_Util_Helper::getPickListId($pickListFieldName);
-
-		$db->update($this->getPickListTableName($pickListFieldName), [$pickListFieldName => $newValue], $primaryKey . ' = ?', [$id]);
-		for ($i = 0; $i < $num_rows; $i++) {
-			$row = $db->query_result_rowdata($result, $i);
-			$tableName = $row['tablename'];
-			$columnName = $row['columnname'];
-			$db->update($tableName, [$columnName => $newValue], $columnName . ' = ?', [$oldValue]);
+		$db = App\Db::getInstance();
+		$pickListFieldName = $fieldModel->getName();
+		$primaryKey = App\Fields\Picklist::getPickListId($pickListFieldName);
+		$result = $db->createCommand()->update($this->getPickListTableName($pickListFieldName), [$pickListFieldName => $newValue], [$primaryKey => $id])->execute();
+		if ($result) {
+			$dataReader = (new \App\Db\Query())->select(['tablename', 'columnname', 'tabid'])
+				->from('vtiger_field')
+				->where(['and', ['fieldname' => $pickListFieldName], ['presence' => [0, 2]], ['or', ['uitype' => [15, 16, 33]], ['and', ['uitype' => [55]], ['fieldname' => 'salutationtype']]]])
+				->createCommand()->query();
+			while ($row = $dataReader->read()) {
+				$columnName = $row['columnname'];
+				$db->createCommand()->update($row['tablename'], [$columnName => $newValue], [$columnName => $oldValue])->execute();
+				$db->createCommand()->update('vtiger_field', ['defaultvalue' => $newValue], ['defaultvalue' => $oldValue, 'columnname' => $columnName, 'tabid' => $row['tabid']])->execute();
+				$db->createCommand()->update('vtiger_picklist_dependency', ['sourcevalue' => $newValue], ['sourcevalue' => $oldValue, 'sourcefield' => $pickListFieldName, 'tabid' => $row['tabid']])->execute();
+			}
+			$dataReader->close();
+			$this->clearPicklistCache($pickListFieldName);
+			$eventHandler = new App\EventHandler();
+			$eventHandler->setParams([
+				'fieldname' => $pickListFieldName,
+				'oldvalue' => $oldValue,
+				'newvalue' => $newValue,
+				'module' => $fieldModel->getModuleName(),
+				'id' => $id,
+			]);
+			$eventHandler->trigger('PicklistAfterRename');
 		}
-
-		$query = "UPDATE vtiger_field SET defaultvalue=? WHERE defaultvalue=? && columnname=?";
-		$db->pquery($query, array($newValue, $oldValue, $columnName));
-
-		vimport('include/utils/CommonUtils.php');
-
-		$db->update('vtiger_picklist_dependency', ['sourcevalue' => $newValue], 'sourcevalue = ? && sourcefield = ?', [$oldValue, $pickListFieldName]);
-
-		$em = new VTEventsManager($db);
-		$data = array();
-		$data['fieldname'] = $pickListFieldName;
-		$data['oldvalue'] = $oldValue;
-		$data['newvalue'] = $newValue;
-		$data['module'] = $moduleName;
-		$em->triggerEvent('vtiger.picklist.afterrename', $data);
-
-		return true;
+		return !empty($result);
 	}
 
 	public function remove($pickListFieldName, $valueToDeleteId, $replaceValueId, $moduleName)
 	{
-		$db = PearDatabase::getInstance();
+		$dbCommand = App\Db::getInstance()->createCommand();
 		if (!is_array($valueToDeleteId)) {
-			$valueToDeleteId = array($valueToDeleteId);
+			$valueToDeleteId = [$valueToDeleteId];
 		}
-		$primaryKey = Vtiger_Util_Helper::getPickListId($pickListFieldName);
-
-		$pickListValues = array();
-		$valuesOfDeleteIds = "SELECT $pickListFieldName FROM " . $this->getPickListTableName($pickListFieldName) . " WHERE $primaryKey IN (" . generateQuestionMarks($valueToDeleteId) . ")";
-		$pickListValuesResult = $db->pquery($valuesOfDeleteIds, array($valueToDeleteId));
-		$num_rows = $db->num_rows($pickListValuesResult);
-		for ($i = 0; $i < $num_rows; $i++) {
-			$pickListValues[] = decode_html($db->query_result($pickListValuesResult, $i, $pickListFieldName));
-		}
-
-		$replaceValueQuery = $db->pquery("SELECT $pickListFieldName FROM " . $this->getPickListTableName($pickListFieldName) . " WHERE $primaryKey IN (" . generateQuestionMarks($replaceValueId) . ")", array($replaceValueId));
-		$replaceValue = decode_html($db->query_result($replaceValueQuery, 0, $pickListFieldName));
-
+		$primaryKey = App\Fields\Picklist::getPickListId($pickListFieldName);
+		$pickListValues = array_map('App\Purifier::decodeHtml', (new \App\Db\Query())->select([$pickListFieldName])
+			->from($this->getPickListTableName($pickListFieldName))
+			->where([$primaryKey => $valueToDeleteId])
+			->column());
+		$replaceValue = array_map('App\Purifier::decodeHtml', (new \App\Db\Query())->select([$pickListFieldName])
+			->from($this->getPickListTableName($pickListFieldName))
+			->where([$primaryKey => $replaceValueId])
+			->column());
 		//As older look utf8 characters are pushed as html-entities,and in new utf8 characters are pushed to database
 		//so we are checking for both the values
-		$encodedValueToDelete = array();
-		foreach ($pickListValues as $key => $value) {
-			$encodedValueToDelete[$key] = Vtiger_Util_Helper::toSafeHTML($value);
-		}
-		$mergedValuesToDelete = array_merge($pickListValues, $encodedValueToDelete);
-
 		$fieldModel = Settings_Picklist_Field_Model::getInstance($pickListFieldName, $this);
 		//if role based then we need to delete all the values in role based picklist
 		if ($fieldModel->isRoleBased()) {
-			$picklistValueIdToDelete = array();
-			$query = sprintf('SELECT picklist_valueid FROM %s WHERE %s IN (%s)', $this->getPickListTableName($pickListFieldName), $primaryKey, generateQuestionMarks($valueToDeleteId));
-			$result = $db->pquery($query, $valueToDeleteId);
-			$num_rows = $db->num_rows($result);
-			for ($i = 0; $i < $num_rows; $i++) {
-				$picklistValueIdToDelete[] = $db->query_result($result, $i, 'picklist_valueid');
-			}
-			$db->delete('vtiger_role2picklist', 'picklistvalueid IN (' . generateQuestionMarks($picklistValueIdToDelete) . ')', $picklistValueIdToDelete);
+			$dbCommand->delete('vtiger_role2picklist', ['picklistvalueid' => (new \App\Db\Query())->select(['picklist_valueid'])->from($this->getPickListTableName($pickListFieldName))
+				->where([$primaryKey => $valueToDeleteId]), ])->execute();
 		}
-
-		$db->delete($this->getPickListTableName($pickListFieldName), $primaryKey . ' IN (' . generateQuestionMarks($valueToDeleteId) . ')', $valueToDeleteId);
-
-		vimport('include/utils/CommonUtils.php');
-		$tabId = \includes\Modules::getModuleId($moduleName);
-		$params = [];
-		array_push($params, $pickListValues);
-		array_push($params, $pickListFieldName);
-		$db->delete('vtiger_picklist_dependency', 'sourcevalue IN (' . generateQuestionMarks($pickListValues) . ') && sourcefield = ?', $params);
-
-		$query = 'SELECT tablename,columnname FROM vtiger_field WHERE fieldname=? && presence in (0,2)';
-		$result = $db->pquery($query, array($pickListFieldName));
-		$num_row = $db->num_rows($result);
-
-		for ($i = 0; $i < $num_row; $i++) {
-			$row = $db->query_result_rowdata($result, $i);
+		$dbCommand->delete($this->getPickListTableName($pickListFieldName), [$primaryKey => $valueToDeleteId])->execute();
+		$dbCommand->delete('vtiger_picklist_dependency', ['sourcevalue' => $pickListValues, 'sourcefield' => $pickListFieldName])
+			->execute();
+		$dataReader = (new \App\Db\Query())->select(['tablename', 'columnname'])
+			->from('vtiger_field')
+			->where(['fieldname' => $pickListFieldName, 'presence' => [0, 2]])
+			->createCommand()->query();
+		while ($row = $dataReader->read()) {
 			$tableName = $row['tablename'];
 			$columnName = $row['columnname'];
-			$db->update($tableName, [$columnName => $replaceValue], $columnName . ' IN (' . generateQuestionMarks($pickListValues) . ')', $pickListValues);
+			$dbCommand->update($tableName, [$columnName => $replaceValue], [$columnName => $pickListValues])
+				->execute();
 		}
-		$params = [];
-		array_push($params, $pickListValues);
-		array_push($params, $columnName);
-		$db->update('vtiger_field', ['defaultvalue' => $replaceValue], 'defaultvalue IN (' . generateQuestionMarks($pickListValues) . ') && columnname=?', $params);
-
-		$em = new VTEventsManager($db);
-		$data = array();
-		$data['fieldname'] = $pickListFieldName;
-		$data['valuetodelete'] = $pickListValues;
-		$data['replacevalue'] = $replaceValue;
-		$data['module'] = $moduleName;
-		$em->triggerEvent('vtiger.picklist.afterdelete', $data);
+		$dataReader->close();
+		$dbCommand->update('vtiger_field', ['defaultvalue' => $replaceValue], ['defaultvalue' => $pickListValues, 'columnname' => $columnName])
+			->execute();
+		$this->clearPicklistCache($pickListFieldName);
+		$eventHandler = new App\EventHandler();
+		$eventHandler->setParams([
+			'fieldname' => $pickListFieldName,
+			'valuetodelete' => $pickListValues,
+			'replacevalue' => $replaceValue,
+			'module' => $moduleName,
+		]);
+		$eventHandler->trigger('PicklistAfterDelete');
 
 		return true;
 	}
 
 	public function enableOrDisableValuesForRole($picklistFieldName, $valuesToEnables, $valuesToDisable, $roleIdList)
 	{
-		$db = PearDatabase::getInstance();
-		//To disable die On error since we will be doing insert without chekcing
-		$dieOnErrorOldValue = $db->dieOnError;
-		$db->dieOnError = false;
-
-		$sql = "select picklistid from vtiger_picklist where name=?";
-		$result = $db->pquery($sql, array($picklistFieldName));
-		$picklistid = $db->query_result($result, 0, "picklistid");
-
-		$primaryKey = Vtiger_Util_Helper::getPickListId($picklistFieldName);
-
+		$db = App\Db::getInstance();
+		$picklistId = (new App\Db\Query())->select(['picklistid'])->from('vtiger_picklist')
+			->where(['name' => $picklistFieldName])->scalar();
+		$primaryKey = App\Fields\Picklist::getPickListId($picklistFieldName);
 		$pickListValueList = array_merge($valuesToEnables, $valuesToDisable);
-		$pickListValueDetails = array();
-		$query = sprintf('SELECT picklist_valueid, %s, %s FROM %s WHERE %s IN (%s)', $picklistFieldName, $primaryKey, $this->getPickListTableName($picklistFieldName), $primaryKey, generateQuestionMarks($pickListValueList));
-		$params = array();
-		array_push($params, $pickListValueList);
-
-		$result = $db->pquery($query, $params);
-		$num_rows = $db->num_rows($result);
-
-		for ($i = 0; $i < $num_rows; $i++) {
-			$row = $db->query_result_rowdata($result, $i);
-
-			$pickListValueDetails[decode_html($row[$primaryKey])] = array('picklistvalueid' => $row['picklist_valueid'],
-				'picklistid' => $picklistid);
+		$dataReader = (new App\Db\Query())->select(['picklist_valueid', $picklistFieldName, $primaryKey])
+			->from($this->getPickListTableName($picklistFieldName))
+			->where([$primaryKey => $pickListValueList])
+			->createCommand()->query();
+		$pickListValueDetails = [];
+		while ($row = $dataReader->read()) {
+			$pickListValueDetails[App\Purifier::decodeHtml($row[$primaryKey])] = $row['picklist_valueid'];
 		}
-		$insertValueList = array();
-		$deleteValueList = array();
+		$dataReader->close();
+		$insertValueList = [];
+		$deleteValueList = ['or'];
 		foreach ($roleIdList as $roleId) {
 			foreach ($valuesToEnables as $picklistValue) {
-				$valueDetail = $pickListValueDetails[$picklistValue];
-				if (empty($valueDetail)) {
-					$valueDetail = $pickListValueDetails[Vtiger_Util_Helper::toSafeHTML($picklistValue)];
+				if (empty($pickListValueDetails[$picklistValue])) {
+					$pickListValueId = $pickListValueDetails[App\Purifier::encodeHtml($picklistValue)];
+				} else {
+					$pickListValueId = $pickListValueDetails[$picklistValue];
 				}
-				$pickListValueId = $valueDetail['picklistvalueid'];
-				$picklistId = $valueDetail['picklistid'];
-				$insertValueList[] = '("' . $roleId . '","' . $pickListValueId . '","' . $picklistId . '")';
+				$insertValueList[] = [$roleId, $pickListValueId, $picklistId];
+				$deleteValueList[] = ['roleid' => $roleId, 'picklistvalueid' => $pickListValueId];
 			}
-
 			foreach ($valuesToDisable as $picklistValue) {
-				$valueDetail = $pickListValueDetails[$picklistValue];
-				if (empty($valueDetail)) {
-					$valueDetail = $pickListValueDetails[Vtiger_Util_Helper::toSafeHTML($picklistValue)];
+				if (empty($pickListValueDetails[$picklistValue])) {
+					$pickListValueId = $pickListValueDetails[App\Purifier::encodeHtml($picklistValue)];
+				} else {
+					$pickListValueId = $pickListValueDetails[$picklistValue];
 				}
-				$pickListValueId = $valueDetail['picklistvalueid'];
-				$picklistId = $valueDetail['picklistid'];
-				$deleteValueList[] = ' ( roleid = "' . $roleId . '" && ' . 'picklistvalueid = "' . $pickListValueId . '") ';
+				$deleteValueList[] = ['roleid' => $roleId, 'picklistvalueid' => $pickListValueId];
 			}
 		}
-		$query = 'INSERT IGNORE INTO vtiger_role2picklist (roleid,picklistvalueid,picklistid) VALUES ' . implode(',', $insertValueList);
-		$result = $db->pquery($query, array());
 		if ($deleteValueList) {
-			$db->delete('vtiger_role2picklist', implode(' || ', $deleteValueList));
+			$db->createCommand()->delete('vtiger_role2picklist', $deleteValueList)->execute();
 		}
-		//retaining to older value
-		$db->dieOnError = $dieOnErrorOldValue;
+		$db->createCommand()->batchInsert('vtiger_role2picklist', ['roleid', 'picklistvalueid', 'picklistid'], $insertValueList)->execute();
 	}
 
+	/**
+	 * Function to update sequence number.
+	 *
+	 * @param string $pickListFieldName
+	 * @param array  $picklistValues
+	 */
 	public function updateSequence($pickListFieldName, $picklistValues)
 	{
-		$db = PearDatabase::getInstance();
-
-		$primaryKey = Vtiger_Util_Helper::getPickListId($pickListFieldName);
-
-		$query = sprintf('UPDATE %s SET sortorderid = CASE ', $this->getPickListTableName($pickListFieldName));
+		$db = \App\Db::getInstance();
+		$primaryKey = App\Fields\Picklist::getPickListId($pickListFieldName);
+		$set = ' CASE ';
 		foreach ($picklistValues as $values => $sequence) {
-			$query .= ' WHEN ' . $primaryKey . '="' . $values . '" THEN "' . $sequence . '"';
+			$set .= " WHEN {$db->quoteColumnName($primaryKey)} = {$db->quoteValue($values)} THEN {$db->quoteValue($sequence)}";
 		}
-		$query .= ' END';
-		$db->pquery($query, array());
+		$set .= ' END';
+		$expression = new \yii\db\Expression($set);
+		$db->createCommand()->update($this->getPickListTableName($pickListFieldName), ['sortorderid' => $expression])->execute();
 	}
 
 	public static function getPicklistSupportedModules()
 	{
-		$db = PearDatabase::getInstance();
-
-		// vtlib customization: Ignore disabled modules.
-		$query = "SELECT DISTINCT 
-					vtiger_tab.tablabel,
-					vtiger_tab.name AS tabname 
-				  FROM
-					vtiger_tab 
-					INNER JOIN vtiger_field 
-					  ON vtiger_tab.tabid = vtiger_field.tabid 
-				  WHERE uitype IN (15, 33, 16) 
-					AND vtiger_field.tabid NOT IN (29, 10) 
-					AND vtiger_tab.presence != 1 
-					AND vtiger_field.presence IN (0, 2) 
-					AND vtiger_field.`columnname` !=  'taxtype'
-				  ORDER BY vtiger_tab.tabid ASC ";
-		// END
-		$result = $db->pquery($query, array());
-
-		$modulesModelsList = array();
-		while ($row = $db->fetch_array($result)) {
+		$dataReader = (new App\Db\Query())->select(['vtiger_tab.tabid', 'vtiger_tab.tablabel', 'tabname' => 'vtiger_tab.name'])
+			->from('vtiger_tab')
+			->innerJoin('vtiger_field', 'vtiger_tab.tabid = vtiger_field.tabid')
+			->where([
+					'and',
+					['uitype' => [15, 33, 16]],
+					['NOT IN', 'vtiger_field.tabid', [29, 10]],
+					['<>', 'vtiger_tab.presence', 1],
+					['vtiger_field.presence' => [0, 2]],
+					['<>', 'vtiger_field.columnname', 'taxtype'],
+				])->orderBy(['vtiger_tab.tabid' => SORT_ASC])
+					->distinct()
+					->createCommand()->query();
+		$modulesModelsList = [];
+		while ($row = $dataReader->read()) {
 			$moduleLabel = $row['tablabel'];
 			$moduleName = $row['tabname'];
 			$instance = new self();
@@ -305,11 +277,14 @@ class Settings_Picklist_Module_Model extends Vtiger_Module_Model
 			$instance->label = $moduleLabel;
 			$modulesModelsList[] = $instance;
 		}
+		$dataReader->close();
+
 		return $modulesModelsList;
 	}
 
 	/**
-	 * Static Function to get the instance of Vtiger Module Model for the given id or name
+	 * Static Function to get the instance of Vtiger Module Model for the given id or name.
+	 *
 	 * @param mixed id or name of the module
 	 */
 	public static function getInstance($value)
@@ -323,8 +298,10 @@ class Settings_Picklist_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get the instance of Vtiger Module Model from a given vtlib\Module object
+	 * Function to get the instance of Vtiger Module Model from a given vtlib\Module object.
+	 *
 	 * @param vtlib\Module $moduleObj
+	 *
 	 * @return Vtiger_Module_Model instance
 	 */
 	public static function getInstanceFromModuleObject(vtlib\Module $moduleObj)
@@ -335,5 +312,18 @@ class Settings_Picklist_Module_Model extends Vtiger_Module_Model
 			$moduleModel->$properName = $propertyValue;
 		}
 		return $moduleModel;
+	}
+
+	/**
+	 * Clear cache.
+	 *
+	 * @param string $fieldName
+	 */
+	public function clearPicklistCache($fieldName)
+	{
+		\App\Cache::delete('getValuesName', $fieldName);
+		\App\Cache::delete('getNonEditablePicklistValues', $fieldName);
+		\App\Cache::delete('getRoleBasedPicklistValues', $fieldName);
+		\App\Cache::delete('getPickListFieldValuesRows', $fieldName);
 	}
 }

@@ -1,79 +1,53 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings RealizationProcesses module model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license   YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_RealizationProcesses_Module_Model extends Settings_Vtiger_Module_Model
 {
-
 	/**
-	 * Gets Project status 
-	 * @return - array of Project status
-	 */
-	public static function getProjectStatus()
-	{
-		$adb = PearDatabase::getInstance();
-		
-		\App\Log::trace("Entering Settings_RealizationProcesses_Module_Model::getProjectStatus() method ...");
-		$sql = 'SELECT * FROM `vtiger_projectstatus`;';
-		$result = $adb->query($sql);
-		$rowsNum = $adb->num_rows($result);
-
-		for ($i = 0; $i < $rowsNum; $i++) {
-			$return[$i]['id'] = $adb->query_result($result, $i, 'projectstatusid');
-			$return[$i]['statusTranslate'] = vtranslate($adb->query_result($result, $i, 'projectstatus'), 'Project');
-			$return[$i]['status'] = $adb->query_result($result, $i, 'projectstatus');
-		}
-		\App\Log::trace("Exiting Settings_RealizationProcesses_Module_Model::getProjectStatus() method ...");
-		return $return;
-	}
-
-	/**
-	 * Gets status
+	 * Gets status.
+	 *
 	 * @return - array of status
 	 */
 	public static function getStatusNotModify()
 	{
-		
-		$adb = PearDatabase::getInstance();
-		\App\Log::trace("Entering Settings_RealizationProcesses_Module_Model::getStatusNotModify() method ...");
-		$sql = 'SELECT * FROM `vtiger_realization_process`;';
-		$result = $adb->query($sql);
-		$rowsNum = $adb->num_rows($result);
-		for ($i = 0; $i < $rowsNum; $i++) {
-			$moduleId = $adb->query_result($result, $i, 'module_id');
-			$moduleName = vtlib\Functions::getModuleName($moduleId);
+		\App\Log::trace('Entering Settings_RealizationProcesses_Module_Model::getStatusNotModify() method ...');
+		$dataReader = (new App\Db\Query())->from('vtiger_realization_process')
+			->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$moduleId = $row['module_id'];
+			$moduleName = App\Module::getModuleName($moduleId);
 			$return[$moduleName]['id'] = $moduleId;
-			$status = \includes\utils\Json::decode(html_entity_decode($adb->query_result($result, $i, 'status_indicate_closing')));
+			$status = \App\Json::decode(html_entity_decode($row['status_indicate_closing']));
 			if (!is_array($status)) {
 				$status = [$status];
 			}
 			$return[$moduleName]['status'] = $status;
+			$return[$moduleName]['id'] = $moduleId;
 		}
+		$dataReader->close();
 
-		\App\Log::trace("Exiting Settings_RealizationProcesses_Module_Model::getStatusNotModify() method ...");
+		\App\Log::trace('Exiting Settings_RealizationProcesses_Module_Model::getStatusNotModify() method ...');
+
 		return $return;
 	}
 
 	/**
-	 * Update status
+	 * Update status.
+	 *
 	 * @return - array of status
 	 */
-	public function updateStatusNotModify($moduleId, $status)
+	public static function updateStatusNotModify($moduleId, $status)
 	{
-		$adb = PearDatabase::getInstance();
-		
-		\App\Log::trace("Entering Settings_RealizationProcesses_Module_Model::updateStatusNotModify() method ...");
-		$query = "UPDATE `vtiger_realization_process` SET `status_indicate_closing` = ? WHERE `module_id` = ?";
-		$data = \includes\utils\Json::encode($status);
-		$adb->pquery($query, array($data, $moduleId));
-		\App\Log::trace("Exiting Settings_RealizationProcesses_Module_Model::updateStatusNotModify() method ...");
+		\App\Log::trace('Entering Settings_RealizationProcesses_Module_Model::updateStatusNotModify() method ...');
+		\App\Db::getInstance()->createCommand()->update('vtiger_realization_process', [
+			'status_indicate_closing' => \App\Json::encode($status),
+		], ['module_id' => $moduleId])->execute();
+		\App\Log::trace('Exiting Settings_RealizationProcesses_Module_Model::updateStatusNotModify() method ...');
 		return true;
 	}
 }

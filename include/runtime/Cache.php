@@ -8,11 +8,10 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-include_once dirname(__FILE__) . '/cache/Connector.php';
+include_once __DIR__ . '/cache/Connector.php';
 
 class Vtiger_Cache
 {
-
 	private static $selfInstance = false;
 	public static $cacheEnable = true;
 	protected $connector;
@@ -28,6 +27,7 @@ class Vtiger_Cache
 			return self::$selfInstance;
 		} else {
 			self::$selfInstance = new self();
+
 			return self::$selfInstance;
 		}
 	}
@@ -89,23 +89,6 @@ class Vtiger_Cache
 		}
 	}
 
-	private static $_picklist_values;
-
-	public function getPicklistValues($fieldName)
-	{
-		if (isset(self::$_picklist_values[$fieldName])) {
-			return self::$_picklist_values[$fieldName];
-		}
-		return false;
-	}
-
-	public function setPicklistValues($fieldName, $values)
-	{
-		if (self::$cacheEnable) {
-			self::$_picklist_values[$fieldName] = $values;
-		}
-	}
-
 	private static $_picklist_details;
 
 	public function getPicklistDetails($module, $field)
@@ -137,23 +120,6 @@ class Vtiger_Cache
 	{
 		if (self::$cacheEnable) {
 			self::$_module_ownedby[$module] = $ownedby;
-		}
-	}
-
-	private static $_block_instance;
-
-	public function getBlockInstance($block, $moduleName)
-	{
-		if (isset(self::$_block_instance[$moduleName][$block])) {
-			return self::$_block_instance[$moduleName][$block];
-		}
-		return false;
-	}
-
-	public function setBlockInstance($block, $moduleName, $instance)
-	{
-		if (self::$cacheEnable) {
-			self::$_block_instance[$moduleName][$block] = $instance;
 		}
 	}
 
@@ -203,42 +169,6 @@ class Vtiger_Cache
 	{
 		if (self::$cacheEnable) {
 			self::$_module_name[$moduleId] = $moduleName;
-		}
-	}
-
-	//cache for the module Instance
-	private static $_workflow_for_module = [];
-
-	public function getWorkflowForModule($module)
-	{
-		if (isset(self::$_workflow_for_module[$module])) {
-			return self::$_workflow_for_module[$module];
-		}
-		return false;
-	}
-
-	public function setWorkflowForModule($module, $workflows)
-	{
-		if (self::$cacheEnable) {
-			self::$_workflow_for_module[$module] = $workflows;
-		}
-	}
-
-	//cache for the module Instance
-	private static $_workflow_for_module_supporting_comments = [];
-
-	public function getWorkflowForModuleSupportingComments($module)
-	{
-		if (isset(self::$_workflow_for_module_supporting_comments[$module])) {
-			return self::$_workflow_for_module_supporting_comments[$module];
-		}
-		return false;
-	}
-
-	public function setWorkflowForModuleSupportingComments($module, $workflows)
-	{
-		if (self::$cacheEnable) {
-			self::$_workflow_for_module_supporting_comments[$module] = $workflows;
 		}
 	}
 
@@ -310,29 +240,6 @@ class Vtiger_Cache
 		}
 	}
 
-	private static $_assigned_picklist_values;
-
-	public function getAssignedPicklistValues($tableName, $roleId)
-	{
-		if (isset(self::$_assigned_picklist_values[$tableName][$roleId])) {
-			return self::$_assigned_picklist_values[$tableName][$roleId];
-		}
-		return false;
-	}
-
-	public function setAssignedPicklistValues($tableName, $roleId, $values)
-	{
-		if (self::$cacheEnable) {
-			self::$_assigned_picklist_values[$tableName][$roleId] = $values;
-		}
-	}
-
-	public function hasAssignedPicklistValues($tableName, $roleId)
-	{
-		$values = $this->getAssignedPicklistValues($tableName, $roleId);
-		return $values !== false;
-	}
-
 	private static $_block_fields;
 
 	public function getBlockFields($block, $module)
@@ -402,6 +309,7 @@ class Vtiger_Cache
 	public function hasOwnerName($id)
 	{
 		$value = $this->getOwnerName($id);
+
 		return $value !== false;
 	}
 
@@ -425,29 +333,7 @@ class Vtiger_Cache
 	public function hasOwnerDbName($id)
 	{
 		$value = $this->getOwnerDbName($id);
-		return $value !== false;
-	}
 
-	private static $_creator_ids_list;
-
-	public function getCreator($id)
-	{
-		if (isset(self::$_creator_ids_list[$id])) {
-			return self::$_creator_ids_list[$id];
-		}
-		return false;
-	}
-
-	public function setCreator($id, $value)
-	{
-		if (self::$cacheEnable) {
-			self::$_creator_ids_list[$id] = $value;
-		}
-	}
-
-	public function hasCreator($id)
-	{
-		$value = $this->getCreator($id);
 		return $value !== false;
 	}
 }

@@ -10,11 +10,11 @@
 
 class Settings_Profiles_ListView_Model extends Settings_Vtiger_ListView_Model
 {
-
 	public function getBasicListQuery()
 	{
 		$query = parent::getBasicListQuery();
-		$query .= ' WHERE directly_related_to_role=0 ';
+		$query->where(['directly_related_to_role' => 0]);
+
 		return $query;
 	}
 }

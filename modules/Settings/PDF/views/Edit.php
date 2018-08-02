@@ -1,22 +1,22 @@
 <?php
 
 /**
- * Edit View Class for PDF Settings
- * @package YetiForce.View
- * @license licenses/License.html
+ * Edit View Class for PDF Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_PDF_Edit_View extends Settings_Vtiger_Index_View
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$step = strtolower($request->getMode());
 		$this->step($step, $request);
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request);
 		$viewer = $this->getViewer($request);
@@ -24,39 +24,33 @@ class Settings_PDF_Edit_View extends Settings_Vtiger_Index_View
 		$viewer->view('EditHeader.tpl', $request->getModule(false));
 	}
 
-	public function step($step, Vtiger_Request $request)
+	public function step($step, \App\Request $request)
 	{
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
-
-		$recordId = $request->get('record');
-		if ($recordId) {
-			$pdfModel = Vtiger_PDF_Model::getInstanceById($recordId);
-			$viewer->assign('RECORDID', $recordId);
+		if (!$request->isEmpty('record', true)) {
+			$pdfModel = Vtiger_PDF_Model::getInstanceById($request->getInteger('record'));
+			$viewer->assign('RECORDID', $request->getInteger('record'));
 			$viewer->assign('MODE', 'edit');
 			$selectedModuleName = $pdfModel->get('module_name');
 		} else {
-			$selectedModuleName = $request->get('source_module');
+			$selectedModuleName = $request->getByType('source_module', 2);
 			$pdfModel = Settings_PDF_Record_Model::getCleanInstance();
 		}
 		$viewer->assign('SELECTED_MODULE', $selectedModuleName);
 		$viewer->assign('PDF_MODEL', $pdfModel);
-		$allModules = Settings_PDF_Module_Model::getSupportedModules();
-		$viewer->assign('ALL_MODULES', $allModules);
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
 		$viewer->assign('SOURCE_MODULE', $selectedModuleName);
-
 		switch ($step) {
 			case 'step8':
+				$viewer->assign('WATERMARK_TEXT', Vtiger_Mpdf_Pdf::WATERMARK_TYPE_TEXT);
 				$viewer->view('Step8.tpl', $qualifiedModuleName);
 				break;
-
 			case 'step7':
 				$viewer->view('Step7.tpl', $qualifiedModuleName);
 				break;
-
 			case 'step6':
 				$moduleModel = Vtiger_Module_Model::getInstance($pdfModel->get('module_name'));
 				$recordStructureInstance = Vtiger_RecordStructure_Model::getInstanceForModule($moduleModel);
@@ -64,80 +58,34 @@ class Settings_PDF_Edit_View extends Settings_Vtiger_Index_View
 				$viewer->assign('ADVANCE_CRITERIA', Vtiger_AdvancedFilter_Helper::transformToAdvancedFilterCondition($pdfModel->get('conditions')));
 				$viewer->view('Step6.tpl', $qualifiedModuleName);
 				break;
-
 			case 'step5':
-				$relatedModules = Settings_PDF_Module_Model::getRelatedModules($pdfModel->get('module_name'));
-				if (count($relatedModules) > 0) {
-					$relatedFields = Settings_PDF_Module_Model::getMainModuleFields(reset($relatedModules));
-				} else {
-					$relatedFields = [];
-				}
-				$specialFunctions = Vtiger_PDF_Model::getSpecialFunctions($pdfModel->get('module_name'));
-
-				$insertOperations = [
-					'PAGENO' => 'PAGENO',
-					'PAGENUM' => 'nb'
-				];
-				$viewer->assign('INSERT', $insertOperations);
-				$viewer->assign('RELATED_MODULES', $relatedModules);
-				$viewer->assign('RELATED_FIELDS', $relatedFields);
-				$viewer->assign('SPECIAL_FUNCTIONS', $specialFunctions);
 				$viewer->view('Step5.tpl', $qualifiedModuleName);
 				break;
-
 			case 'step4':
-				$relatedModules = Settings_PDF_Module_Model::getRelatedModules($pdfModel->get('module_name'));
-				if (count($relatedModules) > 0) {
-					$relatedFields = Settings_PDF_Module_Model::getMainModuleFields(reset($relatedModules));
-				} else {
-					$relatedFields = [];
-				}
-				$specialFunctions = Vtiger_PDF_Model::getSpecialFunctions($pdfModel->get('module_name'));
-
-				$viewer->assign('RELATED_MODULES', $relatedModules);
-				$viewer->assign('RELATED_FIELDS', $relatedFields);
-				$viewer->assign('SPECIAL_FUNCTIONS', $specialFunctions);
 				$viewer->view('Step4.tpl', $qualifiedModuleName);
 				break;
-
 			case 'step3':
-				$relatedModules = Settings_PDF_Module_Model::getRelatedModules($pdfModel->get('module_name'));
-				if (count($relatedModules) > 0) {
-					$relatedFields = Settings_PDF_Module_Model::getMainModuleFields(reset($relatedModules));
-				} else {
-					$relatedFields = [];
-				}
-				$specialFunctions = Vtiger_PDF_Model::getSpecialFunctions($pdfModel->get('module_name'));
-
-				$insertOperations = [
-					'PAGENO' => 'PAGENO',
-					'PAGENUM' => 'nb'
-				];
-				$viewer->assign('INSERT', $insertOperations);
-				$viewer->assign('RELATED_MODULES', $relatedModules);
-				$viewer->assign('RELATED_FIELDS', $relatedFields);
-				$viewer->assign('SPECIAL_FUNCTIONS', $specialFunctions);
 				$viewer->view('Step3.tpl', $qualifiedModuleName);
 				break;
-
 			case 'step2':
 				$viewer->view('Step2.tpl', $qualifiedModuleName);
 				break;
-
 			case 'step1':
 			default:
+				$allModules = Settings_PDF_Module_Model::getSupportedModules();
+				$viewer->assign('ALL_MODULES', $allModules);
 				$viewer->view('Step1.tpl', $qualifiedModuleName);
 				break;
 		}
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
 		$moduleName = $request->getModule();
 
 		$jsFileNames = [
-			'libraries.jquery.ZeroClipboard.ZeroClipboard',
+			'libraries.clipboard.dist.clipboard',
 			'modules.Settings.Vtiger.resources.Edit',
 			"modules.Settings.$moduleName.resources.Edit",
 			"modules.Settings.$moduleName.resources.Edit1",
@@ -154,10 +102,11 @@ class Settings_PDF_Edit_View extends Settings_Vtiger_Index_View
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
 		$moduleName = $request->getModule();
@@ -166,6 +115,7 @@ class Settings_PDF_Edit_View extends Settings_Vtiger_Index_View
 		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
 		$headerCssInstances = array_merge($cssInstances, $headerCssInstances);
+
 		return $headerCssInstances;
 	}
 }

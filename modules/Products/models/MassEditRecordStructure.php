@@ -6,10 +6,11 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 /**
- * Mass Edit Record Structure Model
+ * Mass Edit Record Structure Model.
  */
 class Products_MassEditRecordStructure_Model extends Vtiger_MassEditRecordStructure_Model
 {
@@ -22,12 +23,10 @@ class Products_MassEditRecordStructure_Model extends Vtiger_MassEditRecordStruct
 	public function isFieldRestricted($fieldModel)
 	{
 		$restricted = parent::isFieldRestricted($fieldModel);
-		if ($restricted && ($fieldModel->getFieldDataType() == 'productTax' || $fieldModel->getName() == 'unit_price')) {
+		if ($restricted && $fieldModel->getName() === 'unit_price') {
 			return false;
 		} else {
 			return $restricted;
 		}
 	}
 }
-
-?>

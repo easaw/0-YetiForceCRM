@@ -10,10 +10,9 @@
 
 class Settings_LayoutEditor_Block_Model extends Vtiger_Block_Model
 {
-
 	public function isActionsAllowed()
 	{
-		$actionNotSupportedModules = array('calendar', 'events');
+		$actionNotSupportedModules = ['calendar', 'events'];
 		if (in_array(strtolower($this->module->name), $actionNotSupportedModules)) {
 			return false;
 		}
@@ -21,8 +20,9 @@ class Settings_LayoutEditor_Block_Model extends Vtiger_Block_Model
 	}
 
 	/**
-	 * Function to check whether adding custom field is allowed or not
-	 * @return <Boolean> true/false
+	 * Function to check whether adding custom field is allowed or not.
+	 *
+	 * @return bool true/false
 	 */
 	public function isAddCustomFieldEnabled()
 	{
@@ -31,7 +31,7 @@ class Settings_LayoutEditor_Block_Model extends Vtiger_Block_Model
 			'helpdesk' => ['LBL_TICKET_RESOLUTION', 'LBL_COMMENTS'],
 			'faq' => ['LBL_COMMENT_INFORMATION'],
 			'events' => ['LBL_EVENT_INFORMATION', 'LBL_REMINDER_INFORMATION', 'LBL_DESCRIPTION_INFORMATION',
-				'LBL_RECURRENCE_INFORMATION', 'LBL_RELATED_TO', 'LBL_INVITE_RECORDS', 'LBL_CUSTOM_INFORMATION']];
+				'LBL_RECURRENCE_INFORMATION', 'LBL_RELATED_TO', 'LBL_INVITE_RECORDS', 'LBL_CUSTOM_INFORMATION', ], ];
 		if (in_array(strtolower($this->module->name), $actionNotSupportedModules)) {
 			if (!empty($blocksEliminatedArray[strtolower($this->module->name)])) {
 				if (in_array($this->get('label'), $blocksEliminatedArray[strtolower($this->module->name)])) {
@@ -44,47 +44,46 @@ class Settings_LayoutEditor_Block_Model extends Vtiger_Block_Model
 		return true;
 	}
 
+	/**
+	 * Function to save sequence number of fields.
+	 *
+	 * @param array $blockFieldSequence
+	 */
 	public static function updateFieldSequenceNumber($blockFieldSequence)
 	{
-		$fieldIdList = array();
-		$db = PearDatabase::getInstance();
-
-		$query = 'UPDATE vtiger_field SET ';
-		$query .=' sequence= CASE ';
+		$fieldIdList = [];
+		$db = App\Db::getInstance();
+		$caseSequence = 'CASE';
 		foreach ($blockFieldSequence as $newFieldSequence) {
 			$fieldId = $newFieldSequence['fieldid'];
-			$sequence = $newFieldSequence['sequence'];
-			$block = $newFieldSequence['block'];
 			$fieldIdList[] = $fieldId;
-
-			$query .= ' WHEN fieldid=' . $fieldId . ' THEN ' . $sequence;
+			$caseSequence .= " WHEN fieldid = {$db->quoteValue($fieldId)} THEN {$db->quoteValue($newFieldSequence['sequence'])}";
 		}
-
-		$query .=' END, block=CASE ';
-
+		$caseSequence .= ' END';
+		$caseBlock = 'CASE';
 		foreach ($blockFieldSequence as $newFieldSequence) {
-			$fieldId = $newFieldSequence['fieldid'];
-			$sequence = $newFieldSequence['sequence'];
-			$block = $newFieldSequence['block'];
-			$query .= ' WHEN fieldid=' . $fieldId . ' THEN ' . $block;
+			$caseBlock .= " WHEN fieldid = {$db->quoteValue($newFieldSequence['fieldid'])} THEN {$db->quoteValue($newFieldSequence['block'])}";
 		}
-		$query .=' END ';
-
-		$query .= sprintf(' WHERE fieldid IN (%s)', generateQuestionMarks($fieldIdList));
-
-		$db->pquery($query, [$fieldIdList]);
+		$caseBlock .= ' END';
+		$db->createCommand()->update('vtiger_field', [
+			'sequence' => new yii\db\Expression($caseSequence),
+			'block' => new yii\db\Expression($caseBlock),
+			], ['fieldid' => $fieldIdList])->execute();
 	}
 
 	public static function getInstance($value, $moduleInstance = false)
 	{
 		$blockInstance = parent::getInstance($value, $moduleInstance);
 		$blockModel = self::getInstanceFromBlockObject($blockInstance);
+
 		return $blockModel;
 	}
 
 	/**
-	 * Function to retrieve block instance from vtlib\Block object
+	 * Function to retrieve block instance from vtlib\Block object.
+	 *
 	 * @param vtlib\Block $blockObject - vtlib block object
+	 *
 	 * @return Vtiger_Block_Model
 	 */
 	public static function getInstanceFromBlockObject(vtlib\Block $blockObject)
@@ -98,14 +97,16 @@ class Settings_LayoutEditor_Block_Model extends Vtiger_Block_Model
 	}
 
 	/**
-	 * Function to retrieve block instances for a module
+	 * Function to retrieve block instances for a module.
+	 *
 	 * @param <type> $moduleModel - module instance
+	 *
 	 * @return <array> - list of Vtiger_Block_Model
 	 */
-	public static function getAllForModule($moduleModel)
+	public static function getAllForModule(vtlib\ModuleBasic $moduleModel)
 	{
 		$blockObjects = parent::getAllForModule($moduleModel);
-		$blockModelList = array();
+		$blockModelList = [];
 
 		if ($blockObjects) {
 			foreach ($blockObjects as $blockObject) {
@@ -118,7 +119,7 @@ class Settings_LayoutEditor_Block_Model extends Vtiger_Block_Model
 	public function getLayoutBlockActiveFields()
 	{
 		$fields = $this->getFields();
-		$activeFields = array();
+		$activeFields = [];
 		foreach ($fields as $fieldName => $fieldModel) {
 			if ($fieldModel->isActiveField()) {
 				$activeFields[$fieldName] = $fieldModel;

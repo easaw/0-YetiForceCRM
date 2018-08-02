@@ -11,39 +11,38 @@
 
 class Project_DetailView_Model extends Vtiger_DetailView_Model
 {
-
 	public function getDetailViewLinks($linkParams)
 	{
-		$currentUserModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		$recordModel = $this->getRecord();
 		$linkModelList = parent::getDetailViewLinks($linkParams);
 		$recordId = $recordModel->getId();
 
-		if (Users_Privileges_Model::isPermitted('ProjectTask', 'EditView')) {
+		if (\App\Privilege::isPermitted('ProjectTask', 'EditView')) {
 			$viewLinks = [
-				'linktype' => 'DETAILVIEW',
+				'linktype' => 'DETAIL_VIEW_BASIC',
 				'linklabel' => 'Add Project Task',
 				'linkurl' => 'index.php?module=ProjectTask&action=EditView&projectid=' . $recordId . '&return_module=Project&return_action=DetailView&return_id=' . $recordId,
-				'linkicon' => 'glyphicon glyphicon-tasks',
+				'linkicon' => 'fas fa-tasks',
 				'linkhint' => 'Add Project Task',
 			];
-			$linkModelList['DETAILVIEW'][] = Vtiger_Link_Model::getInstanceFromValues($viewLinks);
+			$linkModelList['DETAIL_VIEW_BASIC'][] = Vtiger_Link_Model::getInstanceFromValues($viewLinks);
 		}
-		if (Users_Privileges_Model::isPermitted('Documents', 'EditView')) {
+		if (\App\Privilege::isPermitted('Documents', 'EditView')) {
 			$viewLinks = [
-				'linktype' => 'DETAILVIEW',
+				'linktype' => 'DETAIL_VIEW_BASIC',
 				'linklabel' => 'Add Note',
 				'linkurl' => 'index.php?module=Documents&action=EditView&return_module=Project&return_action=DetailView&return_id=' . $recordId . '&parent_id=' . $recordId,
-				'linkicon' => 'glyphicon glyphicon-file',
+				'linkicon' => 'fas fa-file',
 				'linkhint' => 'Add Note',
 			];
-			$linkModelList['DETAILVIEW'][] = Vtiger_Link_Model::getInstanceFromValues($viewLinks);
+			$linkModelList['DETAIL_VIEW_BASIC'][] = Vtiger_Link_Model::getInstanceFromValues($viewLinks);
 		}
 		return $linkModelList;
 	}
 
 	/**
-	 * Function to get the detail view related links
+	 * Function to get the detail view related links.
+	 *
 	 * @return <array> - list of links parameters
 	 */
 	public function getDetailViewRelatedLinks()
@@ -55,21 +54,23 @@ class Project_DetailView_Model extends Vtiger_DetailView_Model
 		if ($parentModel->isActive()) {
 			$relatedLinks[] = [
 				'linktype' => 'DETAILVIEWTAB',
-				'linklabel' => vtranslate('LBL_CHARTS', $moduleName),
+				'linklabel' => \App\Language::translate('LBL_CHARTS', $moduleName),
 				'linkurl' => $recordModel->getDetailViewUrl() . '&mode=showCharts&requestMode=charts',
 				'linkicon' => '',
 				'linkKey' => 'LBL_RECORD_SUMMARY',
-				'related' => 'Charts'
+				'related' => 'Charts',
 			];
 		}
-		$relatedLinks[] = [
-			'linktype' => 'DETAILVIEWTAB',
-			'linklabel' => vtranslate('LBL_GANTT', $moduleName),
-			'linkurl' => $recordModel->getDetailViewUrl() . '&mode=showGantt',
-			'linkicon' => '',
-			'linkKey' => 'LBL_GANTT',
-			'related' => 'Gantt'
-		];
+		if (\App\Module::isModuleActive('ProjectTask') && \App\Module::isModuleActive('ProjectMilestone')) {
+			$relatedLinks[] = [
+				'linktype' => 'DETAILVIEWTAB',
+				'linklabel' => \App\Language::translate('LBL_GANTT', $moduleName),
+				'linkurl' => $recordModel->getDetailViewUrl() . '&mode=showGantt',
+				'linkicon' => '',
+				'linkKey' => 'LBL_GANTT',
+				'related' => 'Gantt',
+			];
+		}
 		return $relatedLinks;
 	}
 }

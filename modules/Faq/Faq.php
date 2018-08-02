@@ -24,99 +24,52 @@
 // Faq is used to store vtiger_faq information.
 class Faq extends CRMEntity
 {
-
-	public $table_name = "vtiger_faq";
+	public $table_name = 'vtiger_faq';
 	public $table_index = 'id';
-	//fix for Custom Field for FAQ 
-	public $tab_name = Array('vtiger_crmentity', 'vtiger_faq', 'vtiger_faqcf');
-	public $tab_name_index = Array('vtiger_crmentity' => 'crmid', 'vtiger_faq' => 'id', 'vtiger_faqcomments' => 'faqid', 'vtiger_faqcf' => 'faqid');
-	public $customFieldTable = Array('vtiger_faqcf', 'faqid');
-	public $entity_table = "vtiger_crmentity";
-	public $column_fields = Array();
-	public $sortby_fields = Array('question', 'category', 'id');
+	//fix for Custom Field for FAQ
+	public $tab_name = ['vtiger_crmentity', 'vtiger_faq', 'vtiger_faqcf'];
+	public $tab_name_index = ['vtiger_crmentity' => 'crmid', 'vtiger_faq' => 'id', 'vtiger_faqcomments' => 'faqid', 'vtiger_faqcf' => 'faqid'];
+	public $customFieldTable = ['vtiger_faqcf', 'faqid'];
+	public $entity_table = 'vtiger_crmentity';
+	public $column_fields = [];
 	// This is the list of vtiger_fields that are in the lists.
-	public $list_fields = Array(
-		'FAQ Id' => Array('faq' => 'id'),
-		'Question' => Array('faq' => 'question'),
-		'Category' => Array('faq' => 'category'),
-		'Product Name' => Array('faq' => 'product_id'),
-		'Created Time' => Array('crmentity' => 'createdtime'),
-		'Modified Time' => Array('crmentity' => 'modifiedtime')
-	);
-	public $list_fields_name = Array(
+	public $list_fields = [
+		'FAQ Id' => ['faq' => 'id'],
+		'Question' => ['faq' => 'question'],
+		'Category' => ['faq' => 'category'],
+		'Product Name' => ['faq' => 'product_id'],
+		'Created Time' => ['crmentity' => 'createdtime'],
+		'Modified Time' => ['crmentity' => 'modifiedtime'],
+	];
+	public $list_fields_name = [
 		'FAQ Id' => '',
 		'Question' => 'question',
 		'Category' => 'faqcategories',
 		'Product Name' => 'product_id',
 		'Created Time' => 'createdtime',
-		'Modified Time' => 'modifiedtime'
-	);
+		'Modified Time' => 'modifiedtime',
+	];
+
+	/**
+	 * @var string[] List of fields in the RelationListView
+	 */
+	public $relationFields = ['question', 'faqcategories', 'product_id', 'createdtime', 'modifiedtime'];
 	public $list_link_field = 'question';
-	public $search_fields = Array(
-		'Account Name' => Array('account' => 'accountname'),
-		'City' => Array('accountaddress' => 'addresslevel5a'),
-	);
-	public $search_fields_name = Array(
+	public $search_fields = [
+		'Account Name' => ['account' => 'accountname'],
+		'City' => ['accountaddress' => 'addresslevel5a'],
+	];
+	public $search_fields_name = [
 		'Account Name' => 'accountname',
 		'City' => 'addresslevel5a',
-	);
+	];
 	//Added these variables which are used as default order by and sortorder in ListView
 	public $default_order_by = '';
 	public $default_sort_order = 'DESC';
-	public $mandatory_fields = Array('question', 'faq_answer', 'createdtime', 'modifiedtime');
+	public $mandatory_fields = ['question', 'faq_answer', 'createdtime', 'modifiedtime'];
 	// For Alphabetical search
 	public $def_basicsearch_col = 'question';
 
-	public function save_module($module)
-	{
-		//Inserting into Faq comment table
-		$this->insertIntoFAQCommentTable('vtiger_faqcomments', $module);
-	}
-
-	/** Function to insert values in vtiger_faqcomments table for the specified module,
-	 * @param $table_name -- table name:: Type varchar
-	 * @param $module -- module:: Type varchar
-	 */
-	public function insertIntoFAQCommentTable($table_name, $module)
-	{
-
-		\App\Log::trace("in insertIntoFAQCommentTable  " . $table_name . "    module is  " . $module);
-		$adb = PearDatabase::getInstance();
-
-		$current_time = $adb->formatDate(date('Y-m-d H:i:s'), true);
-
-		if ($this->column_fields['comments'] != '')
-			$comment = $this->column_fields['comments'];
-		else
-			$comment = AppRequest::get('comments');
-
-		if ($comment != '') {
-			$params = array('', $this->id, \vtlib\Functions::fromHTML($comment), $current_time);
-			$sql = "insert into vtiger_faqcomments values(?, ?, ?, ?)";
-			$adb->pquery($sql, $params);
-		}
-	}
-	/*
-	 * Function to get the primary query part of a report
-	 * @param - $module Primary module name
-	 * returns the query string formed on fetching the related data for report for primary module
-	 */
-
-	public function generateReportsQuery($module, $queryPlanner)
-	{
-		$moduletable = $this->table_name;
-		$moduleindex = $this->table_index;
-
-		$query = "from $moduletable
-					inner join vtiger_crmentity on vtiger_crmentity.crmid=$moduletable.$moduleindex
-					left join vtiger_products as vtiger_products$module on vtiger_products$module.productid = vtiger_faq.product_id
-					left join vtiger_groups as vtiger_groups$module on vtiger_groups$module.groupid = vtiger_crmentity.smownerid
-					left join vtiger_users as vtiger_users$module on vtiger_users$module.id = vtiger_crmentity.smownerid
-					left join vtiger_groups on vtiger_groups.groupid = vtiger_crmentity.smownerid
-					left join vtiger_users on vtiger_users.id = vtiger_crmentity.smownerid
-                    left join vtiger_users as vtiger_lastModifiedBy" . $module . " on vtiger_lastModifiedBy" . $module . ".id = vtiger_crmentity.modifiedby";
-		return $query;
-	}
 	/*
 	 * Function to get the relation tables for related modules
 	 * @param - $secmodule secondary module name
@@ -125,17 +78,12 @@ class Faq extends CRMEntity
 
 	public function setRelationTables($secmodule = false)
 	{
-		$relTables = array(
-			'Documents' => array('vtiger_senotesrel' => array('crmid', 'notesid'), 'vtiger_faq' => 'id'),
-		);
+		$relTables = [
+			'Documents' => ['vtiger_senotesrel' => ['crmid', 'notesid'], 'vtiger_faq' => 'id'],
+		];
 		if ($secmodule === false) {
 			return $relTables;
 		}
 		return $relTables[$secmodule];
-	}
-
-	public function clearSingletonSaveFields()
-	{
-		$this->column_fields['comments'] = '';
 	}
 }

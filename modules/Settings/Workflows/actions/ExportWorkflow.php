@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Export to XML Class for PDF Settings
- * @package YetiForce.Action
- * @license licenses/License.html
+ * Export to XML Class for PDF Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  */
 class Settings_Workflows_ExportWorkflow_Action extends Settings_Vtiger_Index_Action
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$recordId = $request->get('id');
 		$workflowModel = Settings_Workflows_Record_Model::getInstance($recordId);
@@ -19,7 +19,7 @@ class Settings_Workflows_ExportWorkflow_Action extends Settings_Vtiger_Index_Act
 		header('content-type: application/xml; charset=utf-8');
 		header('Pragma: public');
 		header('Cache-Control: private');
-		header('Content-Disposition: attachment; filename=' . $recordId . '_workflow.xml');
+		header('Content-Disposition: attachment; filename="' . $recordId . '_workflow.xml"');
 		header('Content-Description: PHP Generated Data');
 
 		$xml = new DOMDocument('1.0', 'utf-8');
@@ -29,7 +29,6 @@ class Settings_Workflows_ExportWorkflow_Action extends Settings_Vtiger_Index_Act
 		$xmlTemplate = $xml->createElement('workflow');
 		$xmlFields = $xml->createElement('fields');
 		$xmlField = $xml->createElement('field');
-
 
 		$cDataColumns = ['conditions'];
 		foreach (Settings_Workflows_Module_Model::$allFields as $field) {
@@ -58,7 +57,7 @@ class Settings_Workflows_ExportWorkflow_Action extends Settings_Vtiger_Index_Act
 			$xmlTask->appendChild($xmlColumn);
 
 			if (strpos($task['task'], 'VTEntityMethodTask') !== false) {
-				require_once 'modules/com_vtiger_workflow/tasks/VTEntityMethodTask.inc';
+				require_once 'modules/com_vtiger_workflow/tasks/VTEntityMethodTask.php';
 				$taskObject = unserialize(html_entity_decode($task['task']));
 				$method = Settings_Workflows_Module_Model::exportTaskMethod($taskObject->methodName);
 
@@ -89,6 +88,14 @@ class Settings_Workflows_ExportWorkflow_Action extends Settings_Vtiger_Index_Act
 		}
 
 		$xml->appendChild($xmlTemplate);
-		print $xml->saveXML();
+		echo $xml->saveXML();
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function validateRequest(\App\Request $request)
+	{
+		$request->validateReadAccess();
 	}
 }

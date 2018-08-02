@@ -11,10 +11,12 @@
 
 class Vtiger_CalendarActivities_Dashboard extends Vtiger_IndexAjax_View
 {
-
-	private $conditions = false;
-
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$viewer = $this->getViewer($request);
@@ -23,23 +25,21 @@ class Vtiger_CalendarActivities_Dashboard extends Vtiger_IndexAjax_View
 
 		$stateActivityLabels = Calendar_Module_Model::getComponentActivityStateLabel();
 
-		$page = $request->get('page');
-		$linkId = $request->get('linkid');
-		$sortOrder = $request->get('sortorder');
-		$orderBy = $request->get('orderby');
+		$page = $request->getInteger('page');
+		$linkId = $request->getInteger('linkid');
+		$sortOrder = $request->getForSql('sortorder');
+		$orderBy = $request->getForSql('orderby');
 
 		$params = ['status' => [
 				$stateActivityLabels['not_started'],
-				$stateActivityLabels['in_realization']
-			]
+				$stateActivityLabels['in_realization'],
+			],
 		];
-		$this->conditions = ['vtiger_activity.status', "'" . implode("','", $params['status']) . "'", 'in', QueryGenerator::$AND];
-
+		if (!$request->isEmpty('activitytype') && $request->getByType('activitytype') !== 'all') {
+			$params['activitytype'] = $request->getByType('activitytype');
+		}
 		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
-		if (!$request->has('owner'))
-			$owner = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget);
-		else
-			$owner = $request->get('owner');
+		$owner = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget, 'Calendar', $request->getByType('owner', 2));
 
 		$pagingModel = new Vtiger_Paging_Model();
 		$pagingModel->set('page', $page);
@@ -49,30 +49,21 @@ class Vtiger_CalendarActivities_Dashboard extends Vtiger_IndexAjax_View
 
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
 		$calendarActivities = ($owner === false) ? [] : $moduleModel->getCalendarActivities('upcoming', $pagingModel, $owner, false, $params);
-
-		$colorList = [];
-		foreach ($calendarActivities as $activityModel) {
-			$colorList[$activityModel->getId()] = Settings_DataAccess_Module_Model::executeColorListHandlers('Calendar', $activityModel->getId(), $activityModel);
-		}
 		$msgLabel = 'LBL_NO_SCHEDULED_ACTIVITIES';
 		$viewer->assign('WIDGET', $widget);
 		$viewer->assign('SOURCE_MODULE', 'Calendar');
-		$viewer->assign('COLOR_LIST', $colorList);
 		$viewer->assign('MODULE_NAME', $moduleName);
 		$viewer->assign('ACTIVITIES', $calendarActivities);
 		$viewer->assign('PAGING_MODEL', $pagingModel);
 		$viewer->assign('CURRENTUSER', $currentUser);
-		$title_max_length = vglobal('title_max_length');
-		$href_max_length = vglobal('href_max_length');
-		$viewer->assign('NAMELENGHT', $title_max_length);
+		$viewer->assign('HREFNAMELENGTH', \AppConfig::main('href_max_length'));
+		$viewer->assign('NAMELENGTH', \AppConfig::main('title_max_length'));
 		$viewer->assign('OWNER', $owner);
-		$viewer->assign('HREFNAMELENGHT', $href_max_length);
 		$viewer->assign('NODATAMSGLABLE', $msgLabel);
 		$viewer->assign('LISTVIEWLINKS', true);
 		$viewer->assign('DATA', $data);
-		$viewer->assign('USER_CONDITIONS', $this->conditions);
-		$content = $request->get('content');
-		if (!empty($content)) {
+		$viewer->assign('USER_CONDITIONS', ['condition' => ['vtiger_activity.status' => $params['status']]]);
+		if ($request->has('content')) {
 			$viewer->view('dashboards/CalendarActivitiesContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/CalendarActivities.tpl', $moduleName);

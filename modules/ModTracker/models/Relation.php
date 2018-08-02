@@ -11,7 +11,6 @@
 
 class ModTracker_Relation_Model extends Vtiger_Record_Model
 {
-
 	public function getValue()
 	{
 		return $this->getLinkedRecord()->getName();
@@ -27,52 +26,53 @@ class ModTracker_Relation_Model extends Vtiger_Record_Model
 		return $this->parent;
 	}
 
+	/**
+	 * Function return link to record.
+	 *
+	 * @return bool|\Vtiger_Record_Model
+	 */
 	public function getLinkedRecord()
 	{
-		$db = PearDatabase::getInstance();
-
 		$targetId = $this->get('targetid');
 		$targetModule = $this->get('targetmodule');
-
-		$query = 'SELECT * FROM vtiger_crmentity WHERE crmid = ?';
-		$result = $db->pquery($query, [$targetId]);
-		$noOfRows = $db->num_rows($result);
-		$moduleModels = [];
-		if ($noOfRows) {
+		$row = (new \App\Db\Query())->from('vtiger_crmentity')->where(['crmid' => $targetId])->one();
+		if ($row) {
 			$moduleModel = Vtiger_Module_Model::getInstance($targetModule);
-			$row = $db->getRow($result);
 			$modelClassName = Vtiger_Loader::getComponentClassName('Model', 'Record', $targetModule);
 			$recordInstance = new $modelClassName();
 			$recordInstance->setData($row)->setModuleFromInstance($moduleModel);
-			$recordInstance->set('id', $row['crmid']);
+			$recordInstance->setId($row['crmid']);
+
 			return $recordInstance;
 		}
 		return false;
 	}
 
 	/**
-	 * Function adds records to task queue that updates reviewing changes in records
-	 * @param array $data - List of records to update
+	 * Function adds records to task queue that updates reviewing changes in records.
+	 *
+	 * @param array  $data   - List of records to update
 	 * @param string $module - Module name
 	 */
 	public static function reviewChangesQueue($data, $module)
 	{
-		$db = \App\DB::getInstance();
+		$db = \App\Db::getInstance();
 		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$id = (new \App\db\Query())->from('u_#__reviewed_queue')->max('id') + 1;
+		$id = (new \App\Db\Query())->from('u_#__reviewed_queue')->max('id') + 1;
 		$db->createCommand()->insert('u_#__reviewed_queue', [
 			'id' => $id,
 			'userid' => $currentUserModel->getRealId(),
-			'tabid' => \vtlib\Functions::getModuleId($module),
-			'data' => \includes\utils\Json::encode($data),
-			'time' => date('Y-m-d H:i:s')
+			'tabid' => \App\Module::getModuleId($module),
+			'data' => \App\Json::encode($data),
+			'time' => date('Y-m-d H:i:s'),
 		])->execute();
 	}
 
 	/**
-	 * Function marks forwarded records as reviewed
+	 * Function marks forwarded records as reviewed.
+	 *
 	 * @param array $recordsList - List of records to update
-	 * @param integer $userId - User id
+	 * @param int   $userId      - User id
 	 */
 	public static function reviewChanges($recordsList, $userId = false)
 	{

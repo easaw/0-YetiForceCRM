@@ -11,35 +11,27 @@
 -->*}
 {strip}
 	<input type="hidden" id="sourceModule" value="{$SOURCE_MODULE}" />
-	<div class="listViewEntriesDiv">
-		<span class="listViewLoadingImageBlock hide modal" id="loadingListViewModal">
-			<img class="listViewLoadingImage" src="{vimage_path('loading.gif')}" alt="no-image" title="{vtranslate('LBL_LOADING', $MODULE)}"/>
-			<p class="listViewLoadingMsg">{vtranslate('LBL_LOADING_LISTVIEW_CONTENTS', $MODULE)}........</p>
+	<div class="listViewEntriesDiv u-overflow-scroll-xs-down">
+		<span class="listViewLoadingImageBlock d-none modal" id="loadingListViewModal">
+			<img class="listViewLoadingImage" src="{\App\Layout::getImagePath('loading.gif')}" alt="no-image" title="{\App\Language::translate('LBL_LOADING')}" />
+			<p class="listViewLoadingMsg">{\App\Language::translate('LBL_LOADING_LISTVIEW_CONTENTS')}........</p>
 		</span>
 		<div class="feedContainer">
 			{if $RECORD}
 				<input id="recordId" type="hidden" value="{$RECORD->getId()}">
-				<div class="row">
-					<div class="col-md-8" id="rssFeedHeading">
-						<h3> {vtranslate('LBL_FEEDS_LIST_FROM',$MODULE)}: {$RECORD->getName()} </h3>
+				<div class="d-flex justify-content-between flex-wrap">
+					<div id="rssFeedHeading">
+						<h3> {\App\Language::translate('LBL_FEEDS_LIST_FROM',$MODULE)}: {$RECORD->getName()} </h3>
 					</div>
-					<div class="btn-toolbar col-md-4">
-						<span class="btn-group pull-right">
-							<button id="deleteButton" class="btn btn-danger" title="{vtranslate('LBL_DELETE', $MODULE)}"><span class="glyphicon glyphicon-trash"></span></button>
-						</span>
-						<span class="btn-group pull-right">
-							<button id="makeDefaultButton" class="btn btn-info" title="{vtranslate('LBL_SET_AS_DEFAULT', $MODULE)}">&nbsp;<strong>{vtranslate('LBL_SET_AS_DEFAULT', $MODULE)}</strong></button>
-						</span>
-						<span class="btn-group pull-right">
-							<button id="rssAddButton" class="rssAddButton btn btn-success" title="{vtranslate('LBL_ADD_FEED_SOURCE', $MODULE)}"><span class="glyphicon glyphicon-plus"></span>&nbsp;<span class="userIcon-Rss"></span></button>
-						</span>
-						<span class="btn-group pull-right">
-							<button id="changeFeedSource" class="changeFeedSource btn btn-primary" title="{vtranslate('LBL_CHANGE_RSS_CHANNEL', $MODULE)}"><span class="glyphicon glyphicon-transfer"></span>&nbsp;<span class="userIcon-Rss"></span></button>
-						</span>
+					<div class="btn-toolbar btn-group flex-column flex-sm-row u-w-sm-down-100">
+							<button id="changeFeedSource" class="changeFeedSource btn btn-primary c-btn-block-sm-down" title="{\App\Language::translate('LBL_CHANGE_RSS_CHANNEL', $MODULE)}"><span class="fas fa-exchange-alt mr-1"></span><span class="userIcon-Rss"></span></button>
+							<button id="rssAddButton" class="rssAddButton btn btn-success c-btn-block-sm-down" title="{\App\Language::translate('LBL_ADD_FEED_SOURCE', $MODULE)}"><span class="fas fa-plus mr-1"></span><span class="userIcon-Rss"></span></button>
+							<button id="makeDefaultButton" class="btn btn-info c-btn-block-sm-down" title="{\App\Language::translate('LBL_SET_AS_DEFAULT', $MODULE)}">{\App\Language::translate('LBL_SET_AS_DEFAULT', $MODULE)}</button>
+							<button id="deleteButton" class="btn btn-danger c-btn-block-sm-down" title="{\App\Language::translate('LBL_DELETE', $MODULE)}"><span class="fas fa-trash-alt"></span></button>
 					</div>
 				</div>
-				<div class="feedListContainer pushDown" style="overflow: auto;"> 
-					{include file='RssFeedContents.tpl'|@vtemplate_path:$MODULE}
+				<div class="feedListContainer pushDown"> 
+					{include file=\App\Layout::getTemplatePath('RssFeedContents.tpl', $MODULE)}
 				</div>
 			{else}
 				<table class="emptyRecordsDiv">
@@ -47,7 +39,7 @@
 						<tr>
 							<td>
 								{assign var=SINGLE_MODULE value="SINGLE_$MODULE"}
-								<button class="rssAddButton btn btn-link tdUnderline">{vtranslate('LBL_RECORDS_NO_FOUND')}. {vtranslate('LBL_CREATE')} {vtranslate($SINGLE_MODULE, $MODULE)}</button>
+								<button class="rssAddButton btn btn-link tdUnderline">{\App\Language::translate('LBL_RECORDS_NO_FOUND')}. {\App\Language::translate('LBL_CREATE')} {\App\Language::translate($SINGLE_MODULE, $MODULE)}</button>
 							</td>
 						</tr>
 					</tbody>

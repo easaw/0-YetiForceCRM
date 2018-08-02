@@ -8,20 +8,14 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class Settings_PBXManager_Gateway_Action extends Settings_Vtiger_IndexAjax_View
+class Settings_PBXManager_Gateway_Action extends Settings_Vtiger_Basic_Action
 {
-
 	public function __construct()
 	{
 		$this->exposeMethod('getSecretKey');
 	}
 
-	public function process(Vtiger_Request $request)
-	{
-		$this->getSecretKey($request);
-	}
-
-	public function getSecretKey(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$serverModel = PBXManager_Server_Model::getInstance();
 		$response = new Vtiger_Response();

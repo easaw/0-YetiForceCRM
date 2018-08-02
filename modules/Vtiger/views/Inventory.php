@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Basic Inventory View Class
- * @package YetiForce.Views
- * @license licenses/License.html
+ * Basic Inventory View Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Vtiger_Inventory_View extends Vtiger_IndexAjax_View
 {
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -16,15 +16,16 @@ class Vtiger_Inventory_View extends Vtiger_IndexAjax_View
 		$this->exposeMethod('showTaxes');
 	}
 
-	public function showDiscounts(Vtiger_Request $request)
+	public function showDiscounts(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$discountType = $request->get('discountType');
-		$currency = $request->get('currency');
-		$relatedRecord = $request->get('relatedRecord');
-		$isIndividual = $request->get('isIndividual');
-		$totalPrice = $request->get('totalPrice');
-
+		$discountType = $request->getInteger('discountType');
+		$currency = $request->getInteger('currency');
+		$relatedRecord = $request->isEmpty('relatedRecord', true) ? false : $request->getInteger('relatedRecord');
+		$totalPrice = (float) $request->get('totalPrice');
+		if (!\App\Privilege::isPermitted($moduleName, 'EditView')) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
 		$inventoryModel = Vtiger_Inventory_Model::getInstance($moduleName);
 		$config = $inventoryModel->getDiscountsConfig();
 		$groupDiscount = $inventoryModel->getAccountDiscount($relatedRecord);
@@ -43,16 +44,23 @@ class Vtiger_Inventory_View extends Vtiger_IndexAjax_View
 		echo $viewer->view('InventoryDiscounts.tpl', $moduleName, true);
 	}
 
-	public function showTaxes(Vtiger_Request $request)
+	/**
+	 * Function to show taxes.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function showTaxes(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
-		$record = $request->get('record');
+		$record = $request->getInteger('record');
 		$recordModule = $request->get('recordModule');
-		$currency = $request->get('currency');
-		$sourceRecord = $request->get('sourceRecord');
+		$currency = $request->getInteger('currency');
+		$sourceRecord = $request->isEmpty('sourceRecord', true) ? false : $request->getInteger('sourceRecord');
 		$taxType = $request->get('taxType');
-		$totalPrice = $request->get('totalPrice');
-
+		$totalPrice = (float) $request->get('totalPrice');
+		if (!\App\Privilege::isPermitted($moduleName, 'EditView')) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
 		$inventoryModel = Vtiger_Inventory_Model::getInstance($moduleName);
 		$accountTaxs = $inventoryModel->getAccountTax($moduleName, $sourceRecord);
 
@@ -61,7 +69,7 @@ class Vtiger_Inventory_View extends Vtiger_IndexAjax_View
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->assign('RECORD', $record);
 		$viewer->assign('RECORD_MODULE', $recordModule);
-		$viewer->assign('GLOBAL_TAXS', $inventoryModel->getGlobalTaxs());
+		$viewer->assign('GLOBAL_TAXES', Vtiger_Inventory_Model::getGlobalTaxes());
 		$viewer->assign('CURRENCY_SYMBOL', vtlib\Functions::getCurrencySymbolandRate($currency)['symbol']);
 		$viewer->assign('TOTAL_PRICE', $totalPrice);
 		$viewer->assign('CONFIG', $config);

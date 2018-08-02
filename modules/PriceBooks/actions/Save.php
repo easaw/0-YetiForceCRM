@@ -10,20 +10,21 @@
 
 class PriceBooks_Save_Action extends Vtiger_Save_Action
 {
-
 	/**
-	 * Function to save record
-	 * @param <Vtiger_Request> $request - values of the record
-	 * @return <RecordModel> - record Model of saved record
+	 * Function to save record.
+	 *
+	 * @param \App\Request $request - values of the record
+	 *
+	 * @return Vtiger_Record_Model - record Model of saved record
 	 */
-	public function saveRecord($request)
+	public function saveRecord(\App\Request $request)
 	{
 		$recordModel = $this->getRecordModelFromRequest($request);
 		$recordModel->save();
-		if ($request->get('relationOperation')) {
-			$parentModuleName = $request->get('sourceModule');
+		if ($request->getBoolean('relationOperation')) {
+			$parentModuleName = $request->getByType('sourceModule', 2);
 			$parentModuleModel = Vtiger_Module_Model::getInstance($parentModuleName);
-			$parentRecordId = $request->get('sourceRecord');
+			$parentRecordId = $request->getInteger('sourceRecord');
 			$relatedModule = $recordModel->getModule();
 			$relatedRecordId = $recordModel->getId();
 

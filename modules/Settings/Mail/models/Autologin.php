@@ -1,63 +1,60 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings mail autologin model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Mail_Autologin_Model
 {
-
 	public function getAccountsList()
 	{
-		$db = PearDatabase::getInstance();
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$param = $users = [];
-		$sql = "SELECT * FROM roundcube_users WHERE password <> '';";
-		$result = $db->query($sql);
-
-		while ($row = $db->fetch_array($result)) {
-			$users[] = $row;
-		}
-		return $users;
+		return (new \App\Db\Query())->from('roundcube_users')
+			->where(['<>', 'password', ''])
+			->all();
 	}
 
-	public function getAutologinUsers($user_id)
+	public function getAutologinUsers($userId)
 	{
-		$db = PearDatabase::getInstance();
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$users = [];
-		$sql = 'SELECT crmuser_id FROM roundcube_users_autologin WHERE rcuser_id = ?;';
-		$result = $db->pquery($sql, [$user_id]);
-		for ($i = 0; $i < $db->num_rows($result); $i++) {
-			$users[] = $db->query_result_raw($result, $i, 'crmuser_id');
-		}
-		return $users;
+		return (new \App\Db\Query())->select('crmuser_id')
+			->from('roundcube_users_autologin')
+			->where(['rcuser_id' => $userId])
+			->createCommand()->queryColumn();
 	}
 
-	public function updateUsersAutologin($id, $users)
+	/**
+	 * Update users autologin.
+	 *
+	 * @param int   $id
+	 * @param array $users
+	 */
+	public static function updateUsersAutologin($id, $users)
 	{
-		$db = PearDatabase::getInstance();
-		if (!$users)
+		if (!$users) {
 			$users = [];
-		$db->pquery('DELETE FROM roundcube_users_autologin WHERE rcuser_id = ?', [$id]);
-		foreach ($users as $user) {
-			$db->pquery('INSERT INTO roundcube_users_autologin (`rcuser_id`,`crmuser_id`) VALUES (?, ?);', [$id, $user]);
+		}
+		$db = \App\Db::getInstance();
+		$db->createCommand()->delete('roundcube_users_autologin', ['rcuser_id' => $id])
+			->execute();
+		if (!empty($users)) {
+			$insertData = [];
+			foreach ($users as $user) {
+				$insertData[] = [$id, $user];
+			}
+			$db->createCommand()->batchInsert('roundcube_users_autologin', ['rcuser_id', 'crmuser_id'], $insertData)->execute();
 		}
 	}
 
 	/**
-	 * Function to get instance
-	 * @param <Boolean> true/false
-	 * @return <Settings_Leads_Mapping_Model>
+	 * Function to get instance.
+	 *
+	 * @param bool true/false
+	 *
+	 * @return <Settings_Mail_Autologin_Model>
 	 */
 	public static function getInstance()
 	{
-		$instance = new self();
-		return $instance;
+		return new self();
 	}
 }

@@ -1,34 +1,20 @@
 <?php
 
 /**
- * Record Class for Assets
- * @package YetiForce.Model
- * @license licenses/License.html
+ * Record Class for Assets.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Assets_Record_Model extends Vtiger_Record_Model
 {
-
-	protected $privileges = ['editFieldByModal' => true];
-
-	public function getFieldToEditByModal()
-	{
-		return [
-			'addClass' => 'btn-danger',
-			'iconClass' => 'glyphicon-modal-window',
-			'listViewClass' => 'danger-color',
-			'titleTag' => 'LBL_SET_RECORD_STATUS',
-			'name' => 'assets_renew',
-		];
-	}
-
 	public function updateRenewal()
 	{
 		$value = $this->getRenewalValue();
 		if ($value && $this->get('assets_renew') != $value) {
 			$this->set('assets_renew', $value);
-			$this->set('mode', 'edit');
 			$this->save();
 		}
 	}
@@ -61,6 +47,7 @@ class Assets_Record_Model extends Vtiger_Record_Model
 			if ($methodExist) {
 				return $classFunction['class']::$classFunction['method']($this, 'PLL_NOT_RENEWED_VERIFICATION');
 			}
+
 			return 'PLL_NOT_RENEWED_VERIFICATION';
 		}
 		if ($methodExist) {

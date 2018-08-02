@@ -10,53 +10,35 @@
 
 class PBXManager_DetailView_Model extends Vtiger_DetailView_Model
 {
-
 	/**
 	 * Overrided to remove Edit button, Duplicate button
-	 * To remove related links
+	 * To remove related links.
 	 */
 	public function getDetailViewLinks($linkParams)
 	{
-		$linkTypes = array('DETAILVIEWBASIC', 'DETAILVIEW');
+		$linkTypes = ['DETAIL_VIEW_ADDITIONAL', 'DETAIL_VIEW_BASIC'];
 		$moduleModel = $this->getModule();
-		$recordModel = $this->getRecord();
-
-		$moduleName = $moduleModel->getName();
-		$recordId = $recordModel->getId();
-
-		$detailViewLink = array();
-
 		$linkModelListDetails = Vtiger_Link_Model::getAllByType($moduleModel->getId(), $linkTypes, $linkParams);
 		//Mark all detail view basic links as detail view links.
 		//Since ui will be look ugly if you need many basic links
-		$detailViewBasiclinks = $linkModelListDetails['DETAILVIEWBASIC'];
-		unset($linkModelListDetails['DETAILVIEWBASIC']);
-
-		if (Users_Privileges_Model::isPermitted($moduleName, 'Delete', $recordId)) {
-			$deletelinkModel = array(
-				'linktype' => 'DETAILVIEW',
-				'linklabel' => 'LBL_DELETE_RECORD',
-				'linkurl' => 'javascript:Vtiger_Detail_Js.deleteRecord("' . $recordModel->getDeleteUrl() . '")',
-				'linkicon' => ''
-			);
-			$linkModelList['DETAILVIEW'][] = Vtiger_Link_Model::getInstanceFromValues($deletelinkModel);
-		}
-
+		$detailViewBasiclinks = $linkModelListDetails['DETAIL_VIEW_BASIC'];
+		unset($linkModelListDetails['DETAIL_VIEW_BASIC']);
 		if (!empty($detailViewBasiclinks)) {
 			foreach ($detailViewBasiclinks as $linkModel) {
 				// Remove view history, needed in vtiger5 to see history but not in vtiger6
 				if ($linkModel->linklabel == 'View History') {
 					continue;
 				}
-				$linkModelList['DETAILVIEW'][] = $linkModel;
+				$linkModelList['DETAIL_VIEW_BASIC'][] = $linkModel;
 			}
 		}
 
 		$widgets = $this->getWidgets();
-		foreach ($widgets as $widgetLinkModel) {
-			$linkModelList['DETAILVIEWWIDGET'][] = $widgetLinkModel;
+		if (!empty($widgets)) {
+			foreach ($widgets as $widgetLinkModel) {
+				$linkModelList['DETAILVIEWWIDGET'][] = $widgetLinkModel;
+			}
 		}
-
 		return $linkModelList;
 	}
 }

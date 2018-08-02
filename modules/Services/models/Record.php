@@ -10,20 +10,12 @@
 
 class Services_Record_Model extends Products_Record_Model
 {
-
 	/**
-	 * Function to get acive status of record
+	 * {@inheritdoc}
 	 */
-	public function getActiveStatusOfRecord()
+	public function delete()
 	{
-		$activeStatus = $this->get('discontinued');
-		if ($activeStatus) {
-			return $activeStatus;
-		}
-		$recordId = $this->getId();
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT discontinued FROM vtiger_service WHERE serviceid = ?', array($recordId));
-		$activeStatus = $db->query_result($result, 'discontinued');
-		return $activeStatus;
+		parent::delete();
+		\App\Db::getInstance()->createCommand()->delete('vtiger_seproductsrel', ['or', ['productid' => $this->getId()], ['crmid' => $this->getId()]])->execute();
 	}
 }

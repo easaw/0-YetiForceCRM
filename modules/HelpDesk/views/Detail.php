@@ -10,7 +10,9 @@
 
 class HelpDesk_Detail_View extends Vtiger_Detail_View
 {
-
+	/**
+	 * {@inheritdoc}
+	 */
 	public function __construct()
 	{
 		parent::__construct();
@@ -18,36 +20,19 @@ class HelpDesk_Detail_View extends Vtiger_Detail_View
 		$this->exposeMethod('showCharts');
 	}
 
-	/**
-	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
-	 * @return <Array> - List of Vtiger_JsScript_Model instances
-	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function showCharts(\App\Request $request)
 	{
-		$headerScriptInstances = parent::getFooterScripts($request);
-		$moduleName = $request->getModule();
-
-		$jsFileNames = array(
-			'~libraries/jquery/flot/jquery.flot.min.js',
-			'~libraries/jquery/flot/jquery.flot.resize.js',
-			'~libraries/jquery/flot/jquery.flot.stack.min.js',
-		);
-
-		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
-		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
-		return $headerScriptInstances;
-	}
-
-	public function showCharts(Vtiger_Request $request)
-	{
-		$recordId = $request->get('record');
+		$recordId = $request->getInteger('record');
 		$moduleName = $request->getModule();
 
 		$viewer = $this->getViewer($request);
+		if (!Users_Privileges_Model::getCurrentUserPrivilegesModel()->hasModulePermission('OSSTimeControl')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
 		$moduleModel = Vtiger_Module_Model::getInstance('OSSTimeControl');
-		if ($moduleModel)
+		if ($moduleModel && $moduleModel->isActive()) {
 			$data = $moduleModel->getTimeUsers($recordId, $moduleName);
+		}
 		$viewer->assign('MODULE_NAME', $moduleName);
 		$viewer->assign('DATA', $data);
 		$viewer->view('charts/ShowTimeHelpDesk.tpl', $moduleName);

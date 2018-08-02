@@ -9,40 +9,45 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class Calendar_ActivityReminder_Action extends Vtiger_Action_Controller
+class Calendar_ActivityReminder_Action extends \App\Controller\Action
 {
+	use \App\Controller\ExposeMethod;
 
 	public function __construct()
 	{
 		$this->exposeMethod('postpone');
 	}
 
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedToRecord
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		$userPrivilegesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		$permission = $userPrivilegesModel->hasModulePermission($moduleName);
-
-		if (!$permission) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		if ($request->isEmpty('record')) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+		if (!\App\Privilege::isPermitted($request->getModule(), 'DetailView', $request->getInteger('record'))) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * Action to postpone activities.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function postpone(\App\Request $request)
 	{
-		$mode = $request->getMode();
-		if (!empty($mode) && $this->isMethodExposed($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
-		}
-	}
-
-	public function postpone(Vtiger_Request $request)
-	{
-		$recordId = $request->get('record');
-		$time = $request->get('time');
+		$time = $request->getByType('time', 'Alnum');
 		$module = $request->getModule();
-		$recordModel = Vtiger_Record_Model::getInstanceById($recordId, $module);
+		$recordModel = Vtiger_Record_Model::getInstanceById($request->getInteger('record'), $module);
 		$recordModel->updateReminderPostpone($time);
+		$response = new Vtiger_Response();
+		$response->setResult(true);
+		$response->emit();
 	}
 }

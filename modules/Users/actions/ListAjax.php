@@ -10,28 +10,6 @@
 
 class Users_ListAjax_Action extends Vtiger_BasicAjax_Action
 {
-
-	public function __construct()
-	{
-		parent::__construct();
-	}
-
-	public function preProcess(Vtiger_Request $request)
-	{
-		return true;
-	}
-
-	public function postProcess(Vtiger_Request $request)
-	{
-		return true;
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		if (!empty($mode)) {
-			$this->invokeExposedMethod($mode, $request);
-			return;
-		}
-	}
+	use \App\Controller\ExposeMethod,
+	 App\Controller\ClearProcess;
 }

@@ -1,136 +1,174 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings LangManagement SaveAjax action class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_LangManagement_SaveAjax_Action extends Settings_Vtiger_IndexAjax_View
 {
-
+	/**
+	 * Constructor.
+	 */
 	public function __construct()
 	{
 		parent::__construct();
-		$this->exposeMethod('AddTranslation');
-		$this->exposeMethod('SaveTranslation');
-		$this->exposeMethod('DeleteTranslation');
+		$this->exposeMethod('addTranslation');
+		$this->exposeMethod('saveTranslation');
+		$this->exposeMethod('deleteTranslation');
 		$this->exposeMethod('add');
 		$this->exposeMethod('save');
-		$this->exposeMethod('saveView');
 		$this->exposeMethod('delete');
 		$this->exposeMethod('setAsDefault');
 	}
 
-	public function AddTranslation(Vtiger_Request $request)
+	/**
+	 * Add translation.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\Security
+	 */
+	public function addTranslation(\App\Request $request)
 	{
-		$params = $request->get('params');
-		$form_data = $params['form_data'];
-		$langs = json_decode($form_data['langs'], true);
-		$params['type'] = $form_data['type'];
-		$params['langkey'] = $form_data['variable'];
-		foreach ($langs as $lang) {
-			$params['lang'] = $lang;
-			$params['val'] = $form_data[$lang];
-			$saveResp = Settings_LangManagement_Module_Model::AddTranslation($params);
-			if ($saveResp['success'] === false) {
-				break;
+		$moduleName = $request->getModule(false);
+		try {
+			$langs = $request->getArray('langs', 1);
+			if (!$langs || array_diff($langs, array_keys(App\Language::getAll()))) {
+				throw new \App\Exceptions\Security('ERR_LANGUAGE_DOES_NOT_EXIST');
 			}
+			if (!in_array($request->getByType('type'), \App\Language::LANG_TYPE)) {
+				throw new \App\Exceptions\IllegalValue('ERR_NOT_ALLOWED_VALUE', 406);
+			}
+			$mod = $request->getByType('mod');
+			$type = $request->getByType('type');
+			$variable = $request->getByType('variable', 'Text');
+			$moduleModel = Settings_LangManagement_Module_Model::getInstance($moduleName);
+			$data = $moduleModel->loadLangTranslation($langs, $mod);
+			if (!isset($data[$type][$variable])) {
+				foreach ($langs as $lang) {
+					\App\Language::translationModify($lang, $mod, $type, $variable, $request->getForHtml($lang));
+				}
+				$result = ['success' => true, 'message' => \App\Language::translate('LBL_AddTranslationOK', $moduleName)];
+			} else {
+				$result = ['success' => false, 'message' => \App\Language::translate('LBL_KeyExists', $moduleName)];
+			}
+		} catch (\Exception $ex) {
+			$result = ['success' => false];
 		}
 		$response = new Vtiger_Response();
-		$response->setResult(array(
-			'success' => $saveResp['success'],
-			'message' => vtranslate($saveResp['data'], $request->getModule(false))
-		));
+		$response->setResult($result);
 		$response->emit();
 	}
 
-	public function SaveTranslation(Vtiger_Request $request)
+	/**
+	 * Save translations.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\Security
+	 */
+	public function saveTranslation(\App\Request $request)
 	{
-		$params = $request->get('params');
-		$saveResp = Settings_LangManagement_Module_Model::SaveTranslation($params);
+		$moduleName = $request->getModule(false);
+		try {
+			if (!isset(App\Language::getAll()[$request->getByType('lang')])) {
+				throw new \App\Exceptions\Security('ERR_LANGUAGE_DOES_NOT_EXIST');
+			}
+			if (!in_array($request->getByType('type'), \App\Language::LANG_TYPE)) {
+				throw new \App\Exceptions\IllegalValue('ERR_NOT_ALLOWED_VALUE', 406);
+			}
+			$result = \App\Language::translationModify(
+					$request->getByType('lang'), $request->getByType('mod'), $request->getByType('type'), $request->getByType('variable', 'Text'), $request->getForHtml('val'));
+			$result = ['success' => true, 'message' => \App\Language::translate('LBL_UpdateTranslationOK', $moduleName)];
+		} catch (\Exception $ex) {
+			$result = ['success' => false];
+		}
 		$response = new Vtiger_Response();
-		$response->setResult(array(
-			'success' => $saveResp['success'],
-			'message' => vtranslate($saveResp['data'], $request->getModule(false))
-		));
+		$response->setResult($result);
 		$response->emit();
 	}
 
-	public function saveView(Vtiger_Request $request)
+	/**
+	 * Remove translation.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function deleteTranslation(\App\Request $request)
 	{
-		$params = $request->get('params');
-		$saveResp = Settings_LangManagement_Module_Model::saveView($params);
+		$moduleName = $request->getModule(false);
+		try {
+			$langs = $request->getArray('lang', 1);
+			if (!$langs || array_diff($langs, array_keys(App\Language::getAll()))) {
+				throw new \App\Exceptions\Security('ERR_LANGUAGE_DOES_NOT_EXIST');
+			}
+			if (!in_array($request->getByType('type'), \App\Language::LANG_TYPE)) {
+				throw new \App\Exceptions\IllegalValue('ERR_NOT_ALLOWED_VALUE', 406);
+			}
+			foreach ($langs as $lang) {
+				\App\Language::translationModify($lang, $request->getByType('mod'), $request->getByType('type'), $request->getByType('langkey', 'Text'), '', true);
+			}
+			$result = ['success' => true, 'message' => \App\Language::translate('LBL_DeleteTranslationOK', $moduleName)];
+		} catch (\Exception $ex) {
+			$result = ['success' => false];
+		}
 		$response = new Vtiger_Response();
-		$response->setResult(array(
-			'success' => $saveResp['success'],
-			'message' => vtranslate($saveResp['data'], $request->getModule(false))
-		));
+		$response->setResult($result);
 		$response->emit();
 	}
 
-	public function DeleteTranslation(Vtiger_Request $request)
+	/**
+	 * Function added new language.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function add(\App\Request $request)
 	{
-		$params = $request->get('params');
-		$saveResp = Settings_LangManagement_Module_Model::DeleteTranslation($params);
-		$response = new Vtiger_Response();
-		$response->setResult(array(
-			'success' => $saveResp['success'],
-			'message' => vtranslate($saveResp['data'], $request->getModule(false))
-		));
-		$response->emit();
-	}
-
-	public function add(Vtiger_Request $request)
-	{
-		$params = $request->get('params');
+		$params = [
+			'label' => $request->getByType('label', 'Text'),
+			'name' => $request->getByType('name', 'Text'),
+			'prefix' => $request->getByType('prefix'),
+		];
 		$saveResp = Settings_LangManagement_Module_Model::add($params);
 		$response = new Vtiger_Response();
-		$response->setResult(array(
+		$response->setResult([
 			'success' => $saveResp['success'],
-			'message' => vtranslate($saveResp['data'], $request->getModule(false))
-		));
+			'message' => \App\Language::translate($saveResp['data'], $request->getModule(false)),
+		]);
 		$response->emit();
 	}
 
-	public function save(Vtiger_Request $request)
+	/**
+	 * Delete language.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function delete(\App\Request $request)
 	{
-		$params = $request->get('params');
-		$saveResp = Settings_LangManagement_Module_Model::save($params);
+		$saveResp = Settings_LangManagement_Module_Model::delete($request->getByType('prefix'));
 		$response = new Vtiger_Response();
 		if ($saveResp) {
-			$response->setResult(array('success' => true, 'message' => vtranslate('LBL_SaveDataOK', $request->getModule(false))));
+			$response->setResult(['success' => true, 'message' => \App\Language::translate('LBL_DeleteDataOK', $request->getModule(false))]);
 		} else {
-			$response->setResult(array('success' => false));
+			$response->setResult(['success' => false]);
 		}
 		$response->emit();
 	}
 
-	public function delete(Vtiger_Request $request)
+	/**
+	 * Function to set language as default.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function setAsDefault(\App\Request $request)
 	{
-		$params = $request->get('params');
-		$saveResp = Settings_LangManagement_Module_Model::delete($params);
-		$response = new Vtiger_Response();
-		if ($saveResp) {
-			$response->setResult(array('success' => true, 'message' => vtranslate('LBL_DeleteDataOK', $request->getModule(false))));
-		} else {
-			$response->setResult(array('success' => false));
-		}
-		$response->emit();
-	}
-
-	public function setAsDefault(Vtiger_Request $request)
-	{
-		$params = $request->get('params');
-		$saveResp = Settings_LangManagement_Module_Model::setAsDefault($params);
+		$saveResp = Settings_LangManagement_Module_Model::setAsDefault($request->getByType('prefix'));
 		$response = new Vtiger_Response();
 		if ($saveResp['success']) {
-			$response->setResult(array('success' => true, 'message' => vtranslate('LBL_SaveDataOK', $request->getModule(false)), 'prefixOld' => $saveResp['prefixOld']));
+			$response->setResult(['success' => true, 'message' => \App\Language::translate('LBL_SaveDataOK', $request->getModule(false)), 'prefixOld' => $saveResp['prefixOld']]);
 		} else {
-			$response->setResult(array('success' => false));
+			$response->setResult(['success' => false]);
 		}
 		$response->emit();
 	}

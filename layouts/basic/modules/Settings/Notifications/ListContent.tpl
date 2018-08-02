@@ -1,10 +1,10 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 	<table class="table table-bordered themeTableColor">
 		<thead>
 			<tr>
 				<th>
-					{vtranslate('LBL_NAME', $QUALIFIED_MODULE)}
+					{\App\Language::translate('LBL_NAME', $QUALIFIED_MODULE)}
 				</th>
 
 			</tr>
@@ -13,13 +13,13 @@
 			{foreach from=$LIST_CONTENT item=RECORD}
 				<tr class="opacity" data-id="{$RECORD->getId()}">
 					<td>
-						{vtranslate($RECORD->getName(), $QUALIFIED_MODULE)}
+						{\App\Language::translate($RECORD->getName(), $QUALIFIED_MODULE)}
 						{if $RECORD->get('presence') == 1}
-							<div class="pull-right actions">
-								<a class="edit cursorPointer" data-url="{$RECORD->getEditUrl()}">
-									<span class="glyphicon glyphicon-pencil alignBottom" title="Edycja"></span>
+							<div class="float-right actions">
+								<a class="edit u-cursor-pointer" data-url="{$RECORD->getEditUrl()}">
+									<span class="fas fa-edit alignBottom" title="Edycja"></span>
 								</a>
-								<a class="remove cursorPointer"><span title="" class="glyphicon glyphicon-trash alignBottom"></span>
+								<a class="remove u-cursor-pointer"><span title="" class="fas fa-trash-alt alignBottom"></span>
 								</a>
 							</div>
 						{/if}

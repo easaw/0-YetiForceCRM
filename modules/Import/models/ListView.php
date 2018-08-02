@@ -9,14 +9,15 @@
  * *********************************************************************************** */
 
 /**
- * Vtiger ListView Model Class
+ * Vtiger ListView Model Class.
  */
 class Import_ListView_Model extends Vtiger_ListView_Model
 {
-
 	/**
-	 * Function to get the list of listview links for the module
+	 * Function to get the list of listview links for the module.
+	 *
 	 * @param <Array> $linkParams
+	 *
 	 * @return false - no List View Links needed on Import pages
 	 */
 	public function getListViewLinks($linkParams)
@@ -25,8 +26,10 @@ class Import_ListView_Model extends Vtiger_ListView_Model
 	}
 
 	/**
-	 * Function to get the list of Mass actions for the module
+	 * Function to get the list of Mass actions for the module.
+	 *
 	 * @param <Array> $linkParams
+	 *
 	 * @return false - no List View Links needed on Import pages
 	 */
 	public function getListViewMassActions($linkParams)
@@ -35,109 +38,89 @@ class Import_ListView_Model extends Vtiger_ListView_Model
 	}
 
 	/**
-	 * Function to get the list view entries
+	 * Function to get the list view entries.
+	 *
 	 * @param Vtiger_Paging_Model $pagingModel
-	 * @return <Array> - Associative array of record id mapped to Vtiger_Record_Model instance.
+	 *
+	 * @return array - Associative array of record id mapped to Vtiger_Record_Model instance
 	 */
-	public function getListViewEntries($pagingModel)
+	public function getListViewEntries(Vtiger_Paging_Model $pagingModel)
 	{
-		$db = PearDatabase::getInstance();
-
-		$moduleName = $this->getModule()->get('name');
-		$moduleFocus = CRMEntity::getInstance($moduleName);
-		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-
-		$queryGenerator = $this->get('query_generator');
-		$listViewContoller = $this->get('listview_controller');
-
-		$listQuery = $queryGenerator->getQuery();
-
-		$startIndex = $pagingModel->getStartIndex();
+		$moduleModel = $this->getModule();
+		$this->loadListViewCondition();
+		$this->loadListViewOrderBy();
 		$pageLimit = $pagingModel->getPageLimit();
-
-		$importedRecordIds = $this->getLastImportedRecord();
-		$listViewRecordModels = array();
-		if (count($importedRecordIds) != 0) {
-			$moduleModel = $this->get('module');
-			$listQuery .= ' && ' . $moduleModel->basetable . '.' . $moduleModel->basetableid . ' IN (' . implode(',', $importedRecordIds) . ')';
-
-			$listQuery .= " LIMIT $startIndex, $pageLimit";
-
-			$listResult = $db->pquery($listQuery, array());
-
-			$listViewEntries = $listViewContoller->getListViewRecords($moduleFocus, $moduleName, $listResult);
-			$pagingModel->calculatePageRange($listViewEntries);
-			foreach ($listViewEntries as $recordId => $record) {
-				$record['id'] = $recordId;
-				$listViewRecordModels[$recordId] = $moduleModel->getRecordFromArray($record);
-			}
+		$query = $this->getQueryGenerator()->createQuery();
+		if ($pagingModel->get('limit') !== 0) {
+			$query->limit($pageLimit + 1)->offset($pagingModel->getStartIndex());
 		}
+		$query = $this->addLastImportedRecordConditions($query);
+		$rows = $query->all();
+		$count = count($rows);
+		$pagingModel->calculatePageRange($count);
+		if ($count > $pageLimit) {
+			array_pop($rows);
+			$pagingModel->set('nextPageExists', true);
+		} else {
+			$pagingModel->set('nextPageExists', false);
+		}
+		$listViewRecordModels = [];
+		foreach ($rows as $row) {
+			$listViewRecordModels[$row['id']] = $moduleModel->getRecordFromArray($row);
+		}
+		unset($rows);
+
 		return $listViewRecordModels;
 	}
 
 	/**
-	 * Function to get the list view entries
-	 * @param Vtiger_Paging_Model $pagingModel
-	 * @return <Array> - Associative array of record id mapped to Vtiger_Record_Model instance.
+	 * ListView count.
+	 *
+	 * @return int
 	 */
 	public function getListViewCount()
 	{
-		$db = PearDatabase::getInstance();
+		$this->loadListViewCondition();
+		$query = $this->getQueryGenerator()->createQuery();
+		$query = $this->addLastImportedRecordConditions($query);
 
-		$queryGenerator = $this->get('query_generator');
-
-		$listQuery = $queryGenerator->getQuery();
-
-		$importedRecordIds = $this->getLastImportedRecord();
-		if (count($importedRecordIds) != 0) {
-			$moduleModel = $this->get('module');
-			$listQuery .= ' && ' . $moduleModel->basetable . '.' . $moduleModel->basetableid . ' IN (' . implode(',', $importedRecordIds) . ')';
-		}
-
-		$listResult = $db->pquery($listQuery, array());
-		return $db->num_rows($listResult);
+		return $query->count();
 	}
 
 	/**
-	 * Static Function to get the Instance of Vtiger ListView model for a given module and custom view
-	 * @param <String> $moduleName - Module Name
-	 * @param <Number> $viewId - Custom View Id
+	 * Static Function to get the Instance of Vtiger ListView model for a given module and custom view.
+	 *
+	 * @param string $moduleName - Module Name
+	 * @param int    $viewId     - Custom View Id
+	 *
 	 * @return Vtiger_ListView_Model instance
 	 */
 	public static function getInstance($moduleName, $viewId = '0')
 	{
-		$db = PearDatabase::getInstance();
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-
 		$modelClassName = Vtiger_Loader::getComponentClassName('Model', 'ListView', 'Import');
 		$instance = new $modelClassName();
-
 		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
-		$queryGenerator = new QueryGenerator($moduleModel->get('name'), $currentUser);
+		$queryGenerator = new \App\QueryGenerator($moduleModel->get('name'));
+		$queryGenerator->initForDefaultCustomView(true);
 
-		$customView = new CustomView();
-		$viewId = $customView->getViewIdByName('All', $moduleName);
-		$queryGenerator->initForCustomViewById($viewId);
-
-		$controller = new ListViewController($db, $currentUser, $queryGenerator);
-
-		return $instance->set('module', $moduleModel)->set('query_generator', $queryGenerator)->set('listview_controller', $controller);
+		return $instance->set('module', $moduleModel)->set('query_generator', $queryGenerator);
 	}
 
-	public function getLastImportedRecord()
+	/**
+	 * Function adds conditions to query.
+	 *
+	 * @param \App\Db\Query $query
+	 *
+	 * @return \App\Db\Query
+	 */
+	public function addLastImportedRecordConditions($query)
 	{
-		$db = PearDatabase::getInstance();
+		$moduleModel = $this->getModule();
+		$user = \App\User::getCurrentUserId();
+		$userDBTableName = Import_Module_Model::getDbTableName($user);
+		$query->innerJoin($userDBTableName, $moduleModel->basetable . '.' . $moduleModel->basetableid . " = $userDBTableName.recordid");
+		$query->where(['and', ['not', [$userDBTableName . '.temp_status' => [Import_Data_Action::IMPORT_RECORD_FAILED, Import_Data_Action::IMPORT_RECORD_SKIPPED]]], ['not', [$userDBTableName . '.recordid' => null]]]);
 
-		$user = Users_Record_Model::getCurrentUserModel();
-		$userDBTableName = Import_Utils_Helper::getDbTableName($user);
-		$query = sprintf('SELECT recordid FROM %s WHERE temp_status NOT IN (?,?) && recordid IS NOT NULL', $userDBTableName);
-		$result = $db->pquery($query, [Import_Data_Action::$IMPORT_RECORD_FAILED, Import_Data_Action::$IMPORT_RECORD_SKIPPED]);
-		$noOfRecords = $db->num_rows($result);
-
-		$importedRecordIds = array();
-		for ($i = 0; $i < $noOfRecords; ++$i) {
-			$importedRecordIds[] = $db->query_result($result, $i, 'recordid');
-		}
-		return $importedRecordIds;
+		return $query;
 	}
 }

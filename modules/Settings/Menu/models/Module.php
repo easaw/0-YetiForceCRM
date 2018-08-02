@@ -1,17 +1,22 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings menu module model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_Menu_Module_Model
 {
-
+	/**
+	 * Fields to edit.
+	 *
+	 * @var strung[]
+	 */
+	protected $editFields = [
+		'id', 'role', 'parentid', 'type', 'sequence', 'module', 'label', 'newwindow',
+		'dataurl', 'showicon', 'icon', 'sizeicon', 'hotkey', 'filters', 'edit',
+	];
 	protected $types = [
 		0 => 'Module',
 		1 => 'Shortcut',
@@ -25,20 +30,34 @@ class Settings_Menu_Module_Model
 	];
 
 	/**
-	 * Function to get instance
-	 * @param <Boolean> true/false
+	 * Function to get instance.
+	 *
+	 * @param bool true/false
+	 *
 	 * @return <Settings_Menu_Module_Model>
 	 */
 	public static function getInstance()
 	{
 		$instance = new self();
+
 		return $instance;
+	}
+
+	/**
+	 * Function to get editable fields.
+	 *
+	 * @return string[]
+	 */
+	public function getEditFields()
+	{
+		return $this->editFields;
 	}
 
 	public function getMenuTypes($key = false)
 	{
-		if ($key === false)
+		if ($key === false) {
 			return $this->types;
+		}
 		return $this->types[$key];
 	}
 
@@ -49,6 +68,7 @@ class Settings_Menu_Module_Model
 
 	public function getMenuName($row, $settings = false)
 	{
+		$name ='';
 		switch ($row['type']) {
 			case 0: $name = empty($row['label']) ? $row['name'] : $row['label'];
 				break;
@@ -58,17 +78,16 @@ class Settings_Menu_Module_Model
 				if ($row['label'] != '') {
 					$name = $row['label'];
 				} elseif ($settings) {
-					$name = vtranslate('LBL_QUICK_CREATE_MODULE', 'Menu') . ': ' . Vtiger_Menu_Model::vtranslateMenu('SINGLE_' . $row['name'], $row['name']);
+					$name = \App\Language::translate('LBL_QUICK_CREATE_MODULE', 'Menu') . ': ' . Vtiger_Menu_Model::vtranslateMenu('SINGLE_' . $row['name'], $row['name']);
 				}
 				break;
 			case 6: $name = 'LBL_HOME';
 				break;
 			case 7:
-				$adb = PearDatabase::getInstance();
-				$result = $adb->pquery('SELECT viewname,entitytype FROM vtiger_customview WHERE cvid=?', [$row['dataurl']]);
-				$data = $adb->raw_query_result_rowdata($result, 0);
+				$query = (new \App\Db\Query())->select('viewname, entitytype')->from('vtiger_customview')->where(['cvid' => $row['dataurl']]);
+				$data = $query->one();
 				if ($settings) {
-					$name = Vtiger_Menu_Model::vtranslateMenu($data['entitytype'], $data['entitytype']) . ': ' . vtranslate($data['viewname'], $data['entitytype']);
+					$name = Vtiger_Menu_Model::vtranslateMenu($data['entitytype'], $data['entitytype']) . ': ' . \App\Language::translate($data['viewname'], $data['entitytype']);
 				} else {
 					$name = Vtiger_Menu_Model::vtranslateMenu($data['viewname'], $data['entitytype']);
 				}
@@ -98,30 +117,39 @@ class Settings_Menu_Module_Model
 		return $url;
 	}
 
+	/**
+	 * Module list.
+	 *
+	 * @return array
+	 */
 	public function getModulesList()
 	{
-		$db = PearDatabase::getInstance();
-		$modules = [];
-		$result = $db->query("SELECT tabid,name FROM vtiger_tab WHERE name NOT "
-			. "IN ('Users','ModComments','Emails') && ( isentitytype = '1' || name IN ('Home','Reports','RecycleBin','OSSMail','Portal','Rss') ) ORDER BY name;");
-		while ($row = $db->fetch_array($result)) {
-			$modules[] = $row;
-		}
-		return $modules;
+		return (new \App\Db\Query())->select('tabid, name')->from('vtiger_tab')
+			->where(['not in', 'name', ['Users', 'ModComments']])
+			->andWhere(['or', ['isentitytype' => 1], ['name' => ['Home', 'OSSMail', 'Portal', 'Rss']]])
+			->orderBy('name')
+			->all();
 	}
 
-	public function getLastId()
+	public static function getLastId()
 	{
-		$db = PearDatabase::getInstance();
-		$result = $db->query('SELECT MAX(id) AS max FROM yetiforce_menu;');
-		return (int) $db->query_result_raw($result, 0, 'max');
+		$maxSequence = (new \App\Db\Query())
+			->from('yetiforce_menu')
+			->max('id');
+
+		return (int) $maxSequence;
 	}
 
+	/**
+	 * Function to get all filters.
+	 *
+	 * @return array
+	 */
 	public function getCustomViewList()
 	{
-		$db = PearDatabase::getInstance();
-		$list = $db->query('SELECT cvid,viewname,entitytype,vtiger_tab.tabid FROM vtiger_customview LEFT JOIN vtiger_tab ON vtiger_tab.name = vtiger_customview.entitytype');
-		$filters = $db->getArray($list);
+		$filters = (new \App\Db\Query())->select('cvid, viewname, entitytype, vtiger_tab.tabid')
+			->from('vtiger_customview')
+			->leftJoin('vtiger_tab', 'vtiger_tab.name = vtiger_customview.entitytype')->all();
 		foreach (Vtiger_Module_Model::getAll() as $module) {
 			$filterDir = 'modules' . DIRECTORY_SEPARATOR . $module->get('name') . DIRECTORY_SEPARATOR . 'filters';
 			if (file_exists($filterDir)) {
@@ -131,7 +159,7 @@ class Settings_Menu_Module_Model
 					$handlerClass = Vtiger_Loader::getComponentClassName('Filter', $name, $module->get('name'));
 					if (class_exists($handlerClass)) {
 						$filters[] = [
-							'viewname' => $handler->getViewName(),
+							'viewname' => (new $handlerClass())->getViewName(),
 							'cvid' => $name,
 							'entitytype' => $module->get('name'),
 							'tabid' => $module->getId(),

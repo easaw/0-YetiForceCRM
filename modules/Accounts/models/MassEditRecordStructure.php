@@ -9,7 +9,7 @@
  * *********************************************************************************** */
 
 /**
- * Mass Edit Record Structure Model
+ * Mass Edit Record Structure Model.
  */
 class Accounts_MassEditRecordStructure_Model extends Vtiger_MassEditRecordStructure_Model
 {
@@ -29,5 +29,3 @@ class Accounts_MassEditRecordStructure_Model extends Vtiger_MassEditRecordStruct
 		}
 	}
 }
-
-?>

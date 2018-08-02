@@ -6,129 +6,105 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com.
  * *********************************************************************************** */
+
 namespace vtlib;
 
 /**
- * Provides API to control Access like Sharing, Tools etc. for vtiger CRM Module
- * @package vtlib
+ * Provides API to control Access like Sharing, Tools etc. for vtiger CRM Module.
  */
 class Access
 {
-
-	/**
-	 * Helper function to log messages
-	 * @param String Message to log
-	 * @param Boolean true appends linebreak, false to avoid it
-	 * @access private
-	 */
-	static function log($message, $delim = true)
-	{
-		Utils::Log($message, $delim);
-	}
-
-	/**
-	 * Get unique id for sharing access record.
-	 * @access private
-	 */
-	static function __getDefaultSharingAccessId()
-	{
-		$adb = \PearDatabase::getInstance();
-		return $adb->getUniqueID('vtiger_def_org_share');
-	}
-
 	/**
 	 * Recalculate sharing access rules.
+	 *
 	 * @internal This function could take up lot of resource while execution
-	 * @access private
 	 */
-	static function syncSharingAccess()
+	public static function syncSharingAccess()
 	{
-		self::log("Recalculating sharing rules ... ", false);
-		RecalculateSharingRules();
-		self::log("DONE");
+		\App\Log::trace('Recalculating sharing rules ... ', __METHOD__);
+		\App\UserPrivilegesFile::recalculateAll();
+		\App\Log::trace('DONE', __METHOD__);
 	}
 
 	/**
-	 * Enable or Disable sharing access control to module
-	 * @param Module Instance of the module to use
-	 * @param Boolean true to enable sharing access, false disable sharing access
-	 * @access private
+	 * Enable or Disable sharing access control to module.
+	 *
+	 * @param ModuleBasic $moduleInstance
+	 * @param bool true to enable sharing access, false disable sharing access
 	 */
-	static function allowSharing($moduleInstance, $enable = true)
+	public static function allowSharing(ModuleBasic $moduleInstance, $enable = true)
 	{
-		$adb = \PearDatabase::getInstance();
-		$ownedby = $enable ? 0 : 1;
-		$adb->pquery("UPDATE vtiger_tab set ownedby=? WHERE tabid=?", Array($ownedby, $moduleInstance->id));
-		self::log(($enable ? "Enabled" : "Disabled") . " sharing access control ... DONE");
+		$ownedBy = $enable ? 0 : 1;
+		\App\Db::getInstance()->createCommand()->update('vtiger_tab', ['ownedby' => $ownedBy], ['tabid' => $moduleInstance->id])->execute();
+		\App\Log::trace(($enable ? 'Enabled' : 'Disabled') . ' sharing access control ... DONE', __METHOD__);
 	}
 
 	/**
 	 * Initialize sharing access.
-	 * @param Module Instance of the module to use
-	 * @access private
-	 * @internal This method is called from Module during creation.
+	 *
+	 * @param ModuleBasic $moduleInstance
+	 *
+	 * @internal This method is called from Module during creation
 	 */
-	static function initSharing($moduleInstance)
+	public static function initSharing(ModuleBasic $moduleInstance)
 	{
-		$adb = \PearDatabase::getInstance();
-
-		$result = $adb->query("SELECT share_action_id from vtiger_org_share_action_mapping WHERE share_action_name in
-			('Public: Read Only', 'Public: Read, Create/Edit', 'Public: Read, Create/Edit, Delete', 'Private')");
-		
-		$countResult = $adb->num_rows($result);
-		for ($index = 0; $index < $countResult; ++$index) {
-			$actionid = $adb->query_result($result, $index, 'share_action_id');
-			$adb->pquery("INSERT INTO vtiger_org_share_action2tab(share_action_id,tabid) VALUES(?,?)", Array($actionid, $moduleInstance->id));
+		$query = (new \App\Db\Query())->select(['share_action_id'])->from('vtiger_org_share_action_mapping')
+			->where(['share_action_name' => ['Public: Read Only', 'Public: Read, Create/Edit', 'Public: Read, Create/Edit, Delete', 'Private']]);
+		$actionIds = $query->column();
+		$insertedData = [];
+		foreach ($actionIds as $id) {
+			$insertedData[] = [$id, $moduleInstance->id];
 		}
-		self::log("Setting up sharing access options ... DONE");
+		\App\Db::getInstance()->createCommand()
+			->batchInsert('vtiger_org_share_action2tab', ['share_action_id', 'tabid'], $insertedData)
+			->execute();
+		\App\Log::trace('Setting up sharing access options ... DONE', __METHOD__);
 	}
 
 	/**
-	 * Delete sharing access setup for module
-	 * @param Module Instance of module to use
-	 * @access private
-	 * @internal This method is called from Module during deletion.
+	 * Delete sharing access setup for module.
+	 *
+	 * @param ModuleBasic $moduleInstance
+	 *
+	 * @internal This method is called from Module during deletion
 	 */
-	static function deleteSharing($moduleInstance)
+	public static function deleteSharing(ModuleBasic $moduleInstance)
 	{
-		$adb = \PearDatabase::getInstance();
-		$adb->pquery("DELETE FROM vtiger_org_share_action2tab WHERE tabid=?", Array($moduleInstance->id));
-		self::log("Deleting sharing access ... DONE");
+		\App\Db::getInstance()->createCommand()->delete('vtiger_org_share_action2tab', ['tabid' => $moduleInstance->id])->execute();
+		\App\Log::trace('Deleting sharing access ... DONE', __METHOD__);
 	}
 
 	/**
-	 * Set default sharing for a module
-	 * @param Module Instance of the module
-	 * @param String Permission text should be one of ['Public_ReadWriteDelete', 'Public_ReadOnly', 'Public_ReadWrite', 'Private']
-	 * @access private
+	 * Set default sharing for a module.
+	 *
+	 * @param ModuleBasic $moduleInstance
+	 * @param string Permission text should be one of ['Public_ReadWriteDelete', 'Public_ReadOnly', 'Public_ReadWrite', 'Private']
 	 */
-	static function setDefaultSharing($moduleInstance, $permission_text = 'Public_ReadWriteDelete')
+	public static function setDefaultSharing(ModuleBasic $moduleInstance, $permissionText = 'Public_ReadWriteDelete')
 	{
-		$adb = \PearDatabase::getInstance();
+		$permissionText = strtolower($permissionText);
 
-		$permission_text = strtolower($permission_text);
-
-		if ($permission_text == 'public_readonly')
+		if ($permissionText === 'public_readonly') {
 			$permission = 0;
-		else if ($permission_text == 'public_readwrite')
+		} elseif ($permissionText === 'public_readwrite') {
 			$permission = 1;
-		else if ($permission_text == 'public_readwritedelete')
+		} elseif ($permissionText === 'public_readwritedelete') {
 			$permission = 2;
-		else if ($permission_text == 'private')
+		} elseif ($permissionText === 'private') {
 			$permission = 3;
-		else
-			$permission = 2; // public_readwritedelete is default
+		} else {
+			$permission = 2;
+		} // public_readwritedelete is default
 
 		$editstatus = 0; // 0 or 1
 
-		$result = $adb->pquery("SELECT * FROM vtiger_def_org_share WHERE tabid=?", Array($moduleInstance->id));
-		if ($adb->num_rows($result)) {
-			$ruleid = $adb->query_result($result, 0, 'ruleid');
-			$adb->pquery("UPDATE vtiger_def_org_share SET permission=? WHERE ruleid=?", Array($permission, $ruleid));
+		$ruleId = (new \App\Db\Query())->select(['ruleid'])->from('vtiger_def_org_share')->where(['tabid' => $moduleInstance->id])->scalar();
+		if ($ruleId) {
+			\App\Db::getInstance()->createCommand()->update('vtiger_def_org_share', ['permission' => $permission], ['ruleid' => $ruleId])->execute();
 		} else {
-			$ruleid = self::__getDefaultSharingAccessId();
-			$adb->pquery("INSERT INTO vtiger_def_org_share (ruleid,tabid,permission,editstatus) VALUES(?,?,?,?)", Array($ruleid, $moduleInstance->id, $permission, $editstatus));
+			\App\Db::getInstance()->createCommand()->insert('vtiger_def_org_share', ['tabid' => $moduleInstance->id, 'permission' => $permission, 'editstatus' => $editstatus])->execute();
 		}
 
 		self::syncSharingAccess();
@@ -136,19 +112,16 @@ class Access
 
 	/**
 	 * Enable tool for module.
-	 * @param Module Instance of module to use
-	 * @param String Tool (action name) like Import, Export, Merge
-	 * @param Boolean true to enable tool, false to disable
-	 * @param Integer (optional) profile id to use, false applies to all profile.
-	 * @access private
+	 *
+	 * @param ModuleBasic $moduleInstance
+	 * @param string Tool (action name) like Import, Export
+	 * @param bool true to enable tool, false to disable
+	 * @param int (optional) profile id to use, false applies to all profile
 	 */
-	static function updateTool($moduleInstance, $toolAction, $flag, $profileid = false)
+	public static function updateTool(ModuleBasic $moduleInstance, $toolAction, $flag, $profileid = false)
 	{
-		$adb = \PearDatabase::getInstance();
-
-		$result = $adb->pquery("SELECT actionid FROM vtiger_actionmapping WHERE actionname=?", Array($toolAction));
-		if ($adb->num_rows($result)) {
-			$actionid = $adb->query_result($result, 0, 'actionid');
+		$actionId = \App\Module::getActionId($toolAction);
+		if ($actionId) {
 			$permission = ($flag === true) ? '0' : '1';
 
 			$profileids = [];
@@ -158,33 +131,31 @@ class Access
 				$profileids = Profile::getAllIds();
 			}
 
-			self::log(($flag ? 'Enabling' : 'Disabling') . " $toolAction for Profile [", false);
-
-			foreach ($profileids as $useprofileid) {
-				$result = $adb->pquery("SELECT permission FROM vtiger_profile2utility WHERE profileid=? && tabid=? && activityid=?", Array($useprofileid, $moduleInstance->id, $actionid));
-				if ($adb->num_rows($result)) {
-					$curpermission = $adb->query_result($result, 0, 'permission');
-					if ($curpermission != $permission) {
-						$adb->pquery("UPDATE vtiger_profile2utility set permission=? WHERE profileid=? && tabid=? && activityid=?", Array($permission, $useprofileid, $moduleInstance->id, $actionid));
-					}
+			\App\Log::trace(($flag ? 'Enabling' : 'Disabling') . " $toolAction for Profile [", __METHOD__);
+			$db = \App\Db::getInstance();
+			foreach ($profileids as &$useProfileId) {
+				$isExists = (new \App\Db\Query())->from('vtiger_profile2utility')
+					->where(['profileid' => $useProfileId, 'tabid' => $moduleInstance->id, 'activityid' => $actionId])
+					->exists();
+				if ($isExists) {
+					$db->createCommand()->update('vtiger_profile2utility', ['permission' => $permission], ['profileid' => $useProfileId, 'tabid' => $moduleInstance->id, 'activityid' => $actionId])->execute();
 				} else {
-					$adb->pquery("INSERT INTO vtiger_profile2utility (profileid, tabid, activityid, permission) VALUES(?,?,?,?)", Array($useprofileid, $moduleInstance->id, $actionid, $permission));
+					$db->createCommand()->insert('vtiger_profile2utility', ['profileid' => $useProfileId, 'tabid' => $moduleInstance->id, 'activityid' => $actionId, 'permission' => $permission])->execute();
 				}
-
-				self::log("$useprofileid,", false);
+				\App\Log::trace("$useProfileId,", __METHOD__);
 			}
-			self::log("] ... DONE");
+			\App\Log::trace('] ... DONE', __METHOD__);
 		}
 	}
 
 	/**
-	 * Delete tool (actions) of the module
-	 * @param Module Instance of module to use
+	 * Delete tool (actions) of the module.
+	 *
+	 * @param ModuleBasic $moduleInstance
 	 */
-	static function deleteTools($moduleInstance)
+	public static function deleteTools(ModuleBasic $moduleInstance)
 	{
-		$adb = \PearDatabase::getInstance();
-		$adb->pquery("DELETE FROM vtiger_profile2utility WHERE tabid=?", Array($moduleInstance->id));
-		self::log("Deleting tools ... DONE");
+		\App\Db::getInstance()->createCommand()->delete('vtiger_profile2utility', ['tabid' => $moduleInstance->id])->execute();
+		\App\Log::trace('Deleting tools ... DONE', __METHOD__);
 	}
 }

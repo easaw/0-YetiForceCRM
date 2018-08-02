@@ -6,107 +6,194 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
-AppConfig::iniSet("auto_detect_line_endings", true);
 
 class Import_CSVReader_Reader extends Import_FileReader_Reader
 {
+	/**
+	 * Parsed file data.
+	 *
+	 * @var array
+	 */
+	private $data;
 
-	public function arrayCombine($key, $value)
+	/**
+	 * Import_CSVReader_Reader constructor.
+	 *
+	 * @param \App\Request $request
+	 * @param \App\User    $user
+	 */
+	public function __construct(\App\Request $request, \App\User $user)
 	{
-		$combine = array();
-		$dup = array();
-		$countKey = count($key);
-		for ($i = 0; $i < $countKey; $i++) {
-			if (array_key_exists($key[$i], $combine)) {
-				if (!$dup[$key[$i]])
-					$dup[$key[$i]] = 1;
-				$key[$i] = $key[$i] . "(" . ++$dup[$key[$i]] . ")";
+		parent::__construct($request, $user);
+		$this->data = \KzykHys\CsvParser\CsvParser::fromFile($this->getFilePath(), [
+			'encoding' => $this->request->get('file_encoding'),
+			'delimiter' => $this->request->get('delimiter'),
+		])->parse();
+	}
+
+	/**
+	 * Creates a table using one table's values as keys, and the other's as values.
+	 *
+	 * @param array $keys
+	 * @param array $values
+	 *
+	 * @return array
+	 */
+	public function arrayCombine($keys, $values)
+	{
+		$combine = $dup = [];
+		foreach ($keys as $key => $keyData) {
+			if (isset($combine[$keyData])) {
+				if (!isset($dup[$keyData])) {
+					$dup[$keyData] = 1;
+				}
+				$keyData = $keyData . '(' . ++$dup[$keyData] . ')';
 			}
-			$combine[$key[$i]] = $value[$i];
+			$combine[$keyData] = $values[$key];
 		}
 		return $combine;
 	}
 
+	/**
+	 * Function gets data of the first record to import.
+	 *
+	 * @param bool $hasHeader
+	 *
+	 * @return array
+	 */
 	public function getFirstRowData($hasHeader = true)
 	{
-		global $default_charset;
-
-		$fileHandler = $this->getFileHandler();
-
-		$headers = array();
-		$firstRowData = array();
-		$currentRow = 0;
-		while ($data = fgetcsv($fileHandler, 0, $this->request->get('delimiter'))) {
-			if ($currentRow == 0 || ($currentRow == 1 && $hasHeader)) {
-				if ($hasHeader && $currentRow == 0) {
+		$defaultCharset = \AppConfig::main('default_charset', 'UTF-8');
+		if ($this->moduleModel->isInventory()) {
+			$isInventory = true;
+		}
+		$rowData = $headers = $standardData = $inventoryData = [];
+		foreach ($this->data as $currentRow => $data) {
+			if ($currentRow === 0 || ($currentRow === 1 && $hasHeader)) {
+				if ($hasHeader && $currentRow === 0) {
 					foreach ($data as $key => $value) {
-						$headers[$key] = $this->convertCharacterEncoding($value, $this->request->get('file_encoding'), $default_charset);
+						if (!empty($isInventory) && strpos($value, 'Inventory::') === 0) {
+							$value = substr($value, 11);
+							$inventoryHeaders[$key] = $this->convertCharacterEncoding($value, $this->request->get('file_encoding'), $defaultCharset);
+						} else {
+							$headers[$key] = $this->convertCharacterEncoding($value, $this->request->get('file_encoding'), $defaultCharset);
+						}
 					}
 				} else {
 					foreach ($data as $key => $value) {
-						$firstRowData[$key] = $this->convertCharacterEncoding($value, $this->request->get('file_encoding'), $default_charset);
+						if (!empty($isInventory) && isset($inventoryHeaders[$key])) {
+							$inventoryData[$key] = $this->convertCharacterEncoding($value, $this->request->get('file_encoding'), $defaultCharset);
+						} else {
+							$standardData[$key] = $this->convertCharacterEncoding($value, $this->request->get('file_encoding'), $defaultCharset);
+						}
 					}
 					break;
 				}
 			}
-			$currentRow++;
 		}
 
 		if ($hasHeader) {
-			$noOfHeaders = count($headers);
-			$noOfFirstRowData = count($firstRowData);
-			// Adjust first row data to get in sync with the number of headers
-			if ($noOfHeaders > $noOfFirstRowData) {
-				$firstRowData = array_merge($firstRowData, array_fill($noOfFirstRowData, $noOfHeaders - $noOfFirstRowData, ''));
-			} elseif ($noOfHeaders < $noOfFirstRowData) {
-				$firstRowData = array_slice($firstRowData, 0, count($headers), true);
+			$standardData = $this->syncRowData($headers, $standardData);
+			$rowData['LBL_STANDARD_FIELDS'] = $this->arrayCombine($headers, $standardData);
+			if ($inventoryData) {
+				$standardData = $this->syncRowData($inventoryHeaders, $inventoryData);
+				$rowData['LBL_INVENTORY_FIELDS'] = $this->arrayCombine($inventoryHeaders, $inventoryData);
 			}
-			$rowData = $this->arrayCombine($headers, $firstRowData);
 		} else {
-			$rowData = $firstRowData;
+			$rowData = $standardData;
 		}
-
-		unset($fileHandler);
 		return $rowData;
 	}
 
+	/**
+	 * Adjust first row data to get in sync with the number of headers.
+	 *
+	 * @param array $keys
+	 * @param array $values
+	 *
+	 * @return array
+	 */
+	public function syncRowData($keys, $values)
+	{
+		$noOfHeaders = count($keys);
+		$noOfFirstRowData = count($values);
+		if ($noOfHeaders > $noOfFirstRowData) {
+			$values = array_merge($values, array_fill($noOfFirstRowData, $noOfHeaders - $noOfFirstRowData, ''));
+		} elseif ($noOfHeaders < $noOfFirstRowData) {
+			$values = array_slice($values, 0, count($keys), true);
+		}
+		return $values;
+	}
+
+	/**
+	 * Function creates tables for import in database.
+	 */
 	public function read()
 	{
-		global $default_charset;
-
-		$fileHandler = $this->getFileHandler();
-		$temp_status = $this->createTable();
-		if (!$temp_status) {
-			return false;
-		}
-
+		$defaultCharset = AppConfig::main('default_charset');
+		$this->createTable();
 		$fieldMapping = $this->request->get('field_mapping');
-
-		$i = -1;
-		while ($data = fgetcsv($fileHandler, 0, $this->request->get('delimiter'))) {
-			$i++;
-			if ($this->request->get('has_header') && $i == 0)
+		$inventoryFieldMapping = $this->request->get('inventory_field_mapping');
+		if ($this->moduleModel->isInventory()) {
+			$inventoryFieldModel = Vtiger_InventoryField_Model::getInstance($this->moduleModel->getName());
+			$inventoryFields = $inventoryFieldModel->getFields();
+		}
+		$skip = $importId = $skipData = false;
+		foreach ($this->data as $i => $data) {
+			if ($this->request->get('has_header') && $i === 0) {
+				foreach ($data as $index => $fullName) {
+					if ($this->moduleModel->isInventory() && strpos($fullName, 'Inventory::') === 0) {
+						$name = substr($fullName, 11);
+						if ($name !== 'recordIteration') {
+							$inventoryNames[$index] = $name;
+						} else {
+							$skip = $index;
+						}
+					}
+				}
 				continue;
-			$mappedData = array();
+			}
+			$mappedData = $inventoryMappedData = [];
 			$allValuesEmpty = true;
 			foreach ($fieldMapping as $fieldName => $index) {
 				$fieldValue = $data[$index];
-				$mappedData[$fieldName] = $fieldValue;
-				if ($this->request->get('file_encoding') != $default_charset) {
-					$mappedData[$fieldName] = $this->convertCharacterEncoding($fieldValue, $this->request->get('file_encoding'), $default_charset);
+				if ($this->request->get('file_encoding') !== $defaultCharset) {
+					$fieldValue = $this->convertCharacterEncoding($fieldValue, $this->request->get('file_encoding'), $defaultCharset);
 				}
-				if (!empty($fieldValue))
+				$fieldValueTemp = $fieldValue;
+				$fieldValueTemp = str_replace(',', '.', $fieldValueTemp);
+				if (is_numeric($fieldValueTemp)) {
+					$fieldValue = $fieldValueTemp;
+				}
+				$mappedData[$fieldName] = $fieldValue;
+				if (!empty($fieldValue)) {
 					$allValuesEmpty = false;
+				}
 			}
-			if ($allValuesEmpty)
-				continue;
-			$fieldNames = array_keys($mappedData);
-			$fieldValues = array_values($mappedData);
-			$this->addRecordToDB($fieldNames, $fieldValues);
+			foreach ($inventoryFieldMapping as $fieldName => $index) {
+				$fieldValue = $data[$index];
+				$inventoryMappedData[$i][$fieldName] = $fieldValue;
+				$fieldModel = $inventoryFields[$fieldName];
+				foreach ($fieldModel->getCustomColumn() as $columnParamsName => $dataType) {
+					if (in_array($columnParamsName, $inventoryNames)) {
+						$key = array_search($columnParamsName, $inventoryNames);
+						$inventoryMappedData[$i][$columnParamsName] = $data[$key];
+					}
+				}
+			}
+			if (!$allValuesEmpty) {
+				if (!$skip || !$importId || ($skip && $skipData !== $data[$skip])) {
+					$importId = $this->addRecordToDB($mappedData);
+				}
+				if ($importId && $inventoryMappedData) {
+					$this->addInventoryToDB($inventoryMappedData, $importId);
+				}
+				if ($skip) {
+					$skipData = $data[$skip];
+				}
+			}
 		}
-		unset($fileHandler);
 	}
 }
-
-?>

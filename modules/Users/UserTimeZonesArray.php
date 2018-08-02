@@ -15,10 +15,9 @@
 
 class UserTimeZones
 {
-
-	public function userTimeZones()
+	public static function getTimeZones()
 	{
-		$arrayOfSupportedTimeZones = array(
+		return [
 			'Pacific/Midway',
 			'Pacific/Samoa',
 			'Pacific/Honolulu',
@@ -114,10 +113,7 @@ class UserTimeZones
 			'Asia/Kamchatka',
 			'Pacific/Auckland',
 			'Asia/Magadan',
-			'Pacific/Tongatapu'
-		);
-		return $arrayOfSupportedTimeZones;
+			'Pacific/Tongatapu',
+		];
 	}
 }
-
-?>

@@ -11,145 +11,130 @@
 
 class HelpDesk_TicketsByStatus_Dashboard extends Vtiger_IndexAjax_View
 {
-
 	private $conditions = false;
 
 	public function getSearchParams($value, $assignedto = '')
 	{
-
 		$listSearchParams = [];
-		$conditions = array(array('ticketstatus', 'e', $value));
-		if (!empty($assignedto))
-			array_push($conditions, array('assigned_user_id', 'e', $assignedto));
+		$conditions = [['ticketstatus', 'e', $value]];
+		if (!empty($assignedto)) {
+			array_push($conditions, ['assigned_user_id', 'e', $assignedto]);
+		}
 		$listSearchParams[] = $conditions;
 		return '&viewname=All&search_params=' . json_encode($listSearchParams);
 	}
 
 	/**
-	 * Function returns Tickets grouped by Status
-	 * @param type $data
-	 * @return <Array>
+	 * Function returns Tickets grouped by Status.
+	 *
+	 * @param int $owner
+	 *
+	 * @return array
 	 */
 	public function getTicketsByStatus($owner)
 	{
-		$db = PearDatabase::getInstance();
 		$moduleName = 'HelpDesk';
-		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
 		$ticketStatus = Settings_SupportProcesses_Module_Model::getTicketStatusNotModify();
-		$params = [];
+		$query = new \App\Db\Query();
+		$query->select([
+				'vtiger_troubletickets.priority',
+				'vtiger_ticketpriorities.ticketpriorities_id',
+				'count' => new \yii\db\Expression('COUNT(*)'),
+				'statusvalue' => new \yii\db\Expression("CASE WHEN vtiger_troubletickets.status IS NULL OR vtiger_troubletickets.status = '' THEN '' ELSE vtiger_troubletickets.status END"), ])
+				->from('vtiger_troubletickets')
+				->innerJoin('vtiger_crmentity', 'vtiger_troubletickets.ticketid = vtiger_crmentity.crmid')
+				->innerJoin('vtiger_ticketstatus', 'vtiger_troubletickets.status = vtiger_ticketstatus.ticketstatus')
+				->innerJoin('vtiger_ticketpriorities', 'vtiger_troubletickets.priority = vtiger_ticketpriorities.ticketpriorities')
+				->where(['vtiger_crmentity.deleted' => 0]);
 
-		$sql = 'SELECT COUNT(*) as count
-					, priority, vtiger_ticketpriorities.color,
-					CASE WHEN vtiger_troubletickets.status IS NULL || vtiger_troubletickets.status = "" THEN "" ELSE vtiger_troubletickets.status END AS statusvalue 
-				FROM
-					vtiger_troubletickets
-				INNER JOIN vtiger_crmentity
-					ON vtiger_troubletickets.ticketid = vtiger_crmentity.crmid && vtiger_crmentity.deleted=0
-				INNER JOIN vtiger_ticketstatus
-					ON vtiger_troubletickets.status = vtiger_ticketstatus.ticketstatus
-				INNER JOIN vtiger_ticketpriorities
-					ON vtiger_ticketpriorities.`ticketpriorities` = vtiger_troubletickets.`priority`
-				WHERE
-					vtiger_crmentity.`deleted` = 0';
 		if (!empty($owner)) {
-			$sql .= ' && smownerid = ' . $owner;
+			$query->andWhere(['smownerid' => $owner]);
 		}
 		if (!empty($ticketStatus)) {
-			$ticketStatusSearch = implode("','", $ticketStatus);
-			$sql .= " && vtiger_troubletickets.status NOT IN ('$ticketStatusSearch')";
-			$this->conditions = ['vtiger_troubletickets.status', "'$ticketStatusSearch'", 'nin', QueryGenerator::$AND];
+			$query->andWhere(['not in', 'vtiger_troubletickets.status', $ticketStatus]);
+			$this->conditions = ['condition' => ['not in', 'vtiger_troubletickets.status', $ticketStatus]];
 		}
-		$sql.= \App\PrivilegeQuery::getAccessConditions($moduleName);
-		$sql .= ' GROUP BY statusvalue, priority ORDER BY vtiger_ticketstatus.sortorderid';
-
-		$result = $db->query($sql);
-		$colors = $status = $priorities = $tickets = $response = [];
+		\App\PrivilegeQuery::getConditions($query, $moduleName);
+		$query->groupBy(['statusvalue', 'vtiger_troubletickets.priority', 'vtiger_ticketpriorities.ticketpriorities_id', 'vtiger_ticketstatus.sortorderid'])->orderBy('vtiger_ticketstatus.sortorderid');
+		$dataReader = $query->createCommand()->query();
+		$status = $priorities = $tickets = [];
 		$counter = 0;
-
-		while ($row = $db->getRow($result)) {
-			$tickets[$row['statusvalue']][$row['priority']] = $row['count'];
-			if (!array_key_exists($row['priority'], $priorities)) {
-				$priorities[$row['priority']] = $counter++;
-				$colors[$row['priority']] = $row['color'];
+		$colors = \App\Fields\Picklist::getColors('ticketpriorities');
+		$chartData = [
+			'labels' => [],
+			'datasets' => [],
+			'show_chart' => false,
+		];
+		while ($row = $dataReader->read()) {
+			$tickets[$row['statusvalue']][$row['ticketpriorities_id']] = $row['count'];
+			if (!array_key_exists($row['ticketpriorities_id'], $priorities)) {
+				$priorities[$row['ticketpriorities_id']] = ++$counter;
+				// datasets stacked by priority (status is X, bar divided by priority)
+				$chartData['datasets'][] = [
+					'data' => [],
+					'label' => \App\Language::translate($row['priority'], $moduleName),
+					'backgroundColor' => [],
+					'names' => [],
+					'links' => [],
+					'_priorityId' => $row['ticketpriorities_id'],
+				];
 			}
-			if (!in_array($row['statusvalue'], $status))
+			if (!in_array($row['statusvalue'], $status)) {
 				$status[] = $row['statusvalue'];
+			}
 		}
+		$dataReader->close();
 		if (!empty($tickets)) {
-			$counter = 0;
-			$result = [];
-
-			foreach ($tickets as $ticketKey => $ticketValue) {
-				foreach ($priorities as $priorityKey => $priorityValue) {
-					$result[$priorityValue]['data'][$counter][0] = $counter;
-					$result[$priorityValue]['label'] = vtranslate($priorityKey, 'HelpDesk');
-					$result[$priorityValue]['color'] = $colors[$priorityKey];
-					if ($ticketValue[$priorityKey]) {
-						$result[$priorityValue]['data'][$counter][1] = $ticketValue[$priorityKey];
+			$chartData['show_chart'] = true;
+			foreach ($tickets as $status => $ticketValue) {
+				foreach ($priorities as $priorityId => $priorityValue) {
+					if ($ticketValue[$priorityId]) {
+						$value = $ticketValue[$priorityId];
 					} else {
-						$result[$priorityValue]['data'][$counter][1] = 0;
+						$value = 0;
+					}
+					foreach ($chartData['datasets'] as &$dataset) {
+						if ($dataset['_priorityId'] === $priorityId) {
+							$dataset['data'][] = $value;
+							$dataset['names'][] = $status;
+							$dataset['backgroundColor'][] = $colors[$priorityId];
+							break;
+						}
 					}
 				}
-				$counter++;
+				$chartData['labels'][] = App\Language::translate($status, $moduleName);
 			}
-
-			$ticks = [];
-			foreach ($status as $key => $value) {
-				$newArray = [$key, vtranslate($value, 'HelpDesk')];
-				array_push($ticks, $newArray);
-				$name[] = $value;
-			}
-
-			$response['chart'] = $result;
-			$response['ticks'] = $ticks;
-			$response['name'] = $name;
 		}
-		return $response;
+		return $chartData;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-
-		$linkId = $request->get('linkid');
-		$data = $request->get('data');
-		$createdTime = $request->get('createdtime');
-		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
-		if (!$request->has('owner'))
+		$widget = Vtiger_Widget_Model::getInstance($request->getInteger('linkid'), \App\User::getCurrentUserId());
+		if (!$request->has('owner')) {
 			$owner = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget, $moduleName);
-		else
-			$owner = $request->get('owner');
+		} else {
+			$owner = $request->getByType('owner', 2);
+		}
 		$ownerForwarded = $owner;
-		if ($owner == 'all')
+		if ($owner == 'all') {
 			$owner = '';
-
-		//Date conversion from user to database format
-		if (!empty($createdTime)) {
-			$dates['start'] = Vtiger_Date_UIType::getDBInsertedValue($createdTime['start']);
-			$dates['end'] = Vtiger_Date_UIType::getDBInsertedValue($createdTime['end']);
 		}
-
-		$moduleModel = Vtiger_Module_Model::getInstance($moduleName);
 		$data = ($owner === false) ? [] : $this->getTicketsByStatus($owner);
-
-		$listViewUrl = $moduleModel->getListViewUrl();
-		$statusmount = count($data['name']);
-		for ($i = 0; $i < $statusmount; $i++) {
-			$data['links'][$i][0] = $i;
-			$data['links'][$i][1] = $listViewUrl . $this->getSearchParams($data['name'][$i], $owner);
+		$listViewUrl = Vtiger_Module_Model::getInstance($moduleName)->getListViewUrl();
+		foreach ($data['datasets'] as &$dataset) {
+			foreach ($dataset['names'] as $name) {
+				$dataset['links'][] = $listViewUrl . $this->getSearchParams($name, $owner);
+			}
 		}
-
 		$viewer->assign('USER_CONDITIONS', $this->conditions);
 		$viewer->assign('WIDGET', $widget);
 		$viewer->assign('MODULE_NAME', $moduleName);
 		$viewer->assign('DATA', $data);
-		$viewer->assign('CURRENTUSER', $currentUser);
 		$viewer->assign('OWNER', $ownerForwarded);
-
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/DashBoardWidgetContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/TicketsByStatus.tpl', $moduleName);

@@ -1,22 +1,22 @@
 <?php
 
 /**
- * Returns special functions for PDF Settings
- * @package YetiForce.Action
- * @license licenses/License.html
+ * Returns special functions for PDF Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_PDF_Watermark_Action extends Settings_Vtiger_Index_Action
 {
-
 	public function __construct()
 	{
-		$this->exposeMethod('Delete');
-		$this->exposeMethod('Upload');
+		$this->exposeMethod('delete');
+		$this->exposeMethod('upload');
 	}
 
-	public function Delete(Vtiger_Request $request)
+	public function delete(\App\Request $request)
 	{
 		$recordId = $request->get('id');
 		$pdfModel = Vtiger_PDF_Model::getInstanceById($recordId);
@@ -27,7 +27,7 @@ class Settings_PDF_Watermark_Action extends Settings_Vtiger_Index_Action
 		$response->emit();
 	}
 
-	public function Upload(Vtiger_Request $request)
+	public function upload(\App\Request $request)
 	{
 		$templateId = $request->get('template_id');
 		$newName = basename($_FILES['watermark']['name'][0]);
@@ -37,29 +37,30 @@ class Settings_PDF_Watermark_Action extends Settings_Vtiger_Index_Action
 		$targetFile = $targetDir . $newName;
 		$uploadOk = 1;
 
-		$fileInstance = \includes\fields\File::loadFromPath($_FILES['watermark']['tmp_name'][0]);
+		$fileInstance = \App\Fields\File::loadFromPath($_FILES['watermark']['tmp_name'][0]);
 		if (!$fileInstance->validate('image')) {
 			$uploadOk = 0;
 		}
 
 		// Check allowed upload file size
-		if ($uploadOk && $_FILES['watermark']['size'][0] > vglobal('upload_maxsize')) {
+		if ($uploadOk && $_FILES['watermark']['size'][0] > \AppConfig::main('upload_maxsize')) {
 			$uploadOk = 0;
 		}
 		// Check if $uploadOk is set to 0 by an error
-		if ($uploadOk == 1) {
-			$db = PearDatabase::getInstance();
-			$query = 'SELECT `watermark_image` FROM `a_yf_pdf` WHERE `pdfid` = ? LIMIT 1;';
-			$result = $db->pquery($query, [$templateId]);
-			$watermarkImage = $db->getSingleValue($result);
-
+		if ($uploadOk === 1) {
+			$db = App\Db::getInstance('admin');
+			$watermarkImage = (new \App\Db\Query())->select('watermark_image')
+				->from('a_#__pdf')
+				->where(['pdfid' => $templateId])
+				->scalar($db);
 			if (file_exists($watermarkImage)) {
 				unlink($watermarkImage);
 			}
 			// successful upload
 			if ($fileInstance->moveFile($targetFile)) {
-				$query = 'UPDATE `a_yf_pdf` SET `watermark_image` = ? WHERE `pdfid` = ? LIMIT 1;';
-				$db = $db->pquery($query, [$targetFile, $templateId]);
+				$db->createCommand()
+					->update('a_#__pdf', ['watermark_image' => $targetFile], ['pdfid' => $templateId])
+					->execute();
 			}
 		}
 	}

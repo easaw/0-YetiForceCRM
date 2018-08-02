@@ -1,25 +1,24 @@
 <?php
 
 /**
- * Api CalDAV Handler Class
- * @package YetiForce.Handlers
- * @license licenses/License.html
+ * Api CalDAV Handler Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-class API_CalDAV_Handler extends VTEventHandler
+class API_CalDAV_Handler
 {
-
-	public function handleEvent($eventName, $entityData)
+	/**
+	 * EntityAfterSave handler function.
+	 *
+	 * @param App\EventHandler $eventHandler
+	 */
+	public function entityAfterSave(App\EventHandler $eventHandler)
 	{
-		if ($eventName == 'vtiger.entity.aftersave.final') {
-			$adb = PearDatabase::getInstance();
-			
-			$recordId = $entityData->getId();
-			$moduleName = $entityData->getModuleName();
-			$isNew = $entityData->isNew();
-			if (!$isNew && in_array($moduleName, ['Events', 'Calendar'])) {
-				$adb->pquery('UPDATE vtiger_activity SET dav_status = ? WHERE activityid = ?', array(1, $recordId));
-			}
+		$recordModel = $eventHandler->getRecordModel();
+		if (!$recordModel->isNew()) {
+			\App\Db::getInstance()->createCommand()->update('vtiger_activity', ['dav_status' => 1], ['activityid' => $recordModel->getId()])->execute();
 		}
 	}
 }

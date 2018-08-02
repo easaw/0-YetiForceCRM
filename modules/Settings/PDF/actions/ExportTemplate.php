@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Export to XML Class for PDF Settings
- * @package YetiForce.Action
- * @license licenses/License.html
+ * Export to XML Class for PDF Settings.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Maciej Stencel <m.stencel@yetiforce.com>
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Settings_PDF_ExportTemplate_Action extends Settings_Vtiger_Index_Action
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$recordId = $request->get('id');
 		$pdfModel = Vtiger_PDF_Model::getInstanceById($recordId);
@@ -18,7 +18,7 @@ class Settings_PDF_ExportTemplate_Action extends Settings_Vtiger_Index_Action
 		header('content-type: application/xml; charset=utf-8');
 		header('Pragma: public');
 		header('Cache-Control: private');
-		header('Content-Disposition: attachment; filename=' . $recordId . '_pdftemplate.xml');
+		header('Content-Disposition: attachment; filename="' . $recordId . '_pdftemplate.xml"');
 		header('Content-Description: PHP Generated Data');
 
 		$xml = new DOMDocument('1.0', 'utf-8');
@@ -57,6 +57,14 @@ class Settings_PDF_ExportTemplate_Action extends Settings_Vtiger_Index_Action
 		$xmlFields->appendChild($xmlField);
 		$xmlTemplate->appendChild($xmlFields);
 		$xml->appendChild($xmlTemplate);
-		print $xml->saveXML();
+		echo $xml->saveXML();
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function validateRequest(\App\Request $request)
+	{
+		$request->validateReadAccess();
 	}
 }

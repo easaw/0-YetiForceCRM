@@ -16,22 +16,8 @@
 	{foreach key=index item=jsModel from=$SCRIPTS}
 		<script type="{$jsModel->getType()}" src="{$jsModel->getSrc()}"></script>
 	{/foreach}
-	<div class="row">
-		<div class="col-md-8">
-			<div class="dashboardTitle" title="{vtranslate($WIDGET->getTitle(), $MODULE_NAME)}"><strong>&nbsp;&nbsp;{vtranslate($WIDGET->getTitle(), $MODULE_NAME)}</strong></div>
-		</div>
-		<div class="col-md-4">
-			<div class="box pull-right">
-				{include file="dashboards/DashboardHeaderIcons.tpl"|@vtemplate_path:$MODULE_NAME}
-			</div>
-		</div>
-	</div>
-	<hr class="widgetHr"/>
-	<div class="row" >
-		<div class="col-md-12">
-			<div class="pull-right">
-				&nbsp;
-			</div>
-		</div>
+	<div class="d-flex flex-row flex-nowrap no-gutters justify-content-between">
+		{include file=\App\Layout::getTemplatePath('dashboards/WidgetHeaderTitle.tpl', $MODULE_NAME)}
+		{include file=\App\Layout::getTemplatePath('dashboards/WidgetHeaderButtons.tpl', $MODULE_NAME)}
 	</div>
 {/strip}

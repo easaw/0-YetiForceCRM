@@ -1,45 +1,35 @@
 <?php
 
 /**
- * 
- * @package YetiForce.Model
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class Settings_WebserviceApps_Module_Model extends Settings_Vtiger_Module_Model
 {
-
-	static public function getTypes()
+	/**
+	 * Webservice apps types.
+	 *
+	 * @return string[]
+	 */
+	public static function getTypes()
 	{
-		return ['Portal', 'POS'];
+		return ['Portal'];
 	}
 
-	static public function getServers()
+	public static function getServers()
 	{
-		$db = PearDatabase::getInstance();
-		$query = 'SELECT * FROM w_yf_servers';
-		$result = $db->query($query);
-		$listServers = [];
-		while ($row = $db->getRow($result)) {
-			$listServers[$row['id']] = $row;
-		}
-		return $listServers;
+		return (new \App\Db\Query())->from('w_#__servers')
+			->createCommand(\App\Db::getInstance('webservice'))
+			->queryAllByGroup(1);
 	}
 
-	static public function getActiveServers($type = '')
+	public static function getActiveServers($type = '')
 	{
-		$db = PearDatabase::getInstance();
-		$query = 'SELECT * FROM w_yf_servers WHERE status = ?';
-		$params[] = 1;
+		$query = (new \App\Db\Query())->from('w_#__servers')->andWhere(['status' => 1]);
 		if (!empty($type)) {
-			$params[] = $type;
-			$query.= ' && type = ?';
+			$query->andWhere(['type' => $type]);
 		}
-		$result = $db->pquery($query, $params);
-		$listServers = [];
-		while ($row = $db->getRow($result)) {
-			$listServers[$row['id']] = $row;
-		}
-		return $listServers;
+		return $query->createCommand(\App\Db::getInstance('webservice'))->queryAllByGroup(1);
 	}
 }

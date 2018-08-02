@@ -10,9 +10,9 @@
 
 class Users_QuickCreateRecordStructure_Model extends Vtiger_QuickCreateRecordStructure_Model
 {
-
 	/**
-	 * Function to get the values in stuctured format
+	 * Function to get the values in stuctured format.
+	 *
 	 * @return <array> - values in structure array('block'=>array(fieldinfo));
 	 */
 	public function getStructure()
@@ -21,12 +21,12 @@ class Users_QuickCreateRecordStructure_Model extends Vtiger_QuickCreateRecordStr
 			return $this->structuredValues;
 		}
 
-		$values = array();
+		$values = [];
 		$recordModel = $this->getRecord();
 		$moduleModel = $this->getModule();
 
-		$fieldModelList = array();
-		$quickCreateFields = array('user_name', 'email1', 'first_name', 'last_name', 'user_password', 'confirm_password', 'roleid', 'is_admin', 'status');
+		$fieldModelList = [];
+		$quickCreateFields = ['user_name', 'email1', 'first_name', 'last_name', 'user_password', 'confirm_password', 'roleid', 'is_admin', 'status'];
 		foreach ($quickCreateFields as $field) {
 			$fieldModelList[$field] = $moduleModel->getField($field);
 		}
@@ -44,6 +44,7 @@ class Users_QuickCreateRecordStructure_Model extends Vtiger_QuickCreateRecordStr
 			$values[$fieldName] = $fieldModel;
 		}
 		$this->structuredValues = $values;
+
 		return $values;
 	}
 }

@@ -10,62 +10,105 @@
 
 class Vtiger_Owner_UIType extends Vtiger_Base_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
+	public function getDBValue($value, $recordModel = false)
 	{
-		return 'uitypes/Owner.tpl';
+		return empty($value) ? \App\User::getCurrentUserId() : (int) $value;
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function validate($value, $isUserFormat = false)
 	{
-		$ownerName = \includes\fields\Owner::getLabel($value);
+		if (isset($this->validate[$value]) || empty($value)) {
+			return;
+		}
+		if (!is_numeric($value)) {
+			throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+		}
+		$maximumLength = $this->getFieldModel()->get('maximumlength');
+		if ($maximumLength) {
+			$rangeValues = explode(',', $maximumLength);
+			if (($rangeValues[1] ?? $rangeValues[0]) < $value || (isset($rangeValues[1]) ? $rangeValues[0] : 0) > $value) {
+				throw new \App\Exceptions\Security('ERR_VALUE_IS_TOO_LONG||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
+			}
+		}
+		$this->validate[$value] = true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		if (empty($value)) {
+			return '';
+		}
+		$ownerName = \App\Fields\Owner::getLabel($value);
+		if (is_int($length)) {
+			$ownerName = \App\TextParser::textTruncate($ownerName, $length);
+		}
 		if ($rawText) {
 			return $ownerName;
 		}
-		if (\includes\fields\Owner::getType($value) === 'Users') {
-			$userModel = Users_Record_Model::getCleanInstance('Users');
-			$userModel->set('id', $value);
-			$detailViewUrl = $userModel->getDetailViewUrl();
-			$currentUser = Users_Record_Model::getCurrentUserModel();
-			if (!$currentUser->isAdminUser() || $rawText) {
-				return $ownerName;
-			}
-		} else {
-			$currentUser = Users_Record_Model::getCurrentUserModel();
-			if (!$currentUser->isAdminUser() || $rawText) {
-				return $ownerName;
-			}
-			$recordModel = new Settings_Groups_Record_Model();
-			$recordModel->set('groupid', $value);
-			$detailViewUrl = $recordModel->getDetailViewUrl();
+		switch (\App\Fields\Owner::getType($value)) {
+			case 'Users':
+				$userModel = Users_Privileges_Model::getInstanceById($value);
+				$userModel->setModule('Users');
+				if ($userModel->get('status') === 'Inactive') {
+					$ownerName = '<span class="redColor"><s>' . $ownerName . '</s></span>';
+				}
+				if (App\User::getCurrentUserModel()->isAdmin()) {
+					$detailViewUrl = $userModel->getDetailViewUrl();
+				}
+				break;
+			case 'Groups':
+				if (App\User::getCurrentUserModel()->isAdmin()) {
+					$recordModel = new Settings_Groups_Record_Model();
+					$recordModel->set('groupid', $value);
+					$detailViewUrl = $recordModel->getDetailViewUrl();
+				}
+				break;
+			default:
+				$ownerName = '<span class="redColor">---</span>';
+				break;
 		}
-		return "<a href='" . $detailViewUrl . "'>$ownerName</a>";
+		if (isset($detailViewUrl)) {
+			return "<a href='" . $detailViewUrl . "'>$ownerName</a>";
+		}
+		return $ownerName;
 	}
 
 	/**
-	 * Function to get Display value for RelatedList
-	 * @param <String> $value
-	 * @return <String>
+	 * {@inheritdoc}
 	 */
 	public function getRelatedListDisplayValue($value)
 	{
 		return $value;
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getListSearchTemplateName()
 	{
-		return 'uitypes/OwnerFieldSearchView.tpl';
+		return 'List/Field/Owner.tpl';
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'Edit/Field/Owner.tpl';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function isAjaxEditable()
 	{
 		$userPrivModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
@@ -74,5 +117,13 @@ class Vtiger_Owner_UIType extends Vtiger_Base_UIType
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getAllowedColumnTypes()
+	{
+		return ['integer', 'smallint'];
 	}
 }

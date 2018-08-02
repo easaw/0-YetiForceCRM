@@ -1,11 +1,11 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 	<table class="table table-striped">
 		<thead>
 			<tr>
 				{foreach item=HEADER from=$HEADERS}
 					<th>
-						{vtranslate($HEADER->get('label'), $MODULE)}
+						{\App\Language::translate($HEADER->get('label'), $MODULE)}
 					</th>
 				{/foreach}
 			</tr>
@@ -16,22 +16,13 @@
 					{foreach item=HEADER from=$HEADERS}
 						{assign var=HEADERNAME value=$HEADER->get('name')}
 						<td>
-							{if $HEADER->isNameField() eq true}
-								<a {if $HEADER->isNameField() eq true}class="moduleColor_{$MODULE}"{/if} href="{$ENTRY->getDetailViewUrl()}">
-									{if $HEADER->getFieldDataType() eq 'sharedOwner' || $HEADER->getFieldDataType() eq 'boolean' || $HEADER->getFieldDataType() eq 'tree'}
-										{$ENTRY->getDisplayValue($HEADERNAME)}
-									{else}
-										{$ENTRY->get($HEADERNAME)}
-									{/if}</a>
-								{else}
-									{if $HEADER->getFieldDataType() eq 'double'}
-										{\vtlib\Functions::formatDecimal($ENTRY->get($HEADERNAME))}
-									{else if $HEADER->getFieldDataType() eq 'sharedOwner' || $HEADER->getFieldDataType() eq 'boolean' || $HEADER->getFieldDataType() eq 'tree'}
-										{$ENTRY->getDisplayValue($HEADERNAME)}
-									{else}
-										{$ENTRY->get($HEADERNAME)}
-									{/if}
-								{/if}
+							{if $HEADER->isNameField() eq true && $ENTRY->isViewable()}
+								<a {if $HEADER->isNameField() eq true}class="modCT_{$MODULE}"{/if} href="{$ENTRY->getDetailViewUrl()}">
+									{$ENTRY->getListViewDisplayValue($HEADERNAME)}
+								</a>
+							{else}
+								{$ENTRY->getListViewDisplayValue($HEADERNAME)}
+							{/if}
 						</td>
 					{/foreach}
 				</tr>

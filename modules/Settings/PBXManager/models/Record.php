@@ -10,8 +10,7 @@
 
 class Settings_PBXManager_Record_Model extends Settings_Vtiger_Record_Model
 {
-
-	const tableName = 'vtiger_pbxmanager_gateway';
+	const TABLE_NAME = 'vtiger_pbxmanager_gateway';
 
 	public function getId()
 	{
@@ -20,35 +19,30 @@ class Settings_PBXManager_Record_Model extends Settings_Vtiger_Record_Model
 
 	public function getName()
 	{
-		
 	}
 
 	public function getModule()
 	{
-		return new Settings_PBXManager_Module_Model;
+		return new Settings_PBXManager_Module_Model();
 	}
 
-	static function getCleanInstance()
+	public static function getCleanInstance()
 	{
-		return new self;
+		return new self();
 	}
 
 	public static function getInstance()
 	{
 		$serverModel = new self();
-		$db = PearDatabase::getInstance();
-		$query = sprintf('SELECT * FROM %s', self::tableName);
-		$gatewatResult = $db->query($query);
-		$gatewatResultCount = $db->num_rows($gatewatResult);
-
-		if ($gatewatResultCount > 0) {
-			$rowData = $db->query_result_rowdata($gatewatResult, 0);
-			$serverModel->set('gateway', $rowData['gateway']);
-			$serverModel->set('id', $rowData['id']);
-			$parameters = \includes\utils\Json::decode(decode_html($rowData['parameters']));
+		$row = (new \App\Db\Query())->from(self::TABLE_NAME)->one();
+		if ($row !== false) {
+			$serverModel->set('gateway', $row['gateway']);
+			$serverModel->set('id', $row['id']);
+			$parameters = \App\Json::decode(App\Purifier::decodeHtml($row['parameters']));
 			foreach ($parameters as $fieldName => $fieldValue) {
 				$serverModel->set($fieldName, $fieldValue);
 			}
+
 			return $serverModel;
 		}
 		return $serverModel;
@@ -56,22 +50,15 @@ class Settings_PBXManager_Record_Model extends Settings_Vtiger_Record_Model
 
 	public static function getInstanceById($recordId, $qualifiedModuleName)
 	{
-		$db = PearDatabase::getInstance();
-		$query = 'SELECT * FROM %s WHERE id = ?';
-		$query = sprintf($query, self::tableName);
-		$result = $db->pquery($query, [$recordId]);
-
-		if ($db->num_rows($result)) {
-			$moduleModel = Settings_Vtiger_Module_Model::getInstance($qualifiedModuleName);
-			$rowData = $db->query_result_rowdata($result, 0);
-
+		$row = (new \App\Db\Query())->from(self::TABLE_NAME)->where(['id' => $recordId])->one();
+		if ($row !== false) {
 			$recordModel = new self();
-			$recordModel->setData($rowData);
-
-			$parameters = \includes\utils\Json::decode(decode_html($recordModel->get('parameters')));
+			$recordModel->setData($row);
+			$parameters = \App\Json::decode(App\Purifier::decodeHtml($recordModel->get('parameters')));
 			foreach ($parameters as $fieldName => $fieldValue) {
 				$recordModel->set($fieldName, $fieldValue);
 			}
+
 			return $recordModel;
 		}
 		return false;
@@ -79,24 +66,22 @@ class Settings_PBXManager_Record_Model extends Settings_Vtiger_Record_Model
 
 	public function save()
 	{
-		$db = PearDatabase::getInstance();
-		$parameters = '';
+		$db = App\Db::getInstance();
+		$parameters = [];
 		$selectedGateway = $this->get('gateway');
-		$connector = new PBXManager_PBXManager_Connector;
-
-		foreach ($connector->getSettingsParameters() as $field => $type) {
+		foreach (PBXManager_PBXManager_Connector::getSettingsParameters() as $field => $type) {
 			$parameters[$field] = $this->get($field);
 		}
-		$this->set('parameters', \includes\utils\Json::encode($parameters));
+		$this->set('parameters', \App\Json::encode($parameters));
 		$params = [
 			'gateway' => $selectedGateway,
-			'parameters' => $this->get('parameters')
+			'parameters' => $this->get('parameters'),
 		];
 		$id = $this->getId();
 		if ($id) {
-			$db->update(self::tableName, $params, 'id = ?', [$id]);
+			$db->createCommand()->update(self::TABLE_NAME, $params, ['id' => $id])->execute();
 		} else {
-			$db->insert(self::tableName, $params);
+			$db->createCommand()->insert(self::TABLE_NAME, $params)->execute();
 		}
 	}
 }

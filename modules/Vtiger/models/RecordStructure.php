@@ -9,11 +9,10 @@
  * *********************************************************************************** */
 
 /**
- * Vtiger Record Structure Model
+ * Vtiger Record Structure Model.
  */
-class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
+class Vtiger_RecordStructure_Model extends \App\Base
 {
-
 	protected $record = false;
 	protected $module = false;
 	protected $structuredValues = false;
@@ -26,19 +25,23 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 	const RECORD_STRUCTURE_MODE_SUMMARY = 'Summary';
 
 	/**
-	 * Function to set the record Model
+	 * Function to set the record Model.
+	 *
 	 * @param <type> $record - record instance
+	 *
 	 * @return Vtiger_RecordStructure_Model
 	 */
 	public function setRecord($record)
 	{
 		$this->record = $record;
+
 		return $this;
 	}
 
 	/**
-	 * Function to get the record
-	 * @return <Vtiger_Record_Model>
+	 * Function to get the record.
+	 *
+	 * @return Vtiger_Record_Model
 	 */
 	public function getRecord()
 	{
@@ -51,8 +54,9 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to get the module
-	 * @return <Vtiger_Module_Model>
+	 * Function to get the module.
+	 *
+	 * @return Vtiger_Module_Model
 	 */
 	public function getModule()
 	{
@@ -60,18 +64,22 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to set the module
+	 * Function to set the module.
+	 *
 	 * @param <type> $module - module model
+	 *
 	 * @return Vtiger_RecordStructure_Model
 	 */
 	public function setModule($module)
 	{
 		$this->module = $module;
+
 		return $this;
 	}
 
 	/**
-	 * Function to get the values in stuctured format
+	 * Function to get the values in stuctured format.
+	 *
 	 * @return <array> - values in structure array('block'=>array(fieldinfo));
 	 */
 	public function getStructure()
@@ -100,12 +108,15 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 			}
 		}
 		$this->structuredValues = $values;
+
 		return $values;
 	}
 
 	/**
-	 * Function to retieve the instance from record model
-	 * @param <Vtiger_Record_Model> $recordModel - record instance
+	 * Function to retieve the instance from record model.
+	 *
+	 * @param Vtiger_Record_Model $recordModel - record instance
+	 *
 	 * @return Vtiger_RecordStructure_Model
 	 */
 	public static function getInstanceFromRecordModel($recordModel, $mode = self::RECORD_STRUCTURE_MODE_DEFAULT)
@@ -114,12 +125,15 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 		$className = Vtiger_Loader::getComponentClassName('Model', $mode . 'RecordStructure', $moduleModel->getName(true));
 		$instance = new $className();
 		$instance->setModule($moduleModel)->setRecord($recordModel);
+
 		return $instance;
 	}
 
 	/**
-	 * Function to retieve the instance from module model
-	 * @param <Vtiger_Module_Model> $moduleModel - module instance
+	 * Function to retieve the instance from module model.
+	 *
+	 * @param Vtiger_Module_Model $moduleModel - module instance
+	 *
 	 * @return Vtiger_RecordStructure_Model
 	 */
 	public static function getInstanceForModule($moduleModel, $mode = self::RECORD_STRUCTURE_MODE_DEFAULT)
@@ -127,6 +141,7 @@ class Vtiger_RecordStructure_Model extends Vtiger_Base_Model
 		$className = Vtiger_Loader::getComponentClassName('Model', $mode . 'RecordStructure', $moduleModel->get('name'));
 		$instance = new $className();
 		$instance->setModule($moduleModel);
+
 		return $instance;
 	}
 }

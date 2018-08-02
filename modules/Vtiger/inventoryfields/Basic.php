@@ -1,21 +1,21 @@
 <?php
 
 /**
- * Inventory Basic Field Class
- * @package YetiForce.Fields
- * @license licenses/License.html
+ * Inventory Basic Field Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
+class Vtiger_Basic_InventoryField extends \App\Base
 {
-
 	protected $name = '';
 	protected $defaultLabel = '';
 	protected $defaultValue = '';
 	protected $columnName = '-';
 	protected $colSpan = 10;
-	protected $dbType = 'varchar(100)';
+	protected $dbType = 'string';
 	protected $customColumn = [];
 	protected $summationValue = false;
 	protected $onlyOne = true;
@@ -23,9 +23,11 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	protected $blocks = [1];
 	protected $fieldDataType = 'inventory';
 	protected $params = [];
+	protected $maximumLength = 255;
 
 	/**
-	 * Getting onlyOne field
+	 * Getting onlyOne field.
+	 *
 	 * @return true/false
 	 */
 	public function isOnlyOne()
@@ -39,7 +41,8 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Getting database-type of field
+	 * Getting database-type of field.
+	 *
 	 * @return string dbType
 	 */
 	public function getDBType()
@@ -48,7 +51,8 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Getting all params values
+	 * Getting all params values.
+	 *
 	 * @return array
 	 */
 	public function getParams()
@@ -58,11 +62,12 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 
 	public function getParamsConfig()
 	{
-		return \includes\utils\Json::decode($this->get('params'));
+		return \App\Json::decode($this->get('params'));
 	}
 
 	/**
-	 * Getting all values display Type
+	 * Getting all values display Type.
+	 *
 	 * @return array
 	 */
 	public function displayTypeBase()
@@ -72,24 +77,30 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 
 	public function getColSpan()
 	{
-		if ($this->has('colspan'))
+		if ($this->has('colspan')) {
 			return $this->get('colspan');
-
+		}
 		return $this->colSpan;
 	}
 
+	public function getRangeValues()
+	{
+		return $this->maximumLength;
+	}
+
 	/**
-	 * Getting template name
+	 * Getting template name.
+	 *
 	 * @return string templateName
 	 */
 	public function getTemplateName($view, $moduleName)
 	{
 		$tpl = $view . $this->name . '.tpl';
-		$filename = 'layouts' . DIRECTORY_SEPARATOR . Yeti_Layout::getActiveLayout() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $moduleName . DIRECTORY_SEPARATOR . 'inventoryfields' . DIRECTORY_SEPARATOR . $tpl;
+		$filename = 'layouts' . DIRECTORY_SEPARATOR . \App\Layout::getActiveLayout() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $moduleName . DIRECTORY_SEPARATOR . 'inventoryfields' . DIRECTORY_SEPARATOR . $tpl;
 		if (is_file($filename)) {
 			return $tpl;
 		}
-		$filename = 'layouts' . DIRECTORY_SEPARATOR . Yeti_Layout::getActiveLayout() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . 'Vtiger' . DIRECTORY_SEPARATOR . 'inventoryfields' . DIRECTORY_SEPARATOR . $tpl;
+		$filename = 'layouts' . DIRECTORY_SEPARATOR . \App\Layout::getActiveLayout() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . 'Vtiger' . DIRECTORY_SEPARATOR . 'inventoryfields' . DIRECTORY_SEPARATOR . $tpl;
 		if (is_file($filename)) {
 			return $tpl;
 		}
@@ -105,7 +116,8 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Getting default label
+	 * Getting default label.
+	 *
 	 * @return string defaultLabel
 	 */
 	public function getDefaultLabel()
@@ -114,7 +126,8 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Getting field name
+	 * Getting field name.
+	 *
 	 * @return string name
 	 */
 	public function getName()
@@ -123,18 +136,21 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Getting column name
+	 * Getting column name.
+	 *
 	 * @return string columnName
 	 */
 	public function getColumnName()
 	{
-		if ($this->has('columnname'))
+		if ($this->has('columnname')) {
 			return $this->get('columnname');
+		}
 		return $this->columnName;
 	}
 
 	/**
-	 * Getting column name
+	 * Getting column name.
+	 *
 	 * @return string customColumn
 	 */
 	public function getCustomColumn()
@@ -149,13 +165,15 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 
 	public function getDefaultValue()
 	{
-		if ($this->has('defaultvalue'))
+		if ($this->has('defaultvalue')) {
 			return $this->get('defaultvalue');
+		}
 		return $this->defaultValue;
 	}
 
 	/**
-	 * Data field instance initialization 
+	 * Data field instance initialization.
+	 *
 	 * @param array $valueArray Array for initialization
 	 */
 	public function initialize($valueArray)
@@ -164,18 +182,22 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Getting value to display
+	 * Getting value to display.
+	 *
 	 * @param type $value
+	 *
 	 * @return string
 	 */
-	public function getDisplayValue($value)
+	public function getDisplayValue($value, $rawText = false)
 	{
-		return $value;
+		return \App\Purifier::encodeHtml($value);
 	}
 
 	/**
-	 * Getting value to display
+	 * Getting value to display.
+	 *
 	 * @param type $value
+	 *
 	 * @return string
 	 */
 	public function getEditValue($value)
@@ -184,8 +206,10 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Getting value
+	 * Getting value.
+	 *
 	 * @param type $value
+	 *
 	 * @return string
 	 */
 	public function getValue($value)
@@ -202,8 +226,9 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to check whether the current field is visible
-	 * @return <Boolean> - true/false
+	 * Function to check whether the current field is visible.
+	 *
+	 * @return bool - true/false
 	 */
 	public function isVisible()
 	{
@@ -214,8 +239,9 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to check whether the current field is editable
-	 * @return <Boolean> - true/false
+	 * Function to check whether the current field is editable.
+	 *
+	 * @return bool - true/false
 	 */
 	public function isEditable()
 	{
@@ -226,8 +252,9 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Function to check whether the current field is editable
-	 * @return <Boolean> - true/false
+	 * Function to check whether the current field is editable.
+	 *
+	 * @return bool - true/false
 	 */
 	public function isColumnType()
 	{
@@ -238,13 +265,14 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	}
 
 	/**
-	 * Getting value to display
+	 * Getting value to display.
+	 *
 	 * @return array
 	 */
 	public function modulesValues()
 	{
 		$modules = Vtiger_Module_Model::getAll([0], [], true);
-		foreach ($modules AS $module) {
+		foreach ($modules as $module) {
 			$modulesNames[] = ['module' => $module->getName(), 'name' => $module->getName(), 'id' => $module->getName()];
 		}
 		return $modulesNames;
@@ -270,6 +298,7 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 			$mapDetail = $fields[$name];
 			if ($returInstance) {
 				$moduleModel = Vtiger_Module_Model::getInstance($mapDetail['module']);
+
 				return Vtiger_Field_Model::getInstance($mapDetail['field'], $moduleModel);
 			} else {
 				return $mapDetail;
@@ -281,5 +310,44 @@ class Vtiger_Basic_InventoryField extends Vtiger_Base_Model
 	public function getFieldDataType()
 	{
 		return $this->fieldDataType;
+	}
+
+	/**
+	 * Get value from request.
+	 *
+	 * @param array        $insertData
+	 * @param \App\Request $request
+	 * @param int          $i
+	 *
+	 * @return bool
+	 */
+	public function getValueFromRequest(&$insertData, \App\Request $request, $i)
+	{
+		$column = $this->getColumnName();
+		if (empty($column) || $column === '-' || !$request->has($column . $i)) {
+			return false;
+		}
+		$value = $request->get($column . $i);
+		$this->validate($value, $column, true);
+		$insertData[$column] = $value;
+	}
+
+	/**
+	 * Verification of data.
+	 *
+	 * @param mixed  $value
+	 * @param string $columnName
+	 * @param bool   $isUserFormat
+	 *
+	 * @throws \App\Exceptions\Security
+	 */
+	public function validate($value, $columnName, $isUserFormat = false)
+	{
+		if (!is_numeric($value) && (is_string($value) && $value !== strip_tags($value))) {
+			throw new \App\Exceptions\Security("ERR_ILLEGAL_FIELD_VALUE||$columnName||$value", 406);
+		}
+		if (App\TextParser::getTextLength($value) > $this->maximumLength) {
+			throw new \App\Exceptions\Security("ERR_VALUE_IS_TOO_LONG||$columnName||$value", 406);
+		}
 	}
 }

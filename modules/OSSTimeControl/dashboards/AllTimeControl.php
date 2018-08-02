@@ -1,22 +1,23 @@
 <?php
 
 /**
- * Wdiget to show work time
- * @package YetiForce.Dashboard
- * @license licenses/License.html
+ * Wdiget to show work time.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Tomasz Kur <t.kur@yetiforce.com>
  */
 class OSSTimeControl_AllTimeControl_Dashboard extends Vtiger_IndexAjax_View
 {
-
-	public function getSearchParams($assignedto = '', $dateStart, $dateEnd)
+	public function getSearchParams($assignedto, $date)
 	{
 		$conditions = [];
 		$listSearchParams = [];
-		if ($assignedto != '')
+		if ($assignedto != '') {
 			array_push($conditions, ['assigned_user_id', 'e', $assignedto]);
-		if (!empty($dateStart) && !empty($dateEnd)) {
-			array_push($conditions, ['due_date', 'bw', $dateStart . ',' . $dateEnd . '']);
+		}
+		if (!empty($date)) {
+			array_push($conditions, ['due_date', 'bw', implode(',', $date)]);
 		}
 		$listSearchParams[] = $conditions;
 		return '&search_params=' . json_encode($listSearchParams) . '&viewname=All';
@@ -25,119 +26,118 @@ class OSSTimeControl_AllTimeControl_Dashboard extends Vtiger_IndexAjax_View
 	public function getWidgetTimeControl($user, $time)
 	{
 		if (!$time) {
-			return array();
+			return ['show_chart' => false];
 		}
-		$timeDatabase['start'] = DateTimeField::convertToDBFormat($time['start']);
-		$timeDatabase['end'] = DateTimeField::convertToDBFormat($time['end']);
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		if ($user == 'all') {
-			$accessibleUsers = \includes\fields\Owner::getInstance(false, $currentUser)->getAccessibleUsers();
-			$user = array_keys($accessibleUsers);
+			$user = array_keys(\App\Fields\Owner::getInstance(false, $currentUser)->getAccessibleUsers());
 		}
 		if (!is_array($user)) {
-			$accessibleUsers[$user] = Users_Record_Model::getInstanceById($user, 'Users')->getName();
 			$user = [$user];
 		}
-		$db = PearDatabase::getInstance();
-		$sql = "SELECT timecontrol_type, color FROM vtiger_timecontrol_type";
-		$result = $db->query($sql);
-		while ($row = $db->fetch_array($result)) {
-			$colors[$row['timecontrol_type']] = $row['color'];
-		}
-		$module = 'OSSTimeControl';
-		$param[] = $module;
-		$param = array_merge($param, $user);
-		$sql = sprintf('SELECT sum_time AS daytime, due_date, timecontrol_type, vtiger_crmentity.smownerid FROM vtiger_osstimecontrol
-					INNER JOIN vtiger_crmentity ON vtiger_osstimecontrol.osstimecontrolid = vtiger_crmentity.crmid
-					WHERE vtiger_crmentity.setype = ? && vtiger_crmentity.smownerid IN (%s) ', generateQuestionMarks($user));
-		$sql .= \App\PrivilegeQuery::getAccessConditions($module, false);
-		$sql .= "AND (vtiger_osstimecontrol.date_start >= ? && vtiger_osstimecontrol.due_date <= ?) && vtiger_osstimecontrol.deleted = 0 ";
-		$param[] = $timeDatabase['start'];
-		$param[] = $timeDatabase['end'];
-		$result = $db->pquery($sql, $param);
+		$colors = \App\Fields\Picklist::getColors('timecontrol_type');
+		$moduleName = 'OSSTimeControl';
+		$query = (new App\Db\Query())->select(['sum_time', 'due_date', 'vtiger_osstimecontrol.timecontrol_type', 'vtiger_crmentity.smownerid', 'timecontrol_typeid'])
+			->from('vtiger_osstimecontrol')
+			->innerJoin('vtiger_crmentity', 'vtiger_osstimecontrol.osstimecontrolid = vtiger_crmentity.crmid')
+			->innerJoin('vtiger_timecontrol_type', 'vtiger_osstimecontrol.timecontrol_type = vtiger_timecontrol_type.timecontrol_type')
+			->where(['vtiger_crmentity.setype' => $moduleName, 'vtiger_crmentity.smownerid' => $user]);
+		\App\PrivilegeQuery::getConditions($query, $moduleName);
+		$query->andWhere([
+			'and',
+			['>=', 'vtiger_osstimecontrol.due_date', $time[0]],
+			['<=', 'vtiger_osstimecontrol.due_date', $time[1]],
+			['vtiger_osstimecontrol.deleted' => 0],
+		]);
 		$timeTypes = [];
-		$response = [];
-		$numRows = $db->num_rows($result);
 		$smOwners = [];
-		$counter = 0;
-		for ($i = 0; $i < $numRows; $i++) {
-			$row = $db->query_result_rowdata($result, $i);
-			$workingTimeByType[vtranslate($row['timecontrol_type'], 'OSSTimeControl')] += $row['daytime'];
-			$workingTime[$row['smownerid']][$row['timecontrol_type']] += $row['daytime'];
-			if (!array_key_exists($row['timecontrol_type'], $timeTypes)) {
-				$timeTypes[$row['timecontrol_type']] = $counter++;
+		$dataReader = $query->createCommand()->query();
+		$chartData = [
+			'labels' => [],
+			'fullLabels' => [],
+			'datasets' => [],
+			'show_chart' => false,
+		];
+		$time = \App\Fields\Date::formatRangeToDisplay($time);
+		while ($row = $dataReader->read()) {
+			$label = \App\Language::translate($row['timecontrol_type'], 'OSSTimeControl');
+			$workingTimeByType[$label] += (float) $row['sum_time'];
+			$workingTime[$row['smownerid']][$row['timecontrol_type']] += (float) $row['sum_time'];
+			if (!in_array($row['timecontrol_type'], $timeTypes)) {
+				$timeTypes[$row['timecontrol_typeid']] = $row['timecontrol_type'];
+				// one dataset per type
+				$chartData['datasets'][] = [
+					'label' => $label,
+					'original_label' => $label,
+					'_type' => $row['timecontrol_type'],
+					'data' => [],
+					'backgroundColor' => [],
+					'links' => [],
+				];
 			}
-			if (!in_array($row['smownerid'], $smOwners))
+			if (!in_array($row['smownerid'], $smOwners)) {
 				$smOwners[] = $row['smownerid'];
+				$ownerName = \App\Fields\Owner::getUserLabel($row['smownerid']);
+				$chartData['labels'][] = vtlib\Functions::getInitials($ownerName);
+				$chartData['fullLabels'][] = $ownerName;
+			}
 		}
-		if ($numRows > 0) {
-			$counter = 0;
-			$result = [];
-			foreach ($workingTime as $timeKey => $timeValue) {
-				foreach ($timeTypes as $timeTypeKey => $timeTypeKey) {
-					$result[$timeTypeKey]['data'][$counter][0] = $counter;
-					$result[$timeTypeKey]['label'] = vtranslate($timeTypeKey, 'OSSTimeControl');
-					$result[$timeTypeKey]['color'] = $colors[$timeTypeKey];
-					if ($timeValue[$timeTypeKey]) {
-						$result[$timeTypeKey]['data'][$counter][1] = $timeValue[$timeTypeKey];
+		foreach ($chartData['datasets'] as &$dataset) {
+			$dataset['label'] .= ': ' . \App\Fields\Time::formatToHourText($workingTimeByType[$dataset['label']]);
+		}
+		if ($dataReader->count() > 0) {
+			$chartData['show_chart'] = true;
+			foreach ($workingTime as $ownerId => $timeValue) {
+				foreach ($timeTypes as $timeTypeId => $timeType) {
+					// if owner has this kind of type
+					if ($timeValue[$timeType]) {
+						$userTime = $timeValue[$timeType];
 					} else {
-						$result[$timeTypeKey]['data'][$counter][1] = 0;
+						$userTime = 0;
+					}
+					foreach ($chartData['datasets'] as &$dataset) {
+						if ($dataset['_type'] === $timeType) {
+							// each data item is an different owner time in this dataset/time type
+							$dataset['data'][] = round($userTime, 2);
+							$dataset['backgroundColor'][] = $colors[$timeTypeId];
+						}
 					}
 				}
-				$counter++;
 			}
-			$ticks = [];
-			foreach ($smOwners as $key => $value) {
-				$newArray = [$key, $accessibleUsers[$value]];
-				array_push($ticks, $newArray);
+			foreach ($smOwners as $ownerId) {
+				foreach ($chartData['datasets'] as &$dataset) {
+					$dataset['links'][] = 'index.php?module=OSSTimeControl&view=List&viewname=All' . $this->getSearchParams($ownerId, $time);
+				}
 			}
-			$listViewUrl = 'index.php?module=OSSTimeControl&view=List&viewname=All';
-			$counter = 0;
-			foreach ($ticks as $key => $value) {
-				$response['links'][$counter][0] = $counter;
-				$response['links'][$counter][1] = $listViewUrl . $this->getSearchParams($value[1], $time['start'], $time['end']);
-				$counter++;
-			}
-			$response['legend'] = $workingTimeByType;
-			$response['chart'] = $result;
-			$response['ticks'] = $ticks;
 		}
-		return $response;
+		$dataReader->close();
+		return $chartData;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$loggedUserId = $currentUser->get('id');
+		$currentUserId = \App\User::getCurrentUserId();
 		$viewer = $this->getViewer($request);
 		$moduleName = $request->getModule();
-		$linkId = $request->get('linkid');
-		$user = $request->get('owner');
-		$time = $request->get('time');
-		if ($time === null) {
-			$time['start'] = vtlib\Functions::currentUserDisplayDateNew();
-			$time['end'] = vtlib\Functions::currentUserDisplayDateNew();
+		$user = $request->getByType('owner', 2);
+		$time = $request->getDateRange('time');
+		$widget = Vtiger_Widget_Model::getInstance($request->getInteger('linkid'), $currentUserId);
+		if (empty($time)) {
+			$time = Settings_WidgetsManagement_Module_Model::getDefaultDateRange($widget);
 		}
-		$widget = Vtiger_Widget_Model::getInstance($linkId, $currentUser->getId());
-		if ($user === null) {
+		if (empty($user)) {
 			$user = Settings_WidgetsManagement_Module_Model::getDefaultUserId($widget);
 		}
-		$data = $this->getWidgetTimeControl($user, $time);
-		$TCPModuleModel = Settings_TimeControlProcesses_Module_Model::getCleanInstance();
-		$accessibleUsers = \includes\fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleUsersForModule();
-		$accessibleGroups = \includes\fields\Owner::getInstance($moduleName, $currentUser)->getAccessibleGroupForModule();
-		$viewer->assign('TCPMODULE_MODEL', $TCPModuleModel->getConfigInstance());
+		$viewer->assign('TCPMODULE_MODEL', Settings_TimeControlProcesses_Module_Model::getCleanInstance()->getConfigInstance());
 		$viewer->assign('USERID', $user);
-		$viewer->assign('DTIME', $time);
-		$viewer->assign('DATA', $data);
+		$viewer->assign('DTIME', \App\Fields\Date::formatRangeToDisplay($time));
+		$viewer->assign('DATA', $this->getWidgetTimeControl($user, $time));
 		$viewer->assign('WIDGET', $widget);
 		$viewer->assign('MODULE_NAME', $moduleName);
-		$viewer->assign('CURRENTUSER', $currentUser);
-		$viewer->assign('LOGGEDUSERID', $loggedUserId);
-		$viewer->assign('ACCESSIBLE_USERS', $accessibleUsers);
-		$viewer->assign('ACCESSIBLE_GROUPS', $accessibleGroups);
-		$content = $request->get('content');
-		if (!empty($content)) {
+		$viewer->assign('LOGGEDUSERID', $currentUserId);
+		$viewer->assign('ACCESSIBLE_USERS', \App\Fields\Owner::getInstance($moduleName, $currentUserId)->getAccessibleUsersForModule());
+		$viewer->assign('ACCESSIBLE_GROUPS', \App\Fields\Owner::getInstance($moduleName, $currentUserId)->getAccessibleGroupForModule());
+		if ($request->has('content')) {
 			$viewer->view('dashboards/TimeControlContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/AllTimeControl.tpl', $moduleName);

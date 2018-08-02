@@ -1,84 +1,93 @@
 <?php
 
 /**
- * FInvoice Summation By User Dashboard Class
- * @package YetiForce.Dashboard
- * @license licenses/License.html
+ * FInvoice Summation By User Dashboard Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
+ * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class FInvoice_SummationByUser_Dashboard extends Vtiger_IndexAjax_View
 {
-
-	public function process(Vtiger_Request $request)
+	/**
+	 * Process.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function process(\App\Request $request)
 	{
-		$linkId = $request->get('linkid');
-
-
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$userId = $currentUser->getId();
-		if ($request->has('time')) {
-			$time = $request->get('time');
-		} else {
-			$time['start'] = date('Y-m-01');
-			$time['end'] = date('Y-m-t');
+		$widget = Vtiger_Widget_Model::getInstance($request->getInteger('linkid'), \App\User::getCurrentUserId());
+		$time = $request->getDateRange('time');
+		if (empty($time)) {
+			$time = Settings_WidgetsManagement_Module_Model::getDefaultDateRange($widget);
 		}
-		// date parameters passed, convert them to YYYY-mm-dd
-		$time['start'] = vtlib\Functions::currentUserDisplayDate($time['start']);
-		$time['end'] = vtlib\Functions::currentUserDisplayDate($time['end']);
-		$viewer = $this->getViewer($request);
+		$time = \App\Fields\Date::formatRangeToDisplay($time);
 		$moduleName = $request->getModule();
-		$widget = Vtiger_Widget_Model::getInstance($linkId, $userId);
-		$param = \includes\utils\Json::decode($widget->get('data'));
+		$param = \App\Json::decode($widget->get('data'));
 		$data = $this->getWidgetData($moduleName, $param, $time);
-
+		$viewer = $this->getViewer($request);
 		$viewer->assign('DTIME', $time);
 		$viewer->assign('DATA', $data);
 		$viewer->assign('WIDGET', $widget);
 		$viewer->assign('PARAM', $param);
 		$viewer->assign('MODULE_NAME', $moduleName);
-		$viewer->assign('CURRENTUSER', $currentUser);
-		$content = $request->get('content');
-		if (!empty($content)) {
+		if ($request->has('content')) {
 			$viewer->view('dashboards/SummationByUserContents.tpl', $moduleName);
 		} else {
 			$viewer->view('dashboards/SummationByUser.tpl', $moduleName);
 		}
 	}
 
+	/**
+	 * Get widget data.
+	 *
+	 * @param string $moduleName
+	 * @param array  $widgetParam
+	 * @param array  $time
+	 *
+	 * @return array
+	 */
 	public function getWidgetData($moduleName, $widgetParam, $time)
 	{
-		$rawData = $response = $ticks = [];
-		$currentUser = Users_Record_Model::getCurrentUserModel();
-
-		$param = [0, $time['start'], $time['end']];
-		$db = PearDatabase::getInstance();
-		$sql = 'SELECT vtiger_crmentity.smownerid as o,sum(`sum_gross`) as s FROM u_yf_finvoice
-					INNER JOIN vtiger_crmentity ON u_yf_finvoice.finvoiceid = vtiger_crmentity.crmid
-					WHERE vtiger_crmentity.deleted = ? && u_yf_finvoice.saledate >= ? && u_yf_finvoice.saledate <= ?';
-		$sql.= \App\PrivilegeQuery::getAccessConditions($moduleName, $currentUser->getId());
-		$sql .= ' GROUP BY smownerid ORDER BY s DESC';
-
-		$result = $db->pquery($sql, $param);
-		$i = 0;
-
-		while ($row = $db->getRow($result)) {
-			if ($row['s'] == 0) {
-				continue;
-			}
-			$i++;
-			$color = '#EDC240';
-			if ($currentUser->getId() == $row['o']) {
-				$color = '#4979aa';
-			}
-			$owner = vtlib\Functions::getOwnerRecordLabel($row['o']);
-			$rawData[] = [
-				'data' => [[$i, (int) $row['s']]],
-				'label' => $owner,
-				'color' => $color
-			];
+		$currentUserId = \App\User::getCurrentUserId();
+		$s = new \yii\db\Expression('sum(sum_gross)');
+		$queryGenerator = new \App\QueryGenerator($moduleName);
+		$queryGenerator->setField('assigned_user_id');
+		$queryGenerator->setCustomColumn(['s' => $s]);
+		$queryGenerator->addCondition('saledate', implode(',', $time), 'bw');
+		$queryGenerator->setGroup('assigned_user_id');
+		$query = $queryGenerator->createQuery();
+		$query->orderBy(['s' => SORT_DESC]);
+		$query->having(['>', $s, 0]);
+		$dataReader = $query->createCommand()->query();
+		$chartData = [
+			'labels' => [],
+			'datasets' => [
+				[
+					'data' => [],
+					'backgroundColor' => [],
+					'tooltips' => []
+				],
+			],
+			'show_chart' => false
+		];
+		if ($widgetParam['showUser']) {
+			$chartData['fullLabels'] = [];
 		}
-		$response['ticks'] = $ticks;
-		$response['chart'] = $rawData;
-		return $response;
+		while ($row = $dataReader->read()) {
+			$label = \App\Fields\Owner::getLabel($row['assigned_user_id']);
+			$chartData['datasets'][0]['data'][] = (int) $row['s'];
+			$chartData['datasets'][0]['backgroundColor'][] = $currentUserId === (int) $row['assigned_user_id'] ? \App\Fields\Owner::getColor($row['assigned_user_id']) : 'rgba(0,0,0,0.25)';
+			$chartData['labels'][] = $widgetParam['showUser'] ? vtlib\Functions::getInitials($label) : '';
+			if ($widgetParam['showUser'] || $currentUserId === (int) $row['assigned_user_id']) {
+				$chartData['fullLabels'][] = $label;
+			} else {
+				$chartData['fullLabels'][] = '';
+			}
+		}
+		$chartData['show_chart'] = (bool) count($chartData['datasets'][0]['data']);
+		$dataReader->close();
+		return $chartData;
 	}
 }

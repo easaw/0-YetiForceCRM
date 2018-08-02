@@ -7,15 +7,14 @@
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
  * ********************************************************************************** */
+
 namespace vtlib;
 
 /**
- * Provides API to work with vtiger CRM Menu
- * @package vtlib
+ * Provides API to work with vtiger CRM Menu.
  */
 class Menu
 {
-
 	/** ID of this menu instance */
 	public $id = false;
 	public $label = false;
@@ -23,9 +22,9 @@ class Menu
 	public $visible = 0;
 
 	/**
-	 * Initialize this instance
-	 * @param Array Map 
-	 * @access private
+	 * Initialize this instance.
+	 *
+	 * @param array Map
 	 */
 	public function initialize($valuemap)
 	{
@@ -36,36 +35,25 @@ class Menu
 	}
 
 	/**
-	 * Get instance of menu by label
-	 * @param String Menu label
+	 * Get instance of menu by label.
+	 *
+	 * @param string Menu label
 	 */
-	static function getInstance($value)
+	public static function getInstance($value)
 	{
 		return false;
 	}
 
 	/**
-	 * Helper function to log messages
-	 * @param String Message to log
-	 * @param Boolean true appends linebreak, false to avoid it
-	 * @access private
+	 * Delete all menus associated with module.
+	 *
+	 * @param ModuleBasic $moduleInstance
 	 */
-	static function log($message, $delim = true)
+	public static function deleteForModule(ModuleBasic $moduleInstance)
 	{
-		Utils::Log($message, $delim);
-	}
-
-	/**
-	 * Delete all menus associated with module
-	 * @param Module Instnace of module to use
-	 */
-	static function deleteForModule($moduleInstance)
-	{
-		$db = \PearDatabase::getInstance();
-		$result = $db->pquery('SELECT id FROM yetiforce_menu WHERE module=?', [$moduleInstance->id]);
-		$db->delete('yetiforce_menu', 'module = ?', [$moduleInstance->id]);
-		$numRows = $db->getRowCount($result);
-		if ($numRows) {
+		$id = (new \App\Db\Query())->select('id')->from('yetiforce_menu')->where(['module' => $moduleInstance->id])->scalar();
+		if ($id) {
+			\App\Db::getInstance()->createCommand()->delete('yetiforce_menu', ['module' => $moduleInstance->id])->execute();
 			$menuRecordModel = new \Settings_Menu_Record_Model();
 			$menuRecordModel->refreshMenuFiles();
 		}

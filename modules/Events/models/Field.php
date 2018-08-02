@@ -9,11 +9,10 @@
  * *********************************************************************************** */
 
 /**
- * Events Field Model Class
+ * Events Field Model Class.
  */
 class Events_Field_Model extends Calendar_Field_Model
 {
-
 	public function get($propertyName)
 	{
 		if (property_exists($this, $propertyName)) {
@@ -21,6 +20,7 @@ class Events_Field_Model extends Calendar_Field_Model
 			if ($propertyName == 'label' && $fieldName == 'due_date') {
 				return 'End Date & Time';
 			}
+
 			return $this->$propertyName;
 		}
 		return null;
@@ -29,29 +29,17 @@ class Events_Field_Model extends Calendar_Field_Model
 	/**
 	 * Customize the display value for detail view.
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
 	{
-		if ($recordInstance) {
-			if ($this->getName() == 'due_date') {
-				$displayValue = $value . ' ' . $recordInstance->get('time_end');
+		if ($recordModel) {
+			if ($this->getName() === 'due_date') {
+				$displayValue = $value . ' ' . $recordModel->get('time_end');
 				$value = $this->getUITypeModel()->getDisplayValue($displayValue);
-				list($endDate, $endTime, $meridiem) = explode(' ', $value);
-				return $endDate . ' ' . $endTime . ' ' . $meridiem;
+				list($endDate, $endTime) = explode(' ', $value);
+
+				return $endDate . ' ' . $endTime;
 			}
 		}
-		return parent::getDisplayValue($value, $record, $recordInstance, $rawText);
-	}
-
-	/**
-	 * Function to check whether field is ajax editable'
-	 * @return <Boolean>
-	 */
-	public function isAjaxEditable()
-	{
-		$return = parent::isAjaxEditable();
-		if (!$return || 'recurringtype' == $this->getFieldName()) {
-			return false;
-		}
-		return true;
+		return parent::getDisplayValue($value, $record, $recordModel, $rawText, $length);
 	}
 }

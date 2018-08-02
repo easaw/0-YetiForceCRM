@@ -1,49 +1,81 @@
 <?php
-/* +***********************************************************************************
- * The contents of this file are subject to the vtiger CRM Public License Version 1.0
- * ("License"); You may not use this file except in compliance with the License
- * The Original Code is:  vtiger CRM Open Source
- * The Initial Developer of the Original Code is vtiger.
- * Portions created by vtiger are Copyright (C) vtiger.
- * All Rights Reserved.
- * *********************************************************************************** */
 
+/**
+ * UIType Taxes Field Class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ * @author YetiForce.com
+ */
 class Vtiger_Taxes_UIType extends Vtiger_Base_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
-	public function getTemplateName()
+	public function getDBValue($value, $recordModel = false)
 	{
-		return 'uitypes/Taxes.tpl';
+		if (is_array($value)) {
+			$value = implode(',', $value);
+		}
+		return \App\Purifier::decodeHtml($value);
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function validate($value, $isUserFormat = false)
 	{
-		$values = explode(',', $value);
-		$taxs = $this->getTaxes();
-		$display = [];
-
-		foreach ($values as $tax) {
-			if (isset($taxs[$tax])) {
-				$display[] = $taxs[$tax]['value'] . '% - ' . $taxs[$tax]['name'];
+		$hashValue = is_array($value) ? implode('|', $value) : $value;
+		if (isset($this->validate[$hashValue]) || empty($value)) {
+			return;
+		}
+		if (!is_array($value)) {
+			$value = [$value];
+		}
+		foreach ($value as $id) {
+			if (!is_numeric($id)) {
+				throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $id, 406);
 			}
 		}
+		$this->validate[$hashValue] = true;
+	}
 
-		return implode(',', $display);
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		$display = [];
+		if (!empty($value)) {
+			$taxes = $this->getPicklistValues();
+			$values = explode(',', $value);
+			$display = array_intersect_key($taxes, array_flip($values));
+		}
+		return \App\Purifier::encodeHtml(implode(', ', $display));
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getEditViewDisplayValue($value, $recordModel = false)
+	{
+		$display = [];
+		if (!empty($value)) {
+			$values = explode(',', $value);
+			$taxes = $this->getPicklistValues();
+			foreach ($values as $tax) {
+				if (isset($taxes[$tax])) {
+					$display[] = \App\Purifier::encodeHtml($tax);
+				}
+			}
+		}
+		return $display;
 	}
 
 	public static function getValues($value)
 	{
 		$values = explode(',', $value);
-		$taxs = self::getTaxes();
+		$taxs = Vtiger_Inventory_Model::getGlobalTaxes();
 		$display = [];
 
 		foreach ($values as $tax) {
@@ -51,32 +83,36 @@ class Vtiger_Taxes_UIType extends Vtiger_Base_UIType
 				$display[$tax] = $taxs[$tax];
 			}
 		}
-
 		return $display;
 	}
 
-	public function getListSearchTemplateName()
+	/**
+	 * Function to get all the available picklist values for the current field.
+	 *
+	 * @return array List of picklist values if the field
+	 */
+	public function getPicklistValues()
 	{
-		return 'uitypes/TaxesFieldSearchView.tpl';
+		$taxes = Vtiger_Inventory_Model::getGlobalTaxes();
+		foreach ($taxes as $key => $tax) {
+			$taxes[$key] = $tax['name'] . ' - ' . $tax['value'] . '%';
+		}
+		return $taxes;
 	}
 
 	/**
-	 * Function to get all the available picklist values for the current field
-	 * @return <Array> List of picklist values if the field is of type picklist or multipicklist, null otherwise.
+	 * {@inheritdoc}
 	 */
-	public function getTaxes()
+	public function getListSearchTemplateName()
 	{
-		$taxs = Vtiger_Cache::get('taxes', 'global');
-		if (!$taxs) {
-			$db = PearDatabase::getInstance();
-			$taxs = [];
-			$result = $db->pquery('SELECT * FROM a_yf_taxes_global WHERE status = ?', [0]);
-			while ($row = $db->fetch_array($result)) {
-				$taxs[$row['id']] = $row;
-			}
-			Vtiger_Cache::set('taxes', 'global', $taxs);
-		}
+		return 'List/Field/MultiPicklist.tpl';
+	}
 
-		return $taxs;
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getTemplateName()
+	{
+		return 'Edit/Field/Taxes.tpl';
 	}
 }

@@ -10,15 +10,21 @@
 
 class Settings_Vtiger_CustomRecordNumbering_View extends Settings_Vtiger_Index_View
 {
+	/**
+	 * Page title.
+	 *
+	 * @var type
+	 */
+	protected $pageTitle = 'LBL_CUSTOMIZE_RECORD_NUMBERING';
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$qualifiedModuleName = $request->getModule(false);
 		$supportedModules = Settings_Vtiger_CustomRecordNumberingModule_Model::getSupportedModules();
 
-		$sourceModule = $request->get('sourceModule');
+		$sourceModule = $request->getByType('sourceModule', 2);
 		if ($sourceModule) {
-			$defaultModuleModel = $supportedModules[\includes\Modules::getModuleId($sourceModule)];
+			$defaultModuleModel = $supportedModules[\App\Module::getModuleId($sourceModule)];
 		} else {
 			$defaultModuleModel = reset($supportedModules);
 		}
@@ -29,30 +35,25 @@ class Settings_Vtiger_CustomRecordNumbering_View extends Settings_Vtiger_Index_V
 		$viewer->view('CustomRecordNumbering.tpl', $qualifiedModuleName);
 	}
 
-	public function getPageTitle(Vtiger_Request $request)
-	{
-		$qualifiedModuleName = $request->getModule(false);
-		return vtranslate('LBL_CUSTOMIZE_RECORD_NUMBERING', $qualifiedModuleName);
-	}
-
 	/**
-	 * Function to get the list of Script models to be included
-	 * @param Vtiger_Request $request
+	 * Function to get the list of Script models to be included.
+	 *
+	 * @param \App\Request $request
+	 *
 	 * @return <Array> - List of Vtiger_JsScript_Model instances
 	 */
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
-		$moduleName = $request->getModule();
-
-		$jsFileNames = array(
+		$jsFileNames = [
 			'modules.Settings.Vtiger.resources.CustomRecordNumbering',
-			'libraries.jquery.ZeroClipboard.ZeroClipboard',
+			'libraries.clipboard.dist.clipboard',
 			'modules.Settings.Vtiger.resources.Edit',
-		);
+		];
 
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 }

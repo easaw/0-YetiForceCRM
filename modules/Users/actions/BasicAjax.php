@@ -6,39 +6,46 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Users_BasicAjax_Action extends Vtiger_BasicAjax_Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		$currentUser = Users_Record_Model::getCurrentUserModel();
 		if (!$currentUser->isAdminUser()) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
 		$searchValue = $request->get('search_value');
-		$searchModule = $request->get('search_module');
-
-		$parentRecordId = $request->get('parent_id');
-		$parentModuleName = $request->get('parent_module');
+		$searchModule = $request->getByType('search_module');
+		$parentRecordId = $request->getInteger('parent_id');
+		$parentModuleName = $request->getByType('parent_module');
 
 		$searchModuleModel = Users_Module_Model::getInstance($searchModule);
 		$records = $searchModuleModel->searchRecord($searchValue, $parentRecordId, $parentModuleName);
-
-		$result = array();
+		$result = [];
 		if (is_array($records)) {
 			foreach ($records as $moduleName => $recordModels) {
 				foreach ($recordModels as $recordModel) {
-					$result[] = array('label' => decode_html($recordModel->getName()), 'value' => decode_html($recordModel->getName()), 'id' => $recordModel->getId());
+					$result[] = [
+						'label' => App\Purifier::decodeHtml($recordModel->getName()),
+						'value' => App\Purifier::decodeHtml($recordModel->getName()),
+						'id' => $recordModel->getId(),
+					];
 				}
 			}
 		}
-
 		$response = new Vtiger_Response();
 		$response->setResult($result);
 		$response->emit();

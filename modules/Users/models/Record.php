@@ -10,19 +10,33 @@
 
 class Users_Record_Model extends Vtiger_Record_Model
 {
-
 	public function getRealId()
 	{
-		if (Vtiger_Session::has('baseUserId') && Vtiger_Session::get('baseUserId') != '') {
-			return Vtiger_Session::get('baseUserId');
+		if (App\Session::has('baseUserId') && App\Session::get('baseUserId') != '') {
+			return App\Session::get('baseUserId');
 		}
 		return $this->getId();
 	}
 
 	/**
+	 * Function to get the Module to which the record belongs.
+	 *
+	 * @return Vtiger_Module_Model
+	 */
+	public function getModule()
+	{
+		if (empty($this->module)) {
+			$this->module = Vtiger_Module_Model::getInstance('Users');
+		}
+		return $this->module;
+	}
+
+	/**
 	 * Gets the value of the key . First it will check whether specified key is a property if not it
-	 *  will get from normal data attribure from base class
-	 * @param <string> $key - property or key name
+	 *  will get from normal data attribure from base class.
+	 *
+	 * @param string $key - property or key name
+	 *
 	 * @return <object>
 	 */
 	public function get($key)
@@ -35,9 +49,10 @@ class Users_Record_Model extends Vtiger_Record_Model
 
 	/**
 	 * Sets the value of the key . First it will check whether specified key is a property if not it
-	 * will set from normal set from base class
-	 * @param <string> $key - property or key name
-	 * @param <string> $value
+	 * will set from normal set from base class.
+	 *
+	 * @param string $key   - property or key name
+	 * @param string $value
 	 */
 	public function set($key, $value)
 	{
@@ -45,85 +60,83 @@ class Users_Record_Model extends Vtiger_Record_Model
 			$this->$key = $value;
 		}
 		parent::set($key, $value);
+
 		return $this;
 	}
 
 	/**
-	 * Function to get the Detail View url for the record
-	 * @return <String> - Record Detail View Url
+	 * Function to get the Detail View url for the record.
+	 *
+	 * @return string - Record Detail View Url
 	 */
 	public function getDetailViewUrl()
 	{
 		$module = $this->getModule();
+
 		return 'index.php?module=' . $this->getModuleName() . '&parent=Settings&view=' . $module->getDetailViewName() . '&record=' . $this->getId();
 	}
 
 	/**
-	 * Function to get the Detail View url for the Preferences page
-	 * @return <String> - Record Detail View Url
+	 * Function to get the Detail View url for the Preferences page.
+	 *
+	 * @return string - Record Detail View Url
 	 */
 	public function getPreferenceDetailViewUrl()
 	{
-		$module = $this->getModule();
 		return 'index.php?module=' . $this->getModuleName() . '&view=PreferenceDetail&record=' . $this->getId();
 	}
 
 	/**
-	 * Function to get the url for the Profile page
-	 * @return <String> - Profile Url
-	 */
-	public function getProfileUrl()
-	{
-		$module = $this->getModule();
-		return 'index.php?module=Users&view=ChangePassword&mode=Profile';
-	}
-
-	/**
-	 * Function to get the Edit View url for the record
-	 * @return <String> - Record Edit View Url
+	 * Function to get the Edit View url for the record.
+	 *
+	 * @return string - Record Edit View Url
 	 */
 	public function getEditViewUrl()
 	{
 		$module = $this->getModule();
+
 		return 'index.php?module=' . $this->getModuleName() . '&parent=Settings&view=' . $module->getEditViewName() . '&record=' . $this->getId();
 	}
 
 	/**
-	 * Function to get the Edit View url for the Preferences page
-	 * @return <String> - Record Detail View Url
+	 * Function to get the Edit View url for the Preferences page.
+	 *
+	 * @return string - Record Detail View Url
 	 */
 	public function getPreferenceEditViewUrl()
 	{
-		$module = $this->getModule();
 		return 'index.php?module=' . $this->getModuleName() . '&view=PreferenceEdit&record=' . $this->getId();
 	}
 
 	/**
-	 * Function to get the Delete Action url for the record
-	 * @return <String> - Record Delete Action Url
+	 * Function to get the Delete Action url for the record.
+	 *
+	 * @return string - Record Delete Action Url
 	 */
 	public function getDeleteUrl()
 	{
 		$module = $this->getModule();
+
 		return 'index.php?module=' . $this->getModuleName() . '&parent=Settings&view=' . $module->getDeleteActionName() . 'User&record=' . $this->getId();
 	}
 
 	/**
-	 * Function to check whether the user is an Admin user
-	 * @return <Boolean> true/false
+	 * Function to check whether the user is an Admin user.
+	 *
+	 * @return bool true/false
 	 */
 	public function isAdminUser()
 	{
-		$adminStatus = $this->get('is_admin');
-		if ($adminStatus == 'on') {
+		if ($this->get('is_admin') === 'on' || $this->get('is_admin') == 1) {
 			return true;
 		}
 		return false;
 	}
 
 	/**
-	 * Function to get the module name
-	 * @return <String> Module Name
+	 * Function to get the module name.
+	 *
+	 * @return string Module Name
 	 */
 	public function getModuleName()
 	{
@@ -136,101 +149,278 @@ class Users_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to save the current Record Model
+	 * Function to save the user record model.
+	 *
+	 * @throws \Exception
 	 */
 	public function save()
 	{
-		parent::save();
+		$entityInstance = $this->getModule()->getEntityInstance();
+		$entityInstance->column_fields['user_name'] = $this->get('user_name');
+		if (!$this->isNew() && empty($this->getPreviousValue())) {
+			App\Log::info('ERR_NO_DATA');
+			return false;
+		}
+		if ($this->getPreviousValue('user_password')) {
+			$this->set('date_password_change', date('Y-m-d H:i:s'));
+		}
+		$eventHandler = new App\EventHandler();
+		$eventHandler->setRecordModel($this);
+		$eventHandler->setModuleName($this->getModuleName());
+		if ($this->getHandlerExceptions()) {
+			$eventHandler->setExceptions($this->getHandlerExceptions());
+		}
+		$eventHandler->trigger('UserBeforeSave');
+		$db = \App\Db::getInstance();
+		$transaction = $db->beginTransaction();
+		try {
+			$this->validate();
+			$this->saveToDb();
+			$this->afterSaveToDb();
+			(new App\BatchMethod(['method' => '\App\PrivilegeUtil::recalculateSharingRulesByUser', 'params' => App\Json::encode([$this->getId()])]))->save();
+			$transaction->commit();
+		} catch (\Exception $e) {
+			$transaction->rollBack();
+			throw $e;
+		}
+		$eventHandler->trigger('UserAfterSave');
+		\App\Cache::clearOpcache();
 	}
 
 	/**
-	 * Function to get all the Home Page components list
-	 * @return <Array> List of the Home Page components
+	 * Save data to the database.
 	 */
-	public function getHomePageComponents()
+	public function saveToDb()
 	{
-		$entity = $this->getEntity();
-		$homePageComponents = $entity->getHomeStuffOrder($this->getId());
-		return $homePageComponents;
+		$entityInstance = $this->getModule()->getEntityInstance();
+		$db = \App\Db::getInstance();
+		$valuesForSave = $this->getValuesForSave();
+		foreach ($valuesForSave as $tableName => $tableData) {
+			if ($this->isNew()) {
+				$db->createCommand()->insert($tableName, [$entityInstance->tab_name_index[$tableName] => $this->getId()] + $tableData)->execute();
+			} else {
+				$db->createCommand()->update($tableName, $tableData, [$entityInstance->tab_name_index[$tableName] => $this->getId()])->execute();
+			}
+		}
+		if (AppConfig::module('Users', 'CHECK_LAST_USERNAME') && isset($valuesForSave['vtiger_users']['user_name'])) {
+			$db = \App\Db::getInstance('log');
+			$db->createCommand()->insert('l_#__username_history', ['user_name' => $valuesForSave['vtiger_users']['user_name'], 'user_id' => $this->getId()])->execute();
+		}
 	}
 
 	/**
-	 * Static Function to get the instance of the User Record model for the current user
+	 * Prepare value to save.
+	 *
+	 * @return array
+	 */
+	public function getValuesForSave()
+	{
+		$forSave = [
+			'vtiger_users' => [
+				'date_modified' => date('Y-m-d H:i:s'),
+				'reminder_next_time' => date('Y-m-d H:i'),
+				'modified_user_id' => \App\User::getCurrentUserRealId(),
+			],
+		];
+		$moduleModel = $this->getModule();
+		$saveFields = $moduleModel->getFieldsForSave($this);
+		if (!$this->isNew()) {
+			$saveFields = array_intersect($saveFields, array_keys($this->changes));
+		}
+		if ($this->isNew()) {
+			$this->setId(\App\Db::getInstance()->getUniqueID('vtiger_users'));
+			$forSave['vtiger_users']['date_entered'] = date('Y-m-d H:i:s');
+		}
+		if ($this->has('changeUserPassword') || $this->isNew()) {
+			$saveFields[] = 'user_password';
+		}
+		foreach ($saveFields as $fieldName) {
+			$fieldModel = $moduleModel->getFieldByName($fieldName);
+			if ($fieldModel) {
+				$uitypeModel = $fieldModel->getUITypeModel();
+				$value = $this->get($fieldName);
+				$uitypeModel->validate($value);
+				if ($value === null || $value === '') {
+					$defaultValue = $fieldModel->getDefaultFieldValue();
+					if ($defaultValue !== '') {
+						$value = $defaultValue;
+					} elseif ($default = $this->getDefaultValue($fieldName)) {
+						$value = $default;
+					} else {
+						$value = $uitypeModel->getDBValue($value, $this);
+					}
+					$this->set($fieldName, $value);
+				}
+				$forSave[$fieldModel->getTableName()][$fieldModel->getColumnName()] = $uitypeModel->convertToSave($value, $this);
+			}
+		}
+		return $forSave;
+	}
+
+	/**
+	 * Get default value.
+	 *
+	 * @param string $fieldName
+	 *
+	 * @return mixed
+	 */
+	protected function getDefaultValue($fieldName)
+	{
+		switch ($fieldName) {
+			case 'currency_id':
+				return CurrencyField::getDBCurrencyId();
+				break;
+			case 'accesskey':
+				return \App\Encryption::generatePassword(20, 'lbn');
+				break;
+			case 'language':
+				return \App\Language::getLanguage();
+				break;
+			case 'time_zone':
+				return App\Fields\DateTime::getTimeZone();
+				break;
+			case 'theme':
+				return Vtiger_Viewer::DEFAULTTHEME;
+				break;
+			case 'is_admin':
+				return 'off';
+				break;
+		}
+		return false;
+	}
+
+	/**
+	 * Validation of modified data.
+	 *
+	 * @throws \App\Exceptions\SaveRecord
+	 */
+	public function validate()
+	{
+		$checkUserExist = false;
+		if ($this->isNew()) {
+			$checkUserExist = true;
+		} else {
+			if ($this->getPreviousValue('is_admin') !== false) {
+				\App\Privilege::setAllUpdater();
+			}
+			if ($this->getPreviousValue('roleid') !== false) {
+				$checkUserExist = true;
+			}
+		}
+		if ($checkUserExist) {
+			$query = (new App\Db\Query())->from('vtiger_users')
+				->leftJoin('vtiger_user2role', 'vtiger_user2role.userid = vtiger_users.id')
+				->where(['vtiger_users.user_name' => $this->get('user_name'), 'vtiger_user2role.roleid' => $this->get('roleid')]);
+			if ($this->isNew() === false) {
+				$query->andWhere(['<>', 'vtiger_users.id', $this->getId()]);
+			}
+			if ($query->exists()) {
+				throw new \App\Exceptions\SaveRecord('ERR_USER_EXISTS||' . $this->get('user_name'), 406);
+			}
+			if ($this->getId()) {
+				\App\Db::getInstance()->createCommand()->delete('vtiger_module_dashboard_widgets', ['userid' => $this->getId()])->execute();
+			}
+			\App\Privilege::setAllUpdater();
+		}
+		if (!$this->isNew() && $this->getPreviousValue('user_password') !== false && App\User::getCurrentUserId() === $this->getId()) {
+			$isExists = (new \App\Db\Query())->from('l_#__userpass_history')->where(['user_id' => $this->getId(), 'pass' => \App\Encryption::createHash($this->get('user_password'))])->exists();
+			if ($isExists) {
+				throw new \App\Exceptions\SaveRecord('ERR_PASSWORD_HAS_ALREADY_BEEN_USED', 406);
+			}
+		}
+	}
+
+	/**
+	 * Function after save to database.
+	 */
+	public function afterSaveToDb()
+	{
+		if ($this->getPreviousValue('user_password') !== false && ($this->isNew() || App\User::getCurrentUserId() === $this->getId())) {
+			\App\Db::getInstance()->createCommand()
+				->insert('l_#__userpass_history', [
+					'pass' => \App\Encryption::createHash($this->get('user_password')),
+					'user_id' => $this->getId(),
+					'date' => date('Y-m-d H:i:s'),
+				])->execute();
+		}
+		if ($this->getPreviousValue('language') !== false && App\User::getCurrentUserRealId() === $this->getId()) {
+			App\Session::set('language', $this->get('language'));
+		}
+		\App\UserPrivilegesFile::createUserPrivilegesfile($this->getId());
+		\App\UserPrivilegesFile::createUserSharingPrivilegesfile($this->getId());
+		if (AppConfig::performance('ENABLE_CACHING_USERS')) {
+			\App\PrivilegeFile::createUsersFile();
+		}
+	}
+
+	/**
+	 * Static Function to get the instance of the User Record model for the current user.
+	 *
 	 * @return Users_Record_Model instance
 	 */
 	protected static $currentUserModels = [];
 
 	public static function getCurrentUserModel()
 	{
-		$currentUser = vglobal('current_user');
-		if (!empty($currentUser)) {
-
+		$currentUser = \App\User::getCurrentUserModel();
+		if ($currentUser->getId()) {
 			// Optimization to avoid object creation every-time
 			// Caching is per-id as current_user can get swapped at runtime (ex. workflow)
-			$currentUserModel = NULL;
-			if (isset(self::$currentUserModels[$currentUser->id])) {
-				$currentUserModel = self::$currentUserModels[$currentUser->id];
-				if (isset($currentUser->column_fields['modifiedtime']) && $currentUser->column_fields['modifiedtime'] != $currentUserModel->get('modifiedtime')) {
-					$currentUserModel = NULL;
-				}
+			$currentUserModel = null;
+			if (isset(static::$currentUserModels[$currentUser->getId()])) {
+				$currentUserModel = static::$currentUserModels[$currentUser->getId()];
 			}
 			if (!$currentUserModel) {
-				$currentUserModel = self::getInstanceFromUserObject($currentUser);
-				self::$currentUserModels[$currentUser->id] = $currentUserModel;
+				static::$currentUserModels[$currentUser->getId()] = $currentUserModel = static::getInstanceFromUserObject($currentUser);
 			}
+
 			return $currentUserModel;
 		}
 		return new self();
 	}
 
 	/**
-	 * Static Function to get the instance of the User Record model from the given Users object
+	 * Static Function to get the instance of the User Record model from the given Users object.
+	 *
 	 * @return Users_Record_Model instance
 	 */
-	public static function getInstanceFromUserObject($userObject)
+	public static function getInstanceFromUserObject($currentUser)
 	{
-		$objectProperties = get_object_vars($userObject);
+		$userDetails = array_map('\App\Purifier::decodeHtml', $currentUser->getDetails());
 		$userModel = new self();
-		foreach ($objectProperties as $properName => $propertyValue) {
-			$userModel->$properName = $propertyValue;
+		foreach ($userDetails as $key => $value) {
+			$userModel->$key = $value;
 		}
-		return $userModel->setData($userObject->column_fields)->setModule('Users')->setEntity($userObject);
+		return $userModel->setData($userDetails)->setModule('Users')->setId($currentUser->getId());
 	}
 
 	/**
-	 * Static Function to get the instance of all the User Record models
+	 * Static Function to get the instance of all the User Record models.
+	 *
 	 * @return <Array> - List of Users_Record_Model instances
 	 */
 	public static function getAll($onlyActive = true)
 	{
-		$db = PearDatabase::getInstance();
-
-		$sql = 'SELECT id FROM vtiger_users';
-		$params = [];
+		$query = (new \App\Db\Query())
+			->select(['id'])
+			->from('vtiger_users');
 		if ($onlyActive) {
-			$sql .= ' WHERE status = ?';
-			$params[] = 'Active';
+			$query->where(['status' => 'Active']);
 		}
-		$result = $db->pquery($sql, $params);
-
-		$noOfUsers = $db->num_rows($result);
 		$users = [];
-		if ($noOfUsers > 0) {
-			$focus = new Users();
-			for ($i = 0; $i < $noOfUsers; ++$i) {
-				$userId = $db->query_result($result, $i, 'id');
-				$focus->id = $userId;
-				$focus->retrieve_entity_info($userId, 'Users');
-
-				$userModel = self::getInstanceFromUserObject($focus);
-				$users[$userModel->getId()] = $userModel;
-			}
+		$dataReader = $query->createCommand()->query();
+		while ($userId = $dataReader->readColumn(0)) {
+			$userModel = self::getInstanceFromUserObject(\App\User::getUserModel($userId));
+			$users[$userModel->getId()] = $userModel;
 		}
+		$dataReader->close();
+
 		return $users;
 	}
 
 	/**
-	 * Function returns the Subordinate users
+	 * Function returns the Subordinate users.
+	 *
 	 * @return <Array>
 	 */
 	public function getSubordinateUsers()
@@ -255,24 +445,9 @@ class Users_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function returns the Users Parent Role
-	 * @return <String>
-	 */
-	public function getParentRoleSequence()
-	{
-		$privilegesModel = $this->get('privileges');
-
-		if (empty($privilegesModel)) {
-			$privilegesModel = Users_Privileges_Model::getInstanceById($this->getId());
-			$this->set('privileges', $privilegesModel);
-		}
-
-		return $privilegesModel->get('parent_role_seq');
-	}
-
-	/**
-	 * Function returns the Users Current Role
-	 * @return <String>
+	 * Function returns the Users Current Role.
+	 *
+	 * @return string
 	 */
 	public function getRole()
 	{
@@ -282,7 +457,6 @@ class Users_Record_Model extends Vtiger_Record_Model
 			$privilegesModel = Users_Privileges_Model::getInstanceById($this->getId());
 			$this->set('privileges', $privilegesModel);
 		}
-
 		return $privilegesModel->get('roleid');
 	}
 
@@ -299,12 +473,14 @@ class Users_Record_Model extends Vtiger_Record_Model
 		}
 		$roleModel = Settings_Roles_Record_Model::getInstanceById($this->get('privileges')->get('roleid'));
 		$this->set('roleDetail', $roleModel);
+
 		return $roleModel;
 	}
 
 	/**
-	 * Function returns the Users Current Role
-	 * @return <String>
+	 * Function returns the Users Current Role.
+	 *
+	 * @return string
 	 */
 	public function getProfiles()
 	{
@@ -327,12 +503,9 @@ class Users_Record_Model extends Vtiger_Record_Model
 	{
 		if (empty($this->get('groups'))) {
 			if ($this->isAdminUser()) {
-				$userGroupFocus = new GetUserGroups();
-				$userGroupFocus->getAllUserGroups($this->getId());
-				$userGroups = $userGroupFocus->user_groups;
+				$userGroups = App\PrivilegeUtil::getAllGroupsByUser($this->getId());
 			} else {
-				$privilegesModel = $this->getPrivileges();
-				$userGroups = $privilegesModel->get('groups');
+				$userGroups = $this->getPrivileges()->get('groups');
 			}
 			$this->set('groups', $userGroups);
 		}
@@ -354,116 +527,49 @@ class Users_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get Images Data
-	 * @return <Array> list of Image names and paths
-	 */
-	public function getImageDetails()
-	{
-		$db = PearDatabase::getInstance();
-
-		$imageDetails = [];
-		$recordId = $this->getId();
-
-		if ($recordId) {
-			$query = 'SELECT vtiger_attachments.* FROM vtiger_attachments
-            LEFT JOIN vtiger_salesmanattachmentsrel ON vtiger_salesmanattachmentsrel.attachmentsid = vtiger_attachments.attachmentsid
-            WHERE vtiger_salesmanattachmentsrel.smid=?';
-
-			$result = $db->pquery($query, [$recordId]);
-
-			if ($db->getRowCount($result)) {
-				$imageId = $db->query_result($result, 0, 'attachmentsid');
-				$imagePath = $db->query_result($result, 0, 'path');
-				$imageName = $db->query_result($result, 0, 'name');
-				//decode_html - added to handle UTF-8 characters in file names
-				$imageOriginalName = decode_html($imageName);
-				$imageDetails[] = array(
-					'id' => $imageId,
-					'orgname' => $imageOriginalName,
-					'path' => $imagePath . $imageId,
-					'name' => $imageName
-				);
-			}
-		}
-		return $imageDetails;
-	}
-
-	public function getImagePath()
-	{
-		$image = $this->getImageDetails();
-		$image = reset($image);
-		if (empty($image) || empty($image['path'])) {
-			$imagePath = vimage_path('DefaultUserIcon.png');
-		} else {
-			$imagePath = $image['path'] . '_' . $image['orgname'];
-		}
-		return $imagePath;
-	}
-
-	/**
-	 * Function to get privillage model
+	 * Function to get privillage model.
+	 *
 	 * @return $privillage model
 	 */
 	public function getPrivileges()
 	{
 		$privilegesModel = $this->get('privileges');
-
 		if (empty($privilegesModel)) {
 			$privilegesModel = Users_Privileges_Model::getInstanceById($this->getId());
 			$this->set('privileges', $privilegesModel);
 		}
-
 		return $privilegesModel;
 	}
 
 	/**
-	 * Function to get user default activity view
-	 * @return <String>
+	 * Function to get user default activity view.
+	 *
+	 * @return string
 	 */
 	public function getActivityView()
 	{
 		$activityView = $this->get('activity_view');
+
 		return $activityView;
 	}
 
 	/**
-	 * Function to delete corresponding image
-	 * @param <type> $imageId
+	 * Function to get the Day Starts picklist values.
+	 *
+	 * @return array
 	 */
-	public function deleteImage($imageId)
+	public function getDayStartsPicklistValues()
 	{
-		$db = PearDatabase::getInstance();
-
-		$checkResult = $db->pquery('SELECT smid FROM vtiger_salesmanattachmentsrel WHERE attachmentsid = ?', array($imageId));
-		$smId = $db->query_result($checkResult, 0, 'smid');
-
-		if ($this->getId() === $smId) {
-			$db->pquery('DELETE FROM vtiger_attachments WHERE attachmentsid = ?', array($imageId));
-			$db->pquery('DELETE FROM vtiger_salesmanattachmentsrel WHERE attachmentsid = ?', array($imageId));
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Function to get the Day Starts picklist values
-	 * @param type $name Description
-	 */
-	public static function getDayStartsPicklistValues($stucturedValues)
-	{
-		$fieldModel = $stucturedValues['LBL_CALENDAR_SETTINGS'];
-		$hour_format = $fieldModel['hour_format']->getPicklistValues();
-		$start_hour = $fieldModel['start_hour']->getPicklistValues();
-
-		$defaultValues = array('00:00' => '12:00 AM', '01:00' => '01:00 AM', '02:00' => '02:00 AM', '03:00' => '03:00 AM', '04:00' => '04:00 AM', '05:00' => '05:00 AM',
+		$hourFormats = $this->getField('hour_format')->getPicklistValues();
+		$startHour = $this->getField('start_hour')->getPicklistValues();
+		$defaultValues = ['00:00' => '12:00 AM', '01:00' => '01:00 AM', '02:00' => '02:00 AM', '03:00' => '03:00 AM', '04:00' => '04:00 AM', '05:00' => '05:00 AM',
 			'06:00' => '06:00 AM', '07:00' => '07:00 AM', '08:00' => '08:00 AM', '09:00' => '09:00 AM', '10:00' => '10:00 AM', '11:00' => '11:00 AM', '12:00' => '12:00 PM',
 			'13:00' => '01:00 PM', '14:00' => '02:00 PM', '15:00' => '03:00 PM', '16:00' => '04:00 PM', '17:00' => '05:00 PM', '18:00' => '06:00 PM', '19:00' => '07:00 PM',
-			'20:00' => '08:00 PM', '21:00' => '09:00 PM', '22:00' => '10:00 PM', '23:00' => '11:00 PM');
-
+			'20:00' => '08:00 PM', '21:00' => '09:00 PM', '22:00' => '10:00 PM', '23:00' => '11:00 PM', ];
 		$picklistDependencyData = [];
-		foreach ($hour_format as $value) {
+		foreach ($hourFormats as $value) {
 			if ($value == 24) {
-				$picklistDependencyData['hour_format'][$value]['start_hour'] = $start_hour;
+				$picklistDependencyData['hour_format'][$value]['start_hour'] = $startHour;
 			} else {
 				$picklistDependencyData['hour_format'][$value]['start_hour'] = $defaultValues;
 			}
@@ -475,33 +581,26 @@ class Users_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get user groups
-	 * @param type $userId
-	 * @return <array> - groupId's
+	 * Function to get user groups.
+	 *
+	 * @param int $userId
+	 *
+	 * @return array - groupId's
 	 */
 	public static function getUserGroups($userId)
 	{
-		$groupIds = Vtiger_Cache::get('getUserGroups', $userId);
-		if ($groupIds !== false) {
-			return $groupIds;
-		}
-		$db = PearDatabase::getInstance();
-		$groupIds = [];
-		$query = 'SELECT groupid FROM vtiger_users2group WHERE userid=?';
-		$result = $db->pquery($query, array($userId));
-		while (($groupId = $db->getSingleValue($result)) !== false) {
-			$groupIds[] = $groupId;
-		}
-		Vtiger_Cache::set('getUserGroups', $userId, $groupIds);
-		return $groupIds;
+		return App\PrivilegeUtil::getUserGroups($userId);
 	}
+
 	/**
-	 * Function returns the users activity reminder in seconds
+	 * Function returns the users activity reminder in seconds.
+	 *
 	 * @return string
 	 */
 
 	/**
-	 * Function returns the users activity reminder in seconds
+	 * Function returns the users activity reminder in seconds.
+	 *
 	 * @return string
 	 */
 	public function getCurrentUserActivityReminderInSeconds()
@@ -518,11 +617,11 @@ class Users_Record_Model extends Vtiger_Record_Model
 						case 'Minute':
 						case 'Minutes': $activityReminderInSeconds = $number * 60;
 							break;
-						case 'Hour' : $activityReminderInSeconds = $number * 60 * 60;
+						case 'Hour': $activityReminderInSeconds = $number * 60 * 60;
 							break;
-						case 'Day' : $activityReminderInSeconds = $number * 60 * 60 * 24;
+						case 'Day': $activityReminderInSeconds = $number * 60 * 60 * 24;
 							break;
-						default : $activityReminderInSeconds = '';
+						default: $activityReminderInSeconds = '';
 					}
 				}
 			}
@@ -531,70 +630,88 @@ class Users_Record_Model extends Vtiger_Record_Model
 	}
 
 	/**
-	 * Function to get the users count
-	 * @param <Boolean> $onlyActive - If true it returns count of only acive users else only inactive users
-	 * @return <Integer> number of users
+	 * Function to get the users count.
+	 *
+	 * @param bool $onlyActive - If true it returns count of only acive users else only inactive users
+	 *
+	 * @return int number of users
 	 */
 	public static function getCount($onlyActive = false)
 	{
-		$db = PearDatabase::getInstance();
-		$query = 'SELECT 1 FROM vtiger_users ';
-		$params = [];
-
+		$query = (new App\Db\Query())->from('vtiger_users');
 		if ($onlyActive) {
-			$query.= ' WHERE status=? ';
-			array_push($params, 'active');
+			$query->where(['status' => 'Active']);
 		}
-
-		$result = $db->pquery($query, $params);
-
-		$numOfUsers = $db->num_rows($result);
-		return $numOfUsers;
+		return $query->count();
 	}
 
 	/**
-	 * Funtion to get Duplicate Record Url
-	 * @return <String>
+	 * Funtion to get Duplicate Record Url.
+	 *
+	 * @return string
 	 */
 	public function getDuplicateRecordUrl()
 	{
 		$module = $this->getModule();
+
 		return 'index.php?module=' . $this->getModuleName() . '&parent=Settings&view=' . $module->getEditViewName() . '&record=' . $this->getId() . '&isDuplicate=true';
 	}
 
 	/**
-	 * Function to get instance of user model by name
-	 * @param <String> $userName
-	 * @return <Users_Record_Model>
+	 * Function to get instance of user model by name.
+	 *
+	 * @param string $userName
+	 *
+	 * @return Users_Record_Model
 	 */
 	public static function getInstanceByName($userName)
 	{
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT id FROM vtiger_users WHERE user_name = ?', array($userName));
-
-		if ($db->num_rows($result)) {
-			return Users_Record_Model::getInstanceById($db->query_result($result, 0, 'id'), 'Users');
+		$id = (new \App\Db\Query())->select(['id'])->from('vtiger_users')->where(['or', ['user_name' => $userName], ['user_name' => strtolower($userName)]])->scalar();
+		if ($id) {
+			return self::getInstanceById($id, 'Users');
 		}
 		return false;
 	}
 
 	/**
-	 * Function to delete the current Record Model
+	 * Function to get instance of user model by id from file.
+	 *
+	 * @param int $userId
+	 *
+	 * @return Users_Record_Model
+	 */
+	public static function getInstanceFromFile($userId)
+	{
+		if (empty($userId)) {
+			\App\Log::error('No user id: ' . $userId);
+
+			return false;
+		}
+		$valueMap = \App\User::getPrivilegesFile($userId);
+		$instance = new self();
+		$instance->setData($valueMap['user_info']);
+
+		return $instance;
+	}
+
+	/**
+	 * Function to delete the current Record Model.
 	 */
 	public function delete()
 	{
-		$this->getModule()->deleteRecord($this);
-	}
-
-	public function isAccountOwner()
-	{
-		$db = PearDatabase::getInstance();
-		$result = $db->pquery('SELECT is_owner FROM vtiger_users WHERE id = ?', [$this->getId()]);
-		$isOwner = $db->getSingleValue($result);
-		if ($isOwner == 1) {
-			return true;
+		$db = \App\Db::getInstance();
+		$transaction = $db->beginTransaction();
+		try {
+			$db->createCommand()->update('vtiger_users', [
+				'status' => 'Inactive',
+				'date_modified' => date('Y-m-d H:i:s'),
+				'modified_user_id' => App\User::getCurrentUserRealId(),
+				], ['id' => $this->getId()])->execute();
+			$transaction->commit();
+		} catch (\Exception $e) {
+			$transaction->rollBack();
+			throw $e;
 		}
-		return false;
 	}
 
 	public function getActiveAdminUsers()
@@ -602,75 +719,57 @@ class Users_Record_Model extends Vtiger_Record_Model
 		$db = PearDatabase::getInstance();
 
 		$sql = 'SELECT id FROM vtiger_users WHERE status=? && is_admin=?';
-		$result = $db->pquery($sql, array('ACTIVE', 'on'));
+		$result = $db->pquery($sql, ['ACTIVE', 'on']);
 
-		$noOfUsers = $db->num_rows($result);
+		$noOfUsers = $db->numRows($result);
 		$users = [];
 		if ($noOfUsers > 0) {
-			$focus = new Users();
 			for ($i = 0; $i < $noOfUsers; ++$i) {
-				$userId = $db->query_result($result, $i, 'id');
-				$focus->id = $userId;
-				$focus->retrieve_entity_info($userId, 'Users');
-
-				$userModel = self::getInstanceFromUserObject($focus);
+				$userId = $db->queryResult($result, $i, 'id');
+				$userModel = self::getInstanceFromUserObject(\App\User::getUserModel($userId));
 				$users[$userModel->getId()] = $userModel;
 			}
 		}
 		return $users;
 	}
 
-	/**
-	 * Function to get the user hash
-	 * @param type $userId
-	 * @return boolean
-	 */
-	public function getUserHash()
-	{
-		$db = PearDatabase::getInstance();
-		$query = 'SELECT user_hash FROM vtiger_users WHERE id = ?';
-		$result = $db->pquery($query, array($this->getId()));
-		if ($db->num_rows($result) > 0) {
-			return $db->query_result($result, 0, 'user_hash');
-		}
-	}
 	/*
 	 * Function to delete user permanemtly from CRM and
 	 * assign all record which are assigned to that user
 	 * and not transfered to other user to other user
-	 * 
+	 *
 	 * @param User Ids of user to be deleted and user
 	 * to whom records should be assigned
 	 */
 
-	public function deleteUserPermanently($userId, $newOwnerId)
+	public static function deleteUserPermanently($userId, $newOwnerId)
 	{
-		$db = PearDatabase::getInstance();
-
-		$sql = 'UPDATE vtiger_crmentity SET smcreatorid=?,smownerid=? WHERE smcreatorid=? && setype=?';
-		$db->pquery($sql, array($newOwnerId, $newOwnerId, $userId, 'ModComments'));
-
-		//update history details in vtiger_modtracker_basic 
-		$sql = 'update vtiger_modtracker_basic set whodid=? where whodid=?';
-		$db->pquery($sql, array($newOwnerId, $userId));
-
-		//update comments details in vtiger_modcomments 
-		$sql = 'update vtiger_modcomments set userid=? where userid=?';
-		$db->pquery($sql, array($newOwnerId, $userId));
-
-		$sql = 'DELETE FROM vtiger_users WHERE id=?';
-		$db->pquery($sql, array($userId));
-
-		deleteUserRelatedSharingRules($userId);
+		$db = App\Db::getInstance();
+		$db->createCommand()->update('vtiger_crmentity', ['smcreatorid' => $newOwnerId, 'smownerid' => $newOwnerId], ['smcreatorid' => $userId, 'setype' => 'ModComments'])->execute();
+		//update history details in vtiger_modtracker_basic
+		$db->createCommand()->update('vtiger_modtracker_basic', ['whodid' => $newOwnerId], ['whodid' => $userId])->execute();
+		//update comments details in vtiger_modcomments
+		$db->createCommand()->update('vtiger_modcomments', ['userid' => $newOwnerId], ['userid' => $userId])->execute();
+		$db->createCommand()->delete('vtiger_users', ['id' => $userId])->execute();
+		\App\PrivilegeUtil::deleteRelatedSharingRules($userId, 'Users');
+		$fileName = "user_privileges/sharing_privileges_{$userId}.php";
+		if (file_exists($fileName)) {
+			unlink($fileName);
+		}
+		$fileName = "user_privileges/user_privileges_{$userId}.php";
+		if (file_exists($fileName)) {
+			unlink($fileName);
+		}
 	}
 
 	/**
-	 * Function to get the Display Name for the record
-	 * @return <String> - Entity Display Name for the record
+	 * Function to get the Display Name for the record.
+	 *
+	 * @return string - Entity Display Name for the record
 	 */
 	public function getDisplayName()
 	{
-		return \vtlib\Deprecated::getFullNameFromArray($this->getModuleName(), $this->getData());
+		return \App\Purifier::encodeHtml(\vtlib\Deprecated::getFullNameFromArray($this->getModuleName(), $this->getData()));
 	}
 
 	public function getSwitchUsersUrl()
@@ -683,9 +782,10 @@ class Users_Record_Model extends Vtiger_Record_Model
 		if ($this->has('locks')) {
 			return $this->get('locks');
 		}
-		require('user_privileges/locks.php');
-		if ($this->getId() && key_exists($this->getId(), $locks)) {
+		require 'user_privileges/locks.php';
+		if ($this->getId() && array_key_exists($this->getId(), $locks)) {
 			$this->set('locks', $locks[$this->getId()]);
+
 			return $locks[$this->getId()];
 		}
 		return [];
@@ -733,5 +833,143 @@ class Users_Record_Model extends Vtiger_Record_Model
 			}
 		}
 		return $return;
+	}
+
+	/**
+	 * Encrypt user password.
+	 *
+	 * @param string $password User password
+	 *
+	 * @return string Encrypted password
+	 */
+	public function encryptPassword($password)
+	{
+		return password_hash($password, PASSWORD_BCRYPT, ['cost' => AppConfig::security('USER_ENCRYPT_PASSWORD_COST')]);
+	}
+
+	/**
+	 * Verify user assword.
+	 *
+	 * @param string $password
+	 *
+	 * @return bool
+	 */
+	public function verifyPassword($password)
+	{
+		return password_verify($password, $this->get('user_password'));
+	}
+
+	/**
+	 * Slower logon for security purposes.
+	 *
+	 * @param string $password
+	 */
+	public function fakeEncryptPassword($password)
+	{
+		$this->getAuthDetail();
+		\Settings_Password_Record_Model::getUserPassConfig();
+		password_verify($password, $this->encryptPassword($password));
+	}
+
+	/**
+	 * The function to log on to the system.
+	 *
+	 * @param string $password The password of the user to authenticate
+	 *
+	 * @return bool true if the user is authenticated, false otherwise
+	 */
+	public function doLogin($password)
+	{
+		$userName = $this->get('user_name');
+		$row = (new App\Db\Query())->select(['id', 'deleted'])->from('vtiger_users')->where(['or', ['user_name' => $userName], ['user_name' => strtolower($userName)]])->limit(1)->one();
+		if (!$row || (int) $row['deleted'] !== 0) {
+			$this->fakeEncryptPassword($password);
+			\App\Log::info('User not found: ' . $userName, 'UserAuthentication');
+
+			return false;
+		}
+		$this->set('id', $row['id']);
+		$userRecordModel = static::getInstanceFromFile($row['id']);
+		if ($userRecordModel->get('status') !== 'Active') {
+			\App\Log::info('Inactive user :' . $userName, 'UserAuthentication');
+
+			return false;
+		}
+		$result = $userRecordModel->doLoginByAuthMethod($password);
+		if (!is_null($result)) {
+			return $result;
+		} elseif (is_null($result) && $userRecordModel->verifyPassword($password)) {
+			\App\Session::set('UserAuthMethod', 'PASSWORD');
+
+			return true;
+		}
+		\App\Log::info('Invalid password. User: ' . $userName, 'UserAuthentication');
+
+		return false;
+	}
+
+	/**
+	 * User authorization based on authorization methods.
+	 *
+	 * @param string $password
+	 *
+	 * @return bool|null
+	 */
+	protected function doLoginByAuthMethod($password)
+	{
+		$auth = $this->getAuthDetail();
+		if ($auth['ldap']['active'] === 'true') {
+			$authMethod = new Users_Ldap_Authmethod($this);
+			return $authMethod->process($auth['ldap'], $password);
+		}
+		return null;
+	}
+
+	/**
+	 * Get authorization detail.
+	 *
+	 * @return array
+	 */
+	protected function getAuthDetail()
+	{
+		if (\App\Cache::has('getAuthMethods', 'config')) {
+			$auth = \App\Cache::get('getAuthMethods', 'config');
+		}
+		$dataReader = (new \App\Db\Query())->from('yetiforce_auth')->createCommand()->query();
+		$auth = [];
+		while ($row = $dataReader->read()) {
+			$auth[$row['type']][$row['param']] = $row['value'];
+		}
+		$dataReader->close();
+		\App\Cache::save('getAuthMethods', 'config', $auth);
+
+		return $auth;
+	}
+
+	/**
+	 * Verify  password change.
+	 *
+	 * @param App\User $userModel
+	 *
+	 * @return bool
+	 */
+	public function verifyPasswordChange(App\User $userModel)
+	{
+		$passConfig = \Settings_Password_Record_Model::getUserPassConfig();
+		$time = (int) $passConfig['change_time'];
+		if ((int) $userModel->getDetail('force_password_change') === 1) {
+			\App\Session::set('ShowUserPasswordChange', 2);
+		}
+		if ($time === 0) {
+			return false;
+		}
+		if (strtotime("-$time day") > strtotime($userModel->getDetail('date_password_change'))) {
+			$time += (int) $passConfig['lock_time'];
+			if (strtotime("-$time day") > strtotime($userModel->getDetail('date_password_change'))) {
+				return true;
+			}
+			\App\Session::set('ShowUserPasswordChange', 1);
+		}
+		return false;
 	}
 }

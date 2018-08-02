@@ -9,28 +9,33 @@
  * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
-class PriceBooks_ProductListPrice_Action extends Vtiger_Action_Controller
+class PriceBooks_ProductListPrice_Action extends \App\Controller\Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function checkPermission(\App\Request $request)
 	{
 		$currentUserPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		if (!$currentUserPriviligesModel->hasModulePermission($request->getModule())) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
+		}
+		if ($request->isEmpty('record', true)) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
+		}
+		if (!\App\Privilege::isPermitted($request->getModule(), 'DetailView', $request->getInteger('record'))) {
+			throw new \App\Exceptions\NoPermittedToRecord('ERR_NO_PERMISSIONS_FOR_THE_RECORD', 406);
 		}
 	}
 
-	public function process(Vtiger_Request $request)
+	/**
+	 * {@inheritdoc}
+	 */
+	public function process(\App\Request $request)
 	{
-		$recordId = $request->get('record');
-		$moduleModel = $request->getModule();
-		$priceBookModel = Vtiger_Record_Model::getInstanceById($recordId, $moduleModel);
-		$listPrice = $priceBookModel->getProductsListPrice($request->get('itemId'));
-
+		$priceBookModel = Vtiger_Record_Model::getInstanceById($request->getInteger('record'), $request->getModule());
 		$response = new Vtiger_Response();
-		$response->setResult(array($listPrice));
+		$response->setResult($priceBookModel->getProductsListPrice($request->getInteger('src_record')));
 		$response->emit();
 	}
 }
-
-?>

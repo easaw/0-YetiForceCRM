@@ -1,17 +1,15 @@
 <?php
 
 /**
- * @package YetiForce.Model
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-class Settings_Inventory_Module_Model extends Vtiger_Base_Model
+class Settings_Inventory_Module_Model extends \App\Base
 {
-
 	public static function getCleanInstance()
 	{
-		$instance = new self();
-		return $instance;
+		return new self();
 	}
 
 	public static function getPicklistValues($type)
@@ -19,47 +17,57 @@ class Settings_Inventory_Module_Model extends Vtiger_Base_Model
 		$picklists['aggregation'] = ['LBL_CANNOT_BE_COMBINED', 'LBL_IN_TOTAL', 'LBL_CASCADE'];
 		$picklists['discounts'] = ['LBL_GLOBAL', 'LBL_GROUP', 'LBL_INDIVIDUAL'];
 		$picklists['taxs'] = ['LBL_GLOBAL', 'LBL_GROUP', 'LBL_INDIVIDUAL', 'LBL_REGIONAL'];
+
 		return $picklists[$type];
 	}
 
+	private static $tablename = ['DiscountConfiguration' => 'a_#__discounts_config', 'TaxConfiguration' => 'a_#__taxes_config'];
+
 	public static function getTableNameFromType($type)
 	{
-		$tablename = ['DiscountConfiguration' => 'a_yf_discounts_config', 'TaxConfiguration' => 'a_yf_taxes_config'];
-		return $tablename[$type];
+		return static::$tablename[$type];
 	}
 
 	public static function getConfig($type, $name = false)
 	{
-		
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__ . " | Type: " . print_r($type, true) . " | Name: " . print_r($name, true));
-		$db = PearDatabase::getInstance();
+		\App\Log::trace('Start ' . __METHOD__ . ' | Type: ' . print_r($type, true) . ' | Name: ' . print_r($name, true));
 		$tableName = self::getTableNameFromType($type);
-		$sql = sprintf('SELECT * FROM `%s`', $tableName);
+		$query = (new \App\Db\Query())->from($tableName);
 		if ($name && !is_array($name)) {
 			$name = [$name];
 		}
-		$params = [];
 		if ($name) {
-			$sql .= sprintf(' WHERE `param` IN (%s)', generateQuestionMarks($name));
-			$params = $name;
+			$query->where(['param' => $name]);
 		}
-		$result = $db->pquery($sql, $params);
 		$output = [];
-		while ($row = $db->fetch_array($result)) {
+		$dataReader = $query->createCommand()->query();
+		while ($row = $dataReader->read()) {
 			$output[$row['param']] = $row['value'];
 		}
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		$dataReader->close();
+		\App\Log::trace('End ' . __METHOD__);
+
 		return $output;
 	}
 
+	/**
+	 * Function saves configuration data to database.
+	 *
+	 * @param string $type
+	 * @param array  $param
+	 *
+	 * @return bool
+	 */
 	public function setConfig($type, $param)
 	{
-		
-		\App\Log::trace('Start ' . __CLASS__ . ':' . __FUNCTION__);
-		$db = PearDatabase::getInstance();
+		\App\Log::trace('Start ' . __METHOD__);
 		$tableName = self::getTableNameFromType($type);
-		$db->update($tableName, ['value' => $param['value']], '`param` = ?', [$param['param']]);
-		\App\Log::trace('End ' . __CLASS__ . ':' . __FUNCTION__);
+		\App\Db::getInstance()->createCommand()
+			->update($tableName, ['value' => $param['value']], ['param' => $param['param']])
+			->execute();
+		\App\Cache::delete('Inventory', $type);
+		\App\Log::trace('End ' . __METHOD__);
+
 		return true;
 	}
 }

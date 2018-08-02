@@ -11,26 +11,17 @@
 
 class ModComments_Save_Action extends Vtiger_Save_Action
 {
-
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
-		$recordId = $request->get('record');
-		$currentUserModel = Users_Record_Model::getCurrentUserModel();
-		$request->set('assigned_user_id', $currentUserModel->getId());
-		$request->set('userid', $currentUserModel->getId());
-
+		$request->set('assigned_user_id', App\User::getCurrentUserId());
 		$recordModel = $this->saveRecord($request);
-		$responseFieldsToSent = array('reasontoedit', 'commentcontent');
-		$fieldModelList = $recordModel->getModule()->getFields();
+		$responseFieldsToSent = ['reasontoedit', 'commentcontent'];
 		foreach ($responseFieldsToSent as $fieldName) {
-			$fieldModel = $fieldModelList[$fieldName];
-			$fieldValue = $recordModel->get($fieldName);
-			$result[$fieldName] = $fieldModel->getDisplayValue(Vtiger_Util_Helper::toSafeHTML($fieldValue));
+			$result[$fieldName] = $recordModel->getDisplayValue($fieldName);
 		}
-
 		$result['success'] = true;
-		$result['modifiedtime'] = Vtiger_Util_Helper::formatDateDiffInStrings($recordModel->get('modifiedtime'));
-		$result['modifiedtimetitle'] = Vtiger_Util_Helper::formatDateTimeIntoDayString($recordModel->get('modifiedtime'));
+		$result['modifiedtime'] = \App\Fields\DateTime::formatToViewDate($recordModel->get('modifiedtime'));
+		$result['modifiedtimetitle'] = \App\Fields\DateTime::formatToDay($recordModel->get('modifiedtime'));
 
 		$response = new Vtiger_Response();
 		$response->setEmitType(Vtiger_Response::$EMIT_JSON);

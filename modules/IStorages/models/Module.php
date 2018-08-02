@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Module Class for IStorages
- * @package YetiForce.Model
- * @license licenses/License.html
+ * Module Class for IStorages.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class IStorages_Module_Model extends Vtiger_Module_Model
 {
-
 	public static $modulesToCalculate = ['add' => ['IGRN', 'IIDN', 'ISTRN', 'IGRNC'], 'remove' => ['IGDN', 'IGIN', 'IPreOrder', 'ISTDN', 'IGDNC']];
 
 	public static function getOperator($moduleName, $action)
@@ -17,17 +17,19 @@ class IStorages_Module_Model extends Vtiger_Module_Model
 			if ('add' == $action) {
 				return '+';
 			}
+
 			return '-';
 		}
 		if (in_array($moduleName, self::$modulesToCalculate['remove'])) {
 			if ('add' == $action) {
 				return '-';
 			}
+
 			return '+';
 		}
 	}
 
-	public static function RecalculateStock($moduleName = false, $data = false, $storageId = false, $action = false)
+	public static function recalculateStock($moduleName = false, $data = false, $storageId = false, $action = false)
 	{
 		if ($moduleName === false) {
 			self::setQtyInStocks(self::getAllQtyInStocks());
@@ -38,9 +40,8 @@ class IStorages_Module_Model extends Vtiger_Module_Model
 
 	public static function setQtyInStock($moduleName, $data, $storageId, $action)
 	{
-		$db = PearDatabase::getInstance();
-		$productRecords = [];
-
+		$db = App\Db::getInstance();
+		$qtyInStock = $productRecords = [];
 		foreach ($data as $product) {
 			if ($product['qtyparam'] == '1') {
 				// If product was added with diffrent units (pcs not packs)
@@ -55,34 +56,36 @@ class IStorages_Module_Model extends Vtiger_Module_Model
 			} else {
 				$productQty = $product['qty'];
 			}
+			if (!isset($qtyInStock[$product['name']])) {
+				$qtyInStock[$product['name']] = 0;
+			}
 			$qtyInStock[$product['name']] += $productQty;
 		}
 		$operator = self::getOperator($moduleName, $action);
-		$qty = '(qtyinstock ' . $operator . ' ?)';
-
 		// Update qtyinstock in Products
-		$params = [];
-		$query = 'UPDATE vtiger_products SET qtyinstock = CASE ';
-		foreach ($qtyInStock as $ID => $value) {
-			$query .= ' WHEN `productid` = ? THEN ' . $qty;
-			array_push($params, $ID, $value);
+		$expresion = 'CASE ';
+		foreach ($qtyInStock as $id => $value) {
+			$expresion .= " WHEN {$db->quoteColumnName('productid')} = {$db->quoteValue($id)} THEN (qtyinstock {$operator} {$db->quoteValue($value)})";
 		}
-		$query .= ' END WHERE `productid` IN (' . $db->generateQuestionMarks(array_keys($qtyInStock)) . ')';
-		$db->pquery($query, array_merge($params, array_keys($qtyInStock)));
-
+		$expresion .= ' END';
+		$db->createCommand()->update('vtiger_products', ['qtyinstock' => new yii\db\Expression($expresion)], ['productid' => array_keys($qtyInStock)])->execute();
 		// Saving the amount of product in stock.
 		$referenceInfo = Vtiger_Relation_Model::getReferenceTableInfo('Products', 'IStorages');
-		$query = 'SELECT %s,qtyinstock FROM %s  WHERE `%s` = ? && `%s` IN (%s);';
-		$query = sprintf($query, $referenceInfo['rel'], $referenceInfo['table'], $referenceInfo['base'], $referenceInfo['rel'], $db->generateQuestionMarks(array_keys($qtyInStock)));
-		$result = $db->pquery($query, array_merge([$storageId], array_keys($qtyInStock)));
-		$relData = $result->fetchAll(PDO::FETCH_GROUP | PDO::FETCH_COLUMN);
-		foreach ($qtyInStock as $ID => $value) {
-			if (array_key_exists($ID, $relData)) {
-				$query = 'UPDATE %s SET `qtyinstock` = %s WHERE `%s` = ? && `%s` = ? ';
-				$query = sprintf($query, $referenceInfo['table'], $qty, $referenceInfo['base'], $referenceInfo['rel']);
-				$db->pquery($query, [$value, $storageId, $ID]);
+		$relData = (new App\Db\Query())->select([$referenceInfo['rel'], 'qtyinstock'])
+			->from($referenceInfo['table'])
+			->where([$referenceInfo['base'] => $storageId, $referenceInfo['rel'] => array_keys($qtyInStock)])
+			->createCommand()->queryAllByGroup(0);
+		foreach ($qtyInStock as $id => $value) {
+			if (array_key_exists($id, $relData)) {
+				$db->createCommand()->update($referenceInfo['table'], [
+					'qtyinstock' => new yii\db\Expression('qtyinstock ' . $operator . ' ' . $value),
+					], [$referenceInfo['base'] => $storageId, $referenceInfo['rel'] => $id])->execute();
 			} else {
-				$db->insert($referenceInfo['table'], [$referenceInfo['base'] => $storageId, $referenceInfo['rel'] => $ID, 'qtyinstock' => $operator == '+' ? $value : $operator . $value]);
+				$db->createCommand()->insert($referenceInfo['table'], [
+					$referenceInfo['base'] => $storageId,
+					$referenceInfo['rel'] => $id,
+					'qtyinstock' => $operator == '+' ? $value : $operator . $value,
+				])->execute();
 			}
 		}
 	}
@@ -95,7 +98,7 @@ class IStorages_Module_Model extends Vtiger_Module_Model
 		foreach (self::$modulesToCalculate as $type => $modules) {
 			$sql = [];
 			foreach ($modules as $moduleName) {
-				if (\includes\Modules::isModuleActive($moduleName) === false) {
+				if (\App\Module::isModuleActive($moduleName) === false) {
 					continue;
 				}
 				$inventoryTableName = Vtiger_InventoryField_Model::getInstance($moduleName)->getTableName();
@@ -129,9 +132,9 @@ class IStorages_Module_Model extends Vtiger_Module_Model
 		} else {
 			$query = 'UPDATE vtiger_products SET qtyinstock = CASE ';
 			$params = [];
-			foreach ($sumProduct as $ID => $value) {
+			foreach ($sumProduct as $id => $value) {
 				$query .= ' WHEN `productid` = ? THEN ?';
-				array_push($params, $ID, $value);
+				array_push($params, $id, $value);
 			}
 			$query .= ' END WHERE `productid` IN (' . $db->generateQuestionMarks(array_keys($sumProduct)) . ')';
 			$db->pquery($query, array_merge($params, array_keys($sumProduct)));
@@ -139,9 +142,9 @@ class IStorages_Module_Model extends Vtiger_Module_Model
 		$referenceInfo = Vtiger_Relation_Model::getReferenceTableInfo('Products', 'IStorages');
 		$db->delete($referenceInfo['table']);
 		if (!empty($sumProductInStorage)) {
-			foreach ($sumProductInStorage as $ID => $values) {
+			foreach ($sumProductInStorage as $id => $values) {
 				foreach ($values as $productId => $value) {
-					$db->insert($referenceInfo['table'], ['crmid' => $ID, 'relcrmid' => $productId, 'qtyinstock' => $value]);
+					$db->insert($referenceInfo['table'], ['crmid' => $id, 'relcrmid' => $productId, 'qtyinstock' => $value]);
 				}
 			}
 		}

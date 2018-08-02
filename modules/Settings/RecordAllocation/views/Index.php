@@ -1,13 +1,15 @@
 <?php
 
 /**
- * Record allocation
- * @package YetiForce.View
- * @license licenses/License.html
+ * Record allocation.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
 class Settings_RecordAllocation_Index_View extends Settings_Vtiger_Index_View
 {
+	use \App\Controller\ExposeMethod;
 
 	public function __construct()
 	{
@@ -15,7 +17,7 @@ class Settings_RecordAllocation_Index_View extends Settings_Vtiger_Index_View
 		$this->exposeMethod('getPanel');
 	}
 
-	public function preProcess(Vtiger_Request $request, $display = true)
+	public function preProcess(\App\Request $request, $display = true)
 	{
 		parent::preProcess($request, $display);
 		$moduleName = $request->getModule();
@@ -26,11 +28,12 @@ class Settings_RecordAllocation_Index_View extends Settings_Vtiger_Index_View
 		$viewer->view('IndexPreProcess.tpl', $qualifiedModuleName);
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
 		$mode = $request->getMode();
 		if (!empty($mode)) {
 			echo $this->invokeExposedMethod($mode, $request);
+
 			return;
 		}
 		$moduleName = $request->getModule();
@@ -46,7 +49,7 @@ class Settings_RecordAllocation_Index_View extends Settings_Vtiger_Index_View
 		$viewer->view('Index.tpl', $qualifiedModuleName);
 	}
 
-	public function getPanel(Vtiger_Request $request)
+	public function getPanel(\App\Request $request)
 	{
 		$moduleName = $request->getModule();
 		$qualifiedModuleName = $request->getModule(false);
@@ -58,34 +61,35 @@ class Settings_RecordAllocation_Index_View extends Settings_Vtiger_Index_View
 		$viewer = $this->getViewer($request);
 		$viewer->assign('TYPE', $type);
 		$viewer->assign('QUALIFIED_MODULE', $qualifiedModuleName);
-		$viewer->assign('MODULE_NAME', $request->get('sourceModule'));
-		$viewer->assign('MODULE_ID', vtlib\Functions::getModuleId($request->get('sourceModule')));
+		$viewer->assign('MODULE_NAME', $request->getByType('sourceModule', 2));
+		$viewer->assign('MODULE_ID', \App\Module::getModuleId($request->getByType('sourceModule', 2)));
 		$viewer->assign('INDEX', ++$index);
-		$viewer->assign('DATA', Settings_RecordAllocation_Module_Model::getRecordAllocationByModule($type, $request->get('sourceModule')));
+		$viewer->assign('DATA', Settings_RecordAllocation_Module_Model::getRecordAllocationByModule($type, $request->getByType('sourceModule', 2)));
 		$viewer->assign('MODULE', $moduleName);
 		$viewer->view('AddPanel.tpl', $qualifiedModuleName);
 	}
 
-	public function getFooterScripts(Vtiger_Request $request)
+	public function getFooterScripts(\App\Request $request)
 	{
 		$headerScriptInstances = parent::getFooterScripts($request);
-		$moduleName = $request->getModule();
-
 		$jsFileNames = [
-			'~libraries/jquery/datatables/media/js/jquery.dataTables.min.js',
-			'~libraries/jquery/datatables/plugins/integration/bootstrap/3/dataTables.bootstrap.min.js'
+			'~libraries/datatables.net/js/jquery.dataTables.js',
+			'~libraries/datatables.net-bs4/js/dataTables.bootstrap4.js',
+			'~libraries/datatables.net-responsive/js/dataTables.responsive.js',
+			'~libraries/datatables.net-responsive-bs4/js/responsive.bootstrap4.js'
 		];
 		$jsScriptInstances = $this->checkAndConvertJsScripts($jsFileNames);
 		$headerScriptInstances = array_merge($headerScriptInstances, $jsScriptInstances);
+
 		return $headerScriptInstances;
 	}
 
-	public function getHeaderCss(Vtiger_Request $request)
+	public function getHeaderCss(\App\Request $request)
 	{
 		$headerCssInstances = parent::getHeaderCss($request);
 		$cssFileNames = [
-			'~libraries/jquery/datatables/media/css/jquery.dataTables_themeroller.css',
-			'~libraries/jquery/datatables/plugins/integration/bootstrap/3/dataTables.bootstrap.css',
+			'~libraries/datatables.net-bs4/css/dataTables.bootstrap4.css',
+			'~libraries/datatables.net-responsive-bs4/css/responsive.bootstrap4.css'
 		];
 		$cssInstances = $this->checkAndConvertCssStyles($cssFileNames);
 		$headerCssInstances = array_merge($headerCssInstances, $cssInstances);

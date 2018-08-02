@@ -1,55 +1,76 @@
 <?php
 
 /**
- * UIType Category multipicklist
- * @package YetiForce.UIType
- * @license licenses/License.html
+ * UIType Category multipicklist.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Krzysztof Gastołek <krzysztof.gastolek@wars.pl>
+ * @author Tomasz Kur <t.kur@yetiforce.com>
+ * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
+ * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
 class Vtiger_CategoryMultipicklist_UIType extends Vtiger_Tree_UIType
 {
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDBValue($value, $recordModel = false)
+	{
+		if ($value) {
+			$value = trim($value, ',');
+			$value = ",$value,";
+		} elseif (is_null($value)) {
+			$value = '';
+		}
+		return \App\Purifier::decodeHtml($value);
+	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <Object> $value
-	 * @return <Object>
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($tree, $record = false, $recordInstance = false, $rawText = false)
+	public function validate($value, $isUserFormat = false)
 	{
-		$template = $this->get('field')->getFieldParams();
-		$module = $this->get('field')->getModuleName();
-		$trees = explode(',', $tree);
-		$names = [];
-		$db = null;
-		foreach ($trees as $treeId) {
-			$name = Vtiger_Cache::get('TreeData' . $template, $treeId);
-			if ($name) {
-				$names[] = $name;
-			} else {
-				if (!$db) {
-					$db = PearDatabase::getInstance();
-				}
-				$result = $db->pquery('SELECT * FROM vtiger_trees_templates_data WHERE templateid = ? && tree = ?', [$template, $treeId]);
-				$parentName = '';
-				$name = false;
-				if ($db->getRowCount($result)) {
-					$row = $db->getRow($result);
-					if ($row['depth'] > 0) {
-						$parenttrre = $row['parenttrre'];
-						$pieces = explode('::', $parenttrre);
-						end($pieces);
-						$parent = prev($pieces);
-						$result2 = $db->pquery('SELECT name FROM vtiger_trees_templates_data WHERE templateid = ? && tree = ?', [$template, $parent]);
-						$parentName = $db->getSingleValue($result2);
-						$parentName = '(' . vtranslate($parentName, $module) . ') ';
-					}
-					$name = $parentName . vtranslate($row['name'], $module);
-				}
-				Vtiger_Cache::set('TreeData' . $template, $treeId, $name);
-				$names[] = $name;
+		if ($this->validate || $value === '' || $value === null) {
+			return;
+		}
+		foreach (explode(',', $value) as $row) {
+			if ($row && (substr($row, 0, 1) !== 'T' || !is_numeric(substr($row, 1)))) {
+				throw new \App\Exceptions\Security('ERR_ILLEGAL_FIELD_VALUE||' . $this->getFieldModel()->getFieldName() . '||' . $value, 406);
 			}
 		}
-		$names = implode(', ', $names);
-		return $names;
+		$this->validate[$value] = true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		if (empty($value)) {
+			return '';
+		}
+		$fieldModel = $this->getFieldModel();
+		$names = [];
+		$trees = array_filter(explode(',', $value));
+		$treeData = \App\Fields\Tree::getPicklistValue($fieldModel->getFieldParams(), $fieldModel->getModuleName());
+		foreach ($trees as $treeId) {
+			if (isset($treeData[$treeId])) {
+				$names[] = $treeData[$treeId];
+			}
+		}
+		$value = implode(', ', $names);
+		if (is_int($length)) {
+			$value = \App\TextParser::textTruncate($value, $length);
+		}
+		return \App\Purifier::encodeHtml($value);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getAllowedColumnTypes()
+	{
+		return ['text'];
 	}
 }

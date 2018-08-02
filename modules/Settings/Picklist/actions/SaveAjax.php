@@ -6,11 +6,16 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce Sp. z o.o.
  * ********************************************************************************** */
 
 class Settings_Picklist_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 {
+	use \App\Controller\ExposeMethod;
 
+	/**
+	 * Constructor.
+	 */
 	public function __construct()
 	{
 		$this->exposeMethod('add');
@@ -21,57 +26,36 @@ class Settings_Picklist_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 		$this->exposeMethod('enableOrDisable');
 	}
 
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->get('mode');
-		$this->invokeExposedMethod($mode, $request);
-	}
-	/*
-	 * @function updates user tables with new picklist value for default event and status fields
-	 */
+	// @function updates user tables with new picklist value for default event and status fields
 
 	public function updateDefaultPicklistValues($pickListFieldName, $oldValue, $newValue)
 	{
-		$db = PearDatabase::getInstance();
-		if ($pickListFieldName == 'activitytype')
+		if ($pickListFieldName === 'activitytype') {
 			$defaultFieldName = 'defaultactivitytype';
-		else
-			$defaultFieldName = 'defaulteventstatus';
-		$queryToGetId = sprintf('SELECT id FROM vtiger_users WHERE %s IN (', $defaultFieldName);
-		if (is_array($oldValue)) {
-			$countOldValue = count($oldValue);
-			for ($i = 0; $i < $countOldValue; $i++) {
-				$queryToGetId .= '"' . $oldValue[$i] . '"';
-				if ($i < (count($oldValue) - 1)) {
-					$queryToGetId .= ',';
-				}
-			}
-			$queryToGetId .= ')';
 		} else {
-			$queryToGetId .= '"' . $oldValue . '")';
+			$defaultFieldName = 'defaulteventstatus';
 		}
-		$result = $db->pquery($queryToGetId, array());
-		$rowCount = $db->num_rows($result);
-		for ($i = 0; $i < $rowCount; $i++) {
-			$recordId = $db->query_result_rowdata($result, $i);
-			$recordId = $recordId['id'];
-			$record = Vtiger_Record_Model::getInstanceById($recordId, 'Users');
-			$record->set('mode', 'edit');
+		$dataReader = (new App\Db\Query())->select(['id'])
+			->from('vtiger_users')
+			->where([$defaultFieldName => $oldValue])
+			->createCommand()->query();
+		while ($row = $dataReader->read()) {
+			$record = Vtiger_Record_Model::getInstanceById($row['id'], 'Users');
 			$record->set($defaultFieldName, $newValue);
 			$record->save();
 		}
+		$dataReader->close();
 	}
 
-	public function add(Vtiger_Request $request)
+	public function add(\App\Request $request)
 	{
-		$newValue = $request->getRaw('newValue');
-		$pickListName = $request->get('picklistName');
-		$moduleName = $request->get('source_module');
+		$newValue = $request->get('newValue');
+		$moduleName = $request->getByType('source_module', 2);
 		$moduleModel = Settings_Picklist_Module_Model::getInstance($moduleName);
-		$fieldModel = Settings_Picklist_Field_Model::getInstance($pickListName, $moduleModel);
-		$rolesSelected = array();
+		$fieldModel = Settings_Picklist_Field_Model::getInstance($request->getForSql('picklistName'), $moduleModel);
+		$rolesSelected = [];
 		if ($fieldModel->isRoleBased()) {
-			$userSelectedRoles = $request->get('rolesSelected', array());
+			$userSelectedRoles = $request->getArray('rolesSelected');
 			//selected all roles option
 			if (in_array('all', $userSelectedRoles)) {
 				$roleRecordList = Settings_Roles_Record_Model::getAll();
@@ -84,52 +68,9 @@ class Settings_Picklist_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 		}
 		$response = new Vtiger_Response();
 		try {
+			$fieldModel->validate($newValue);
 			$id = $moduleModel->addPickListValues($fieldModel, $newValue, $rolesSelected);
-			$response->setResult(array('id' => $id['id']));
-		} catch (Exception $e) {
-			$response->setError($e->getCode(), $e->getMessage());
-		}
-		$response->emit();
-	}
-
-	public function rename(Vtiger_Request $request)
-	{
-		$moduleName = $request->get('source_module');
-
-		$newValue = $request->getRaw('newValue');
-		$pickListFieldName = $request->get('picklistName');
-		$oldValue = $request->getRaw('oldValue');
-		$id = $request->getRaw('id');
-
-		if ($moduleName == 'Events' && ($pickListFieldName == 'activitytype' || $pickListFieldName == 'activitystatus')) {
-			$this->updateDefaultPicklistValues($pickListFieldName, $oldValue, $newValue);
-		}
-		$moduleModel = new Settings_Picklist_Module_Model();
-		$response = new Vtiger_Response();
-		try {
-			$status = $moduleModel->renamePickListValues($pickListFieldName, $oldValue, $newValue, $moduleName, $id);
-			$response->setResult(array('success', $status));
-		} catch (Exception $e) {
-			$response->setError($e->getCode(), $e->getMessage());
-		}
-		$response->emit();
-	}
-
-	public function remove(Vtiger_Request $request)
-	{
-		$moduleName = $request->get('source_module');
-		$valueToDelete = $request->getRaw('delete_value');
-		$replaceValue = $request->getRaw('replace_value');
-		$pickListFieldName = $request->get('picklistName');
-
-		if ($moduleName == 'Events' && ($pickListFieldName == 'activitytype' || $pickListFieldName == 'activitystatus')) {
-			$this->updateDefaultPicklistValues($pickListFieldName, $valueToDelete, $replaceValue);
-		}
-		$moduleModel = Settings_Picklist_Module_Model::getInstance($moduleName);
-		$response = new Vtiger_Response();
-		try {
-			$status = $moduleModel->remove($pickListFieldName, $valueToDelete, $replaceValue, $moduleName);
-			$response->setResult(array('success', $status));
+			$response->setResult(['id' => $id['id']]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
@@ -137,16 +78,74 @@ class Settings_Picklist_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 	}
 
 	/**
-	 * Function which will assign existing values to the roles
-	 * @param Vtiger_Request $request
+	 * Rename picklist value.
+	 *
+	 * @param \App\Request $request
 	 */
-	public function assignValueToRole(Vtiger_Request $request)
+	public function rename(\App\Request $request)
 	{
-		$pickListFieldName = $request->get('picklistName');
-		$valueToAssign = $request->getRaw('assign_values');
-		$userSelectedRoles = $request->get('rolesSelected');
+		$moduleName = $request->getByType('source_module', 2);
+		$newValue = $request->get('newValue');
+		$pickListFieldName = $request->getForSql('picklistName');
+		$oldValue = $request->get('oldValue');
+		$id = $request->get('id');
+		$moduleModel = Settings_Picklist_Module_Model::getInstance($moduleName);
+		$fieldModel = Settings_Picklist_Field_Model::getInstance($pickListFieldName, $moduleModel);
+		$response = new Vtiger_Response();
+		if ($fieldModel->isEditable()) {
+			try {
+				$fieldModel->validate($newValue, $id);
+				if ($moduleName === 'Events' && ($pickListFieldName === 'activitytype' || $pickListFieldName === 'activitystatus')) {
+					$this->updateDefaultPicklistValues($pickListFieldName, $oldValue, $newValue);
+				}
+				$status = $moduleModel->renamePickListValues($fieldModel, $oldValue, $newValue, $id);
+				$response->setResult(['success', $status]);
+			} catch (Exception $e) {
+				$response->setError($e->getCode(), $e->getMessage());
+			}
+		}
+		$response->emit();
+	}
 
-		$roleIdList = array();
+	/**
+	 * Action to remove element.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function remove(\App\Request $request)
+	{
+		$moduleName = $request->getByType('source_module', 2);
+		$valueToDelete = $request->getArray('delete_value');
+		$replaceValue = $request->get('replace_value');
+		$pickListFieldName = $request->getForSql('picklistName');
+		if ($moduleName === 'Events' && ($pickListFieldName === 'activitytype' || $pickListFieldName === 'activitystatus')) {
+			$picklistData = \App\Fields\Picklist::getValues($pickListFieldName);
+			$valuesToDelete = [];
+			foreach ($valueToDelete as $value) {
+				$valuesToDelete[] = $picklistData[$value][$pickListFieldName];
+			}
+			$this->updateDefaultPicklistValues($pickListFieldName, $valuesToDelete, $picklistData[$replaceValue][$pickListFieldName]);
+		}
+		$moduleModel = Settings_Picklist_Module_Model::getInstance($moduleName);
+		$response = new Vtiger_Response();
+		try {
+			$status = $moduleModel->remove($pickListFieldName, $valueToDelete, $replaceValue, $moduleName);
+			$response->setResult(['success', $status]);
+		} catch (Exception $e) {
+			$response->setError($e->getCode(), $e->getMessage());
+		}
+		$response->emit();
+	}
+
+	/**
+	 * Function which will assign existing values to the roles.
+	 *
+	 * @param \App\Request $request
+	 */
+	public function assignValueToRole(\App\Request $request)
+	{
+		$userSelectedRoles = $request->getArray('rolesSelected');
+		$roleIdList = [];
 		//selected all roles option
 		if (in_array('all', $userSelectedRoles)) {
 			$roleRecordList = Settings_Roles_Record_Model::getAll();
@@ -161,50 +160,37 @@ class Settings_Picklist_SaveAjax_Action extends Settings_Vtiger_Basic_Action
 
 		$response = new Vtiger_Response();
 		try {
-			$moduleModel->enableOrDisableValuesForRole($pickListFieldName, $valueToAssign, array(), $roleIdList);
-			$response->setResult(array('success', true));
+			$moduleModel->enableOrDisableValuesForRole($request->getForSql('picklistName'), $request->getArray('assign_values'), [], $roleIdList);
+			$response->setResult(['success', true]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
 	}
 
-	public function saveOrder(Vtiger_Request $request)
+	public function saveOrder(\App\Request $request)
 	{
-		$pickListFieldName = $request->get('picklistName');
-		$picklistValues = $request->getRaw('picklistValues');
-
 		$moduleModel = new Settings_Picklist_Module_Model();
 		$response = new Vtiger_Response();
 		try {
-			$moduleModel->updateSequence($pickListFieldName, $picklistValues);
-			$response->setResult(array('success', true));
+			$moduleModel->updateSequence($request->getForSql('picklistName'), $request->getArray('picklistValues'));
+			$response->setResult(['success', true]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
 	}
 
-	public function enableOrDisable(Vtiger_Request $request)
+	public function enableOrDisable(\App\Request $request)
 	{
-		$pickListFieldName = $request->get('picklistName');
-		$enabledValues = $request->getRaw('enabled_values', array());
-		$disabledValues = $request->getRaw('disabled_values', array());
-		$roleSelected = $request->get('rolesSelected');
-
 		$moduleModel = new Settings_Picklist_Module_Model();
 		$response = new Vtiger_Response();
 		try {
-			$moduleModel->enableOrDisableValuesForRole($pickListFieldName, $enabledValues, $disabledValues, array($roleSelected));
-			$response->setResult(array('success', true));
+			$moduleModel->enableOrDisableValuesForRole($request->getForSql('picklistName'), $request->getArray('enabled_values', []), $request->getArray('disabled_values', []), $request->getArray('rolesSelected'));
+			$response->setResult(['success', true]);
 		} catch (Exception $e) {
 			$response->setError($e->getCode(), $e->getMessage());
 		}
 		$response->emit();
-	}
-
-	public function validateRequest(Vtiger_Request $request)
-	{
-		$request->validateWriteAccess();
 	}
 }

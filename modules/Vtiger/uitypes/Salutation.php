@@ -6,26 +6,24 @@
  * The Initial Developer of the Original Code is vtiger.
  * Portions created by vtiger are Copyright (C) vtiger.
  * All Rights Reserved.
+ * Contributor(s): YetiForce.com
  * *********************************************************************************** */
 
 class Vtiger_Salutation_UIType extends Vtiger_Base_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type Object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
 	public function getTemplateName()
 	{
-		return 'uitypes/Salutation.tpl';
+		return 'Edit/Field/Salutation.tpl';
 	}
 
 	/**
-	 * Function to get the Detailview template name for the current UI Type Object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
 	public function getDetailViewTemplateName()
 	{
-		return 'uitypes/SalutationDetailView.tpl';
+		return 'Detail/Field/Salutation.tpl';
 	}
 }

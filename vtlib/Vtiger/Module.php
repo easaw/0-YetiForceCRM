@@ -8,75 +8,69 @@
  * All Rights Reserved.
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
+
 namespace vtlib;
 
 /**
- * Provides API to work with vtiger CRM Modules
- * @package vtlib
+ * Provides API to work with vtiger CRM Modules.
  */
 class Module extends ModuleBasic
 {
-
 	/**
-	 * Function to get the Module/Tab id
-	 * @return <Number>
-	 */
-	public function getId()
-	{
-		return $this->id;
-	}
-
-	/**
-	 * Get related list sequence to use
-	 * @access private
+	 * Get related list sequence to use.
+	 *
+	 * @return int
 	 */
 	public function __getNextRelatedListSequence()
 	{
-		$adb = \PearDatabase::getInstance();
-		$max_sequence = 0;
-		$result = $adb->pquery("SELECT max(sequence) as maxsequence FROM vtiger_relatedlists WHERE tabid=?", Array($this->id));
-		if ($adb->num_rows($result))
-			$max_sequence = $adb->query_result($result, 0, 'maxsequence');
-		return ++$max_sequence;
+		return (new \App\Db\Query())->from('vtiger_relatedlists')->where(['tabid' => $this->id])->max('sequence') + 1;
 	}
 
 	/**
-	 * Set related list information between other module
+	 * Set related list information between other module.
+	 *
 	 * @param Module Instance of target module with which relation should be setup
-	 * @param String Label to display in related list (default is target module name)
-	 * @param Array List of action button to show ('ADD', 'SELECT')
-	 * @param String Callback function name of this module to use as handler
+	 * @param string Label to display in related list (default is target module name)
+	 * @param array List of action button to show ('ADD', 'SELECT')
+	 * @param string Callback function name of this module to use as handler
 	 *
 	 * @internal Creates table vtiger_crmentityrel if it does not exists
 	 */
-	public function setRelatedList($moduleInstance, $label = '', $actions = false, $functionName = 'get_related_list')
+	public function setRelatedList($moduleInstance, $label = '', $actions = false, $functionName = 'getRelatedList')
 	{
-		$adb = \PearDatabase::getInstance();
+		$db = \App\Db::getInstance();
 
-		if (empty($moduleInstance))
+		if (empty($moduleInstance)) {
 			return;
-		if (empty($label))
+		}
+		if (empty($label)) {
 			$label = $moduleInstance->name;
+		}
+		$isExists = (new \App\Db\Query())
+			->select('relation_id')
+			->from('vtiger_relatedlists')
+			->where(['tabid' => $this->id, 'related_tabid' => $moduleInstance->id, 'name' => $functionName, 'label' => $label])
+			->exists();
+		if ($isExists) {
+			\App\Log::trace("Setting relation with $moduleInstance->name [$useactions_text] ... Error, the related module already exists", __METHOD__);
 
-		$result = $adb->pquery('SELECT relation_id FROM vtiger_relatedlists WHERE tabid=? && related_tabid = ? && name = ? && label = ?;', [$this->id, $moduleInstance->id, $functionName, $label]);
-		if ($result->rowCount() > 0) {
-			self::log("Setting relation with $moduleInstance->name [$useactions_text] ... Error, the related module already exists");
 			return;
 		}
 
 		$sequence = $this->__getNextRelatedListSequence();
 		$presence = 0; // 0 - Enabled, 1 - Disabled
 		// Allow ADD action of other module records (default)
-		if ($actions === false)
+		if ($actions === false) {
 			$actions = ['ADD'];
+		}
 
 		$useactionsText = $actions;
-		if (is_array($actions))
+		if (is_array($actions)) {
 			$useactionsText = implode(',', $actions);
+		}
 		$useactionsText = strtoupper($useactionsText);
 
-		$adb->insert('vtiger_relatedlists', [
-			'relation_id' => $adb->getUniqueID('vtiger_relatedlists'),
+		$db->createCommand()->insert('vtiger_relatedlists', [
 			'tabid' => $this->id,
 			'related_tabid' => $moduleInstance->id,
 			'name' => $functionName,
@@ -84,48 +78,59 @@ class Module extends ModuleBasic
 			'label' => $label,
 			'presence' => $presence,
 			'actions' => $useactionsText,
-		]);
+		])->execute();
 
-		if ($functionName == 'get_many_to_many') {
+		if ($functionName === 'getManyToMany') {
 			$refTableName = \Vtiger_Relation_Model::getReferenceTableInfo($moduleInstance->name, $this->name);
-			if (!Utils::CheckTable($refTableName['table'])) {
-				Utils::CreateTable(
-					$refTableName['table'], '(crmid INT(19) ,relcrmid INT(19),KEY crmid (crmid),KEY relcrmid (relcrmid),'
-					. ' CONSTRAINT `' . $refTableName['table'] . '_ibfk_1` FOREIGN KEY (`crmid`) REFERENCES `vtiger_crmentity` (`crmid`) ON DELETE CASCADE,'
-					. ' CONSTRAINT `' . $refTableName['table'] . '_ibfk_2` FOREIGN KEY (`relcrmid`) REFERENCES `vtiger_crmentity` (`crmid`) ON DELETE CASCADE)', true);
+			$schema = $db->getSchema();
+			if (!$schema->getTableSchema($refTableName['table'])) {
+				$db->createTable($refTableName['table'], [
+					'crmid' => 'int',
+					'relcrmid' => 'int',
+				]);
+				$db->createCommand()->createIndex("{$refTableName['table']}_crmid_idx", $refTableName['table'], 'crmid')->execute();
+				$db->createCommand()->createIndex("{$refTableName['table']}_relcrmid_idx", $refTableName['table'], 'relcrmid')->execute();
+				$db->createCommand()->addForeignKey(
+					"fk_1_{$refTableName['table']}", $refTableName['table'], 'crmid', 'vtiger_crmentity', 'crmid', 'CASCADE', 'RESTRICT'
+				)->execute();
+				$db->createCommand()->addForeignKey(
+					"fk_2_{$refTableName['table']}", $refTableName['table'], 'relcrmid', 'vtiger_crmentity', 'crmid', 'CASCADE', 'RESTRICT'
+				)->execute();
 			}
 		}
-		self::log("Setting relation with $moduleInstance->name  ... DONE");
+		\App\Cache::clear();
+		\App\Log::trace("Setting relation with $moduleInstance->name  ... DONE", __METHOD__);
 	}
 
 	/**
-	 * Unset related list information that exists with other module
-	 * @param Module Instance of target module with which relation should be setup
-	 * @param String Label to display in related list (default is target module name)
-	 * @param String Callback function name of this module to use as handler
+	 * Unset related list information that exists with other module.
+	 *
+	 * @param \Module Instance of target module with which relation should be setup
+	 * @param string Label to display in related list (default is target module name)
+	 * @param string Callback function name of this module to use as handler
 	 */
-	public function unsetRelatedList($moduleInstance, $label = '', $function_name = 'get_related_list')
+	public function unsetRelatedList($moduleInstance, $label = '', $function_name = 'getRelatedList')
 	{
-		$adb = \PearDatabase::getInstance();
-
-		if (empty($moduleInstance))
+		if (empty($moduleInstance)) {
 			return;
+		}
 
-		if (empty($label))
+		if (empty($label)) {
 			$label = $moduleInstance->name;
+		}
 
-		$adb->pquery("DELETE FROM vtiger_relatedlists WHERE tabid=? && related_tabid=? && name=? && label=?", Array($this->id, $moduleInstance->id, $function_name, $label));
-
-		self::log("Unsetting relation with $moduleInstance->name ... DONE");
+		\App\Db::getInstance()->createCommand()->delete('vtiger_relatedlists', ['tabid' => $this->id, 'related_tabid' => $moduleInstance->id, 'name' => $function_name, 'label' => $label])->execute();
+		\App\Log::trace("Unsetting relation with $moduleInstance->name ... DONE", __METHOD__);
 	}
 
 	/**
-	 * Add custom link for a module page
-	 * @param String Type can be like 'DETAILVIEW', 'LISTVIEW' etc..
-	 * @param String Label to use for display
-	 * @param String HREF value to use for generated link
-	 * @param String Path to the image file (relative or absolute)
-	 * @param Integer Sequence of appearance
+	 * Add custom link for a module page.
+	 *
+	 * @param string Type can be like 'DETAIL_VIEW_BASIC', 'LISTVIEW' etc..
+	 * @param string Label to use for display
+	 * @param string HREF value to use for generated link
+	 * @param string Path to the image file (relative or absolute)
+	 * @param int Sequence of appearance
 	 *
 	 * NOTE: $url can have variables like $MODULE (module for which link is associated),
 	 * $RECORD (record on which link is dispalyed)
@@ -136,10 +141,11 @@ class Module extends ModuleBasic
 	}
 
 	/**
-	 * Delete custom link of a module
-	 * @param String Type can be like 'DETAILVIEW', 'LISTVIEW' etc..
-	 * @param String Display label to lookup
-	 * @param String URL value to lookup
+	 * Delete custom link of a module.
+	 *
+	 * @param string Type can be like 'DETAIL_VIEW_BASIC', 'LISTVIEW' etc..
+	 * @param string Display label to lookup
+	 * @param string URL value to lookup
 	 */
 	public function deleteLink($type, $label, $url = false)
 	{
@@ -155,27 +161,11 @@ class Module extends ModuleBasic
 	}
 
 	/**
-	 * Get all the custom links related to this module for exporting.
-	 */
-	public function getLinksForExport()
-	{
-		return Link::getAllForExport($this->id);
-	}
-
-	/**
 	 * Initialize webservice setup for this module instance.
 	 */
 	public function initWebservice()
 	{
 		Webservice::initialize($this);
-	}
-
-	/**
-	 * De-Initialize webservice setup for this module instance.
-	 */
-	public function deinitWebservice()
-	{
-		Webservice::uninitialize($this);
 	}
 
 	public function createFiles(Field $entityField)
@@ -191,7 +181,7 @@ class Module extends ModuleBasic
 				$targetPath = str_replace('_ModuleName_', $this->name, $targetPath);
 				if (is_dir($name)) {
 					if (!is_dir($targetPath)) {
-						mkdir($targetPath);
+						mkdir($targetPath, 0755);
 					}
 				} else {
 					$fileContent = file_get_contents($name);
@@ -202,26 +192,28 @@ class Module extends ModuleBasic
 						'<entityfieldlabel>' => $entityField->label,
 						'<entitycolumn>' => $entityField->column,
 						'<entityfieldname>' => $entityField->name,
-						'_ModuleName_' => $this->name,
+						 '_ModuleName_' => $this->name,
+						'<_baseTableName_>' => 'u_' . (\App\Db::getInstance()->getConfig('base')['tablePrefix']) . strtolower($this->name),
 					];
 					foreach ($replacevars as $key => $value) {
-						$fileContent = str_replace($key, $value, $fileContent);
+						$fileContent = str_replace($key, addslashes($value), $fileContent);
 					}
 					file_put_contents($targetPath, $fileContent);
 				}
 			}
-			$languages = \Users_Module_Model::getLanguagesList();
-			$langFile = 'languages/en_us/' . $this->name . '.php';
-			foreach ($languages as $key => $language) {
-				if ($key != 'en_us') {
-					copy($langFile, 'languages/' . $key . '/' . $this->name . '.php');
+			$languages = \App\Language::getAll(false);
+			$langFile = 'languages/en_us/' . $this->name . '.json';
+			foreach ($languages as $prefix => $language) {
+				if ($prefix !== 'en_us') {
+					copy($langFile, 'languages/' . $prefix . '/' . $this->name . '.json');
 				}
 			}
 		}
 	}
 
 	/**
-	 * Get instance by id or name
+	 * Get instance by id or name.
+	 *
 	 * @param mixed id or name of the module
 	 */
 	public static function getInstance($value)
@@ -237,18 +229,19 @@ class Module extends ModuleBasic
 
 	/**
 	 * Get instance of the module class.
-	 * @param String Module name
+	 *
+	 * @param string Module name
 	 */
 	public static function getClassInstance($modulename)
 	{
-		if ($modulename == 'Calendar')
+		if ($modulename == 'Calendar') {
 			$modulename = 'Activity';
-
+		}
 		$instance = false;
 		$filepath = "modules/$modulename/$modulename.php";
 		if (Utils::checkFileAccessForInclusion($filepath, false)) {
 			Deprecated::checkFileAccessForInclusion($filepath);
-			include_once($filepath);
+			include_once $filepath;
 			if (class_exists($modulename)) {
 				$instance = new $modulename();
 			}
@@ -257,49 +250,75 @@ class Module extends ModuleBasic
 	}
 
 	/**
-	 * Fire the event for the module (if vtlib_handler is defined)
+	 * Fire the event for the module (if moduleHandler is defined).
 	 */
 	public static function fireEvent($modulename, $eventType)
 	{
-		$return = false;
+		$return = true;
 		$instance = self::getClassInstance((string) $modulename);
 		if ($instance) {
-			if (method_exists($instance, 'vtlib_handler')) {
-				self::log("Invoking vtlib_handler for $eventType ...START");
-				$fire = $instance->vtlib_handler((string) $modulename, (string) $eventType);
-				if ($fire === null || $fire === true) {
-					$return = true;
+			if (method_exists($instance, 'moduleHandler')) {
+				\App\Log::trace("Invoking moduleHandler for $eventType ...START", __METHOD__);
+				$fire = $instance->moduleHandler((string) $modulename, (string) $eventType);
+				if ($fire !== null && $fire !== true) {
+					$return = false;
 				}
-				self::log("Invoking vtlib_handler for $eventType ...DONE");
+				\App\Log::trace("Invoking moduleHandler for $eventType ...DONE", __METHOD__);
 			}
 		}
 		return $return;
 	}
 
 	/**
-	 * Toggle the module (enable/disable)
+	 * Toggle the module (enable/disable).
 	 */
 	public static function toggleModuleAccess($moduleName, $enableDisable)
 	{
 		$eventType = false;
 		if ($enableDisable === true) {
 			$enableDisable = 0;
-			$eventType = Module::EVENT_MODULE_ENABLED;
-		} else if ($enableDisable === false) {
+			$eventType = self::EVENT_MODULE_ENABLED;
+		} elseif ($enableDisable === false) {
 			$enableDisable = 1;
-			$eventType = Module::EVENT_MODULE_DISABLED;
+			$eventType = self::EVENT_MODULE_DISABLED;
 		}
 		$fire = self::fireEvent($moduleName, $eventType);
 		if ($fire) {
-			$db = \PearDatabase::getInstance();
-			$db->update('vtiger_tab', [
-				'presence' => $enableDisable
-				], 'name = ?', [$moduleName]
-			);
-			Deprecated::createModuleMetaFile();
-			vtlib_RecreateUserPrivilegeFiles();
+			\App\Db::getInstance()->createCommand()->update('vtiger_tab', ['presence' => $enableDisable], ['name' => $moduleName])->execute();
+			\App\Module::createModuleMetaFile();
+			\Settings_GlobalPermission_Record_Model::recalculate();
 			$menuRecordModel = new \Settings_Menu_Record_Model();
 			$menuRecordModel->refreshMenuFiles();
 		}
+	}
+
+	/**
+	 * Check if this module is customized.
+	 *
+	 * @return bool
+	 */
+	public function isCustomizable()
+	{
+		return $this->customized === 1 ? true : false;
+	}
+
+	/**
+	 * Check if this module is upgradable.
+	 *
+	 * @return bool
+	 */
+	public function isModuleUpgradable()
+	{
+		return $this->isCustomizable() ? true : false;
+	}
+
+	/**
+	 * Check if this module is exportable.
+	 *
+	 * @return bool
+	 */
+	public function isExportable()
+	{
+		return $this->isCustomizable() ? true : false;
 	}
 }

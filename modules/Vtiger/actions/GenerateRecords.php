@@ -1,19 +1,24 @@
 <?php
 
 /**
- * @package YetiForce.Action
- * @license licenses/License.html
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Radosław Skrzypczak <r.skrzypczak@yetiforce.com>
  */
-class Vtiger_GenerateRecords_Action extends Vtiger_Action_Controller
+class Vtiger_GenerateRecords_Action extends \App\Controller\Action
 {
-
-	public function checkPermission(Vtiger_Request $request)
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermitted
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$moduleName = $request->getModule();
-		if (!Users_Privileges_Model::isPermitted($moduleName, 'RecordMappingList') ||
-			!Users_Privileges_Model::isPermitted($moduleName, 'CreateView')) {
-			throw new \Exception\NoPermitted('LBL_PERMISSION_DENIED');
+		$userPriviligesModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
+		if (!$userPriviligesModel->hasModuleActionPermission($request->getByType('target'), 'CreateView') || !$userPriviligesModel->hasModuleActionPermission($request->getModule(), 'RecordMappingList')) {
+			throw new \App\Exceptions\NoPermitted('LBL_PERMISSION_DENIED', 406);
 		}
 	}
 
@@ -28,18 +33,18 @@ class Vtiger_GenerateRecords_Action extends Vtiger_Action_Controller
 		return false;
 	}
 
-	public function process(Vtiger_Request $request)
+	public function process(\App\Request $request)
 	{
+		$records = $request->getArray('records');
 		$moduleName = $request->getModule();
-		$records = $request->get('records');
-		$template = $request->get('template');
-		$targetModuleName = $request->get('target');
-		$method = $request->get('method');
+		$template = $request->getInteger('template');
+		$targetModuleName = $request->getByType('target');
+		$method = $request->getInteger('method');
 		$success = [];
 		if (!empty($template)) {
 			$templateRecord = Vtiger_MappedFields_Model::getInstanceById($template);
 			foreach ($records as $recordId) {
-				if ($templateRecord->checkFiltersForRecord(intval($recordId))) {
+				if (\App\Privilege::isPermitted($moduleName, 'DetailView', $recordId) && $templateRecord->checkFiltersForRecord((int) $recordId)) {
 					if ($method == 0) {
 						$recordModel = Vtiger_Record_Model::getCleanInstance($targetModuleName);
 						$parentRecordModel = Vtiger_Record_Model::getInstanceById($recordId);
@@ -48,7 +53,7 @@ class Vtiger_GenerateRecords_Action extends Vtiger_Action_Controller
 							continue;
 						}
 						$recordModel->save();
-						if (isRecordExists($recordModel->getId())) {
+						if (\App\Record::isExists($recordModel->getId())) {
 							$success[] = $recordId;
 						}
 					} else {
@@ -63,7 +68,7 @@ class Vtiger_GenerateRecords_Action extends Vtiger_Action_Controller
 		$response->emit();
 	}
 
-	public function validateRequest(Vtiger_Request $request)
+	public function validateRequest(\App\Request $request)
 	{
 		return $request->validateWriteAccess();
 	}

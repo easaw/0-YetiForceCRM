@@ -9,59 +9,52 @@
  * Contributor(s): YetiForce.com
  * ********************************************************************************** */
 
-class Vtiger_NoteBook_Action extends Vtiger_Action_Controller
+class Vtiger_NoteBook_Action extends \App\Controller\Action
 {
+	use \App\Controller\ExposeMethod;
 
-	public function __construct()
+	/**
+	 * Function to check permission.
+	 *
+	 * @param \App\Request $request
+	 *
+	 * @throws \App\Exceptions\NoPermittedForAdmin
+	 */
+	public function checkPermission(\App\Request $request)
 	{
-		$this->exposeMethod('NoteBookCreate');
-	}
-
-	public function process(Vtiger_Request $request)
-	{
-		$mode = $request->getMode();
-
-		if ($mode) {
-			$this->invokeExposedMethod($mode, $request);
+		$currentUserModel = Users_Record_Model::getCurrentUserModel();
+		if (!$currentUserModel->isAdminUser()) {
+			throw new \App\Exceptions\NoPermittedForAdmin('LBL_PERMISSION_DENIED');
 		}
 	}
 
-	public function NoteBookCreate(Vtiger_Request $request)
+	public function __construct()
 	{
-		$adb = PearDatabase::getInstance();
-		$userModel = Users_Record_Model::getCurrentUserModel();
-		$linkId = $request->get('linkId');
-		$noteBookName = $request->get('notePadName');
-		$noteBookContent = $request->get('notePadContent');
-		$blockid = $request->get('blockid');
-		$isdefault = $request->get('isdefault');
-		$width = $request->get('width');
-		$height = $request->get('height');
+		$this->exposeMethod('noteBookCreate');
+	}
 
-		$date_var = date("Y-m-d H:i:s");
-		$date = $adb->formatDate($date_var, true);
-
-		$dataValue = [];
-		$dataValue['contents'] = $noteBookContent;
-		$dataValue['lastSavedOn'] = $date;
-
-		$data = \includes\utils\Json::encode((object) $dataValue);
-		$size = \includes\utils\Json::encode(array('width' => $width, 'height' => $height));
-		$query = "INSERT INTO vtiger_module_dashboard(`linkid`, `blockid`, `filterid`, `title`, `data`, `isdefault`, `size`) VALUES(?,?,?,?,?,?,?)";
-		$params = array($linkId, $blockid, 0, $noteBookName, $data, $isdefault, $size);
-		$adb->pquery($query, $params);
-		$id = $adb->getLastInsertID();
-
+	public function noteBookCreate(\App\Request $request)
+	{
+		$dataValue['contents'] = $request->get('notePadContent');
+		$dataValue['lastSavedOn'] = date('Y-m-d H:i:s');
+		$data = \App\Json::encode((object) $dataValue);
+		$size = \App\Json::encode(['width' => $request->getInteger('width'), 'height' => $request->getInteger('height')]);
+		$db = \App\Db::getInstance();
+		$db->createCommand()
+			->insert('vtiger_module_dashboard', [
+				'linkid' => $request->getInteger('linkId'),
+				'blockid' => $request->getInteger('blockid'),
+				'filterid' => 0,
+				'title' => $request->get('notePadName'),
+				'data' => $data,
+				'isdefault' => $request->getInteger('isdefault'),
+				'size' => $size,
+			])->execute();
 		$result = [];
 		$result['success'] = true;
-		$result['widgetId'] = $id;
+		$result['widgetId'] = $db->getLastInsertID('vtiger_module_dashboard_id_seq');
 		$response = new Vtiger_Response();
 		$response->setResult($result);
 		$response->emit();
-	}
-
-	public function validateRequest(Vtiger_Request $request)
-	{
-		$request->validateWriteAccess();
 	}
 }

@@ -8,94 +8,120 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
+/**
+ * Class contacts record model.
+ */
 class Contacts_Record_Model extends Vtiger_Record_Model
 {
-
 	/**
-	 * Function returns the url for create event
-	 * @return <String>
+	 * Function returns the url for create event.
+	 *
+	 * @return string
 	 */
 	public function getCreateEventUrl()
 	{
 		$calendarModuleModel = Vtiger_Module_Model::getInstance('Calendar');
+
 		return $calendarModuleModel->getCreateEventRecordUrl() . '&link=' . $this->getId();
 	}
 
 	/**
-	 * Function returns the url for create todo
-	 * @return <String>
+	 * Function returns the url for create todo.
+	 *
+	 * @return string
 	 */
 	public function getCreateTaskUrl()
 	{
 		$calendarModuleModel = Vtiger_Module_Model::getInstance('Calendar');
+
 		return $calendarModuleModel->getCreateTaskRecordUrl() . '&link=' . $this->getId();
 	}
 
 	/**
-	 * Function to get List of Fields which are related from Contacts to Inventory Record
-	 * @return <array>
+	 * Function to get List of Fields which are related from Contacts to Inventory Record.
+	 *
+	 * @return array
 	 */
 	public function getInventoryMappingFields()
 	{
-		return array(
-			array('parentField' => 'parent_id', 'inventoryField' => 'account_id', 'defaultValue' => ''),
-			array('parentField' => 'buildingnumbera', 'inventoryField' => 'buildingnumbera', 'defaultValue' => ''),
-			array('parentField' => 'localnumbera', 'inventoryField' => 'localnumbera', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel1a', 'inventoryField' => 'addresslevel1a', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel2a', 'inventoryField' => 'addresslevel2a', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel3a', 'inventoryField' => 'addresslevel3a', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel4a', 'inventoryField' => 'addresslevel4a', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel5a', 'inventoryField' => 'addresslevel5a', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel6a', 'inventoryField' => 'addresslevel6a', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel7a', 'inventoryField' => 'addresslevel7a', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel8a', 'inventoryField' => 'addresslevel8a', 'defaultValue' => ''),
-			array('parentField' => 'buildingnumberb', 'inventoryField' => 'buildingnumberb', 'defaultValue' => ''),
-			array('parentField' => 'localnumberb', 'inventoryField' => 'localnumberb', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel1b', 'inventoryField' => 'addresslevel1b', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel2b', 'inventoryField' => 'addresslevel2b', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel3b', 'inventoryField' => 'addresslevel3b', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel4b', 'inventoryField' => 'addresslevel4b', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel5b', 'inventoryField' => 'addresslevel5b', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel6b', 'inventoryField' => 'addresslevel6b', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel7b', 'inventoryField' => 'addresslevel7b', 'defaultValue' => ''),
-			array('parentField' => 'addresslevel8b', 'inventoryField' => 'addresslevel8b', 'defaultValue' => ''),
-		);
+		return [
+			['parentField' => 'parent_id', 'inventoryField' => 'account_id', 'defaultValue' => ''],
+			['parentField' => 'buildingnumbera', 'inventoryField' => 'buildingnumbera', 'defaultValue' => ''],
+			['parentField' => 'localnumbera', 'inventoryField' => 'localnumbera', 'defaultValue' => ''],
+			['parentField' => 'addresslevel1a', 'inventoryField' => 'addresslevel1a', 'defaultValue' => ''],
+			['parentField' => 'addresslevel2a', 'inventoryField' => 'addresslevel2a', 'defaultValue' => ''],
+			['parentField' => 'addresslevel3a', 'inventoryField' => 'addresslevel3a', 'defaultValue' => ''],
+			['parentField' => 'addresslevel4a', 'inventoryField' => 'addresslevel4a', 'defaultValue' => ''],
+			['parentField' => 'addresslevel5a', 'inventoryField' => 'addresslevel5a', 'defaultValue' => ''],
+			['parentField' => 'addresslevel6a', 'inventoryField' => 'addresslevel6a', 'defaultValue' => ''],
+			['parentField' => 'addresslevel7a', 'inventoryField' => 'addresslevel7a', 'defaultValue' => ''],
+			['parentField' => 'addresslevel8a', 'inventoryField' => 'addresslevel8a', 'defaultValue' => ''],
+			['parentField' => 'buildingnumberb', 'inventoryField' => 'buildingnumberb', 'defaultValue' => ''],
+			['parentField' => 'localnumberb', 'inventoryField' => 'localnumberb', 'defaultValue' => ''],
+			['parentField' => 'addresslevel1b', 'inventoryField' => 'addresslevel1b', 'defaultValue' => ''],
+			['parentField' => 'addresslevel2b', 'inventoryField' => 'addresslevel2b', 'defaultValue' => ''],
+			['parentField' => 'addresslevel3b', 'inventoryField' => 'addresslevel3b', 'defaultValue' => ''],
+			['parentField' => 'addresslevel4b', 'inventoryField' => 'addresslevel4b', 'defaultValue' => ''],
+			['parentField' => 'addresslevel5b', 'inventoryField' => 'addresslevel5b', 'defaultValue' => ''],
+			['parentField' => 'addresslevel6b', 'inventoryField' => 'addresslevel6b', 'defaultValue' => ''],
+			['parentField' => 'addresslevel7b', 'inventoryField' => 'addresslevel7b', 'defaultValue' => ''],
+			['parentField' => 'addresslevel8b', 'inventoryField' => 'addresslevel8b', 'defaultValue' => ''],
+		];
 	}
 
 	/**
-	 * Function to get Image Details
-	 * @return <array> Image Details List
+	 * The function decide about mandatory save record.
+	 *
+	 * @return bool
 	 */
-	public function getImageDetails()
+	public function isMandatorySave()
 	{
-		$db = PearDatabase::getInstance();
-		$imageDetails = array();
-		$recordId = $this->getId();
+		return $_FILES ? true : false;
+	}
 
-		if ($recordId) {
-			$sql = "SELECT vtiger_attachments.*, vtiger_crmentity.setype FROM vtiger_attachments
-						INNER JOIN vtiger_seattachmentsrel ON vtiger_seattachmentsrel.attachmentsid = vtiger_attachments.attachmentsid
-						INNER JOIN vtiger_crmentity ON vtiger_crmentity.crmid = vtiger_attachments.attachmentsid
-						WHERE vtiger_crmentity.setype = 'Contacts Image' and vtiger_seattachmentsrel.crmid = ?";
+	/**
+	 * {@inheritdoc}
+	 */
+	public function delete()
+	{
+		parent::delete();
+		\App\Db::getInstance()->createCommand()->update('vtiger_customerdetails', [
+			'portal' => 0,
+			'support_start_date' => null,
+			'support_end_date' => null,
+			], ['customerid' => $this->getId()])->execute();
+	}
 
-			$result = $db->pquery($sql, array($recordId));
-
-			$imageId = $db->query_result($result, 0, 'attachmentsid');
-			$imagePath = $db->query_result($result, 0, 'path');
-			$imageName = $db->query_result($result, 0, 'name');
-
-			//decode_html - added to handle UTF-8 characters in file names
-			$imageOriginalName = decode_html($imageName);
-
-			if (!empty($imageName)) {
-				$imageDetails[] = array(
-					'id' => $imageId,
-					'orgname' => $imageOriginalName,
-					'path' => $imagePath . $imageId,
-					'name' => $imageName
-				);
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getRecordRelatedListViewLinksLeftSide(Vtiger_RelationListView_Model $viewModel)
+	{
+		$links = parent::getRecordRelatedListViewLinksLeftSide($viewModel);
+		if (AppConfig::main('isActiveSendingMails') && \App\Privilege::isPermitted('OSSMail')) {
+			if (Users_Record_Model::getCurrentUserModel()->get('internal_mailer') == 1) {
+				$links['LBL_SEND_EMAIL'] = Vtiger_Link_Model::getInstanceFromValues([
+						'linklabel' => 'LBL_SEND_EMAIL',
+						'linkhref' => true,
+						'linkurl' => OSSMail_Module_Model::getComposeUrl($this->getModuleName(), $this->getId(), 'Detail', 'new'),
+						'linkicon' => 'fas fa-envelope',
+						'linkclass' => 'btn-xs btn-default',
+						'linktarget' => '_blank',
+				]);
+			} else {
+				$urldata = OSSMail_Module_Model::getExternalUrl($this->getModuleName(), $this->getId(), 'Detail', 'new');
+				if ($urldata && $urldata !== 'mailto:?') {
+					$links[] = Vtiger_Link_Model::getInstanceFromValues([
+							'linklabel' => 'LBL_CREATEMAIL',
+							'linkhref' => true,
+							'linkurl' => $urldata,
+							'linkicon' => 'fas fa-envelope',
+							'linkclass' => 'btn-xs btn-default',
+							'relatedModuleName' => 'OSSMailView',
+					]);
+				}
 			}
 		}
-		return $imageDetails;
+		return $links;
 	}
 }

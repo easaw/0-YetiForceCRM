@@ -20,24 +20,17 @@
  * Contributor(s): ______________________________________..
  * ****************************************************************************** */
 
-require_once('include/utils/utils.php'); //new
-require_once('include/utils/RecurringType.php');
-require_once 'include/QueryGenerator/QueryGenerator.php';
-require_once 'include/ListView/ListViewController.php';
+require_once 'include/database/PearDatabase.php';
+require_once 'include/utils/CommonUtils.php';
+require_once 'include/fields/DateTimeField.php';
+require_once 'include/fields/DateTimeRange.php';
+require_once 'include/fields/CurrencyField.php';
+require_once 'include/CRMEntity.php';
+include_once 'modules/Vtiger/CRMEntity.php';
 require_once 'include/runtime/Cache.php';
-
-function getEntityName($module, $ids, $compute = true)
-{
-	if ($module == 'Users' || $module == 'Groups') {
-		return \includes\fields\Owner::getLabel($ids);
-	} elseif ($compute) {
-		return \includes\Record::computeLabels($module, $ids);
-	} else {
-		return \includes\Record::getLabel($ids);
-	}
-}
-// vtiger cache utility
-require_once('include/utils/VTCacheUtils.php');
-// vtlib customization: Extended vtiger CRM utlitiy functions
-require_once('include/utils/VtlibUtils.php');
-
+require_once 'modules/Vtiger/helpers/Util.php';
+require_once 'modules/PickList/DependentPickListUtils.php';
+require_once 'modules/Users/Users.php';
+require_once 'include/Webservices/Utils.php';
+require_once 'include/utils/VTCacheUtils.php';
+require_once 'include/utils/VtlibUtils.php';

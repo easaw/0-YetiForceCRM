@@ -11,61 +11,37 @@
 
 class Accounts_ListView_Model extends Vtiger_ListView_Model
 {
-
 	/**
-	 * Function to get the list of Mass actions for the module
-	 * @param <Array> $linkParams
-	 * @return <Array> - Associative array of Link type to List of  Vtiger_Link_Model instances for Mass Actions
+	 * Function to get the list of Mass actions for the module.
+	 *
+	 * @param array $linkParams
+	 *
+	 * @return array - Associative array of Link type to List of  Vtiger_Link_Model instances for Mass Actions
 	 */
 	public function getListViewMassActions($linkParams)
 	{
 		$links = parent::getListViewMassActions($linkParams);
-
 		$currentUserModel = Users_Privileges_Model::getCurrentUserPrivilegesModel();
 		$moduleModel = $this->getModule();
-
 		$massActionLinks = [];
-		if ($currentUserModel->hasModulePermission('Emails') && $currentUserModel->hasModulePermission('OSSMail') && $moduleModel->isPermitted('MassComposeEmail') && AppConfig::main('isActiveSendingMails') && Users_Privileges_Model::isPermitted('OSSMail') && !Settings_ModuleManager_Library_Model::checkLibrary('roundcube')) {
-			$massActionLinks[] = array(
+		if ($moduleModel->isPermitted('MassComposeEmail') && AppConfig::main('isActiveSendingMails') && App\Mail::getDefaultSmtp()) {
+			$massActionLinks[] = [
 				'linktype' => 'LISTVIEWMASSACTION',
 				'linklabel' => 'LBL_MASS_SEND_EMAIL',
-				'linkurl' => 'javascript:Vtiger_List_Js.triggerSendEmail();',
-				'linkicon' => ''
-			);
+				'linkurl' => 'javascript:Vtiger_List_Js.triggerSendEmail()',
+				'linkicon' => 'fas fa-envelope',
+			];
 		}
-
-		if ($currentUserModel->hasModulePermission('SMSNotifier') && $moduleModel->isPermitted('MassSendSMS')) {
-			$massActionLinks[] = array(
+		if ($currentUserModel->hasModulePermission('SMSNotifier') && $moduleModel->isPermitted('MassSendSMS') && SMSNotifier_Module_Model::checkServer()) {
+			$massActionLinks[] = [
 				'linktype' => 'LISTVIEWMASSACTION',
 				'linklabel' => 'LBL_MASS_SEND_SMS',
 				'linkurl' => 'javascript:Vtiger_List_Js.triggerSendSms("index.php?module=' . $this->getModule()->getName() . '&view=MassActionAjax&mode=showSendSMSForm","SMSNotifier");',
-				'linkicon' => ''
-			);
+				'linkicon' => 'fas fa-envelope',
+			];
 		}
-
 		foreach ($massActionLinks as $massActionLink) {
 			$links['LISTVIEWMASSACTION'][] = Vtiger_Link_Model::getInstanceFromValues($massActionLink);
-		}
-		return $links;
-	}
-
-	/**
-	 * Function to get the list of listview links for the module
-	 * @param <Array> $linkParams
-	 * @return <Array> - Associate array of Link Type to List of Vtiger_Link_Model instances
-	 */
-	public function getListViewLinks($linkParams)
-	{
-		$links = parent::getListViewLinks($linkParams);
-
-		if (!empty($links['LISTVIEWBASIC'])) {
-			$index = 0;
-			foreach ($links['LISTVIEWBASIC'] as $link) {
-				if ($link->linklabel == 'Send SMS') {
-					unset($links['LISTVIEWBASIC'][$index]);
-				}
-				$index++;
-			}
 		}
 		return $links;
 	}

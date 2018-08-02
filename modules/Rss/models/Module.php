@@ -10,60 +10,44 @@
 
 class Rss_Module_Model extends Vtiger_Module_Model
 {
-
 	/**
-	 * Function to get the Quick Links for the module
+	 * Function to get the Quick Links for the module.
+	 *
 	 * @param <Array> $linkParams
+	 *
 	 * @return <Array> List of Vtiger_Link_Model instances
 	 */
 	public function getSideBarLinks($linkParams)
 	{
-		$linkTypes = array('SIDEBARLINK', 'SIDEBARWIDGET');
-		$links = Vtiger_Link_Model::getAllByType($this->getId(), $linkTypes, $linkParams);
-
-		$quickLinks = array(
-			array(
+		$links = Vtiger_Link_Model::getAllByType($this->getId(), ['SIDEBARLINK', 'SIDEBARWIDGET'], $linkParams);
+		$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues([
 				'linktype' => 'SIDEBARLINK',
 				'linklabel' => 'LBL_ADD_FEED_SOURCE',
 				'linkurl' => $this->getDefaultUrl(),
-				'linkicon' => '',
-			)
-		);
-		foreach ($quickLinks as $quickLink) {
-			$links['SIDEBARLINK'][] = Vtiger_Link_Model::getInstanceFromValues($quickLink);
-		}
-		$quickWidgets = array(
-			array(
+				'linkicon' => 'fas fa-rss',
+		]);
+		$links['SIDEBARWIDGET'][] = Vtiger_Link_Model::getInstanceFromValues([
 				'linktype' => 'SIDEBARWIDGET',
 				'linklabel' => 'LBL_RSS_FEED_SOURCES',
-				'linkurl' => 'module=' . $this->get('name') . '&view=ViewTypes&mode=getRssWidget',
-				'linkicon' => ''
-			),
-		);
-		foreach ($quickWidgets as $quickWidget) {
-			$links['SIDEBARWIDGET'][] = Vtiger_Link_Model::getInstanceFromValues($quickWidget);
-		}
+				'linkurl' => 'module=' . $this->getName() . '&view=ViewTypes&mode=getRssWidget',
+				'linkicon' => '',
+		]);
 
 		return $links;
 	}
 
 	/**
-	 * Function to get rss sources list
+	 * Function to get rss sources list.
 	 */
 	public function getRssSources()
 	{
-		$db = PearDatabase::getInstance();
-
-		$sql = 'Select *from vtiger_rss';
-		$result = $db->pquery($sql, array());
-		$noOfRows = $db->num_rows($result);
-
-		$records = array();
-		for ($i = 0; $i < $noOfRows; ++$i) {
-			$row = $db->query_result_rowdata($result, $i);
+		$dataReader = (new \App\Db\Query())->from('vtiger_rss')->createCommand()->query();
+		while ($row = $dataReader->read()) {
 			$row['id'] = $row['rssid'];
 			$records[$row['id']] = $this->getRecordFromArray($row);
 		}
+		$dataReader->close();
+
 		return $records;
 	}
 }

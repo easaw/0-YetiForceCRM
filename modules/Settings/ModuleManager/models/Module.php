@@ -11,16 +11,60 @@
 
 class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 {
+	/**
+	 * @var string[] Base module tools.
+	 */
+	public static $baseModuleTools = ['Import', 'Export', 'Merge', 'CreateCustomFilter',
+		'DuplicateRecord', 'MassEdit', 'MassArchived', 'MassActive', 'MassDelete', 'MassAddComment', 'MassTransferOwnership',
+		'ReadRecord', 'WorkflowTrigger', 'Dashboard', 'CreateDashboardFilter', 'QuickExportToExcel', 'ExportPdf', 'RecordMapping',
+		'RecordMappingList', 'FavoriteRecords', 'WatchingRecords', 'WatchingModule', 'RemoveRelation', 'ReviewingUpdates'];
+
+	/**
+	 * @var array Base module tools exceptions.
+	 */
+	public static $baseModuleToolsExceptions = [
+		'Documents' => ['notAllowed' => ['Import']],
+		'Faq' => ['notAllowed' => ['Import', 'Export']],
+		'Events' => ['notAllowed' => 'all'],
+		'PBXManager' => ['notAllowed' => 'all'],
+		'OSSMailView' => ['notAllowed' => 'all'],
+		'CallHistory' => ['allowed' => ['QuickExportToExcel']],
+	];
+
+	/**
+	 * Get module base tools exceptions parse to ids.
+	 *
+	 * @return array
+	 */
+	public static function getBaseModuleToolsExceptions()
+	{
+		$exceptions = [];
+		$actionIds = (new \App\Db\Query())->select(['actionname', 'actionid'])->from('vtiger_actionmapping')->createCommand()->queryAllByGroup();
+		foreach (static::$baseModuleToolsExceptions as $moduleName => $moduleException) {
+			foreach ($moduleException as $type => $exception) {
+				if (is_array($exception)) {
+					$moduleExceptions = [];
+					foreach ($exception as $actionName) {
+						$moduleExceptions[$actionIds[$actionName]] = $actionName;
+					}
+					$exceptions[App\Module::getModuleId($moduleName)][$type] = $moduleExceptions;
+				} else {
+					$exceptions[App\Module::getModuleId($moduleName)][$type] = false;
+				}
+			}
+		}
+		return $exceptions;
+	}
 
 	public static function getNonVisibleModulesList()
 	{
-		return ['ModTracker', 'Portal', 'Users', 'Integration', 'WSAPP',
+		return ['ModTracker', 'Portal', 'Users', 'Integration',
 			'ConfigEditor', 'FieldFormulas', 'VtigerBackup', 'CronTasks', 'Import', 'Tooltip',
-			'CustomerPortal', 'Home'];
+			'Home', ];
 	}
 
 	/**
-	 * Function to get the url of new module import
+	 * Function to get the url of new module import.
 	 */
 	public static function getNewModuleImportUrl()
 	{
@@ -28,7 +72,7 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to get the url of new module import 
+	 * Function to get the url of new module import.
 	 */
 	public static function getUserModuleImportUrl()
 	{
@@ -36,7 +80,8 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to disable a module 
+	 * Function to disable a module.
+	 *
 	 * @param type $moduleName - name of the module
 	 */
 	public function disableModule($moduleName)
@@ -46,7 +91,8 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Function to enable the module
+	 * Function to enable the module.
+	 *
 	 * @param type $moduleName -- name of the module
 	 */
 	public function enableModule($moduleName)
@@ -56,62 +102,73 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 	}
 
 	/**
-	 * Static Function to get the instance of Vtiger Module Model for all the modules
+	 * Function to check module name.
+	 *
+	 * @param string $name
+	 *
+	 * @return bool
+	 */
+	public static function checkModuleName($name)
+	{
+		return (bool) (strpos($name, 'Settings') !== false || preg_match('/[^A-Za-z]/i', $name));
+	}
+
+	/**
+	 * Static Function to get the instance of Vtiger Module Model for all the modules.
+	 *
 	 * @return <Array> - List of Vtiger Module Model or sub class instances
 	 */
 	public static function getAll($presence = [], $restrictedModulesList = [], $isEntityType = false)
 	{
-		return parent::getAll(array(0, 1), self::getNonVisibleModulesList());
+		return parent::getAll([0, 1], self::getNonVisibleModulesList());
 	}
 
 	/**
-	 * Function which will get count of modules
-	 * @param <Boolean> $onlyActive - if true get count of only active modules else all the modules
+	 * Function which will get count of modules.
+	 *
+	 * @param bool $onlyActive - if true get count of only active modules else all the modules
+	 *
 	 * @return <integer> number of modules
 	 */
 	public static function getModulesCount($onlyActive = false)
 	{
-		$db = PearDatabase::getInstance();
-
-		$query = 'SELECT * FROM vtiger_tab';
-		$params = array();
+		$query = (new \App\Db\Query())->from('vtiger_tab');
 		if ($onlyActive) {
-			$presence = [0];
 			$nonVisibleModules = self::getNonVisibleModulesList();
-			$query .= sprintf(' WHERE presence IN (%s) && name NOT IN (%s)', generateQuestionMarks($presence), generateQuestionMarks($nonVisibleModules));
-			array_push($params, $presence, $nonVisibleModules);
+			$query->where(['and', ['presence' => 0], ['NOT IN', 'name', $nonVisibleModules]]);
 		}
-		$result = $db->pquery($query, $params);
-		return $db->num_rows($result);
+		return $query->count();
 	}
 
 	/**
-	 * Function that returns all those modules that support Module Sequence Numbering
-	 * @global PearDatabase $db - database connector
+	 * Function that returns all those modules that support Module Sequence Numbering.
+	 *
 	 * @return <Array of Vtiger_Module_Model>
 	 */
 	public static function getModulesSupportingSequenceNumbering()
 	{
-		$db = PearDatabase::getInstance();
-		$sql = "SELECT tabid, name FROM vtiger_tab WHERE isentitytype = 1 && presence = 0 && tabid IN
-			(SELECT DISTINCT tabid FROM vtiger_field WHERE uitype = '4')";
-		$result = $db->pquery($sql, array());
-
-		$moduleModels = array();
-		for ($i = 0; $i < $db->num_rows($result); ++$i) {
-			$row = $db->query_result_rowdata($result, $i);
+		$subQuery = (new \App\Db\Query())->select('tabid')->from('vtiger_field')->where(['uitype' => 4])->distinct('tabid');
+		$dataReader = (new \App\Db\Query())->select(['tabid', 'name'])
+			->from('vtiger_tab')
+			->where(['isentitytype' => 1, 'presence' => 0, 'tabid' => $subQuery])
+			->createCommand()->query();
+		$moduleModels = [];
+		while ($row = $dataReader->read()) {
 			$moduleModels[$row['name']] = self::getInstanceFromArray($row);
 		}
+		$dataReader->close();
+
 		return $moduleModels;
 	}
 
 	/**
-	 * Function to get restricted modules list
-	 * @return <Array> List module names
+	 * Function to get restricted modules list.
+	 *
+	 * @return array List module names
 	 */
 	public static function getActionsRestrictedModulesList()
 	{
-		return array('Home', 'Emails');
+		return ['Home'];
 	}
 
 	public static function createModule($moduleInformation)
@@ -121,12 +178,12 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 		$module = new vtlib\Module();
 		$module->name = ucfirst($moduleInformation['module_name']);
 		$module->label = $moduleInformation['module_label'];
-		$module->type = $moduleInformation['entitytype'];
+		$module->type = (int) $moduleInformation['entitytype'];
 		$module->save();
 		$module->initTables();
 
 		$block = new vtlib\Block();
-		$block->label = 'LBL_' . strtoupper($module->name) . '_INFORMATION';
+		$block->label = 'LBL_BASIC_INFORMATION';
 		$module->addBlock($block);
 
 		$blockcf = new vtlib\Block();
@@ -138,7 +195,7 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 		$field1->label = $moduleInformation['entityfieldlabel'];
 		$field1->uitype = 2;
 		$field1->column = $field1->name;
-		$field1->columntype = 'VARCHAR(255)';
+		$field1->columntype = 'string(255)';
 		$field1->typeofdata = 'V~M';
 		$block->addField($field1);
 
@@ -152,7 +209,7 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 		$field2->table = $module->basetable;
 		$field2->uitype = 4;
 		$field2->typeofdata = 'V~O';
-		$field2->columntype = 'varchar(32)';
+		$field2->columntype = 'string(32)';
 		$block->addField($field2);
 
 		$field3 = new vtlib\Field();
@@ -184,6 +241,18 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 		$field5->displaytype = 2;
 		$block->addField($field5);
 
+		$field6 = new vtlib\Field();
+		$field6->name = 'created_user_id';
+		$field6->label = 'Created By';
+		$field6->table = 'vtiger_crmentity';
+		$field6->column = 'smcreatorid';
+		$field6->uitype = 53;
+		$field6->typeofdata = 'V~O';
+		$field6->displaytype = 2;
+		$field6->quickcreate = 3;
+		$field6->masseditable = 0;
+		$block->addField($field6);
+
 		// Create default custom filter (mandatory)
 		$filter1 = new vtlib\Filter();
 		$filter1->name = 'All';
@@ -197,29 +266,25 @@ class Settings_ModuleManager_Module_Model extends Vtiger_Module_Model
 		$module->setDefaultSharing();
 
 		// Enable and Disable available tools
-		$module->enableTools(['Import', 'Export', 'DuplicatesHandling', 'CreateCustomFilter',
-			'DuplicateRecord', 'MassEdit', 'MassDelete', 'MassAddComment', 'MassTransferOwnership',
-			'ReadRecord', 'WorkflowTrigger', 'Dashboard', 'CreateDashboardFilter',
-			'QuickExportToExcel', 'TagCloud', 'DetailTransferOwnership', 'ExportPdf',
-			'RecordMapping', 'RecordMappingList', 'FavoriteRecords', 'WatchingRecords',
-			'WatchingModule', 'RemoveRelation', 'ReviewingUpdates']);
+		$module->enableTools(static::$baseModuleTools);
 
 		// Initialize Webservice support
 		$module->initWebservice();
 
 		// Create files
 		$module->createFiles($field1);
-		\includes\fields\RecordNumber::setNumber($module->name, 'N', 1);
+		\App\Fields\RecordNumber::setNumber($module->id, 'N', 1);
 	}
 
 	public static function toAlphaNumeric($value)
 	{
-		return preg_replace("/[^a-zA-Z0-9_]/", '', $value);
+		return preg_replace('/[^a-zA-Z0-9_]/', '', $value);
 	}
 
 	public static function getUploadDirectory()
 	{
 		$uploadDir = 'cache/vtlib';
+
 		return $uploadDir;
 	}
 }

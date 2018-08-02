@@ -8,37 +8,34 @@
  * All Rights Reserved.
  * *********************************************************************************** */
 
-class PBXManager_Server_Model extends Vtiger_Base_Model
+class PBXManager_Server_Model extends \App\Base
 {
-
-	const tableName = 'vtiger_pbxmanager_gateway';
+	const TABLE_NAME = 'vtiger_pbxmanager_gateway';
 
 	public static function getCleanInstance()
 	{
-		return new self;
+		return new self();
 	}
 
 	/**
-	 * Static Function Server Record Model
-	 * @params <string> gateway name
+	 * Static Function Server Record Model.
+	 *
+	 * @params string gateway name
+	 *
 	 * @return PBXManager_Server_Model
 	 */
 	public static function getInstance()
 	{
 		$serverModel = new self();
-		$db = PearDatabase::getInstance();
-		$query = sprintf('SELECT * FROM %s', self::tableName);
-		$gatewatResult = $db->pquery($query, array());
-		$gatewatResultCount = $db->num_rows($gatewatResult);
-
-		if ($gatewatResultCount > 0) {
-			$rowData = $db->query_result_rowdata($gatewatResult, 0);
-			$serverModel->set('gateway', $rowData['gateway']);
-			$serverModel->set('id', $rowData['id']);
-			$parameters = \includes\utils\Json::decode(decode_html($rowData['parameters']));
+		$row = (new \App\Db\Query())->from(self::TABLE_NAME)->one();
+		if ($row !== false) {
+			$serverModel->set('gateway', $row['gateway']);
+			$serverModel->set('id', $row['id']);
+			$parameters = \App\Json::decode(App\Purifier::decodeHtml($row['parameters']));
 			foreach ($parameters as $fieldName => $fieldValue) {
 				$serverModel->set($fieldName, $fieldValue);
 			}
+
 			return $serverModel;
 		}
 		return $serverModel;
@@ -51,16 +48,18 @@ class PBXManager_Server_Model extends Vtiger_Base_Model
 			return $permission ? true : false;
 		}
 		Users_Privileges_Model::getCurrentUserPrivilegesModel();
-		$permission = Users_Privileges_Model::isPermitted('PBXManager', 'MakeOutgoingCalls');
+		$permission = \App\Privilege::isPermitted('PBXManager', 'MakeOutgoingCalls');
 
-		$serverModel = PBXManager_Server_Model::getInstance();
+		$serverModel = self::getInstance();
 		$gateway = $serverModel->get('gateway');
 
 		if ($permission && $gateway) {
 			Vtiger_Cache::set('outgoingCall', 'PBXManager', 1);
+
 			return true;
 		} else {
 			Vtiger_Cache::set('outgoingCall', 'PBXManager', 0);
+
 			return false;
 		}
 	}
@@ -72,6 +71,6 @@ class PBXManager_Server_Model extends Vtiger_Base_Model
 
 	public function getConnector()
 	{
-		return new PBXManager_PBXManager_Connector;
+		return new PBXManager_PBXManager_Connector();
 	}
 }

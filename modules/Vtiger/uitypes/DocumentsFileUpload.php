@@ -10,42 +10,60 @@
 
 class Vtiger_DocumentsFileUpload_UIType extends Vtiger_Base_UIType
 {
-
 	/**
-	 * Function to get the Template name for the current UI Type Object
-	 * @return <String> - Template Name
+	 * {@inheritdoc}
 	 */
 	public function getTemplateName()
 	{
-		return 'uitypes/DocumentsFileUpload.tpl';
+		return 'Edit/Field/DocumentsFileUpload.tpl';
 	}
 
 	/**
-	 * Function to get the Display Value, for the current field type with given DB Insert Value
-	 * @param <String> $value
-	 * @param <Integer> $record
-	 * @param <Vtiger_Record_Model>
-	 * @return <String>
+	 * {@inheritdoc}
 	 */
-	public function getDisplayValue($value, $record = false, $recordInstance = false, $rawText = false)
+	public function getListViewDisplayValue($value, $record = false, $recordModel = false, $rawText = false)
 	{
-		if ($recordInstance) {
-			$fileLocationType = $recordInstance->get('filelocationtype');
-			$fileStatus = $recordInstance->get('filestatus');
+		return $this->getDisplayValue(\App\TextParser::textTruncate($value, $this->getFieldModel()->get('maxlengthtext')), $record, $recordModel, $rawText);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDisplayValue($value, $record = false, $recordModel = false, $rawText = false, $length = false)
+	{
+		$value = \App\Purifier::encodeHtml($value);
+		if ($recordModel) {
+			$fileLocationType = $recordModel->get('filelocationtype');
+			$fileStatus = $recordModel->get('filestatus');
 			if (!empty($value) && $fileStatus) {
-				if ($fileLocationType == 'I') {
-					$db = PearDatabase::getInstance();
-					$fileIdRes = $db->pquery('SELECT attachmentsid FROM vtiger_seattachmentsrel WHERE crmid = ?', array($record));
-					$fileId = $db->query_result($fileIdRes, 0, 'attachmentsid');
+				if ($fileLocationType === 'I') {
+					$fileId = (new App\Db\Query())->select(['attachmentsid'])
+						->from('vtiger_seattachmentsrel')->where(['crmid' => $record])->scalar();
 					if ($fileId) {
-						$value = '<a href="index.php?module=Documents&action=DownloadFile&record=' . $record . '&fileid=' . $fileId . '"' .
-							' title="' . vtranslate('LBL_DOWNLOAD_FILE', 'Documents') . '" >' . $value . '</a>';
+						return '<a href="file.php?module=Documents&action=DownloadFile&record=' . $record . '&fileid=' . $fileId . '"' .
+							' title="' . \App\Language::translate('LBL_DOWNLOAD_FILE', 'Documents') . '" >' . $value . '</a>';
 					}
 				} else {
-					$value = '<a href="' . $value . '" target="_blank" title="' . vtranslate('LBL_DOWNLOAD_FILE', 'Documents') . '" >' . $value . '</a>';
+					return '<a href="' . $value . '" target="_blank" title="' . \App\Language::translate('LBL_DOWNLOAD_FILE', 'Documents') . '" >' . $value . '</a>';
 				}
 			}
 		}
 		return $value;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function getDBValue($value, $recordModel = false)
+	{
+		if ($value === null) {
+			$fileName = (new App\Db\Query())->select(['filename'])->from('vtiger_notes')->where(['notesid' => $this->id])->one();
+			if ($fileName) {
+				return App\Purifier::decodeHtml($fileName);
+			}
+
+			return '';
+		}
+		return App\Purifier::decodeHtml($value);
 	}
 }

@@ -1,16 +1,16 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
 	<tr>
 		<td>
-			<select class="form-control users {if $SELECT}select2{/if}">
-				<optgroup label="{vtranslate('LBL_ROLES', $QUALIFIED_MODULE)}">
+			<select class="form-control js-users {if $SELECT}select2{/if}" data-js="value">
+				<optgroup label="{\App\Language::translate('LBL_ROLES', $QUALIFIED_MODULE)}">
 					{foreach item=ROLE key=ROLEID from=$ROLES}
 						<option value="{$ROLEID}" {if $ID == $ROLEID}selected{/if}>
-							{vtranslate($ROLE->getName(), $QUALIFIED_MODULE)}
+							{\App\Language::translate($ROLE->getName(), $QUALIFIED_MODULE)}
 						</option>
 					{/foreach}
 				</optgroup>
-				<optgroup label="{vtranslate('LBL_USERS', $QUALIFIED_MODULE)}">
+				<optgroup label="{\App\Language::translate('LBL_USERS', $QUALIFIED_MODULE)}">
 					{foreach item=USER key=USERID from=$USERS}
 						<option value="{$USERID}" {if $ID == $USERID}selected{/if}>
 							{$USER->getName()}
@@ -20,17 +20,17 @@
 			</select>
 		</td>
 		<td>
-			<select class="form-control locks {if $SELECT}select2{/if}" multiple="">
-					{foreach item=LOCKT key=ID from=$LOCKS_TYPE}
-						<option value="{$ID}" {if in_array($ID, $LOCK)}selected{/if}>
-							{vtranslate($LOCKT, $QUALIFIED_MODULE)}
-						</option>
-					{/foreach}
+			<select class="form-control js-locks {if $SELECT}select2{/if}" data-js="value" multiple="">
+				{foreach item=LOCKT key=ID from=$LOCKS_TYPE}
+					<option value="{$ID}" {if in_array($ID, $LOCK)}selected{/if}>
+						{\App\Language::translate($LOCKT, $QUALIFIED_MODULE)}
+					</option>
+				{/foreach}
 			</select>
 		</td>
-		<td class="textAlignCenter">
-			<button title="{vtranslate('LBL_DELETE', $QUALIFIED_MODULE)}" type="button" class="btn btn-default delate">
-				<i class="glyphicon glyphicon-trash"></i>
+		<td class="text-center">
+			<button title="{\App\Language::translate('LBL_DELETE', $QUALIFIED_MODULE)}" type="button" class="btn btn-danger js-delete-item" data-js="click">
+				<span class="fas fa-trash-alt"></span>
 			</button>
 		</td>
 	</tr>

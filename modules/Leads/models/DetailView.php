@@ -11,12 +11,12 @@
 
 class Leads_DetailView_Model extends Accounts_DetailView_Model
 {
-
 	/**
-	 * Function to get the detail view links (links and widgets)
-	 * @param <array> $linkParams - parameters which will be used to calicaulate the params
-	 * @return <array> - array of link models in the format as below
-	 *                   array('linktype'=>list of link models);
+	 * Function to get the detail view links (links and widgets).
+	 *
+	 * @param array $linkParams - parameters which will be used to calicaulate the params
+	 *
+	 * @return array - array of link models in the format as below - array('linktype'=>list of link models);
 	 */
 	public function getDetailViewLinks($linkParams)
 	{
@@ -27,30 +27,30 @@ class Leads_DetailView_Model extends Accounts_DetailView_Model
 		$recordId = $recordModel->getId();
 
 		$index = 0;
-		foreach ($linkModelList['DETAILVIEW'] as $link) {
-			if ($link->linklabel == 'View History' || $link->linklabel == 'Send SMS') {
-				unset($linkModelList['DETAILVIEW'][$index]);
-			} else if ($link->linklabel == 'LBL_SHOW_ACCOUNT_HIERARCHY') {
+		foreach ($linkModelList['DETAIL_VIEW_BASIC'] as $link) {
+			if ($link->linklabel == 'View History') {
+				unset($linkModelList['DETAIL_VIEW_BASIC'][$index]);
+			} elseif ($link->linklabel == 'LBL_SHOW_ACCOUNT_HIERARCHY') {
 				$link->linklabel = 'LBL_SHOW_ACCOUNT_HIERARCHY';
 				$linkURL = 'index.php?module=Accounts&view=AccountHierarchy&record=' . $recordId;
 				$link->linkurl = 'javascript:Accounts_Detail_Js.triggerAccountHierarchy("' . $linkURL . '");';
-				unset($linkModelList['DETAILVIEW'][$index]);
-				$linkModelList['DETAILVIEW'][$index] = $link;
+				unset($linkModelList['DETAIL_VIEW_BASIC'][$index]);
+				$linkModelList['DETAIL_VIEW_BASIC'][$index] = $link;
 			}
-			$index++;
+			++$index;
 		}
 
-		if (Users_Privileges_Model::isPermitted($moduleModel->getName(), 'ConvertLead', $recordModel->getId()) && Users_Privileges_Model::isPermitted($moduleModel->getName(), 'EditView', $recordModel->getId())) {
-			$convert = !Leads_Module_Model::checkIfAllowedToConvert($recordModel->get('leadstatus')) ? 'hide' : '';
-			$basicActionLink = array(
-				'linktype' => 'DETAILVIEWBASIC',
+		if (\App\Privilege::isPermitted($moduleModel->getName(), 'ConvertLead', $recordModel->getId()) && \App\Privilege::isPermitted($moduleModel->getName(), 'EditView', $recordModel->getId())) {
+			$convert = !Leads_Module_Model::checkIfAllowedToConvert($recordModel->get('leadstatus')) ? 'd-none' : '';
+			$basicActionLink = [
+				'linktype' => 'DETAIL_VIEW_ADDITIONAL',
 				'linklabel' => '',
-				'linkclass' => 'btn-info btn-convertLead ' . $convert,
-				'linkhint' => vtranslate('LBL_CONVERT_LEAD', $moduleName),
+				'linkclass' => 'btn-outline-info btn-convertLead ' . $convert,
+				'linkhint' => \App\Language::translate('LBL_CONVERT_LEAD', $moduleName),
 				'linkurl' => 'javascript:Leads_Detail_Js.convertLead("' . $recordModel->getConvertLeadUrl() . '",this);',
-				'linkicon' => 'glyphicon glyphicon-transfer',
-			);
-			$linkModelList['DETAILVIEWBASIC'][] = Vtiger_Link_Model::getInstanceFromValues($basicActionLink);
+				'linkicon' => 'fas fa-exchange-alt',
+			];
+			$linkModelList['DETAIL_VIEW_ADDITIONAL'][] = Vtiger_Link_Model::getInstanceFromValues($basicActionLink);
 		}
 		return $linkModelList;
 	}

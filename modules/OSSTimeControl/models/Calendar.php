@@ -1,24 +1,25 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
-class OSSTimeControl_Calendar_Model extends Vtiger_Base_Model
+/**
+ * OSSTimeControl calendar model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license   YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+class OSSTimeControl_Calendar_Model extends App\Base
 {
-
+	/**
+	 * Function to get records.
+	 *
+	 * @return array
+	 */
 	public function getEntity()
 	{
-		$db = PearDatabase::getInstance();
-		$module = 'OSSTimeControl';
+		$moduleName = 'OSSTimeControl';
 		$currentUser = Users_Record_Model::getCurrentUserModel();
-		$query = getListQuery($module);
-		$params = array();
+		$queryGenerator = new App\QueryGenerator($moduleName);
+		$queryGenerator->setFields(['id', 'date_start', 'time_start', 'time_end', 'due_date', 'timecontrol_type', 'name', 'assigned_user_id', 'osstimecontrol_status', 'sum_time', 'osstimecontrol_no', 'process', 'link', 'subprocess', 'linkextend']);
+		$query = $queryGenerator->createQuery();
 		if ($this->get('start') && $this->get('end')) {
 			$dbStartDateOject = DateTimeField::convertToDBTimeZone($this->get('start'), null, false);
 			$dbStartDateTime = $dbStartDateOject->format('Y-m-d H:i:s');
@@ -26,38 +27,68 @@ class OSSTimeControl_Calendar_Model extends Vtiger_Base_Model
 			$dbEndDateObject = DateTimeField::convertToDBTimeZone($this->get('end'), null, false);
 			$dbEndDateTime = $dbEndDateObject->format('Y-m-d H:i:s');
 			$dbEndDate = $dbEndDateObject->format('Y-m-d');
-			$query.= " && ((concat(vtiger_osstimecontrol.date_start, ' ', vtiger_osstimecontrol.time_start) >= ? && concat(vtiger_osstimecontrol.date_start, ' ', vtiger_osstimecontrol.time_start) <= ?) || (concat(vtiger_osstimecontrol.due_date, ' ', vtiger_osstimecontrol.time_end) >= ? && concat(vtiger_osstimecontrol.due_date, ' ', vtiger_osstimecontrol.time_end) <= ?) || (vtiger_osstimecontrol.date_start < ? && vtiger_osstimecontrol.due_date > ?) )";
-			$params[] = $dbStartDateTime;
-			$params[] = $dbEndDateTime;
-			$params[] = $dbStartDateTime;
-			$params[] = $dbEndDateTime;
-			$params[] = $dbStartDate;
-			$params[] = $dbEndDate;
+			$query->andWhere([
+				'or',
+				[
+					'and',
+					['>=', new \yii\db\Expression("CONCAT(vtiger_osstimecontrol.date_start, ' ', vtiger_osstimecontrol.time_start)"), $dbStartDateTime],
+					['<=', new \yii\db\Expression("CONCAT(vtiger_osstimecontrol.date_start, ' ', vtiger_osstimecontrol.time_start)"), $dbEndDateTime],
+				],
+				[
+					'and',
+					['>=', new \yii\db\Expression("CONCAT(vtiger_osstimecontrol.due_date, ' ', vtiger_osstimecontrol.time_end)"), $dbStartDateTime],
+					['<=', new \yii\db\Expression("CONCAT(vtiger_osstimecontrol.due_date, ' ', vtiger_osstimecontrol.time_end)"), $dbEndDateTime],
+				],
+				[
+					'and',
+					['<', 'vtiger_osstimecontrol.date_start', $dbStartDate],
+					['>', 'vtiger_osstimecontrol.due_date', $dbEndDate],
+				],
+			]);
 		}
-		if ($this->get('types')) {
-			$query.= " && vtiger_osstimecontrol.timecontrol_type IN ('" . implode("','", $this->get('types')) . "')";
+		if (!$this->isEmpty('types')) {
+			$query->andWhere(['vtiger_osstimecontrol.timecontrol_type' => $this->get('types')]);
 		}
-		if ($this->get('user')) {
-			if (is_array($this->get('user'))) {
-				$query.= ' && vtiger_crmentity.smownerid IN (' . implode(",", $this->get('user')) . ')';
-			} else {
-				$query.= ' && vtiger_crmentity.smownerid IN (' . $this->get('user') . ')';
+		if (!$this->isEmpty('user')) {
+			$query->andWhere(['vtiger_crmentity.smownerid' => $this->get('user')]);
+		}
+		$dataReader = $query->createCommand()->query();
+		$result = [];
+		while ($record = $dataReader->read()) {
+			$item = [];
+			$item['id'] = $record['id'];
+			$item['title'] = \App\Purifier::encodeHtml($record['name']);
+			$item['url'] = 'index.php?module=OSSTimeControl&view=Detail&record=' . $record['id'];
+			$item['status'] = \App\Language::translate($record['osstimecontrol_status'], 'OSSTimeControl');
+			$item['type'] = \App\Language::translate($record['timecontrol_type'], 'OSSTimeControl');
+			$item['number'] = $record['osstimecontrol_no'];
+			//Relation
+			if ($record['link']) {
+				$item['link'] = $record['link'];
+				$item['linkl'] = \App\Record::getLabel($record['link']);
+				// / migoi
+				$item['linkm'] = \App\Record::getType($record['link']);
 			}
-		}
-		$query .= \App\PrivilegeQuery::getAccessConditions($module, $currentUser->getId());
-		$query .= ' ORDER BY date_start,time_start ASC';
-
-		$queryResult = $db->pquery($query, $params);
-		$result = array();
-		for ($i = 0; $i < $db->num_rows($queryResult); $i++) {
-			$record = $db->raw_query_result_rowdata($queryResult, $i);
-
-			$item = array();
-			$crmid = $record['osstimecontrolid'];
-			$item['id'] = $crmid;
-			$item['title'] = vtranslate($record['name'], $module);
-			$item['url'] = 'index.php?module=OSSTimeControl&view=Detail&record=' . $crmid;
-
+			//Process
+			if ($record['process']) {
+				$item['process'] = $record['process'];
+				$item['procl'] = \App\Record::getLabel($record['process']);
+				$item['procm'] = \App\Record::getType($record['process']);
+			}
+			//Subprocess
+			if ($record['subprocess']) {
+				$item['subprocess'] = $record['subprocess'];
+				$item['subprocl'] = \App\Record::getLabel($record['subprocess']);
+				$item['subprocm'] = \App\Record::getType($record['subprocess']);
+			}
+			//linkextend
+			if ($record['linkextend']) {
+				$item['linkextend'] = $record['linkextend'];
+				$item['linkexl'] = \App\Record::getLabel($record['linkextend']);
+				$item['linkexm'] = \App\Record::getType($record['linkextend']);
+			}
+			$item['totalTime'] = \App\Fields\Time::formatToHourText($record['sum_time'], 'short');
+			$item['smownerid'] = \App\Fields\Owner::getLabel($record['assigned_user_id']);
 			$dateTimeFieldInstance = new DateTimeField($record['date_start'] . ' ' . $record['time_start']);
 			$userDateTimeString = $dateTimeFieldInstance->getDisplayDateTimeValue($currentUser);
 			$dateTimeComponents = explode(' ', $userDateTimeString);
@@ -65,24 +96,26 @@ class OSSTimeControl_Calendar_Model extends Vtiger_Base_Model
 			//Conveting the date format in to Y-m-d . since full calendar expects in the same format
 			$dataBaseDateFormatedString = DateTimeField::__convertToDBFormat($dateComponent, $currentUser->get('date_format'));
 			$item['start'] = $dataBaseDateFormatedString . ' ' . $dateTimeComponents[1];
-
+			$item['start_display'] = $userDateTimeString;
 			$dateTimeFieldInstance = new DateTimeField($record['due_date'] . ' ' . $record['time_end']);
 			$userDateTimeString = $dateTimeFieldInstance->getDisplayDateTimeValue($currentUser);
 			$dateTimeComponents = explode(' ', $userDateTimeString);
 			$dateComponent = $dateTimeComponents[0];
 			//Conveting the date format in to Y-m-d . since full calendar expects in the same format
 			$dataBaseDateFormatedString = DateTimeField::__convertToDBFormat($dateComponent, $currentUser->get('date_format'));
-
-
 			$item['end'] = $dataBaseDateFormatedString . ' ' . $dateTimeComponents[1];
-			$item['className'] = ' userCol_' . $record['smownerid'] . ' calCol_' . $record['timecontrol_type'];
+			$item['end_display'] = $userDateTimeString;
+			$item['className'] = ' ownerCBg_' . $record['assigned_user_id'] . ' picklistCBr_OSSTimeControl_timecontrol_type_' . $record['timecontrol_type'];
 			$result[] = $item;
 		}
+		$dataReader->close();
+
 		return $result;
 	}
 
 	/**
-	 * Static Function to get the instance of Vtiger Module Model for the given id or name
+	 * Static Function to get the instance of Vtiger Module Model for the given id or name.
+	 *
 	 * @param mixed id or name of the module
 	 */
 	public static function getInstance()
@@ -91,19 +124,20 @@ class OSSTimeControl_Calendar_Model extends Vtiger_Base_Model
 		if ($instance === false) {
 			$instance = new self();
 			Vtiger_Cache::set('ossTimeControlModels', 'Calendar', clone $instance);
+
 			return $instance;
 		} else {
 			return clone $instance;
 		}
 	}
 
+	/**
+	 * Function to get type of calendars.
+	 *
+	 * @return string[]
+	 */
 	public static function getCalendarTypes()
 	{
-		$calendarConfig = Array(
-			'PLL_WORKING_TIME',
-			'PLL_BREAK_TIME',
-			'PLL_HOLIDAY_TIME'
-		);
-		return $calendarConfig;
+		return \App\Fields\Picklist::getValuesName('timecontrol_type');
 	}
 }

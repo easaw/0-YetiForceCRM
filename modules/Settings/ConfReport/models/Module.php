@@ -1,59 +1,60 @@
 <?php
-/* +***********************************************************************************************************************************
- * The contents of this file are subject to the YetiForce Public License Version 1.1 (the "License"); you may not use this file except
- * in compliance with the License.
- * Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.
- * See the License for the specific language governing rights and limitations under the License.
- * The Original Code is YetiForce.
- * The Initial Developer of the Original Code is YetiForce. Portions created by YetiForce are Copyright (C) www.yetiforce.com. 
- * All Rights Reserved.
- * *********************************************************************************************************************************** */
 
+/**
+ * Settings ConfReport module model class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license   YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
 class Settings_ConfReport_Module_Model extends Settings_Vtiger_Module_Model
 {
-
 	/**
-	 * variable has all the files and folder that should be writable
-	 * @var <Array>
+	 * variable has all the files and folder that should be writable.
+	 *
+	 * @var array
 	 */
-	public static $writableFilesAndFolders = array(
+	public static $writableFilesAndFolders = [
 		'Configuration directory' => 'config/',
 		'Configuration file' => 'config/config.inc.php',
 		'User privileges directory' => 'user_privileges/',
 		'Tabdata file' => 'user_privileges/tabdata.php',
 		'Menu file' => 'user_privileges/menu_0.php',
 		'User privileges file' => 'user_privileges/user_privileges_1.php',
-		'Parent tabdata file' => 'config/parent_tabdata.php',
+		'Logo directory' => 'public_html/layouts/resources/Logo/',
 		'Cache directory' => 'cache/',
 		'Address book directory' => 'cache/addressBook/',
-		'Cache backup directory' => 'cache/backup/',
 		'Image cache directory' => 'cache/images/',
 		'Import cache directory' => 'cache/import/',
 		'Logs directory' => 'cache/logs/',
 		'Session directory' => 'cache/session/',
 		'Cache templates directory' => 'cache/templates_c/',
 		'Cache upload directory' => 'cache/upload/',
-		'Cron modules directory' => 'cron/modules/',
 		'Vtlib test directory' => 'cache/vtlib/',
 		'Vtlib test HTML directory' => 'cache/vtlib/HTML',
+		'Cron modules directory' => 'cron/modules/',
 		'Modules directory' => 'modules/',
-		'Libraries directory' => 'libraries/',
+		'Libraries directory' => 'public_html/libraries/',
 		'Storage directory' => 'storage/',
 		'Product image directory' => 'storage/Products/',
 		'User image directory' => 'storage/Users/',
 		'Contact image directory' => 'storage/Contacts/',
-		'Logo directory' => 'storage/Logo/',
-		'MailView attachments directory' => 'storage/OSSMailView/'
-	);
-	public static $library = array(
+		'MailView attachments directory' => 'storage/OSSMailView/',
+		'Roundcube directory' => 'public_html/modules/OSSMail/',
+	];
+
+	/**
+	 * List of libraries.
+	 *
+	 * @var array
+	 */
+	public static $library = [
 		'LBL_IMAP_SUPPORT' => ['type' => 'f', 'name' => 'imap_open', 'mandatory' => true],
 		'LBL_ZLIB_SUPPORT' => ['type' => 'f', 'name' => 'gzinflate', 'mandatory' => true],
 		'LBL_PDO_SUPPORT' => ['type' => 'e', 'name' => 'pdo_mysql', 'mandatory' => true],
 		'LBL_OPEN_SSL' => ['type' => 'e', 'name' => 'openssl', 'mandatory' => true],
 		'LBL_CURL' => ['type' => 'e', 'name' => 'curl', 'mandatory' => true],
 		'LBL_GD_LIBRARY' => ['type' => 'e', 'name' => 'gd', 'mandatory' => true],
-		'LBL_LDAP_LIBRARY' => ['type' => 'f', 'name' => 'ldap_connect', 'mandatory' => false],
-		'LBL_PCRE_LIBRARY' => ['type' => 'e', 'name' => 'pcre', 'mandatory' => true],
+		'LBL_PCRE_LIBRARY' => ['type' => 'e', 'name' => 'pcre', 'mandatory' => true], //Roundcube
 		'LBL_XML_LIBRARY' => ['type' => 'e', 'name' => 'xml', 'mandatory' => true],
 		'LBL_JSON_LIBRARY' => ['type' => 'e', 'name' => 'json', 'mandatory' => true],
 		'LBL_SESSION_LIBRARY' => ['type' => 'e', 'name' => 'session', 'mandatory' => true],
@@ -61,252 +62,442 @@ class Settings_ConfReport_Module_Model extends Settings_Vtiger_Module_Model
 		'LBL_ZIP_ARCHIVE' => ['type' => 'e', 'name' => 'zip', 'mandatory' => true],
 		'LBL_MBSTRING_LIBRARY' => ['type' => 'e', 'name' => 'mbstring', 'mandatory' => true],
 		'LBL_SOAP_LIBRARY' => ['type' => 'e', 'name' => 'soap', 'mandatory' => true],
-	);
+		'LBL_MYSQLND_LIBRARY' => ['type' => 'e', 'name' => 'mysqlnd', 'mandatory' => true],
+		'LBL_FILEINFO_LIBRARY' => ['type' => 'e', 'name' => 'fileinfo', 'mandatory' => true],
+		'LBL_LIBICONV_LIBRARY' => ['type' => 'e', 'name' => 'iconv', 'mandatory' => true],
+		'LBL_EXIF_LIBRARY' => ['type' => 'f', 'name' => 'exif_read_data', 'mandatory' => false],
+		'LBL_LDAP_LIBRARY' => ['type' => 'f', 'name' => 'ldap_connect', 'mandatory' => false],
+		'LBL_OPCACHE_LIBRARY' => ['type' => 'f', 'name' => 'opcache_get_configuration', 'mandatory' => false],
+		'LBL_APCU_LIBRARY' => ['type' => 'e', 'name' => 'apcu', 'mandatory' => false],
+	];
 
-	public static function getConfigurationLibrary()
+	private static function getStabilitIniConf()
 	{
-		foreach (self::$library as $k => $v) {
+		$directiveValues = [
+			'PHP' => ['recommended' => '7.1.x, 7.2.x (dev)', 'help' => 'LBL_PHP_HELP_TEXT', 'fn' => 'validatePhp'],
+			'error_reporting' => ['recommended' => 'E_ALL & ~E_NOTICE', 'help' => 'LBL_ERROR_REPORTING_HELP_TEXT', 'fn' => 'validateErrorReporting'],
+			'output_buffering' => ['recommended' => 'On', 'help' => 'LBL_OUTPUT_BUFFERING_HELP_TEXT', 'fn' => 'validateOnOffInt'],
+			'max_execution_time' => ['recommended' => '600', 'help' => 'LBL_MAX_EXECUTION_TIME_HELP_TEXT', 'fn' => 'validateGreater'],
+			'max_input_time' => ['recommended' => '600', 'help' => 'LBL_MAX_INPUT_TIME_HELP_TEXT', 'fn' => 'validateGreater'],
+			'default_socket_timeout' => ['recommended' => '600', 'help' => 'LBL_DEFAULT_SOCKET_TIMEOUT_HELP_TEXT', 'fn' => 'validateGreater'],
+			'memory_limit' => ['recommended' => '1 GB', 'help' => 'LBL_MEMORY_LIMIT_HELP_TEXT', 'fn' => 'validateGreaterMb'],
+			'log_errors' => ['recommended' => 'On', 'help' => 'LBL_LOG_ERRORS_HELP_TEXT', 'fn' => 'validateOnOff'],
+			'file_uploads' => ['recommended' => 'On', 'help' => 'LBL_FILE_UPLOADS_HELP_TEXT', 'fn' => 'validateOnOff'],
+			'short_open_tag' => ['recommended' => 'On', 'help' => 'LBL_SHORT_OPEN_TAG_HELP_TEXT', 'fn' => 'validateOnOff'],
+			'post_max_size' => ['recommended' => '50 MB', 'help' => 'LBL_POST_MAX_SIZE_HELP_TEXT', 'fn' => 'validateGreaterMb'],
+			'upload_max_filesize' => ['recommended' => '100 MB', 'help' => 'LBL_UPLOAD_MAX_FILESIZE_HELP_TEXT', 'fn' => 'validateGreaterMb'],
+			'max_input_vars' => ['recommended' => '10000', 'help' => 'LBL_MAX_INPUT_VARS_HELP_TEXT', 'fn' => 'validateGreater'],
+			'zlib.output_compression' => ['recommended' => 'Off', 'help' => 'LBL_ZLIB_OUTPUT_COMPRESSION_HELP_TEXT', 'fn' => 'validateOnOff'],
+			'session.auto_start' => ['recommended' => 'Off', 'help' => 'LBL_SESSION_AUTO_START_HELP_TEXT', 'fn' => 'validateOnOff'],
+			'session.gc_maxlifetime' => ['recommended' => '21600', 'help' => 'LBL_SESSION_GC_MAXLIFETIME_HELP_TEXT', 'fn' => 'validateGreater'],
+			'session.gc_divisor' => ['recommended' => '500', 'help' => 'LBL_SESSION_GC_DIVISOR_HELP_TEXT', 'fn' => 'validateGreater'],
+			'session.gc_probability' => ['recommended' => '1', 'help' => 'LBL_SESSION_GC_PROBABILITY_HELP_TEXT', 'fn' => 'validateEqual'],
+			'mbstring.func_overload' => ['recommended' => 'Off', 'help' => 'LBL_MBSTRING_FUNC_OVERLOAD_HELP_TEXT', 'fn' => 'validateOnOff'], //Roundcube
+			'date.timezone' => ['recommended' => false, 'fn' => 'validateTimezone'], //Roundcube
+			'allow_url_fopen' => ['recommended' => 'On', 'help' => 'LBL_ALLOW_URL_FOPEN_HELP_TEXT', 'fn' => 'validateOnOff'], //Roundcube
+			'auto_detect_line_endings' => ['recommended' => 'On', 'help' => 'LBL_AUTO_DETECT_LINE_ENDINGS_HELP_TEXT', 'fn' => 'validateOnOff'], //CSVReader
+		];
+		if (extension_loaded('suhosin')) {
+			$directiveValues['suhosin.session.encrypt'] = ['recommended' => 'Off', 'fn' => 'validateOnOff']; //Roundcube
+			$directiveValues['suhosin.request.max_vars'] = ['recommended' => '5000', 'fn' => 'validateGreater'];
+			$directiveValues['suhosin.post.max_vars'] = ['recommended' => '5000', 'fn' => 'validateGreater'];
+			$directiveValues['suhosin.post.max_value_length'] = ['recommended' => '1500000', 'fn' => 'validateGreater'];
+		}
+		return $directiveValues;
+	}
+
+	public static function getLibrary()
+	{
+		foreach (static::$library as $k => $v) {
 			if ($v['type'] == 'f') {
 				$status = function_exists($v['name']);
 			} elseif ($v['type'] == 'e') {
 				$status = extension_loaded($v['name']);
 			}
-			self::$library[$k]['status'] = $status ? 'LBL_YES' : 'LBL_NO';
+			static::$library[$k]['status'] = $status ? 'LBL_YES' : 'LBL_NO';
 		}
-		return self::$library;
-	}
-
-	public static function getConfigurationValue($instalMode = false)
-	{
-		$errorReportingValue = 'E_WARNING & E_ERROR & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT';
-		$directiveValues = [
-			'PHP' => ['prefer' => '5.5.0'],
-			'error_reporting' => ['prefer' => $errorReportingValue],
-			'output_buffering' => ['prefer' => 'On'],
-			'max_execution_time' => ['prefer' => '600'],
-			'max_input_time' => ['prefer' => '600'],
-			'default_socket_timeout' => ['prefer' => '600'],
-			'mysql.connect_timeout' => ['prefer' => '600'],
-			'innodb_lock_wait_timeout' => ['prefer' => '600'], // MySQL
-			'wait_timeout' => ['prefer' => '600'], // MySQL
-			'interactive_timeout' => ['prefer' => '600'], // MySQL
-			'sql_mode' => ['prefer' => ''], // MySQL
-			'memory_limit' => ['prefer' => '512 MB'],
-			'safe_mode' => ['prefer' => 'Off'],
-			'display_errors' => ['prefer' => 'Off'],
-			'log_errors' => ['prefer' => 'Off'],
-			'file_uploads' => ['prefer' => 'On'],
-			'short_open_tag' => ['prefer' => 'On'],
-			'post_max_size' => ['prefer' => '50 MB'],
-			'upload_max_filesize' => ['prefer' => '50 MB'],
-			'max_allowed_packet' => ['prefer' => '10 MB'], // MySQL
-			'max_input_vars' => ['prefer' => '5000'],
-			'magic_quotes_gpc' => ['prefer' => 'Off'],
-			'magic_quotes_runtime' => ['prefer' => 'Off'],
-			'zlib.output_compression' => ['prefer' => 'Off'],
-			'zend.ze1_compatibility_mode' => ['prefer' => 'Off'],
-			'session.auto_start' => ['prefer' => 'Off'],
-			'magic_quotes_sybase' => ['prefer' => 'Off'],
-			'session.gc_maxlifetime' => ['prefer' => '21600'],
-			'session.gc_divisor' => ['prefer' => '500'],
-			'session.gc_probability' => ['prefer' => '1'],
-			'mbstring.func_overload' => ['prefer' => 'Off'],
-		];
-		if (extension_loaded('suhosin')) {
-			$directiveValues['suhosin.session.encrypt'] = array('prefer' => 'Off');
-			$directiveValues['suhosin.request.max_vars'] = array('prefer' => '5000');
-			$directiveValues['suhosin.post.max_vars'] = array('prefer' => '5000');
-			$directiveValues['suhosin.post.max_value_length'] = array('prefer' => '1500000');
-		}
-
-		if (ini_get('safe_mode') == '1' || stripos(ini_get('safe_mode'), 'On') !== false)
-			$directiveValues['safe_mode']['status'] = true;
-		$directiveValues['safe_mode']['current'] = self::getFlag(ini_get('safe_mode'));
-
-		if (ini_get('display_errors') == '1' || stripos(ini_get('display_errors'), 'On') !== false)
-			$directiveValues['display_errors']['status'] = true;
-		$directiveValues['display_errors']['current'] = self::getFlag(ini_get('display_errors'));
-
-		if (ini_get('file_uploads') != '1' || stripos(ini_get('file_uploads'), 'Off') !== false)
-			$directiveValues['file_uploads']['status'] = true;
-		$directiveValues['file_uploads']['current'] = self::getFlag(ini_get('file_uploads'));
-
-		if ((ini_get('output_buffering') <= '4096' && ini_get('output_buffering') != '1') || stripos(ini_get('output_buffering'), 'Off') !== false)
-			$directiveValues['output_buffering']['status'] = true;
-		if (!in_array(ini_get('output_buffering'), ['On', 1, 0, 'Off'])) {
-			$directiveValues['output_buffering']['current'] = ini_get('output_buffering');
-		} else {
-			$directiveValues['output_buffering']['current'] = self::getFlag(ini_get('output_buffering'));
-		}
-
-		if (ini_get('max_execution_time') != 0 && ini_get('max_execution_time') < 600)
-			$directiveValues['max_execution_time']['status'] = true;
-		$directiveValues['max_execution_time']['current'] = ini_get('max_execution_time');
-
-		if (ini_get('max_input_time') != 0 && ini_get('max_input_time') < 600)
-			$directiveValues['max_input_time']['status'] = true;
-		$directiveValues['max_input_time']['current'] = ini_get('max_input_time');
-
-		if (ini_get('default_socket_timeout') != 0 && ini_get('default_socket_timeout') < 600)
-			$directiveValues['default_socket_timeout']['status'] = true;
-		$directiveValues['default_socket_timeout']['current'] = ini_get('default_socket_timeout');
-
-		if (ini_get('mysql.connect_timeout') != 0 && ini_get('mysql.connect_timeout') < 600)
-			$directiveValues['mysql.connect_timeout']['status'] = true;
-		$directiveValues['mysql.connect_timeout']['current'] = ini_get('mysql.connect_timeout');
-
-		if (vtlib\Functions::parseBytes(ini_get('memory_limit')) < 33554432)
-			$directiveValues['memory_limit']['status'] = true;
-		$directiveValues['memory_limit']['current'] = vtlib\Functions::showBytes(ini_get('memory_limit'));
-
-		if (vtlib\Functions::parseBytes(ini_get('post_max_size')) < 10485760)
-			$directiveValues['post_max_size']['status'] = true;
-		$directiveValues['post_max_size']['current'] = vtlib\Functions::showBytes(ini_get('post_max_size'));
-
-		if (vtlib\Functions::parseBytes(ini_get('upload_max_filesize')) < 10485760)
-			$directiveValues['upload_max_filesize']['status'] = true;
-		$directiveValues['upload_max_filesize']['current'] = vtlib\Functions::showBytes(ini_get('upload_max_filesize'));
-
-		if (ini_get('magic_quotes_gpc') == '1' || stripos(ini_get('magic_quotes_gpc'), 'On') !== false)
-			$directiveValues['magic_quotes_gpc']['status'] = true;
-		$directiveValues['magic_quotes_gpc']['current'] = self::getFlag(ini_get('magic_quotes_gpc'));
-
-		if (ini_get('magic_quotes_runtime') == '1' || stripos(ini_get('magic_quotes_runtime'), 'On') !== false)
-			$directiveValues['magic_quotes_runtime']['status'] = true;
-		$directiveValues['magic_quotes_runtime']['current'] = self::getFlag((ini_get('magic_quotes_runtime')));
-
-		if (ini_get('zlib.output_compression') == '1' || stripos(ini_get('zlib.output_compression'), 'On') !== false)
-			$directiveValues['zlib.output_compression']['status'] = true;
-		$directiveValues['zlib.output_compression']['current'] = self::getFlag((ini_get('zlib.output_compression')));
-
-		if (ini_get('zend.ze1_compatibility_mode') == '1' || stripos(ini_get('zend.ze1_compatibility_mode'), 'On') !== false)
-			$directiveValues['zend.ze1_compatibility_mode']['status'] = true;
-		$directiveValues['zend.ze1_compatibility_mode']['current'] = self::getFlag(ini_get('zend.ze1_compatibility_mode'));
-
-		if (extension_loaded('suhosin')) {
-			if (ini_get('suhosin.session.encrypt') == '1' || stripos(ini_get('suhosin.session.encrypt'), 'On') !== false)
-				$directiveValues['suhosin.session.encrypt']['status'] = true;
-			$directiveValues['suhosin.session.encrypt']['current'] = self::getFlag(ini_get('suhosin.session.encrypt'));
-		}
-		if (ini_get('session.auto_start') == '1' || stripos(ini_get('session.auto_start'), 'On') !== false)
-			$directiveValues['session.auto_start']['status'] = true;
-		$directiveValues['session.auto_start']['current'] = self::getFlag(ini_get('session.auto_start'));
-
-		if (ini_get('mbstring.func_overload') == '1' || stripos(ini_get('mbstring.func_overload'), 'On') !== false)
-			$directiveValues['mbstring.func_overload']['status'] = true;
-		$directiveValues['mbstring.func_overload']['current'] = self::getFlag(ini_get('mbstring.func_overload'));
-
-		if (ini_get('magic_quotes_sybase') == '1' || stripos(ini_get('magic_quotes_sybase'), 'On') !== false)
-			$directiveValues['magic_quotes_sybase']['status'] = true;
-		$directiveValues['magic_quotes_sybase']['current'] = self::getFlag(ini_get('magic_quotes_sybase'));
-
-		if (ini_get('log_errors') == '1' || stripos(ini_get('log_errors'), 'On') !== false)
-			$directiveValues['log_errors']['status'] = true;
-		$directiveValues['log_errors']['current'] = self::getFlag(ini_get('log_errors'));
-
-		if (ini_get('short_open_tag') != '1' || stripos(ini_get('short_open_tag'), 'Off') !== false)
-			$directiveValues['short_open_tag']['status'] = true;
-		$directiveValues['short_open_tag']['current'] = self::getFlag(ini_get('short_open_tag'));
-
-		if (ini_get('session.gc_maxlifetime') < 21600)
-			$directiveValues['session.gc_maxlifetime']['status'] = true;
-		$directiveValues['session.gc_maxlifetime']['current'] = ini_get('session.gc_maxlifetime');
-
-		if (ini_get('session.gc_divisor') < 500)
-			$directiveValues['session.gc_divisor']['status'] = true;
-		$directiveValues['session.gc_divisor']['current'] = ini_get('session.gc_divisor');
-
-		if (ini_get('session.gc_probability') < 1)
-			$directiveValues['session.gc_probability']['status'] = true;
-		$directiveValues['session.gc_probability']['current'] = ini_get('session.gc_probability');
-
-		if (ini_get('max_input_vars') < 5000)
-			$directiveValues['max_input_vars']['status'] = true;
-		$directiveValues['max_input_vars']['current'] = ini_get('max_input_vars');
-
-		if (version_compare(PHP_VERSION, '5.4.0', '<'))
-			$directiveValues['PHP']['status'] = true;
-		$directiveValues['PHP']['current'] = PHP_VERSION;
-
-		if (extension_loaded('suhosin')) {
-			if (ini_get('suhosin.request.max_vars') < 5000) {
-				$directiveValues['suhosin.request.max_vars']['status'] = true;
-			}
-			$directiveValues['suhosin.request.max_vars']['current'] = ini_get('suhosin.request.max_vars');
-
-			if (ini_get('suhosin.post.max_vars') < 5000) {
-				$directiveValues['suhosin.post.max_vars']['status'] = true;
-			}
-			$directiveValues['suhosin.post.max_vars']['current'] = ini_get('suhosin.post.max_vars');
-
-			if (ini_get('suhosin.post.max_value_length') < 1500000) {
-				$directiveValues['suhosin.post.max_value_length']['status'] = true;
-			}
-			$directiveValues['suhosin.post.max_value_length']['current'] = ini_get('suhosin.post.max_value_length');
-		}
-
-		if (!$instalMode) {
-			$db = PearDatabase::getInstance();
-			$result = $db->query('SELECT @@max_allowed_packet');
-			$maxAllowedPacket = $db->getSingleValue($result);
-			if ($maxAllowedPacket < 16777216) {
-				$directiveValues['max_allowed_packet']['status'] = true;
-			}
-			$directiveValues['max_allowed_packet']['current'] = vtlib\Functions::showBytes($maxAllowedPacket);
-
-			$result = $db->query('SELECT @@innodb_lock_wait_timeout');
-			$innodbLockWaitTimeout = $db->getSingleValue($result);
-			if ($innodbLockWaitTimeout < 600) {
-				$directiveValues['innodb_lock_wait_timeout']['status'] = true;
-			}
-			$directiveValues['innodb_lock_wait_timeout']['current'] = $innodbLockWaitTimeout;
-
-			$result = $db->query('SELECT @@wait_timeout');
-			$waitTimeout = $db->getSingleValue($result);
-			if ($waitTimeout < 600) {
-				$directiveValues['wait_timeout']['status'] = true;
-			}
-			$directiveValues['wait_timeout']['current'] = $waitTimeout;
-
-			$result = $db->query('SELECT @@interactive_timeout');
-			$interactiveTimeout = $db->getSingleValue($result);
-			if ($interactiveTimeout < 600) {
-				$directiveValues['interactive_timeout']['status'] = true;
-			}
-			$directiveValues['interactive_timeout']['current'] = $interactiveTimeout;
-
-			$result = $db->query('SELECT @@sql_mode');
-			$directiveValues['sql_mode']['current'] = $db->getSingleValue($result);
-		}
-
-		$errorReporting = stripos(ini_get('error_reporting'), '_') === false ? self::error2string(ini_get('error_reporting')) : ini_get('error_reporting');
-		if (in_array('E_NOTICE', $errorReporting) || in_array('E_DEPRECATED', $errorReporting) || in_array('E_STRICT', $errorReporting))
-			$directiveValues['error_reporting']['status'] = true;
-		$directiveValues['error_reporting']['current'] = implode(' | ', $errorReporting);
-
-		return $directiveValues;
-	}
-
-	public static function getSystemInfo()
-	{
-		return [
-			'LBL_PHPINI' => php_ini_loaded_file(),
-			'LBL_LOG_FILE' => ini_get('error_log'),
-			'LBL_CRM_DIR' => ROOT_DIRECTORY,
-		];
+		return static::$library;
 	}
 
 	/**
-	 * Function returns permissions to the core files and folder
+	 * Get system stability configuration.
+	 *
+	 * @param bool $instalMode
+	 *
+	 * @return array
+	 */
+	public static function getStabilityConf($instalMode = false, $onlyError = false, $cli = false)
+	{
+		$ini = static::getPhpIniConf();
+		$conf = static::getStabilitIniConf();
+		$cliConf = false;
+		if ($cli) {
+			$cliConf = static::getPhpIniConfCron();
+		}
+		foreach ($conf as $key => &$value) {
+			if ($cliConf) {
+				$value['cli'] = $value['current'] = $cliConf[$key];
+				if (isset($value['fn'])) {
+					$value = call_user_func_array([__CLASS__, $value['fn']], [$value, true]);
+					$value['cli'] = $value['current'];
+				}
+			}
+			$value['current'] = $ini[$key];
+			if (isset($value['fn'])) {
+				$value = call_user_func_array([__CLASS__, $value['fn']], [$value, false]);
+				unset($value['fn']);
+			}
+		}
+		if ($onlyError) {
+			foreach ($conf as $key => $value) {
+				if (empty($value['incorrect'])) {
+					unset($conf[$key]);
+				}
+			}
+		}
+		return $conf;
+	}
+
+	/**
+	 * Get system security configuration.
+	 *
+	 * @param bool $instalMode
+	 *
+	 * @return array
+	 */
+	public static function getSecurityConf($instalMode = false, $onlyError = false)
+	{
+		$directiveValues = [
+			'display_errors' => [
+				'recommended' => 'Off',
+				'help' => 'LBL_DISPLAY_ERRORS_HELP_TEXT',
+				'current' => static::getFlag(ini_get('display_errors')),
+				'status' => \AppConfig::main('systemMode') !== 'demo' && (ini_get('display_errors') == 1 || stripos(ini_get('display_errors'), 'On') !== false),
+			],
+			'HTTPS' => ['recommended' => 'On', 'help' => 'LBL_HTTPS_HELP_TEXT'],
+			'.htaccess' => ['recommended' => 'On', 'help' => 'LBL_HTACCESS_HELP_TEXT'],
+			'public_html' => ['recommended' => 'On', 'help' => 'LBL_PUBLIC_HTML_HELP_TEXT'],
+			'session.use_strict_mode' => [
+				'recommended' => 'On',
+				'help' => 'LBL_SESSION_USE_STRICT_MODE_HELP_TEXT',
+				'current' => static::getFlag(ini_get('session.use_strict_mode')),
+				'status' => static::getFlag(ini_get('session.use_strict_mode')) !== 'On',
+			],
+			'session.use_trans_sid' => [
+				'recommended' => 'Off',
+				'help' => 'LBL_SESSION_USE_TRANS_SID_HELP_TEXT',
+				'current' => static::getFlag(ini_get('session.use_trans_sid')),
+				'status' => static::getFlag(ini_get('session.use_trans_sid')) !== 'Off',
+			],
+			'session.cookie_httponly' => [
+				'recommended' => 'On',
+				'help' => 'LBL_SESSION_COOKIE_HTTPONLY_HELP_TEXT',
+				'current' => static::getFlag(ini_get('session.cookie_httponly')),
+				'status' => static::getFlag(ini_get('session.cookie_httponly')) !== 'On',
+			],
+			'session.use_only_cookies' => [
+				'recommended' => 'On',
+				'help' => 'LBL_SESSION_USE_ONLY_COOKIES_HELP_TEXT',
+				'current' => static::getFlag(ini_get('session.use_only_cookies')),
+				'status' => static::getFlag(ini_get('session.use_only_cookies')) !== 'On',
+			],
+			'expose_php' => [
+				'recommended' => 'Off',
+				'help' => 'LBL_EXPOSE_PHP_HELP_TEXT',
+				'current' => static::getFlag(ini_get('expose_php')),
+				'status' => static::getFlag(ini_get('expose_php')) !== 'Off',
+			],
+			'Header: X-Frame-Options' => ['recommended' => 'SAMEORIGIN', 'help' => 'LBL_HEADER_X_FRAME_OPTIONS_HELP_TEXT', 'current' => '?'],
+			'Header: X-XSS-Protection' => ['recommended' => '1; mode=block', 'help' => 'LBL_HEADER_X_XSS_PROTECTION_HELP_TEXT', 'current' => '?'],
+			'Header: X-Content-Type-Options' => ['recommended' => 'nosniff', 'help' => 'LBL_HEADER_X_CONTENT_TYPE_OPTIONS_HELP_TEXT', 'current' => '?'],
+			'Header: X-Robots-Tag' => ['recommended' => 'none', 'help' => 'LBL_HEADER_X_ROBOTS_TAG_HELP_TEXT', 'current' => '?'],
+			'Header: X-Permitted-Cross-Domain-Policies' => ['recommended' => 'none', 'help' => 'LBL_HEADER_X_PERMITTED_CROSS_DOMAIN_POLICIES_HELP_TEXT', 'current' => '?'],
+			'Header: X-Powered-By' => ['recommended' => '', 'help' => 'LBL_HEADER_X_POWERED_BY_HELP_TEXT', 'current' => '?'],
+			'Header: Server' => ['recommended' => '', 'help' => 'LBL_HEADER_SERVER_HELP_TEXT', 'current' => '?'],
+			'Header: Expect-CT' => ['recommended' => 'enforce; max-age=3600', 'help' => 'LBL_HEADER_EXPECT_CT_HELP_TEXT', 'current' => '?'],
+			'Header: Referrer-Policy' => ['recommended' => 'no-referrer', 'help' => 'LBL_HEADER_REFERRER_POLICY_HELP_TEXT', 'current' => '?'],
+			'Header: Strict-Transport-Security' => ['recommended' => 'max-age=31536000; includeSubDomains; preload', 'help' => 'LBL_HEADER_STRICT_TRANSPORT_SECURITY_HELP_TEXT', 'current' => '?'],
+		];
+		if (!$instalMode) {
+			$directiveValues['session_regenerate_id'] = [
+				'recommended' => 'On',
+				'help' => 'LBL_SESSION_REGENERATE_HELP_TEXT',
+				'current' => static::getFlag(AppConfig::main('session_regenerate_id')),
+				'status' => AppConfig::main('session_regenerate_id') !== null && !AppConfig::main('session_regenerate_id'),
+			];
+		}
+		if (IS_PUBLIC_DIR === true) {
+			$directiveValues['public_html']['current'] = static::getFlag(true);
+		} else {
+			$directiveValues['public_html']['status'] = true;
+			$directiveValues['public_html']['current'] = static::getFlag(false);
+		}
+		if (isset($_SERVER['SERVER_SOFTWARE']) && strpos($_SERVER['SERVER_SOFTWARE'], 'nginx') === false) {
+			if (!isset($_SERVER['HTACCESS_TEST'])) {
+				$directiveValues['.htaccess']['status'] = true;
+				$directiveValues['.htaccess']['current'] = 'Off';
+			} else {
+				$directiveValues['.htaccess']['current'] = 'On';
+			}
+		} else {
+			unset($directiveValues['.htaccess']);
+		}
+		if (App\RequestUtil::getBrowserInfo()->https) {
+			$directiveValues['HTTPS']['status'] = false;
+			$directiveValues['HTTPS']['current'] = static::getFlag(true);
+			$directiveValues['session.cookie_secure'] = ['recommended' => 'On'];
+			if (ini_get('session.cookie_secure') != '1' && stripos(ini_get('session.cookie_secure'), 'On') !== false) {
+				$directiveValues['session.cookie_secure']['status'] = true;
+				$directiveValues['session.cookie_secure']['current'] = static::getFlag(false);
+			} else {
+				$directiveValues['session.cookie_secure']['current'] = static::getFlag(true);
+			}
+		} else {
+			$directiveValues['HTTPS']['status'] = true;
+			$directiveValues['HTTPS']['current'] = static::getFlag(false);
+			if (ini_get('session.cookie_secure') != '0' || stripos(ini_get('session.cookie_secure'), 'Off') !== false) {
+				$directiveValues['session.cookie_secure']['current'] = static::getFlag(true);
+				$directiveValues['session.cookie_secure']['recommended'] = static::getFlag(false);
+				$directiveValues['session.cookie_secure']['status'] = true;
+			}
+		}
+		stream_context_set_default([
+			'ssl' => [
+				'verify_peer' => false,
+				'verify_peer_name' => false,
+			],
+		]);
+		if (isset($_SERVER['HTTP_HOST'])) {
+			$requestUrl = (\App\RequestUtil::getBrowserInfo()->https ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
+			try {
+				$request = Requests::get($requestUrl, [], ['timeout' => 1]);
+				$headers = array_map(function ($value) {
+					return is_array($value) ? strtolower(implode(',', $value)) : strtolower($value);
+				}, $request->headers->getAll());
+			} catch (\Exception $exc) {
+				$headers = [];
+			}
+			if ($headers) {
+				$directiveValues['Header: X-Frame-Options']['status'] = $headers['x-frame-options'] !== 'sameorigin';
+				$directiveValues['Header: X-Frame-Options']['current'] = $headers['x-frame-options'];
+				$directiveValues['Header: X-XSS-Protection']['status'] = $headers['x-xss-protection'] !== '1; mode=block';
+				$directiveValues['Header: X-XSS-Protection']['current'] = $headers['x-xss-protection'];
+				$directiveValues['Header: X-Content-Type-Options']['status'] = $headers['x-content-type-options'] !== 'nosniff';
+				$directiveValues['Header: X-Content-Type-Options']['current'] = $headers['x-content-type-options'];
+				$directiveValues['Header: X-Powered-By']['status'] = !empty($headers['x-powered-by']);
+				$directiveValues['Header: X-Powered-By']['current'] = $headers['x-powered-by'] ?? '';
+				$directiveValues['Header: X-Robots-Tag']['status'] = $headers['x-robots-tag'] !== 'none';
+				$directiveValues['Header: X-Robots-Tag']['current'] = $headers['x-robots-tag'];
+				$directiveValues['Header: X-Permitted-Cross-Domain-Policies']['status'] = $headers['x-permitted-cross-domain-policies'] !== 'none';
+				$directiveValues['Header: X-Permitted-Cross-Domain-Policies']['current'] = $headers['x-permitted-cross-domain-policies'];
+				$directiveValues['Header: Server']['status'] = !empty($headers['server']);
+				$directiveValues['Header: Server']['current'] = $headers['server'];
+				$directiveValues['Header: Referrer-Policy']['status'] = $headers['referrer-policy'] !== 'no-referrer';
+				$directiveValues['Header: Referrer-Policy']['current'] = $headers['referrer-policy'];
+				$directiveValues['Header: Expect-CT']['status'] = $headers['expect-ct'] !== 'enforce; max-age=3600';
+				$directiveValues['Header: Expect-CT']['current'] = $headers['expect-ct'];
+				$directiveValues['Header: Strict-Transport-Security']['status'] = $headers['strict-transport-security'] !== 'max-age=31536000; includesubdomains; preload';
+				$directiveValues['Header: Strict-Transport-Security']['current'] = $headers['strict-transport-security'];
+			}
+		}
+		if ($onlyError) {
+			foreach ($directiveValues as $key => $value) {
+				if (empty($value['status'])) {
+					unset($directiveValues[$key]);
+				}
+			}
+		}
+		return $directiveValues;
+	}
+
+	/**
+	 * @param type $onlyError
+	 *
+	 * @return bool
+	 */
+	public static function getDbConf($onlyError = false)
+	{
+		$db = \App\Db::getInstance();
+		$directiveValues = [
+			'LBL_DB_DRIVER' => ['recommended' => 'mysql', 'current' => $db->getDriverName(), 'help' => 'LBL_DB_DRIVER_HELP_TEXT'],
+			'LBL_DB_SERVER_VERSION' => ['recommended' => false, 'current' => $db->getSlavePdo()->getAttribute(PDO::ATTR_SERVER_VERSION)],
+			'LBL_DB_CLIENT_VERSION' => ['recommended' => false, 'current' => $db->getSlavePdo()->getAttribute(PDO::ATTR_CLIENT_VERSION)],
+			'LBL_DB_CONNECTION_STATUS' => ['recommended' => false, 'current' => $db->getSlavePdo()->getAttribute(PDO::ATTR_CONNECTION_STATUS)],
+			'LBL_DB_SERVER_INFO' => ['recommended' => false, 'current' => $db->getSlavePdo()->getAttribute(PDO::ATTR_SERVER_INFO)],
+		];
+		if (!in_array($db->getDriverName(), explode(',', $directiveValues['LBL_DB_DRIVER']['recommended']))) {
+			$directiveValues['wait_timeout']['status'] = true;
+		}
+		if ($db->getDriverName() === 'mysql') {
+			$directiveValues = array_merge($directiveValues, [
+				'innodb_lock_wait_timeout' => ['recommended' => '600', 'help' => 'LBL_INNODB_LOCK_WAIT_TIMEOUT_HELP_TEXT'],
+				'wait_timeout' => ['recommended' => '600', 'help' => 'LBL_WAIT_TIMEOUT_HELP_TEXT'],
+				'interactive_timeout' => ['recommended' => '600', 'help' => 'LBL_INTERACTIVE_TIMEOUT_HELP_TEXT'],
+				'sql_mode' => ['recommended' => '', 'help' => 'LBL_SQL_MODE_HELP_TEXT'],
+				'max_allowed_packet' => ['recommended' => '10 MB', 'help' => 'LBL_MAX_ALLOWED_PACKET_HELP_TEXT'],
+				'log_error' => ['recommended' => false],
+				'max_connections' => ['recommended' => false],
+				'bulk_insert_buffer_size' => ['recommended' => false],
+				'key_buffer_size' => ['recommended' => false],
+				'thread_cache_size' => ['recommended' => false],
+				'query_cache_size' => ['recommended' => false],
+				'tmp_table_size' => ['recommended' => false],
+				'max_heap_table_size' => ['recommended' => false],
+				'innodb_file_per_table' => ['recommended' => 'On', 'help' => 'LBL_INNODB_FILE_PER_TABLE_HELP_TEXT'],
+				'innodb_stats_on_metadata' => ['recommended' => 'Off', 'help' => 'LBL_INNODB_STATS_ON_METADATA_HELP_TEXT'],
+				'innodb_buffer_pool_instances' => ['recommended' => false],
+				'innodb_buffer_pool_size' => ['recommended' => false],
+				'innodb_log_file_size' => ['recommended' => false],
+				'innodb_io_capacity_max' => ['recommended' => false],
+				'character_set_server' => ['recommended' => 'utf8'],
+				'character_set_database' => ['recommended' => 'utf8'],
+				'character_set_client' => ['recommended' => 'utf8'],
+				'character_set_connection' => ['recommended' => 'utf8'],
+				'character_set_results' => ['recommended' => 'utf8'],
+				'character_set_system' => ['recommended' => false],
+				'character_set_filesystem' => ['recommended' => false],
+			]);
+			$conf = $db->createCommand('SHOW VARIABLES')->queryAllByGroup(0);
+			$directiveValues['max_allowed_packet']['current'] = vtlib\Functions::showBytes($conf['max_allowed_packet']);
+			$directiveValues['innodb_log_file_size']['current'] = vtlib\Functions::showBytes($conf['innodb_log_file_size']);
+			$directiveValues['bulk_insert_buffer_size']['current'] = vtlib\Functions::showBytes($conf['bulk_insert_buffer_size']);
+			$directiveValues['key_buffer_size']['current'] = vtlib\Functions::showBytes($conf['key_buffer_size']);
+			$directiveValues['query_cache_size']['current'] = vtlib\Functions::showBytes($conf['query_cache_size']);
+			$directiveValues['tmp_table_size']['current'] = vtlib\Functions::showBytes($conf['tmp_table_size']);
+			$directiveValues['max_heap_table_size']['current'] = vtlib\Functions::showBytes($conf['max_heap_table_size']);
+			$directiveValues['innodb_buffer_pool_size']['current'] = vtlib\Functions::showBytes($conf['innodb_buffer_pool_size']);
+			$directiveValues['innodb_log_file_size']['current'] = vtlib\Functions::showBytes($conf['innodb_log_file_size']);
+			$directiveValues['innodb_lock_wait_timeout']['current'] = $conf['innodb_lock_wait_timeout'];
+			$directiveValues['wait_timeout']['current'] = $conf['wait_timeout'];
+			$directiveValues['interactive_timeout']['current'] = $conf['interactive_timeout'];
+			$directiveValues['sql_mode']['current'] = $conf['sql_mode'];
+			$directiveValues['log_error']['current'] = $conf['log_error'];
+			$directiveValues['max_connections']['current'] = $conf['max_connections'];
+			$directiveValues['thread_cache_size']['current'] = $conf['thread_cache_size'];
+			$directiveValues['innodb_buffer_pool_instances']['current'] = $conf['innodb_buffer_pool_instances'];
+			$directiveValues['innodb_io_capacity_max']['current'] = $conf['innodb_io_capacity_max'];
+			$directiveValues['innodb_file_per_table']['current'] = $conf['innodb_file_per_table'];
+			$directiveValues['innodb_stats_on_metadata']['current'] = $conf['innodb_stats_on_metadata'];
+			$directiveValues['character_set_database']['current'] = $conf['character_set_database'];
+			$directiveValues['character_set_client']['current'] = $conf['character_set_client'];
+			$directiveValues['character_set_connection']['current'] = $conf['character_set_connection'];
+			$directiveValues['character_set_filesystem']['current'] = $conf['character_set_filesystem'];
+			$directiveValues['character_set_results']['current'] = $conf['character_set_results'];
+			$directiveValues['character_set_server']['current'] = $conf['character_set_server'];
+			$directiveValues['character_set_system']['current'] = $conf['character_set_system'];
+			if (strtolower($conf['character_set_database']) !== strtolower($directiveValues['character_set_database']['recommended'])) {
+				$directiveValues['character_set_database']['status'] = true;
+			}
+			if (strtolower($conf['character_set_server']) !== strtolower($directiveValues['character_set_server']['recommended'])) {
+				$directiveValues['character_set_server']['status'] = true;
+			}
+			if (strtolower($conf['character_set_client']) !== strtolower($directiveValues['character_set_client']['recommended'])) {
+				$directiveValues['character_set_client']['status'] = true;
+			}
+			if (strtolower($conf['character_set_connection']) !== strtolower($directiveValues['character_set_connection']['recommended'])) {
+				$directiveValues['character_set_connection']['status'] = true;
+			}
+			if (strtolower($conf['character_set_results']) !== strtolower($directiveValues['character_set_results']['recommended'])) {
+				$directiveValues['character_set_results']['status'] = true;
+			}
+			if (strtolower($conf['innodb_stats_on_metadata']) !== strtolower($directiveValues['innodb_stats_on_metadata']['recommended'])) {
+				$directiveValues['innodb_stats_on_metadata']['status'] = true;
+			}
+			if (strtolower($conf['innodb_file_per_table']) !== strtolower($directiveValues['innodb_file_per_table']['recommended'])) {
+				$directiveValues['innodb_file_per_table']['status'] = true;
+			}
+			if (isset($conf['tx_isolation'])) {
+				$directiveValues['tx_isolation'] = ['current' => $conf['tx_isolation'], 'recommended' => false];
+			}
+			if (isset($conf['transaction_isolation'])) {
+				$directiveValues['transaction_isolation'] = ['current' => $conf['transaction_isolation'], 'recommended' => false];
+			}
+			if ($conf['max_allowed_packet'] < 16777216) {
+				$directiveValues['max_allowed_packet']['status'] = true;
+			}
+			if ($conf['innodb_lock_wait_timeout'] < 600) {
+				$directiveValues['innodb_lock_wait_timeout']['status'] = true;
+			}
+			if ($conf['wait_timeout'] < 600) {
+				$directiveValues['wait_timeout']['status'] = true;
+			}
+			if ($conf['interactive_timeout'] < 600) {
+				$directiveValues['interactive_timeout']['status'] = true;
+			}
+			if (!empty($conf['sql_mode']) && (strpos($conf['sql_mode'], 'STRICT_TRANS_TABLE') !== false || strpos($conf['sql_mode'], 'STRICT_ALL_TABLES') !== false)) {
+				$directiveValues['sql_mode']['status'] = true;
+			}
+		}
+		if ($onlyError) {
+			foreach ($directiveValues as $key => $value) {
+				if (empty($value['status'])) {
+					unset($directiveValues[$key]);
+				}
+			}
+		}
+		return $directiveValues;
+	}
+
+	/**
+	 * Get system details.
+	 *
+	 * @return array
+	 */
+	public static function getSystemInfo()
+	{
+		$ini = static::getPhpIniConf();
+		$cliConf = static::getPhpIniConfCron();
+		$dir = ROOT_DIRECTORY . DIRECTORY_SEPARATOR;
+		$params = [
+			'LBL_CRM_VERSION' => \App\Version::get(),
+			'LBL_CRM_DATE' => \App\Version::get('patchVersion'),
+			'LBL_OPERATING_SYSTEM' => \AppConfig::main('systemMode') === 'demo' ? php_uname('s') : php_uname(),
+			'LBL_SERVER_SOFTWARE' => $_SERVER['SERVER_SOFTWARE'] ?? '-',
+			'LBL_TMP_DIR' => App\Fields\File::getTmpPath(),
+			'LBL_CRM_DIR' => ROOT_DIRECTORY,
+			'LBL_PHP_SAPI' => ['www' => $ini['SAPI'], 'cli' => $cliConf ? $cliConf['SAPI'] : ''],
+			'LBL_LOG_FILE' => ['www' => $ini['LOG_FILE'], 'cli' => $cliConf ? $cliConf['LOG_FILE'] : ''],
+			'LBL_PHPINI' => ['www' => $ini['INI_FILE'], 'cli' => $cliConf ? $cliConf['INI_FILE'] : ''],
+			'LBL_SPACE' => App\Language::translateSingleMod('LBL_SPACE_FREE', 'Settings::ConfReport') . ': ' . \vtlib\Functions::showBytes(disk_free_space($dir)) . ', ' . App\Language::translateSingleMod('LBL_SPACE_USED', 'Settings::ConfReport') . ': ' . \vtlib\Functions::showBytes(disk_total_space($dir) - disk_free_space($dir)),
+		];
+		if (function_exists('locale_get_default')) {
+			$params['LBL_LOCALE'] = print_r(locale_get_default(), true);
+		}
+		if (!empty($ini['INI_FILES']) || !empty($cliConf['INI_FILES'])) {
+			$params['LBL_PHPINIS'] = ['www' => nl2br($ini['INI_FILES']), 'cli' => $cliConf ? nl2br($cliConf['INI_FILES']) : ''];
+		}
+		return $params;
+	}
+
+	/**
+	 * Get deny URLs.
+	 *
+	 * @return array
+	 */
+	public static function getDenyPublicDirState()
+	{
+		$baseUrl = \AppConfig::main('site_URL');
+		$denyPublicDirState = [
+			'config/' => ['help' => 'LBL_DENY_PUBLIC_DIR_HELP_TEXT', 'status' => \App\Fields\File::isExistsUrl($baseUrl . 'config')],
+			'cache/' => ['help' => 'LBL_DENY_PUBLIC_DIR_HELP_TEXT', 'status' => \App\Fields\File::isExistsUrl($baseUrl . 'cache')],
+			'storage/' => ['help' => 'LBL_DENY_PUBLIC_DIR_HELP_TEXT', 'status' => \App\Fields\File::isExistsUrl($baseUrl . 'storage')],
+			'user_privileges/' => ['help' => 'LBL_DENY_PUBLIC_DIR_HELP_TEXT', 'status' => \App\Fields\File::isExistsUrl($baseUrl . 'user_privileges')],
+		];
+		return $denyPublicDirState;
+	}
+
+	/**
+	 * Function returns permissions to the core files and folder.
+	 *
 	 * @return <Array>
 	 */
 	public static function getPermissionsFiles($onlyError = false)
 	{
-		$writableFilesAndFolders = self::$writableFilesAndFolders;
-		$permissions = array();
-		require_once ('include/utils/VtlibUtils.php');
+		$writableFilesAndFolders = static::$writableFilesAndFolders;
+		$permissions = [];
+		require_once ROOT_DIRECTORY . '/include/utils/VtlibUtils.php';
 		foreach ($writableFilesAndFolders as $index => $value) {
-			$isWriteable = vtlib_isWriteable($value);
+			$isWriteable = \App\Fields\File::isWriteable($value);
 			if (!$isWriteable || !$onlyError) {
 				$permissions[$index]['permission'] = 'TruePermission';
 				$permissions[$index]['path'] = $value;
@@ -318,7 +509,266 @@ class Settings_ConfReport_Module_Model extends Settings_Vtiger_Module_Model
 		return $permissions;
 	}
 
-	public static function getFlag($val)
+	/**
+	 * Get php.ini configuration.
+	 *
+	 * @return array
+	 */
+	public static function getPhpIniConf()
+	{
+		$iniAll = ini_get_all();
+		$values = [];
+		foreach (static::getStabilitIniConf() as $key => $value) {
+			if (isset($iniAll[$key])) {
+				$values[$key] = $iniAll[$key]['local_value'];
+			}
+		}
+		foreach (static::getPerformanceIniConf() as $key => $value) {
+			if (isset($iniAll[$key])) {
+				$values[$key] = $iniAll[$key]['local_value'];
+			} elseif (isset($value['fn'])) {
+				$values[$key] = call_user_func([__CLASS__, $value['fn']], $value);
+			}
+		}
+		$values['PHP'] = PHP_VERSION;
+		$values['SAPI'] = PHP_SAPI;
+		$values['INI_FILE'] = php_ini_loaded_file();
+		$values['INI_FILES'] = php_ini_scanned_files();
+		$values['LOG_FILE'] = $iniAll['error_log']['local_value'];
+		return $values;
+	}
+
+	/**
+	 * Get php.ini configuration from CLI.
+	 *
+	 * @return array
+	 */
+	public static function getPhpIniConfCron()
+	{
+		if (file_exists('user_privileges/cron.php')) {
+			return include 'user_privileges/cron.php';
+		}
+		return [];
+	}
+
+	/**
+	 * Test server speed.
+	 *
+	 * @return array
+	 */
+	public static function testSpeed()
+	{
+		$dir = ROOT_DIRECTORY . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'speed' . DIRECTORY_SEPARATOR;
+		if (!is_dir($dir)) {
+			mkdir($dir, 0755);
+		}
+		$testStartTime = microtime(true);
+		$ram = $cpu = $filesWrite = 0;
+		while ((microtime(true) - $testStartTime) < 1) {
+			file_put_contents("{$dir}{$testStartTime}{$filesWrite}.txt", $testStartTime);
+			$filesWrite++;
+		}
+		$iterator = new \DirectoryIterator($dir);
+		$readS = microtime(true);
+		foreach ($iterator as $item) {
+			if ($item->isFile()) {
+				file_get_contents($item->getPathname());
+			}
+		}
+		$filesRead = $filesWrite / (microtime(true) - $readS);
+		$testStartTime = microtime(true);
+		while ((microtime(true) - $testStartTime) < 1) {
+			sha1($cpu);
+			$cpu++;
+		}
+		$testStartTime = microtime(true);
+		$test = [];
+		while ((microtime(true) - $testStartTime) < 1) {
+			$test[] = [[[$ram]]];
+			unset($test);
+			$ram++;
+		}
+		\vtlib\Functions::recurseDelete('cache/speed');
+		$dbs = microtime(true);
+		$conf = \App\Db::getInstance()->createCommand('SELECT BENCHMARK(1000000,1+1);')->execute();
+		$dbe = microtime(true);
+		return [
+			'FilesRead' => (int) $filesRead,
+			'FilesWrite' => $filesWrite,
+			'CPU' => $cpu,
+			'RAM' => $ram,
+			'DB' => (int) (1000000 / ($dbe - $dbs))
+		];
+	}
+
+	/**
+	 * Validate number greater than recommended.
+	 *
+	 * @param mixed $row
+	 *
+	 * @return mixed
+	 */
+	public static function validateGreater($row, $isCli)
+	{
+		if ((int) $row['current'] > 0 && (int) $row['current'] < $row['recommended']) {
+			$row['incorrect'] = true;
+		}
+		return $row;
+	}
+
+	/**
+	 * Validate number in bytes greater than recommended.
+	 *
+	 * @param mixed $row
+	 *
+	 * @return mixed
+	 */
+	public static function validateGreaterMb($row, $isCli)
+	{
+		if ($row['current'] !== '-1' && vtlib\Functions::parseBytes($row['current']) < vtlib\Functions::parseBytes($row['recommended'])) {
+			$row['incorrect'] = true;
+		}
+		$row['current'] = vtlib\Functions::showBytes($row['current']);
+		return $row;
+	}
+
+	/**
+	 * Validate on and off values.
+	 *
+	 * @param mixed $row
+	 *
+	 * @return mixed
+	 */
+	public static function validateOnOff($row, $isCli)
+	{
+		static $map = ['on' => true, 'true' => true, 'off' => false, 'false' => false];
+		$current = isset($map[strtolower($row['current'])]) ? $map[strtolower($row['current'])] : (bool) $row['current'];
+		if ($current !== ($row['recommended'] === 'On')) {
+			$row['incorrect'] = true;
+		}
+		if (is_bool($current)) {
+			$row['current'] = $current ? 'On' : 'Off';
+		} else {
+			$row['current'] = static::getFlag($row['current']);
+		}
+		return $row;
+	}
+
+	/**
+	 * Validate on, off and int values.
+	 *
+	 * @param mixed $row
+	 *
+	 * @return mixed
+	 */
+	public static function validateOnOffInt($row, $isCli)
+	{
+		if (!$isCli && strtolower($row['current']) !== 'on') {
+			$row['incorrect'] = true;
+		}
+		return $row;
+	}
+
+	/**
+	 * Validate equal value "recommended == current".
+	 *
+	 * @param mixed $row
+	 *
+	 * @return mixed
+	 */
+	public static function validateEqual($row, $isCli)
+	{
+		if ((int) $row['current'] !== (int) $row['recommended']) {
+			$row['incorrect'] = true;
+		}
+		return $row;
+	}
+
+	/**
+	 * Validate php version.
+	 *
+	 * @param mixed $row
+	 *
+	 * @return mixed
+	 */
+	public static function validatePhp($row, $isCli)
+	{
+		if (version_compare($row['current'], str_replace('x', 0, $row['recommended']), '<')) {
+			$row['incorrect'] = true;
+		}
+		return $row;
+	}
+
+	/**
+	 * Validate date timezone.
+	 *
+	 * @param mixed $row
+	 *
+	 * @return mixed
+	 */
+	public static function validateTimezone($row, $isCli)
+	{
+		try {
+			new DateTimeZone($row['current']);
+		} catch (Exception $e) {
+			$row['current'] = \App\Language::translate('LBL_INVALID_TIME_ZONE', 'Settings::ConfReport') . $row['current'];
+			$row['incorrect'] = true;
+		}
+		return $row;
+	}
+
+	/**
+	 * Validate error reporting.
+	 *
+	 * @param mixed $row
+	 *
+	 * @return mixed
+	 */
+	public static function validateErrorReporting($row, $isCli)
+	{
+		$errorReporting = stripos($row['current'], '_') === false ? \App\ErrorHandler::error2string($row['current']) : $row['current'];
+		if ($row['recommended'] === 'E_ALL & ~E_NOTICE' && (E_ALL & ~E_NOTICE) === (int) $row['current']) {
+			$row['current'] = $row['recommended'];
+		} else {
+			$row['incorrect'] = true;
+			$row['current'] = implode(' | ', $errorReporting);
+		}
+		return $row;
+	}
+
+	/**
+	 * Get actual version of PHP.
+	 *
+	 * @return string[]
+	 */
+	public static function getNewestPhpVersion()
+	{
+		if (!class_exists('Requests') || !\App\RequestUtil::isNetConnection()) {
+			return false;
+		}
+		$resonse = Requests::get('http://php.net/releases/index.php?json&max=7&version=7', [], ['timeout' => 1]);
+		$data = array_keys((array) \App\Json::decode($resonse->body));
+		natsort($data);
+		$ver = [];
+		foreach (array_reverse($data) as $row) {
+			$t = explode('.', $row);
+			array_pop($t);
+			$short = implode('.', $t);
+			if (!isset($ver[$short]) && version_compare($short, '7.0', '>') && version_compare($short, '7.3', '<')) {
+				$ver[$short] = $row;
+			}
+		}
+		return $ver;
+	}
+
+	/**
+	 * Get ini flag.
+	 *
+	 * @param mixed $val
+	 *
+	 * @return string
+	 */
+	private static function getFlag($val)
 	{
 		if ($val == 'On' || $val == 1 || stripos($val, 'On') !== false) {
 			return 'On';
@@ -326,25 +776,56 @@ class Settings_ConfReport_Module_Model extends Settings_Vtiger_Module_Model
 		return 'Off';
 	}
 
-	public function error2string($value)
+	public static function getPerformanceIniConf()
 	{
-		$level_names = array(
-			E_ERROR => 'E_ERROR', E_WARNING => 'E_WARNING',
-			E_PARSE => 'E_PARSE', E_NOTICE => 'E_NOTICE',
-			E_CORE_ERROR => 'E_CORE_ERROR', E_CORE_WARNING => 'E_CORE_WARNING',
-			E_COMPILE_ERROR => 'E_COMPILE_ERROR', E_COMPILE_WARNING => 'E_COMPILE_WARNING',
-			E_USER_ERROR => 'E_USER_ERROR', E_USER_WARNING => 'E_USER_WARNING',
-			E_USER_NOTICE => 'E_USER_NOTICE');
-		if (defined('E_STRICT'))
-			$level_names[E_STRICT] = 'E_STRICT';
-		$levels = array();
-		if (($value & E_ALL) == E_ALL) {
-			$levels[] = 'E_ALL';
-			$value&=~E_ALL;
+		$directiveValues = [
+			'Xdebug' => ['fn' => 'checkExtension', 'extension' => 'xdebug'],
+			'OPcache' => ['fn' => 'checOpcache'],
+		];
+		if (extension_loaded('suhosin')) {
+			$directiveValues['suhosin.session.encrypt'] = ['recommended' => 'Off', 'fn' => 'validateOnOff']; //Roundcube
+			$directiveValues['suhosin.request.max_vars'] = ['recommended' => '5000', 'fn' => 'validateGreater'];
+			$directiveValues['suhosin.post.max_vars'] = ['recommended' => '5000', 'fn' => 'validateGreater'];
+			$directiveValues['suhosin.post.max_value_length'] = ['recommended' => '1500000', 'fn' => 'validateGreater'];
 		}
-		foreach ($level_names as $level => $name)
-			if (($value & $level) == $level)
-				$levels[] = $name;
-		return $levels;
+		return $directiveValues;
+	}
+
+	public static function getPerformanceInfo()
+	{
+		$ini = static::getPhpIniConf();
+		$cliConf = static::getPhpIniConfCron();
+		$directiveValues = [
+			'Xdebug' => [
+				'www' => $ini['Xdebug'],
+				'cli' => $cliConf['Xdebug'] ?? '',
+				'recommended' => 'Off',
+				'incorrect' => ($ini['Xdebug'] !== 'Off') || (isset($cliConf['Xdebug']) && $cliConf['Xdebug'] !== 'Off')
+			],
+			'OPcache' => [
+				'www' => $ini['OPcache'],
+				'cli' => $cliConf['OPcache'] ?? '',
+				'recommended' => 'On',
+				'incorrect' => ($ini['OPcache'] !== 'On') || (isset($cliConf['OPcache']) && $cliConf['Xdebug'] !== 'On')
+			]
+		];
+		return $directiveValues;
+	}
+
+	private static function checkExtension($row)
+	{
+		return extension_loaded($row['extension']) ? 'On' : 'Off';
+	}
+
+	private static function checOpcache($row)
+	{
+		if (function_exists('opcache_get_configuration')) {
+			if (PHP_SAPI === 'cli') {
+				return static::getFlag(ini_get('opcache.enable_cli'));
+			} else {
+				return static::getFlag(ini_get('opcache.enable'));
+			}
+		}
+		return 'Off';
 	}
 }

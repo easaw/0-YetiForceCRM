@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Digest Authorization class
- * @package YetiForce.WebserviceAuth
- * @license licenses/License.html
+ * Digest Authorization class.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
  * @author Mariusz Krzaczkowski <m.krzaczkowski@yetiforce.com>
  */
-class DigestAuth extends AbstractAuth
+class DigestAuth
 {
-
 	public function authenticate()
 	{
 		$userpass = $this->getCredentials();
@@ -23,6 +23,7 @@ class DigestAuth extends AbstractAuth
 			throw new APIException('Username or password does not match', 401);
 		}
 		$this->currentUser = $userpass[0];
+
 		return true;
 	}
 
@@ -43,12 +44,5 @@ class DigestAuth extends AbstractAuth
 	{
 		$this->api->response->addHeader('WWW-Authenticate', 'Basic realm="' . $this->realm . '"');
 		$this->api->response->setStatus(401);
-	}
-
-	public function getDigestHash($realm, $username)
-	{
-		$stmt = $this->pdo->prepare(sprintf('SELECT digesta1 FROM %s WHERE username = ?', $this->tableName));
-		$stmt->execute([$username]);
-		return $stmt->fetchColumn() ? : null;
 	}
 }

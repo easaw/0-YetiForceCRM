@@ -1,6 +1,11 @@
 <?php
-/* {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} */
-$CONFIG = [
+/**
+ * ModTracker module config.
+ *
+ * @copyright YetiForce Sp. z o.o
+ * @license YetiForce Public License 3.0 (licenses/LicenseEN.txt or yetiforce.com)
+ */
+return [
 	// default view in History (Timeline/List)
 	'DEFAULT_VIEW' => 'TimeLine',
 	// Number of records on one page
@@ -16,4 +21,8 @@ $CONFIG = [
 	'REVIEW_CHANGES_LIMIT' => 50,
 	// Max number to update records by cron
 	'REVIEWED_SCHEDULE_LIMIT' => 1000,
+	// Show timeline in listview [module name, ...]
+	'SHOW_TIMELINE_IN_LISTVIEW' => [],
+	// Limit of records displayed in timeline popup
+	'TIMELINE_IN_LISTVIEW_LIMIT' => 5,
 ];

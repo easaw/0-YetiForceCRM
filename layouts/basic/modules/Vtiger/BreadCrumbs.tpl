@@ -1,6 +1,6 @@
-{*<!-- {[The file is published on the basis of YetiForce Public License that can be found in the following directory: licenses/License.html]} --!>*}
+{*<!-- {[The file is published on the basis of YetiForce Public License 3.0 that can be found in the following directory: licenses/LicenseEN.txt or yetiforce.com]} -->*}
 {strip}
-	<div class="breadCrumbs" >
+	{if AppConfig::main('breadcrumbs') eq  'true'}
 		{if isset($BREADCRUMB_TITLE)}
 			{assign var="BREADCRUMBS" value=Vtiger_Menu_Model::getBreadcrumbs($BREADCRUMB_TITLE)}
 		{else}
@@ -8,39 +8,40 @@
 		{/if}
 		{assign var=HOMEICON value='userIcon-Home'}
 		{if $BREADCRUMBS}
-			<div class="breadcrumbsContainer">
-				<h2 class="breadcrumbsLinks textOverflowEllipsis">
+			<ol  class="breadcrumb breadcrumbsContainer my-0 py-auto pl-2 pr-0">
+				<li class="breadcrumb-item">
 					<a href="{AppConfig::main('site_URL')}">
-						<span class="{$HOMEICON}"></span>
+						<span class="{$HOMEICON}" aria-hidden="true"></span>
+						<span class="sr-only">{\App\Language::translate('LBL_HOME')}</span>
 					</a>
-					&nbsp;|&nbsp;
-					{foreach key=key item=item from=$BREADCRUMBS name=breadcrumbs}
-						{if $key != 0 && $ITEM_PREV}
-							<span class="separator">&nbsp;{vglobal('breadcrumbs_separator')}&nbsp;</span>
-						{/if}
-						{if isset($item['url'])}
+				</li>
+				{foreach key=key item=item from=$BREADCRUMBS name=breadcrumbs}
+					{if isset($item['url'])}
+						<li class="breadcrumb-item">
 							<a href="{$item['url']}">
-								<span>{$item['name']}</span>
+								{$item['name']}
 							</a>
+						</li>
+					{elseif $item@last}
+						<li class="breadcrumb-item active js-text-content" data-js="text" aria-current="page">{$item['name']}</li>
 						{else}
-							<span>{$item['name']}</span>
+						<li class="breadcrumb-item"><a href="#">{$item['name']}</a></li>
 						{/if}
 						{assign var="ITEM_PREV" value=$item['name']}
 					{/foreach}
-				</h2>
-			</div>
+				{if isset($SELECTED_PAGE) && $QUALIFIED_MODULE eq 'Settings:ModuleManager'}
+					<div class="js-popover-tooltip ml-2" data-js="popover"
+						 data-content="{\App\Language::translate($SELECTED_PAGE->get('description'),$QUALIFIED_MODULE)}">
+						<span class="fas fa-info-circle"></span>
+					</div>
+				{/if}
+			{if  $QUALIFIED_MODULE eq 'Settings:PDF'}
+				<div class="js-popover-tooltip ml-2" data-js="popover"
+					 data-content="{\App\Language::translate('LBL_PDF_DESCRIPTION', $QUALIFIED_MODULE)}">
+					<span class="fas fa-info-circle"></span>
+				</div>
+			{/if}
+			</ol>
 		{/if}
-		{assign var="MENUSCOLOR" value=Users_Colors_Model::getModulesColors(true)}
-		{if $MENUSCOLOR}
-			<div class="menusColorContainer">
-				<style>
-					{foreach item=item from=$MENUSCOLOR}
-						.moduleColor_{$item.module}{
-							color: {$item.color} !important;
-						}
-					{/foreach}
-				</style>
-			</div>
-		{/if}
-	</div>
+	{/if}
 {/strip}
