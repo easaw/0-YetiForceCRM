@@ -177,7 +177,7 @@ CREATE TABLE `a_yf_record_converter` (
   `check_duplicate` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`id`,`source_module`,`destiny_module`),
   KEY `a_yf_record_converter_fk_tab` (`source_module`),
-  CONSTRAINT `a_yf_record_converter_fk_tab` FOREIGN KEY (`source_module`) REFERENCES `vtiger_tab` (`tabid`)
+  CONSTRAINT `fk_1_a_yf_record_converter` FOREIGN KEY (`source_module`) REFERENCES `vtiger_tab` (`tabid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Table structure for table `a_yf_relatedlists_inv_fields` */
@@ -218,6 +218,18 @@ CREATE TABLE `a_yf_taxes_global` (
   `default` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+/*Table structure for table `b_yf_social_media_twitter` */
+
+CREATE TABLE `b_yf_social_media_twitter` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `twitter_login` varchar(20) NOT NULL,
+  `id_twitter` varchar(32) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `twitter_login` (`twitter_login`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Table structure for table `com_vtiger_workflow_activatedonce` */
 
@@ -303,12 +315,6 @@ CREATE TABLE `com_vtiger_workflowtasks_entitymethod` (
 /*Table structure for table `com_vtiger_workflowtasks_entitymethod_seq` */
 
 CREATE TABLE `com_vtiger_workflowtasks_entitymethod_seq` (
-  `id` int(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Table structure for table `com_vtiger_workflowtasks_seq` */
-
-CREATE TABLE `com_vtiger_workflowtasks_seq` (
   `id` int(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -2982,6 +2988,30 @@ CREATE TABLE `u_yf_scalculationscf` (
   CONSTRAINT `fk_1_u_yf_scalculationscf` FOREIGN KEY (`scalculationsid`) REFERENCES `u_yf_scalculations` (`scalculationsid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+/*Table structure for table `u_yf_social_media_config` */
+
+CREATE TABLE `u_yf_social_media_config` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `value` text DEFAULT NULL,
+  `type` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name_type_unique` (`name`,`type`),
+  KEY `type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/*Table structure for table `u_yf_social_media_twitter` */
+
+CREATE TABLE `u_yf_social_media_twitter` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `twitter_login` varchar(20) NOT NULL,
+  `id_twitter` varchar(32) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `twitter_login` (`twitter_login`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*Table structure for table `u_yf_squoteenquiries` */
 
 CREATE TABLE `u_yf_squoteenquiries` (
@@ -5243,7 +5273,7 @@ CREATE TABLE `vtiger_eventhandlers` (
   `owner_id` smallint(5) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`eventhandler_id`),
   KEY `event_name_class` (`event_name`,`handler_class`)
-) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8;
 
 /*Table structure for table `vtiger_eventstatus` */
 
@@ -6432,7 +6462,7 @@ CREATE TABLE `vtiger_login_method` (
 CREATE TABLE `vtiger_loginhistory` (
   `login_id` int(10) NOT NULL AUTO_INCREMENT,
   `user_name` varchar(32) DEFAULT NULL,
-  `user_ip` varchar(100) NOT NULL,
+  `user_ip` varchar(100) DEFAULT NULL,
   `logout_time` timestamp NULL DEFAULT NULL,
   `login_time` timestamp NULL DEFAULT NULL,
   `status` varchar(25) DEFAULT NULL,
@@ -6585,6 +6615,8 @@ CREATE TABLE `vtiger_modentity_num` (
   `postfix` varchar(50) NOT NULL DEFAULT '',
   `start_id` int(10) unsigned NOT NULL,
   `cur_id` int(10) unsigned NOT NULL,
+  `reset_sequence` char(1),
+  `cur_sequence` varchar(10) DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `semodule` (`cur_id`),
   KEY `prefix` (`prefix`,`postfix`,`cur_id`),
@@ -8333,7 +8365,7 @@ CREATE TABLE `vtiger_settings_field` (
   PRIMARY KEY (`fieldid`),
   KEY `fk_1_vtiger_settings_field` (`blockid`),
   CONSTRAINT `fk_1_vtiger_settings_field` FOREIGN KEY (`blockid`) REFERENCES `vtiger_settings_blocks` (`blockid`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=112 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=113 DEFAULT CHARSET=utf8;
 
 /*Table structure for table `vtiger_sharedcalendar` */
 

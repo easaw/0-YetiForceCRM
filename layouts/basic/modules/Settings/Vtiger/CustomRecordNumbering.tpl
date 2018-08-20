@@ -45,7 +45,7 @@
 									<label class="float-right marginRight10px"><b>{\App\Language::translate('LBL_SELECT_MODULE', $QUALIFIED_MODULE)}</b></label>
 								</td>
 								<td class="fieldValue {$WIDTHTYPE}" style="border-left: none">
-									<select class="chzn-select form-control" name="sourceModule">
+									<select class="select2 form-control" name="sourceModule">
 										{foreach key=index item=MODULE_MODEL from=$SUPPORTED_MODULES}
 											{assign var=MODULE_NAME value=$MODULE_MODEL->get('name')}
 											<option value={$MODULE_NAME} {if $MODULE_NAME eq $DEFAULT_MODULE_NAME} selected {/if}>
@@ -73,6 +73,21 @@
 									<input type="text" class="form-control" value="{$DEFAULT_MODULE_DATA['sequenceNumber']}"
 										   data-old-sequence-number="{$DEFAULT_MODULE_DATA['sequenceNumber']}" name="sequenceNumber"
 										   data-validation-engine="validate[required,funcCall[Vtiger_WholeNumber_Validator_Js.invokeValidation]]" />
+								</td>
+							</tr>
+							<tr>
+								<td class="{$WIDTHTYPE}">
+									<label class="float-right marginRight10px">
+										<b>{\App\Language::translate('LBL_RS_RESET_SEQUENCE', $QUALIFIED_MODULE)}</b>
+									</label>
+								</td>
+								<td class="fieldValue {$WIDTHTYPE}" style="border-left: none">
+									<select class="select2" name="reset_sequence" data-allow-clear="true" data-placeholder="{\App\Language::translate('LBL_RS_RESET_SEQUENCE', $QUALIFIED_MODULE)}">
+										<option></option>
+										<option value="Y"{if $DEFAULT_MODULE_DATA['reset_sequence']==='Y'} selected {/if}>{\App\Language::translate('LBL_RS_YEAR',$QUALIFIED_MODULE)}</option>
+										<option value="M"{if $DEFAULT_MODULE_DATA['reset_sequence']==='M'} selected {/if}>{\App\Language::translate('LBL_RS_MONTH',$QUALIFIED_MODULE)}</option>
+										<option value="D"{if $DEFAULT_MODULE_DATA['reset_sequence']==='D'} selected {/if}>{\App\Language::translate('LBL_RS_DAY',$QUALIFIED_MODULE)}</option>
+									</select>
 								</td>
 							</tr>
 							<tr>
@@ -106,13 +121,14 @@
 								<td class="fieldValue {$WIDTHTYPE}" style="border-left: none">
 									<div class="row">
 										<div class="col-md-11">
-											<select class="chzn-select form-control" id="customVariables" name="custom_variables">
+											<select class="select2 form-control" id="customVariables" name="custom_variables">
 												<option value="YYYY">{\App\Language::translate('LBL_CV_FULL_YEAR', $QUALIFIED_MODULE)}</option>
 												<option value="YY">{\App\Language::translate('LBL_CV_YEAR', $QUALIFIED_MODULE)}</option>
 												<option value="MM">{\App\Language::translate('LBL_CV_FULL_MONTH', $QUALIFIED_MODULE)}</option>
 												<option value="M">{\App\Language::translate('LBL_CV_MONTH', $QUALIFIED_MODULE)}</option>
 												<option value="DD">{\App\Language::translate('LBL_CV_FULL_DAY', $QUALIFIED_MODULE)}</option>
 												<option value="D">{\App\Language::translate('LBL_CV_DAY', $QUALIFIED_MODULE)}</option>
+												<option value="0">{\App\Language::translate('LBL_CV_LEADING_ZERO', $QUALIFIED_MODULE)}</option>
 											</select>
 										</div>
 										<div class="col-md-1">

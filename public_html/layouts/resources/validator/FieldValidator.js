@@ -25,6 +25,13 @@ Vtiger_Base_Validator_Js("Vtiger_Email_Validator_Js", {
 	}
 }, {
 	/**
+	 *Overwrites base function to avoid trimming and validate white spaces
+	 * @return fieldValue
+	 * */
+	getFieldValue: function () {
+		return this.getElement().val();
+	},
+	/**
 	 * Function to validate the email field data
 	 */
 	validate: function () {
@@ -104,7 +111,7 @@ Vtiger_Base_Validator_Js("Vtiger_Phone_Validator_Js", {}, {
 					field.val(data.result.number);
 					field.attr('title', data.result.geocoding + ' ' + data.result.carrier);
 					if (phoneCountryList.val() != data.result.country) {
-						phoneCountryList.val(data.result.country).change().trigger("chosen:updated");
+						phoneCountryList.val(data.result.country).trigger('change');
 					}
 				}
 				field.attr('readonly', false);
@@ -1026,6 +1033,42 @@ Vtiger_Base_Validator_Js("Vtiger_Time_Validator_Js", {
 	}
 });
 
+Vtiger_Base_Validator_Js("Vtiger_Twitter_Validator_Js", {
+	/**
+	 * Function which invokes field validation
+	 * @param accepts field element as parameter
+	 * @return error if validation fails true on success
+	 */
+	invokeValidation(field, rules, i, options) {
+		let validatorInstance = new Vtiger_Twitter_Validator_Js();
+		validatorInstance.setElement(field);
+		let result = validatorInstance.validate();
+		if (result == true) {
+			return result;
+		} else {
+			return validatorInstance.getError();
+		}
+	}
+
+}, {
+	/**
+	 * Function to validate the Twwiter Account
+	 * @author    Arkadiusz Adach <a.adach@yetiforce.com>
+	 * @return true if validation is successfull
+	 * @return false if validation error occurs
+	 */
+	validate() {
+		let fieldValue = this.getFieldValue();
+		if (!fieldValue.match(/^[a-zA-Z0-9_]{1,15}$/g)) {
+			let errorInfo = app.vtranslate("JS_PLEASE_ENTER_VALID_TWITTER_ACCOUNT");
+			this.setError(errorInfo);
+			return false;
+		}
+		return true;
+	}
+});
+
+
 //Calendar Specific validators
 // We have placed it here since quick create will not load module specific validators
 
@@ -1313,7 +1356,7 @@ Vtiger_Base_Validator_Js("Vtiger_YetiForceCompanyName_Validator_Js", {
 		}
 		const field = this.getElement();
 		const fieldValue = field.val();
-		if(fieldValue.toLowerCase().indexOf('yetiforce')>=0){
+		if (fieldValue.toLowerCase().indexOf('yetiforce') >= 0) {
 			this.setError(app.vtranslate('JS_YETIFORCE_COMPANY_NAME_NOT_ALLOWED'));
 			return false;
 		}

@@ -18,7 +18,7 @@ class Settings_WidgetsManagement_Module_Model extends Settings_Vtiger_Module_Mod
 	public function getWidgetsWithLimit()
 	{
 		return ['History', 'Upcoming Activities', 'Overdue Activities', 'Mini List', 'Delegated project tasks', 'Delegated (overdue) project tasks', 'Delagated Events/To Do', 'Delegated (overdue) Events/ToDos', 'LBL_EXPIRING_SOLD_PRODUCTS',
-			'LBL_CREATED_BY_ME_BUT_NOT_MINE_ACTIVITIES', 'LBL_NEW_ACCOUNTS', 'LBL_NEGLECTED_ACCOUNTS', ];
+			'LBL_CREATED_BY_ME_BUT_NOT_MINE_ACTIVITIES', 'LBL_NEW_ACCOUNTS', 'LBL_NEGLECTED_ACCOUNTS', 'Multifilter'];
 	}
 
 	public static function getWidgetSpecial()
@@ -347,7 +347,7 @@ class Settings_WidgetsManagement_Module_Model extends Settings_Vtiger_Module_Mod
 		if (in_array($data['name'], $widgetWithLimit)) {
 			$status = true;
 		}
-		if ($status && !$data['limit']) {
+		if ($status && empty($data['limit'])) {
 			$data['limit'] = 10;
 		}
 		if ($data['isdefault'] != 1 || $data['isdefault'] != '1') {

@@ -303,6 +303,12 @@ class Vtiger_Field_Model extends vtlib\Field
 					case 311:
 						$fieldDataType = 'multiImage';
 						break;
+					case 312:
+						$fieldDataType = 'authySecretTotp';
+						break;
+					case 313:
+						$fieldDataType = 'twitter';
+						break;
 					default:
 						$fieldsDataType = App\Field::getFieldsTypeFromUIType();
 						if (isset($fieldsDataType[$uiType])) {
@@ -1307,6 +1313,9 @@ class Vtiger_Field_Model extends vtlib\Field
 	{
 		$db = \App\Db::getInstance();
 		$tableSchema = $db->getSchema()->getTableSchema($this->getTableName(), true);
+		if (empty($tableSchema)) {
+			return false;
+		}
 		$columnSchema = $tableSchema->getColumn($this->getColumnName());
 		$data = get_object_vars($columnSchema);
 		if ($returnString) {
@@ -1318,7 +1327,6 @@ class Vtiger_Field_Model extends vtlib\Field
 					$string .= '(' . $data['size'] . ')';
 				}
 			}
-
 			return $string;
 		}
 		return $data;
